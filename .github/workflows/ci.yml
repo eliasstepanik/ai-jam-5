@@ -1,0 +1,64 @@
+# Job name `ci` is the branch-protection required status check context: do not rename it.
+#
+# Runner: non-fork events require a self-hosted runner registered on THIS repo with labels
+# self-hosted, Linux, X64, proxy. Personal-account runners are per-repo and cannot be
+# shared with other repos (e.g. quicksight-clone needs its own). If no runner with these
+# labels is online, those jobs wait for a runner and GitHub fails them after ~24 h if none
+# picks them up. An ephemeral and/or containerised runner is recommended (clean state per
+# job, no persistent access to the host).
+#
+# Security: this repo is public. Fork PRs are intentionally run on GitHub-hosted
+# ubuntu-latest, never on the self-hosted runner, so untrusted code never touches the
+# self-hosted host. They still produce a real `ci` result. The job has no `if` on purpose:
+# GitHub reports a job skipped by `if` as Success, which would let a required `ci` check
+# pass on fork PRs without running anything.
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ${{ github.event.pull_request && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","X64","proxy"]') }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+      # Guards the itch.io zip requirement: index.html must use relative ./assets/ paths.
+      - name: Verify dist/index.html uses relative asset paths
+        run: test -f dist/index.html && grep -qF './assets/' dist/index.html
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
