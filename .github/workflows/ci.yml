@@ -1,11 +1,9 @@
 # Job name `ci` is the branch-protection required status check context: do not rename it.
 #
-# Runner: non-fork events require a self-hosted runner registered on THIS repo with labels
-# self-hosted, Linux, X64, proxy. Personal-account runners are per-repo and cannot be
-# shared with other repos (e.g. quicksight-clone needs its own). If no runner with these
-# labels is online, those jobs wait for a runner and GitHub fails them after ~24 h if none
-# picks them up. An ephemeral and/or containerised runner is recommended (clean state per
-# job, no persistent access to the host).
+# Runner: non-fork events run on the GARM scale set `aj5-general` (ephemeral runners, one
+# container per job on host proxy). `runs-on` is the scale-set name; labels are not used.
+# If the scale set is disabled or GARM is down, jobs wait for a runner and GitHub fails
+# them after ~24 h if none picks them up.
 #
 # Security: this repo is public. Fork PRs are intentionally run on GitHub-hosted
 # ubuntu-latest, never on the self-hosted runner, so untrusted code never touches the
@@ -31,7 +29,7 @@ permissions:
 jobs:
   ci:
     name: ci
-    runs-on: ${{ github.event.pull_request && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || fromJSON('["self-hosted","Linux","X64","proxy"]') }}
+    runs-on: ${{ github.event.pull_request && github.event.pull_request.head.repo.full_name != github.repository && 'ubuntu-latest' || 'aj5-general' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
