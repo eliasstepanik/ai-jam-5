@@ -1,4 +1,5 @@
 import type { Monster, MonsterKind, State } from '../core/types.ts'
+import { clamp } from '../core/math.ts'
 import { rand, randRange } from '../core/rng.ts'
 import { T } from '../core/tuning.ts'
 
@@ -18,4 +19,19 @@ export function spawnMonster(s: State, kind: MonsterKind, x: number, y: number, 
   }
   s.monsters.push(m)
   return m
+}
+
+// Devourer light push, docs/architecture-monsters-ai-2.md §1 (moved here by MS-4 so systems/light.ts needs no slice-C file).
+// Smoothstep push from the nearest live (ai !== 'dying') devourer; 1 when there is none. Pure: never stored.
+export function devourerMul(s: State): number {
+  const p = s.player
+  let best = Infinity
+  for (const m of s.monsters) {
+    if (m.kind !== 'devourer' || m.ai === 'dying') continue
+    best = Math.min(best, Math.hypot(m.x - p.x, m.y - p.y))
+  }
+  if (best === Infinity) return 1
+  const L = T.devourerLight
+  const t = clamp((L.farPx - best) / (L.farPx - L.nearPx), 0, 1)
+  return 1 - L.pushMax * (t * t * (3 - 2 * t)) // smoothstep: no pop at the edges
 }
