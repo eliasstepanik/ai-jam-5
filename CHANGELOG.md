@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A21 cave layout helpers: seeded macro trees and masks, connected spine carving, entrance and Beacon placement with guarded chamber carving, and verified loop tunnels that preserve the descent path length.
 - A23 monster foundations: complete spawn records with deterministic gameplay randomness and light-aware ring defaults, plus arrival steering and smooth velocity blending. The spawn caller supplies the light radius to preserve the layer rules.
 - A20 cave foundations: deterministic grid BFS and shortest paths, border-safe carving brushes, largest-region selection, noise fill, five-pass cellular smoothing, widening and diagonal repair.
 - A18 world queries: coordinate and tile helpers, deterministic neighbours, circle movement with sliding and anti-tunnelling substeps, and symmetric tile line of sight. Brought forward the complete solidity cache from A22 to resolve A18's missing dependency; other A22 caches remain separate.
