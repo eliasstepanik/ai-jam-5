@@ -3,12 +3,12 @@ type: architecture
 title: Last Ember – Architecture Hub (precedence, reading order, layer rule, slices, owner decisions)
 description: Entry point for the Last Ember architecture – lists every architecture file with title and purpose in groups, the precedence order, a reading order per task, the layer rule, the vertical slices A/B/C with first chunks, the pending owner decisions (OD-1 to OD-7) and the resolved design issues E-1, E-2.
 tags: [project, ai-jam-5, architecture, last-ember]
-timestamp: 2026-10-18T13:00:00Z
+timestamp: 2026-10-18T19:20:00Z
 ---
 
 # Last Ember – Architecture Hub
 
-**Status (2026-10-18):** Architecture written 2026-10-17 by parallel authors; conflicts resolved in [[architecture-rulings]], [[architecture-rulings-2]] and [[architecture-rulings-3]]; map enlarged to 320×240 (scale and economy rulings, SAE1–SAE4). E-1 and E-2 are RESOLVED (section 6). **Implementation may start once OD-1 and OD-3 are approved; slice A first.**
+**Status (2026-10-18):** Architecture written 2026-10-17 by parallel authors; conflicts resolved in [[architecture-rulings]], [[architecture-rulings-2]] and [[architecture-rulings-3]]; map enlarged to 320×240 (scale and economy rulings, SAE1–SAE4). E-1 and E-2 are RESOLVED (section 6). **OD-1, OD-3 and OD-7 were approved on 2026-10-18; implementation is under way (see [[progress]]).**
 
 Project hub: [[index]]. Jam facts: [[jam-brief]]. Implementation agents read this file first, then the files for their task (section 2).
 
@@ -189,15 +189,15 @@ Devourer, particle table, music layers and stingers, P1/P2 SFX, help pages, fade
 
 | ID | Decision | Recommended |
 |---|---|---|
-| OD-1 | Approve `src/main.ts` host edits (`Input.view`, left-button-only clicks, `contextmenu`, blur/visibility pause) as one medium-tier PR | yes |
+| OD-1 | Approve `src/main.ts` host edits (`Input.view`, left-button-only clicks, `contextmenu`, blur/visibility pause) as one medium-tier PR | yes (**APPROVED 2026-10-18**; merged as #18) |
 | OD-2 | `dprCap` line in `main.ts` | skip |
-| OD-3 | Replace `index.html` | yes |
+| OD-3 | Replace `index.html` | yes (**APPROVED 2026-10-18**) |
 | OD-4 | 9 MB CI size-budget step | skip until first art PR |
 | OD-5 | `?seed=` may not reach the game inside the itch.io iframe; keep the title-screen seed field | keep field |
 | OD-6 | Optional safe-route glow in escape | ship off |
-| OD-7 | Host `STEP_BUDGET_MS = 12` wall-time bailout in `main.ts` ([[architecture-rulings-2]] R-105, [[architecture-scale-and-economy-4]] §1.8) | yes, part of the OD-1 PR |
+| OD-7 | Host `STEP_BUDGET_MS = 12` wall-time bailout in `main.ts` ([[architecture-rulings-2]] R-105, [[architecture-scale-and-economy-4]] §1.8) | yes, part of the OD-1 PR (**APPROVED 2026-10-18**) |
 
-Source: [[architecture-rulings-2]] section 10 (OD-7: [[architecture-rulings-3]] R-124). Full rationale in [[architecture-modules-ui-assets-2]] and [[architecture-host-changes]]. **Implementation may start once OD-1 and OD-3 are approved; slice A first.**
+Source: [[architecture-rulings-2]] section 10 (OD-7: [[architecture-rulings-3]] R-124). Full rationale in [[architecture-modules-ui-assets-2]] and [[architecture-host-changes]]. **OD-1, OD-3 and OD-7 were approved on 2026-10-18; implementation is under way (see [[progress]]).** OD-2, OD-4, OD-5 and OD-6 remain open.
 
 ### Design issues from [[architecture-economy-check]] (RESOLVED 2026-10-18)
 
@@ -273,3 +273,4 @@ Tracked in [[last-ember-open-questions]]. Decider: owner (eliasstepanik) with de
 - [[architecture-assets-pipeline-2]]
 - [[tasks]]
 - [[tasks-files]]
+- [[progress]]

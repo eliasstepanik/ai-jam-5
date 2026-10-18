@@ -3,14 +3,14 @@ type: reference
 title: Last Ember – Production Plan
 description: Schedule, checkpoints, cut-order guidance, art/audio pipeline, team workflow and risks for the chosen ai-jam-5 concept Last Ember.
 tags: [project, ai-jam-5, last-ember, production, schedule, risks]
-timestamp: 2026-10-17T19:00:00Z
+timestamp: 2026-10-18T19:20:00Z
 ---
 
 # Last Ember – Production Plan
 
 Hub: [[index]]. Gameplay: [[last-ember-design]]. Unconfirmed points: [[last-ember-open-questions]]. Jam facts: [[jam-brief]].
 
-> Status: plan drafted 2026-10-17 from author-approved answers. **Scope decision (owner, 2026-10-17): "we will build what we can and see how far we get".** The schedule and cut order below are guidance, not a commitment. **The architecture exists** (hub [[architecture]], 57+ architecture files, binding rulings 1–3). Implementation may start once the owner approves OD-1 (main.ts host PR), OD-3 (index.html) and OD-7 (STEP_BUDGET_MS bailout); slice A first. Tasks: [[tasks]] and [[tasks-files]].
+> Status: plan drafted 2026-10-17 from author-approved answers. **Scope decision (owner, 2026-10-17): "we will build what we can and see how far we get".** The schedule and cut order below are guidance, not a commitment. **The architecture exists** (hub [[architecture]], 57+ architecture files, binding rulings 1–3). The owner approved OD-1 (main.ts host PR), OD-3 (index.html) and OD-7 (STEP_BUDGET_MS bailout) on 2026-10-18; the host PR is merged (#18) and implementation started 2026-10-18 (see [[progress]]); slice A first. Tasks: [[tasks]] and [[tasks-files]].
 
 ## Schedule
 
@@ -52,10 +52,10 @@ The descent-only build must already be tense: cave, flame energy, Lurkers, resin
 ## Team workflow
 
 - Team: saile2204 (design lead), undertaker7431, kittingsl. Repo owner: eliasstepanik.
-- **Plan:** add undertaker7431 and kittingsl as repo collaborators. Work on feature branches and PRs.
+- **Plan:** add team members as repo collaborators (kittingsl done). Work on feature branches and PRs.
 - PRs from collaborators are same-repo PRs, so they run on the project CI runner. `master` stays protected (`ci` required).
 - **Accepted risk (owner, 2026-10-17):** collaborators with write access can run CI code. The owner accepts this.
-- **Invites not yet sent.** Collaborator invites are a state-changing GitHub action and need the owner's explicit go-ahead at that time.
+- **Invite status (verified 2026-10-18):** Kittingsl is a collaborator with write access. The invitation for cedricsdesign (write) is pending. The status of undertaker7431 is not verified. Collaborator invites are a state-changing GitHub action and need the owner's explicit go-ahead.
 - Work split by module: art, audio, level generation, gameplay. **Updated 2026-10-18:** the concrete code ownership is in [[tasks]] (Elias: core, systems, render and lighting, host, integration; Kittingsl: world and cave generation, assets, UI, audio, checks).
 
 ## Risks
@@ -82,5 +82,6 @@ Scope is larger than the original Last Ember pitch:
 - [[last-ember-open-questions]]
 - [[tasks]]
 - [[tasks-files]]
+- [[progress]]
 - [[jam-brief]]
 - [[vite-canvas-hmr-state-preservation]]

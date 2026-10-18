@@ -3,7 +3,7 @@ type: index
 title: ai-jam-5 – AI Browser Game Jam 5 (Last Ember)
 description: Hub for the ai-jam-5 project – itch.io AI Browser Game Jam 5 entry, theme TORCH; chosen concept Last Ember, scope status, and links to all project files.
 tags: [project, ai-jam-5, game-design, last-ember, index, game-jam]
-timestamp: 2026-10-18T13:00:00Z
+timestamp: 2026-10-18T19:15:00Z
 ---
 
 # ai-jam-5 – AI Browser Game Jam 5
@@ -18,10 +18,10 @@ timestamp: 2026-10-18T13:00:00Z
 
 ## Status
 
-- **Status (2026-10-18):** Last Ember chosen; scope: build what we can. Architecture written; map enlarged to 320×240. E-1 RESOLVED by architect (O2 + O3, O1 rejected), E-2 RESOLVED (owner: bigger map). **Implementation may start once OD-1 and OD-3 are approved; slice A first** ([[architecture]] §6; OD-7 host bailout rides in the OD-1 PR).
+- **Status (2026-10-18):** Last Ember chosen; scope: build what we can. Architecture written; map enlarged to 320×240. E-1 RESOLVED by architect (O2 + O3, O1 rejected), E-2 RESOLVED (owner: bigger map). **Implementation started 2026-10-18 after the owner approved OD-1, OD-3 and OD-7.** 23 PRs are merged: the foundation, the world generation core and most of the player-side systems are on master. `src/game.ts` is still the scaffold, so the game is not playable yet. Slice A is due 2026-10-20. Details: [[progress]].
 - **Scope (owner, 2026-10-17):** "we will build what we can and see how far we get". Cut order is guidance only ([[last-ember-production-plan]]). The global leaderboard is dropped; the game has no online services.
 - Design lead: saile2204. Team: undertaker7431, kittingsl. Repo owner: eliasstepanik. Open items: [[last-ember-open-questions]].
-- **Architecture exists:** [[architecture]] is the hub (56 linked files: rulings, scale and economy rulings, module trees, topical specs, asset library). Agents read `projects/ai-jam-5/architecture.md` first; [[architecture-rulings]] (parts 1–3) is binding. Slice A may start once OD-1/OD-3 are answered.
+- **Architecture exists:** [[architecture]] is the hub (56 linked files: rulings, scale and economy rulings, module trees, topical specs, asset library). Agents read `projects/ai-jam-5/architecture.md` first; [[architecture-rulings]] (parts 1–3) is binding. OD-1, OD-3 and OD-7 are approved; slice A is under way ([[progress]]).
 
 ## Files
 
@@ -40,6 +40,7 @@ timestamp: 2026-10-18T13:00:00Z
 
 - [[tasks]] – task plan: Elias vs Kittingsl code ownership, assignment principles, task index for slices A/B/C, totals, risks, process, open questions
 - [[tasks-files]] – per-file assignment table (owner, slice, task id, estimated lines)
+- [[progress]] – build progress synced to the merged state of master: done, partial and remaining tasks, deviations, open items
 
 ### Architecture
 
@@ -64,12 +65,13 @@ timestamp: 2026-10-18T13:00:00Z
 ## Next steps
 
 1. Resolve the items in [[last-ember-open-questions]].
-2. ~~Write `projects/ai-jam-5/architecture.md`~~ done: [[architecture]]. E-1/E-2 resolved 2026-10-18. Next: owner approves OD-1 (with OD-7) and OD-3, then slice A.
-3. Build the descent-only slice by Day 4 (Oct 20) and tune the light economy live with hot reload ([[last-ember-production-plan]]).
+2. ~~Write `projects/ai-jam-5/architecture.md`~~ done: [[architecture]]. E-1/E-2 resolved 2026-10-18. OD-1, OD-3 and OD-7 approved; implementation started 2026-10-18.
+3. Finish slice A by Day 4 (Oct 20): the monster, run and step systems, the render tree, the UI and asset basics and the `game.ts` facade, so the descent is playable. Then tune the light economy live with hot reload ([[last-ember-production-plan]]). Status and remaining work: [[progress]].
 4. Full-loop playtest on Day 6 (Oct 22).
 
 ## Related
 
+- [[progress]]
 - [[tasks]]
 - [[tasks-files]]
 - [[architecture]]
