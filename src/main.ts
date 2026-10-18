@@ -7,9 +7,10 @@ import type { Mod } from './merge.ts'
 
 export type Input = {
   keys: Set<string> // held, KeyboardEvent.code
-  pressed: Set<string> // went down since the last update step
-  mouse: { x: number; y: number; down: boolean } // CSS pixels == game coordinates
-  clicks: { x: number; y: number }[] // mousedowns since the last update step
+  pressed: Set<string> // went down since the last update step; also 'Blur' when focus or visibility was lost
+  mouse: { x: number; y: number; down: boolean } // CSS pixels relative to the canvas, primary button only
+  clicks: { x: number; y: number }[] // primary-button downs since the last update step
+  view: { w: number; h: number; dpr: number } // canvas size in CSS pixels (same w, h that render receives) + devicePixelRatio used by resize
 }
 
 interface Game extends Mod<State> {
@@ -19,6 +20,7 @@ interface Game extends Mod<State> {
 
 const STEP = 1 / 60
 const MAX_FRAME = 0.25 // clamp after tab-away so we do not spiral
+const STEP_BUDGET_MS = 12 // ponytail: wall-time bailout; per-system time slicing if a normal step ever nears it
 
 let game: Game = initialGame
 let error: string | null = null
@@ -51,10 +53,13 @@ function resize(): void {
   h = window.innerHeight
   canvas.width = Math.round(w * dpr)
   canvas.height = Math.round(h * dpr)
+  input.view.w = w
+  input.view.h = h
+  input.view.dpr = dpr
 }
 
 // ---- input ----
-const input: Input = { keys: new Set(), pressed: new Set(), mouse: { x: 0, y: 0, down: false }, clicks: [] }
+const input: Input = { keys: new Set(), pressed: new Set(), mouse: { x: 0, y: 0, down: false }, clicks: [], view: { w: 0, h: 0, dpr: 1 } }
 const GAME_KEYS = /^(Arrow|Space)/ // stop page scroll
 const listeners: [EventTarget, string, (e: never) => void][] = []
 function on<E extends Event>(t: EventTarget, type: string, fn: (e: E) => void): void {
@@ -75,24 +80,32 @@ on<KeyboardEvent>(window, 'keydown', (e) => {
   input.keys.add(e.code)
 })
 on<KeyboardEvent>(window, 'keyup', (e) => input.keys.delete(e.code))
-on<Event>(window, 'blur', () => {
+function lostFocus(): void {
   input.keys.clear()
   input.mouse.down = false
+  input.pressed.add('Blur') // game pauses on its next step
+}
+on<Event>(window, 'blur', lostFocus)
+on<Event>(document, 'visibilitychange', () => {
+  if (document.hidden) lostFocus()
 })
 canvas.style.touchAction = 'none' // let touch drags reach pointer events instead of scrolling
 on<PointerEvent>(canvas, 'pointermove', (e) => {
   input.mouse.x = e.offsetX
   input.mouse.y = e.offsetY
+  input.mouse.down = (e.buttons & 1) !== 0 // a chorded release fires pointermove, not pointerup (R-135)
 })
 on<PointerEvent>(canvas, 'pointerdown', (e) => {
-  canvas.setPointerCapture(e.pointerId) // keeps move/up coming if the drag leaves the canvas
   input.mouse.x = e.offsetX
   input.mouse.y = e.offsetY
+  if (e.button !== 0) return // primary only: a right click must not swing/parry
+  canvas.setPointerCapture(e.pointerId) // keeps move/up coming if the drag leaves the canvas
   input.mouse.down = true
   input.clicks.push({ x: e.offsetX, y: e.offsetY })
 })
 on<PointerEvent>(window, 'pointerup', () => (input.mouse.down = false))
 on<PointerEvent>(window, 'pointercancel', () => (input.mouse.down = false))
+on<Event>(canvas, 'contextmenu', (e) => e.preventDefault())
 on<Event>(window, 'resize', resize)
 resize()
 
@@ -107,6 +120,7 @@ function frame(now: number): void {
   prev = now
 
   // ponytail: fixed timestep renders without interpolation (stutter on 120/144 Hz); add interpolation if it matters.
+  const t0 = performance.now()
   while (acc >= STEP) {
     acc -= STEP
     try {
@@ -116,6 +130,10 @@ function frame(now: number): void {
     }
     input.pressed.clear()
     input.clicks.length = 0
+    if (performance.now() - t0 > STEP_BUDGET_MS) {
+      acc = 0 // drop the backlog, never spiral
+      break
+    }
   }
 
   const dpr = window.devicePixelRatio || 1
