@@ -25,50 +25,58 @@ Frame file names follow style Section 10: `<SpriteId>_<anim>_<nn>.png`, for exam
 
 ## 2. Facing / rotation policy (decision)
 
-**Decision: ONE right-facing top-down sprite per frame; the engine rotates it to the facing angle.** No 4- or 8-direction sheets.
+**Player update (user decision, 2026-10-18; R-154): eight authored directions, with separate torch and no-torch animation sets.** Monster facing remains one right-facing sprite rotated by the engine.
 
-- Rationale: top-down flat view has no "front/back" problem that 3/4 views have; a rotated top-down body is correct geometry. 8-direction sheets would multiply the actor frame count by 8 (about 50 frames → 400) and break the Day 5 delivery.
-- Pixel-art rotation shimmer: the engine **quantises the drawn angle to 16 steps (22.5°)** and draws with `imageSmoothingEnabled = false`. At 2× zoom this reads as clean, chunky pixel rotation. If shimmer bothers playtesters, the upgrade path is to pre-rotate the 16 angles in the packer (offline, no runtime cost) — not planned.
-- What rotates: player body (to mouse aim in `descent`, to movement direction in `escape`), monsters (to movement direction; during telegraph and lunge, to the player), the torch stick (swing arc).
-- What never rotates: eyes-only sprites are drawn rotated with the body (they are on the same canvas), tiles, pickups, props, UI.
-- **Death animations do not rotate after they start** (freeze the angle at the first death frame).
+- Player direction order is clockwise in canvas coordinates: `e`, `se`, `s`, `sw`, `w`, `nw`, `n`, `ne`. Select the nearest 45° direction to the aim angle in descent and movement angle in escape; retain facing when stationary. Exact halfway ties select the next clockwise direction. Do not rotate or mirror authored player frames.
+- Monsters keep the existing 16-step (22.5°) quantised rotation, with `imageSmoothingEnabled = false`.
+- Player death holds the direction selected on its first frame. Monster death freezes its rotation on its first frame.
+- The torch stick is included in the player's torch-set frames; no separate torch sprite or stick draw is used. Flame, glow, sparks and the swing trail remain procedural.
 
 ## 3. Shared conventions for actors
 
 - Canvas: square, pivot at the exact centre pixel `(w/2, h/2)` = the collision centre = rotation centre.
 - Body occupies about 60–70 % of the canvas; the rest is room for lunge stretch and death particles.
-- Head/front points to the right edge (+x).
+- Monsters face right (+x). Player frames face their named direction (Section 2).
 - Emissive parts (eyes) are NOT in body frames. They are separate `eyes` frames on the same canvas size and pivot, so the engine can draw them additively above the darkness mask (spec: outside the light a shade is only glowing eyes).
-- Flames are never in sprites. The torch flame, glow, sparks, light mask, Beacon light and pickup glow are procedural ([[last-ember-production-plan]] Art pipeline).
+- Flames are never in sprites. The player torch stick is baked into the torch-set frames; its flame, glow, sparks, light mask, Beacon light and pickup glow are procedural ([[last-ember-production-plan]] Art pipeline).
 
 ## 4. Player
 
-### 4.1 `player_body`
+### 4.1 Player body sets
 
-`player_body` | 32×32 | `idle:4@4 loop`, `walk:6@10 loop`, `swing:4@20 once`, `roll:4@16 once`, `hurt:2@12 once`, `death:6@8 once (hold last)` | (16,16) | 10 | **P0** (idle, walk, swing), P1 (roll, hurt, death)
+Two `SpriteId`s, both **64×64**, pivot **(32,32)**:
 
-- `walk` is reused for escape sprint at playback ×1.6 fps (16 fps). No separate sprint frames.
-- `swing` = 0.2 s, matches the parry swing; the engine sweeps the torch stick separately (4.2).
-- `roll` = 0.25 s: body tucks into a ball and spins; the engine also moves the body.
-- Torch-held pose: in `descent` all body frames are drawn with the right hand extended forward-right, empty, at the **hand anchor (+9,+6)** from pivot (forward = +x, right side of body = +y). The engine draws `player_torch` there. In `escape` there is no torch; the same frames are used with the hand empty (reads as a running arm).
+- `player_body`: without torch (escape).
+- `player_body-torch`: with the torch stick included in every frame (descent, including when the flame is out).
 
-**Looks:** a small hooded cave-walker seen from above. Round dark hood `#2a2420` with a slightly lighter crown `#3a332d`, worn leather shoulders `#3b2a1e`/`#5a4030`, a short pack on the back (left side of the canvas) `#3b2a1e` with a rope coil `#8c8070`. Shoulders are wider than the hood; the silhouette is a rounded "T": hood in the middle, two shoulder lumps, right arm reaching forward-right. Feet show only in `walk` as two small `#1c1714` ovals alternating in front of/behind the shoulders. No face visible (top-down hood). Mood: fragile, small, determined. `hurt`: frame 0 body shifted 1 px back with hood squashed; frame 1 normal. The engine also flashes it white for 2 frames. `death`: body slumps forward, shoulders flatten, frames 3–5 the figure lies as an elongated dark shape with the pack beside it. `roll`: frame 0 crouched, 1–2 a tight ball rotated 90°/180° (the pack shows as a lump circling), 3 unfolding.
+Each action below exists for **all eight directions in each set**. Other than walk, frame counts and playback rates are unchanged.
 
-**Prompt (key pose, idle_00):** `{MASTER}, a small hooded explorer seen exactly from above, round brown hood in the center, worn leather shoulders, small backpack with coiled rope on the left side, right arm reaching forward to the right holding nothing, no face visible, 32x32 sprite, dark brown and leather tones`. Other frames: same seed, img2img strength ≤ 0.35, prompt adds `walking, feet visible`, `crouched rolling ball`, `collapsed lying on the ground` per animation.
+| Action | Frames per direction per set | Playback | Priority |
+|---|---|---|---|
+| `idle` | 4 | 4 fps, loop | P0 |
+| `walk` | **4** | 10 fps, loop | P0 |
+| `swing` | 4 | 20 fps, once | P0 |
+| `roll` | 4 | 16 fps, once | P1 |
+| `hurt` | 2 | 12 fps, once | P1 |
+| `death` | 6 | 8 fps, once, hold last | P1 |
 
-**Placeholder:** circle r=9 `#5a4030` with 1 px outline `#0a0809`; inner circle r=5 `#2a2420` (hood); line from (0,0) to (12,0) width 2 `#e8dcc8` showing facing. `roll`: same circle scaled to 0.8. `hurt`: fill `#ff3b2a` for the 2 frames. `death`: ellipse rx=11 ry=6 `#2a2420`.
+That is **24 frames × 8 directions × 2 sets = 384 player frames**. This is the full catalog target, not a claim that all art has been delivered. No separate sprint frames: escape reuses `walk` at 16 fps. No pickup or mining action is added by this update.
 
-### 4.2 `player_torch`
+**Keys:** `<SpriteId>_<action>-<direction>_<nn>.png`, e.g. `player_body-torch_walk-ne_03.png` or `player_body_idle-s_00.png`. Animation keys are `walk-ne`, `idle-s`, etc. This retains the pipeline's three underscore-separated fields. Manifest entries enumerate all 48 action/direction combinations per set.
 
-`player_torch` | 16×8 | `idle:1@0` | (2,4) (the grip end) | — | **P0**
+**World-size default:** 64×64 is the source canvas size. Draw player art at scale **0.5** (32×32 world units), preserving collision radius **10** and the existing camera/gameplay scale; pivot becomes (16,16) world units. Do not enlarge collision or tiles. Monsters retain their catalog sizes and scale 1.
 
-**Looks:** a wooden torch stick pointing +x, 14 px long, `#5a4030` with a darker grip wrap `#3b2a1e` at the left, a charred head 4 px wide at the right end `#141114` with 2 ember pixels `#c2410c`. The flame is drawn by the engine at the stick tip (+12,0 from the torch pivot).
+**Looks:** a small hooded cave-walker, with dark brown hood, worn leather shoulders, backpack and rope, no visible face. Keep the silhouette, palette and aligned centre consistent across all directions and both sets. Torch-set frames contain the wooden stick and charred head, without baked flame or glow. No-torch frames contain no stick. `swing` lasts 0.2 s; `roll` 0.25 s; `hurt` recoils then returns; `death` slumps and holds its last frame.
 
-**Swing arc:** the engine rotates the stick from −60° to +60° around the aim angle over the 0.2 s `swing`. The arc trail is procedural (additive arc in the current flame mantle colour).
+**Torch-tip anchor:** the torch-set animation manifest supplies one source-pixel `[x, y]` tip position per frame, measured from the top-left of its 64×64 canvas (array length equals the action frame count). The renderer uses `(tip - [32,32]) * 0.5 + player position` for procedural flame/glow; no extra body rotation. When art falls back, use the anchor belonging to the resolved fallback frame. No-torch animations have no torch-tip anchors.
 
-**Prompt:** `{MASTER}, a single wooden torch stick lying horizontally pointing right, leather grip on the left, charred black head on the right, no flame, 16x8 sprite`.
+**Prompt:** prepend the master style prompt, then specify a hooded explorer, 64×64 final canvas, the named direction, action and either a held wooden torch stick without flame or empty hands. Use a consistent reference across both sets and all eight directions.
 
-**Placeholder:** rectangle 12×2 `#5a4030` from (0,−1); rectangle 3×4 `#141114` at the tip.
+**Placeholder:** retain the existing radius-9 body, hood and facing line in world units, oriented to the selected eight-way direction. The torch-set placeholder includes a stick; no-torch does not. Draw this procedural geometry at world scale 1 so it is not halved again. Roll compresses to 0.8; hurt flashes red; death flattens to an ellipse. Placeholders allow gameplay to progress while the art is incomplete.
+
+### 4.2 Removed separate torch sprite
+
+`player_torch` is removed from the catalog and manifest. Its stick is part of `player_body-torch`; flame and trails remain engine effects. Do not ship a loose torch frame or draw a second stick over the player.
 
 ## 5. Monsters (shades)
 

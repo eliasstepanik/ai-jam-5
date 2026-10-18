@@ -17,6 +17,7 @@ Part 1 (layout, manifests, loading, fallbacks): [[architecture-assets-pipeline]]
 What it must do (implementer spec):
 
 1. **Collect** `art/frames/**/*.png`, sorted by name (determinism). Key = file name without `.png`.
+   Player keys append direction to the animation (`walk-ne`) and select `player_body` or `player_body-torch`; never infer player facing by rotating a right-facing frame. Validate per-frame torch-tip anchors against the manifest.
 2. **Decode PNG** with `node:zlib` `inflateSync`: accept only 8-bit RGBA, non-interlaced (colour type 6, bit depth 8, interlace 0) — the export rule in style Section 9. Undo the 5 PNG scanline filters (None, Sub, Up, Average, Paeth). Anything else → exit 1 with `pack: <file> must be PNG-32 RGBA 8-bit non-interlaced`.
 3. **Validate** each frame against `SPRITES` (imported from `src/assets/sprites.ts`): the `SpriteId` and anim exist, frame index `< n`, PNG size equals `w×h`. Unknown key → error (catches typos like `mon_lurkr_idle_00`).
 4. **Pack** with shelf packing: sort frames by height desc then name, fill rows left to right in a 1024-wide sheet; cell = frame + 1 px extrusion on each side + 1 px transparent gap (style Section 9). Sheet height = next power of two ≥ used height, max 1024; overflow starts `atlas-1.png`. Tiles and actors get no special treatment.
@@ -27,7 +28,7 @@ What it must do (implementer spec):
 
 Optional after packing (not in the script): `oxipng -o 4 --strip safe --nc src/assets/atlas-*.png` if installed (`--nc` = keep RGBA colour type, else check #4 fails); oxipng rewrites the file bytes (not the pixels), so the `hash` is computed over the SOURCE frames only, never over the sheet; the script output is already reasonably small because frames are palette-locked.
 
-`ponytail:` shelf packing wastes ~30 %; replace with MaxRects only if a second sheet appears.
+`ponytail:` shelf packing wastes ~30 %; replace with MaxRects if measured packing exceeds the four-sheet allowance (R-154).
 
 ## 2. Validation `scripts/check-assets.ts` (in `npm run check`)
 
@@ -45,6 +46,7 @@ Runs in Node without decoding images or audio. Each failure prints one line and 
 | 8 | Budgets (Section 3) by `fs.statSync` sizes | bundle creep |
 | 9 | Every `loop` has `0 ≤ start < end` | bad manifest |
 | 10 | All file names match `^[a-z0-9-]+(_[a-z0-9-]+)*\.(png|ogg|m4a)$` | naming rule (style Section 10) |
+| 11 | Player sets are 64×64, pivot (32,32), all eight direction keys per action; walk has 4 frames; torch-set tip-anchor count equals frame count and positions lie within the canvas | enforce R-154; missing source images may still use the documented fallback |
 
 Placeholder and synth coverage are **not** checked here: tsc enforces them (`Record<SpriteId, DrawFn>`, `Record<SoundId, …>`) in `npm run build`.
 
@@ -54,9 +56,9 @@ The script imports `src/assets/sprites.ts` and `sounds.ts`; they stay DOM-free (
 
 | Item | Limit | Target / estimate |
 |---|---|---|
-| Atlas sheets total | ≤ 1.2 MB | ≈ 0.27–0.4 MB, 1 sheet 1024×1024, 259 frames ([[architecture-assets-sprites-3]] Section 6) |
+| Atlas sheets total | ≤ 1.2 MB | 616 catalog frames; up to 4 sheets 1024×1024; compressed size must be measured after packing (R-154) ([[architecture-assets-sprites-3]] Section 6) |
 | Screens (`src/assets/art/`) | ≤ 0.6 MB, each ≤ 250 KB, max 960×540 | ≈ 0.24 MB |
-| **Art total (bundled)** | **≤ 2 MB** (plan target) | ≈ 0.6 MB (≤ 0.65 MB) |
+| **Art total (bundled)** | **≤ 2 MB** (plan target) | Previous estimate obsolete; measure the two player sets plus screens (R-154) |
 | Audio, one format | **≤ 3.3 MB** (R-140; 3 MB left only 1.7 % VBR headroom) | ≈ 2.95 MB ([[architecture-assets-audio]] Section 3) |
 | Audio, both formats in `dist/` | ≤ 7 MB (2 × 3.3 MB + margin) | ≈ 6 MB |
 | Any single audio file | ≤ 900 KB | music loops ≈ 0.5–0.75 MB |
@@ -64,7 +66,7 @@ The script imports `src/assets/sprites.ts` and `sounds.ts`; they stay DOM-free (
 | **`dist/` total on disk** | **≤ 9 MB** | ≈ 6.8 MB |
 | Downloaded per player | ≤ 5.5 MB | ≈ 3.8 MB |
 | Single frame | ≤ 96×96 (devourer); tiles exactly 32×32 | — |
-| Atlas sheet | ≤ 1024×1024, max 2 sheets | — |
+| Atlas sheet | ≤ 1024×1024, max 4 sheets (R-154) | — |
 
 itch.io HTML5 games may be up to several hundred MB per file, so these limits are about load time for voters, not hosting.
 
@@ -88,7 +90,7 @@ Who: TEAM produces assets (saile2204, undertaker7431, kittingsl); the AI orchest
 
 **PR flow:** feature branch → PR → `ci` job (`npm ci`, `npm run check`, `npm run build`, dist sanity) must pass → branch up to date with `master` → merge. Commits/merges go through the user's workflow (AGENTS.md "Git and docs"). Two PRs touching `atlas.json`/`atlas-*.png` conflict by design: rebase, rerun `npm run pack`, commit the regenerated files — never hand-merge them.
 
-**300-line rule:** `src/assets/atlas.json` is an auto-generated data blob — valid exception #1 (auto-generated) / #2 (inherently-one-blob data) of the file-size rule; ~265 lines at 259 frames (after R-097/R-138). `sprites.ts`, `sounds.ts`, placeholder and synth files are hand-written code and stay ≤ 300 lines (split plan in part 1 Sections 2–3).
+**300-line rule:** `src/assets/atlas.json` is an auto-generated data blob — valid exception #1 (auto-generated) / #2 (inherently-one-blob data) of the file-size rule; ~622 lines at 616 frames (after R-154). `sprites.ts`, `sounds.ts`, placeholder and synth files are hand-written code and stay ≤ 300 lines (split plan in part 1 Sections 2–3).
 
 ## 5. Licensing and credit rules
 

@@ -81,8 +81,8 @@ Notes:
 | `placeholders-world.ts` | NEW | `DrawFn` per `tile_*`, `spec_*`, `fx_*`, `prop_*`; `spec_chamber` is an explicit no-op | `WORLD` (same `Extract` pattern) | same | same | ~250 | A |
 | `placeholders-ui.ts` | NEW | `DrawFn` per `item_*`, `ui_*`; merges all three | `type DrawFn = (ctx: CanvasRenderingContext2D, anim: string, frame: number, t: number) => void`; `UI`; `PLACEHOLDERS: Record<SpriteId, DrawFn> = { ...ACTORS, ...WORLD, ...UI }` | same + the two files above | same | ~150 | A |
 | `images.ts` | NEW | Atlas and screen loading, per-frame rect resolution, tint LRU, `drawSprite`. `?ph=1` forces placeholders | `drawSprite(ctx, id, anim, frame, x, y, angle, scale, alpha)`; `startPreload(res)` | `./atlas.json`, `./sprites.ts`, `./placeholders-ui.ts`, `./resources.ts`, `import.meta.glob` | [[architecture-assets-pipeline]] §5–6, §8; [[architecture-resources]] §4, §6 | ~200 | A (placeholders only), B (atlas + screens) |
-| `atlas.json` | GEN | Frame rects + source hash. 300-line exception #1/#2 | – | – | [[architecture-assets-pipeline]] §4 | ~265 (259 frames) | A (empty seed file, G3), B (real) |
-| `atlas-0.png` (`atlas-1.png`) | GEN | Packed sheets, ≤ 1024², max 2 | – | – | [[architecture-assets-pipeline-2]] §1 | binary | B |
+| `atlas.json` | GEN | Frame rects + source hash. 300-line exception #1/#2 | – | – | [[architecture-assets-pipeline]] §4 | ~622 (616 frames, R-154) | A (empty seed file, G3), B (real) |
+| `atlas-0.png` (`atlas-1.png`) | GEN | Packed sheets, ≤ 1024², max 4 (R-154) | – | – | [[architecture-assets-pipeline-2]] §1 | binary | B |
 
 - **Not in `src/assets/`:** `audio.ts`, `synth.ts`, `synth-2.ts` move to `src/audio/{engine,mixer,synth,synth-2,music,sfx}.ts` ([[architecture-resources]] §0, C10). Owned by the render/audio module list [[architecture-modules-render]].
 - **Glob mechanism** ([[architecture-assets-pipeline]] §5): `import.meta.glob('./atlas-*.png' | './art/*.png' | './audio/*.{ogg,m4a}', { eager: true, query: '?url', import: 'default' })`. A missing file is just absent from the map, so undelivered art never breaks the build. `atlas.json` is a static import and must exist (G3).

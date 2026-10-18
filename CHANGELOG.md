@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Player animation specification: 64×64 frames, eight authored directions, separate torch/no-torch sets with the stick integrated, and four-frame walk cycles. Updated rendering, naming, fallback and atlas-planning contracts; graphics delivery remains in progress.
+
 - `AGENTS.md`: documents the `docs/` snapshot, its precedence order and the rule that the knowledge base stays the source of truth.
 - `README.md`: lists `docs/` in the project layout and adds a short "Project plan" section.
 - `docs/tasks.md`, `docs/tasks-files.md`: task ownership rebalanced — render and lighting (`src/render/*`) go to Elias; world generation (`src/world/*`), determinism and score checks and monster/steer go to Kittingsl; cross-person critical path documented. `scripts/check-guard.ts` is created by Elias in A5 so `npm run check` stays green; `check-assets` joins `npm run check` in C8.

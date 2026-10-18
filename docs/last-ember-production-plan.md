@@ -41,7 +41,7 @@ The descent-only build must already be tense: cave, flame energy, Lurkers, resin
 
 - **Heavy AI art for everything.** One style guide plus palette.
 - Generate: player, three monsters, tiles, minerals, resin, plant, Beacon, title image.
-- Pack into 1–2 compressed sprite atlases, **target under about 2 MB total**, imported through Vite (hashed, relative paths).
+- Pack into up to 4 compressed sprite atlases (R-154: 64×64 player, eight directions, torch/no-torch sets), **target under about 2 MB total**, imported through Vite (hashed, relative paths).
 - **Light, glow, fog and sparks stay procedural** (drawn by code) so lighting reacts to the flame.
 - **Music/ambient:** AI-generated (Suno/Udio) is the intended direction. **ASSUMPTION:** the user said "heavily AI ... for everything"; the tooling is not confirmed.
 - **SFX:** AI-generated or WebAudio-synthesised (not decided).
