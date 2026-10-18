@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A23 monster foundations: complete spawn records with deterministic gameplay randomness and light-aware ring defaults, plus arrival steering and smooth velocity blending. The spawn caller supplies the light radius to preserve the layer rules.
 - A20 cave foundations: deterministic grid BFS and shortest paths, border-safe carving brushes, largest-region selection, noise fill, five-pass cellular smoothing, widening and diagonal repair.
 - A18 world queries: coordinate and tile helpers, deterministic neighbours, circle movement with sliding and anti-tunnelling substeps, and symmetric tile line of sight. Brought forward the complete solidity cache from A22 to resolve A18's missing dependency; other A22 caches remain separate.
 - `docs/`: local copy of the Last Ember project plan from the knowledge base (design, binding architecture rulings, module tree, asset library, economy and scale rulings), as a verbatim snapshot. Start at `docs/index.md` and `docs/architecture.md`. `docs/MANIFEST.sha256` lists the sha256 of every copied file for drift detection.
@@ -28,6 +29,7 @@ Initial scaffold.
 
 ### Added
 
+- A23 monster foundations: complete spawn records with deterministic gameplay randomness and light-aware ring defaults, plus arrival steering and smooth velocity blending. The spawn caller supplies the light radius to preserve the layer rules.
 - Vite 7 + TypeScript canvas game scaffold.
 - Stable host `src/main.ts`: fixed 60 Hz timestep loop, DPR-aware canvas, keyboard and pointer input.
 - Hot-swappable game module `src/game.ts` (`init` / `update` / `render`).
