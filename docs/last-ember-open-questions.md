@@ -40,6 +40,7 @@ Hub: [[index]]. Sources: [[last-ember-design]], [[last-ember-production-plan]]. 
 - **2026-10-17, leaderboard dropped** by owner. Reason: scope. It also removes the AGENTS.md "no external runtime services" conflict, so AGENTS.md needs **no amendment**. The end screen is local only: depth, time, minerals used, score, personal best (`localStorage`) and a shareable seed.
 - **2026-10-17, collaborators:** Collaborators with write access can run CI code; owner accepted this (2026-10-17); invites not yet sent.
 - **2026-10-17, concept:** the original Torch-Roguelite concept was confirmed removable by the owner and was deleted from the KB. Last Ember is the jam build; the earlier "lead confirmation pending" item is closed. Its open decisions #7 (no hub/extraction meta layer) and #11 (a lit flame is consumed, no persisted stubs) are settled for Last Ember.
+- **2026-10-18, task split rebalance:** owner decided render and lighting (all of `src/render/*`, plus A4 noise/view) go to Elias, and the whole `src/world/` (cave generation, route.ts as new task B2a) plus A7 and A23 go to Kittingsl. `src/ui/*` stays with Kittingsl. Details and the cross-person critical path are in [[tasks]] and [[tasks-files]].
 
 ## Related
 
@@ -48,4 +49,6 @@ Hub: [[index]]. Sources: [[last-ember-design]], [[last-ember-production-plan]]. 
 - [[architecture-economy-check]]
 - [[last-ember-design]]
 - [[last-ember-production-plan]]
+- [[tasks]]
+- [[tasks-files]]
 - [[jam-brief]]

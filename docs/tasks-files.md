@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Per-File Assignment (Elias vs Kittingsl)"
 description: Per-file table for Last Ember (section 3 of the task plan) – every source, script, asset and check file with the slice in which it is first created, the owner (E = Elias, K = Kittingsl), the task id and an estimated line count.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-18T15:00:00Z
+timestamp: 2026-10-18T21:00:00Z
 ---
 
 # Last Ember – Per-File Assignment (Elias vs Kittingsl)
@@ -25,13 +25,15 @@ Legend:
 |---|---|---|---|---|
 | src/main.ts (EDIT) | A | E | A1 | +13 |
 | index.html (EDIT) | A | E | A1 | 40 |
-| package.json (EDIT) | A | E | A6 | +5 |
-| scripts/check-guard.ts | A | E | A7 | ~80 |
+| package.json (EDIT; A6 wires `node src/checks/all.ts && node scripts/check-guard.ts`; check-assets is added in the C8 review, see note below) | A | E | A6 | +5 |
+| scripts/check-guard.ts | A | E | A5 | ~80 |
 | scripts/check-assets.ts | A | K | A10 | ~150 |
 | scripts/pack-atlas.ts | B | K | B15 | ~350 |
 | src/game.ts (EDIT) | A | E | A30; +B8 | 60 |
 
 `ci.yml`, `merge.ts`, `check.ts` and `vite.config.ts` are unchanged.
+
+Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node src/checks/all.ts && node scripts/check-guard.ts` (check-guard is created in A5, so the chain is green on master from A6). `scripts/check-assets.ts` (A10, K) is NOT part of `npm run check` until C8 (asset integration, K). Exception: the one-line `package.json` hunk for check-assets is made by Elias in the C8 PR review, as a commit on the PR branch or a follow-up PR. See [[tasks]] section 1.
 
 ### core
 
@@ -47,40 +49,40 @@ Legend:
 | src/core/migrate.ts | A | E | A5 | 110 |
 | src/core/score.ts | A | E | A5 | 70 |
 | src/core/storage.ts | B | E | B7 | 90 |
-| src/core/noise.ts | A | K | A4 | 40 |
-| src/core/view.ts | A | K | A4 | 25 |
+| src/core/noise.ts | A | E | A4 | 40 |
+| src/core/view.ts | A | E | A4 | 25 |
 
 ### world
 
 | File | Slice | Owner | Task | Lines |
 |---|---|---|---|---|
-| src/world/bfs.ts | A | E | A20 | 70 |
-| src/world/gen/carve.ts | A | E | A20 | 60 |
-| src/world/gen/region.ts | A | E | A20 | 60 |
-| src/world/gen/ca.ts | A | E | A20 | 100 |
-| src/world/gen/macro.ts | A | E | A21 | 140 |
-| src/world/gen/places.ts | A | E | A21 | 110 |
-| src/world/gen/loops.ts | A | E | A21 | 160 |
-| src/world/generate.ts | A | E | A22; +B6 | 140 |
-| src/world/caches.ts | A | E | A22; +B6 | 200 |
+| src/world/bfs.ts | A | K | A20 | 70 |
+| src/world/gen/carve.ts | A | K | A20 | 60 |
+| src/world/gen/region.ts | A | K | A20 | 60 |
+| src/world/gen/ca.ts | A | K | A20 | 100 |
+| src/world/gen/macro.ts | A | K | A21 | 140 |
+| src/world/gen/places.ts | A | K | A21 | 110 |
+| src/world/gen/loops.ts | A | K | A21 | 160 |
+| src/world/generate.ts | A | K | A22; +B6 | 140 |
+| src/world/caches.ts | A | K | A22; +B6 | 200 |
 | src/world/grid.ts | A | K | A18 | 80 |
 | src/world/collide.ts | A | K | A18 | 90 |
 | src/world/los.ts | A | K | A18 | 40 |
 | src/world/explored.ts | A | K | A19 | 60 |
 | src/world/sample.ts | A | K | A19 | 70 |
-| src/world/route.ts | B | E | B2 | 150 |
-| src/world/gen/pockets.ts | B | E | B4 | 140 |
-| src/world/gen/teach.ts | B | E | B4 | 120 |
-| src/world/validate.ts | B | E | B5 | 190 |
-| src/world/gen/populate.ts | B | E | B5 | 190 |
-| src/world/gen/fallback.ts | B | E | B6 | 110 |
+| src/world/route.ts | B | K | B2a | 150 |
+| src/world/gen/pockets.ts | B | K | B4 | 140 |
+| src/world/gen/teach.ts | B | K | B4 | 120 |
+| src/world/validate.ts | B | K | B5 | 190 |
+| src/world/gen/populate.ts | B | K | B5 | 190 |
+| src/world/gen/fallback.ts | B | K | B6 | 110 |
 
 ### entities and systems
 
 | File | Slice | Owner | Task | Lines |
 |---|---|---|---|---|
-| src/entities/monster.ts | A | E | A23; +C1 | 70 |
-| src/entities/steer.ts | A | E | A23 | 30 |
+| src/entities/monster.ts | A | K | A23; +C1 | 70 |
+| src/entities/steer.ts | A | K | A23 | 30 |
 | src/systems/fx.ts | A | E | A24 | 45 |
 | src/systems/camera.ts | A | E | A24 | 30 |
 | src/systems/depth.ts | A | E | A24 | 25 |
@@ -110,19 +112,19 @@ Legend:
 
 | File | Slice | Owner | Task | Lines |
 |---|---|---|---|---|
-| src/render/keys.ts | A | K | A14 | 50 |
-| src/render/view.ts | A | K | A14 | 90 |
-| src/render/flame.ts | A | K | A14 | 25 |
-| src/render/quality.ts | A | K | A14; +C6 | 120 |
-| src/render/tiles.ts | A | K | A15; +C6 | 190 |
-| src/render/memory.ts | A | K | A15 | 110 |
-| src/render/props.ts | A | K | A15; +B17 | 130 |
-| src/render/light.ts | A | K | A16 | 170 |
-| src/render/entities.ts | A | K | A16 | 200 |
-| src/render/glow.ts | A | K | A16; +B17 | 180 |
-| src/render/index.ts | A | K | A17 | 130 |
-| src/render/overlay.ts | B | K | B17; +C6 | 150 |
-| src/render/particles.ts | B | K | B18; +C6 | 200 |
+| src/render/keys.ts | A | E | A14 | 50 |
+| src/render/view.ts | A | E | A14 | 90 |
+| src/render/flame.ts | A | E | A14 | 25 |
+| src/render/quality.ts | A | E | A14; +C6 | 120 |
+| src/render/tiles.ts | A | E | A15; +C6 | 190 |
+| src/render/memory.ts | A | E | A15 | 110 |
+| src/render/props.ts | A | E | A15; +B17 | 130 |
+| src/render/light.ts | A | E | A16 | 170 |
+| src/render/entities.ts | A | E | A16 | 200 |
+| src/render/glow.ts | A | E | A16; +B17 | 180 |
+| src/render/index.ts | A | E | A17 | 130 |
+| src/render/overlay.ts | B | E | B17; +C6 | 150 |
+| src/render/particles.ts | B | E | B18; +C6 | 200 |
 
 ### ui
 
@@ -170,10 +172,10 @@ Legend:
 | src/checks/input.ts | A | E | A6 | 20 |
 | src/checks/all.ts | A | E | A6 | 15 |
 | src/checks/state.check.ts | A | E | A6 | 150 |
-| src/checks/determinism.check.ts | A | E | A7 | 200 |
-| src/checks/score.check.ts (merged with the systems one) | A | E | A7 | 80 |
-| src/checks/caves.ts | A | E | A22 | 15 |
-| src/checks/render.check.ts | A | K | A4 | 40 |
+| src/checks/determinism.check.ts | A | K | A7 | 200 |
+| src/checks/score.check.ts (merged with the systems one) | A | K | A7 | 80 |
+| src/checks/caves.ts | A | K | A22 | 15 |
+| src/checks/render.check.ts | A | E | A4 | 40 |
 | src/checks/world.check.ts | A | K | A19 | ~250 |
 | src/checks/light-flame.check.ts | A | K | A32 | ~100 |
 | src/checks/parry.check.ts | A | K | A32 | ~120 |
