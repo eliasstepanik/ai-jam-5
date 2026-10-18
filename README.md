@@ -87,6 +87,9 @@ type Input = {
 │   ├── game.ts       # the game: State, init, update, render (edit this)
 │   ├── merge.ts      # pure state-merge used on every hot swap
 │   └── check.ts      # tests for merge.ts, run by `npm run check`
+├── docs/             # project plan: design, architecture, task split — snapshot of the knowledge base
+│   ├── index.md      # hub, start here
+│   └── tasks.md      # who implements what (Elias or Kittingsl)
 ├── .github/
 │   └── workflows/
 │       └── ci.yml    # required PR check `ci` (self-hosted; fork PRs: ubuntu-latest)
@@ -119,6 +122,12 @@ type Input = {
 - The repo is public. Fork PRs run on GitHub-hosted `ubuntu-latest` (the `runs-on` of job `ci` is conditional), so untrusted code never executes on the self-hosted host, and they still produce a real `ci` result. Same-repo PRs run on the self-hosted runner.
 - Also set Settings → Actions → General → Fork pull request workflows → "Require approval for all external contributors".
 - Never share the runner's host with secrets or other projects.
+
+## Project plan
+
+The plan lives in [`docs/`](docs/). Start at [`docs/index.md`](docs/index.md). The architecture hub is [`docs/architecture.md`](docs/architecture.md). [`docs/tasks.md`](docs/tasks.md) says who implements what (Elias or Kittingsl).
+
+`docs/` is a read-only snapshot of the author's knowledge base. Do not edit it in PRs; propose plan changes in the PR description or an issue.
 
 ## Shipping to itch.io
 
