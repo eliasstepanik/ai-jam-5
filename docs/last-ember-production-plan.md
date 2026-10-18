@@ -56,7 +56,7 @@ The descent-only build must already be tense: cave, flame energy, Lurkers, resin
 - PRs from collaborators are same-repo PRs, so they run on the project CI runner. `master` stays protected (`ci` required).
 - **Accepted risk (owner, 2026-10-17):** collaborators with write access can run CI code. The owner accepts this.
 - **Invites not yet sent.** Collaborator invites are a state-changing GitHub action and need the owner's explicit go-ahead at that time.
-- Work split by module: art, audio, level generation, gameplay.
+- Work split by module: art, audio, level generation, gameplay. **Updated 2026-10-18:** the concrete code ownership is in [[tasks]] (Elias: core, systems, render and lighting, host, integration; Kittingsl: world and cave generation, assets, UI, audio, checks).
 
 ## Risks
 
@@ -80,5 +80,7 @@ Scope is larger than the original Last Ember pitch:
 - [[index]]
 - [[last-ember-design]]
 - [[last-ember-open-questions]]
+- [[tasks]]
+- [[tasks-files]]
 - [[jam-brief]]
 - [[vite-canvas-hmr-state-preservation]]
