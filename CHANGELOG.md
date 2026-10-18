@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A22 terrain attempts and derived world caches: deterministic cave-core generation with rejection rules, base depth and zones, Beacon-room masks, pending masks, and reusable escape-distance buffers. The populated generator wrapper and cave-result memo helper remain deferred until B4–B6 are available.
 - Host input: `'Blur'` pseudo-key in `Input.pressed` on window blur or tab hide, and `Input.view` with the canvas size in CSS pixels and `devicePixelRatio`.
 - Host loop: fixed-step time budget (12 ms) so a slow frame drops its backlog instead of freezing.
 - A21 cave layout helpers: seeded macro trees and masks, connected spine carving, entrance and Beacon placement with guarded chamber carving, and verified loop tunnels that preserve the descent path length.
