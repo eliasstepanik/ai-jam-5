@@ -75,7 +75,9 @@ export type SpriteDef = {
 }
 export const SPRITES = {
   // Player definitions: 64x64, pivot (32,32), r:10; player_body and player_body-torch.
-  // Each contains 48 action-direction animations (6 actions x 8 directions).
+  // Each player set contains 48 action-direction animations (6 actions x 8 directions).
+  // Monster body and eye definitions: 64x64, pivot (32,32), eight directions per action.
+  // Body: 32 animation keys each for Lurker/Stalker, 40 for Devourer; eyes: 24 each (R-155).
   // walk-e, walk-se, walk-s, walk-sw, walk-w, walk-nw, walk-n, walk-ne:
   // each is { n: 4, fps: 10, loop: true }. See catalog Section 4 for the full table.
   tile_z1_wall: { w: 32, h: 32, px: 0, py: 0, pri: 0, anims: { v: { n: 16, fps: 0, loop: false } } },
@@ -117,7 +119,7 @@ export type DrawFn = (ctx: CanvasRenderingContext2D, anim: string, frame: number
 export const PLACEHOLDERS: Record<SpriteId, DrawFn> = { ...ACTORS, ...WORLD, ...UI }
 ```
 
-- Each `DrawFn` draws around the pivot at origin, facing +x, in world units; the caller has already translated/rotated/scaled. Geometry = the "Placeholder" line of each catalog entry.
+- Each `DrawFn` draws around the pivot at origin in world units. Actor placeholders select the named direction from the animation key and generate that directional geometry directly, with caller rotation 0 and scale 1. Non-actor callers may translate/rotate/scale. Geometry = the "Placeholder" line of each catalog entry.
 - Ids whose catalog placeholder is "none drawn" (`spec_chamber`) get an explicit no-op with `// ponytail: decor invisible until art exists`.
 - The spread of three partial records is typed so a missing key is a tsc error: declare `ACTORS: Record<Extract<SpriteId, `player_${string}` | `mon_${string}`>, DrawFn>` and the same pattern per file.
 - `SYNTH: Record<SoundId, ((ctx: AudioContext, out: AudioNode, p: PlayParams) => Voice) | null>`; `null` only for music/stingers/ambience (silence fallback). Recipes come from [[architecture-assets-audio-2]].
@@ -130,8 +132,8 @@ export const PLACEHOLDERS: Record<SpriteId, DrawFn> = { ...ACTORS, ...WORLD, ...
   "hash": "sha1-of-all-source-frames",
   "sheets": [{ "image": "atlas-0.png", "w": 1024, "h": 1024 }],
   "frames": {
-    "mon_lurker_idle_00": [0, 2, 2, 32, 32],
-    "mon_lurker_idle_01": [0, 36, 2, 32, 32]
+    "mon_lurker_idle-e_00": [0, 2, 2, 64, 64],
+    "mon_lurker_idle-e_01": [0, 70, 2, 64, 64]
   }
 }
 ```
@@ -167,8 +169,8 @@ for each SpriteId id, for each anim a, for i in 0..n-1:
               ?? null                                  // nothing delivered: placeholder
 ```
 
-- Player fallback is variant- and direction-aware: requested frame → previous available frame of the same action/direction → same-set `idle-<direction>_00` → same-set `idle-e_00` → procedural placeholder. Never cross from torch to no-torch or vice versa. Pass angle 0 for authored player art and scale 0.5; placeholders already draw in world units and use scale 1. Use the resolved frame's torch-tip metadata. The generic resolution pseudocode above applies to other sprites.
-- `drawSprite(ctx, id, anim, frame, x, y, angle, scale, alpha)`: if `rect` is null or the sheet image failed → `PLACEHOLDERS[id](ctx, anim, frame, t)`; else `drawImage(sheet, x, y, w, h, -px, -py, w, h)` after translate/rotate. Angle quantised to 16 steps for monsters only; player art uses angle 0 ([[architecture-assets-sprites]] Section 2). `imageSmoothingEnabled = false` once per frame in `render`.
+- Player fallback is variant- and direction-aware: requested frame → previous available frame of the same action/direction → same-set `idle-<direction>_00` → same-set `idle-e_00` → procedural placeholder. Never cross from torch to no-torch or vice versa. Pass angle 0 for authored player art and scale 0.5; placeholders already draw in world units and use scale 1. Use the resolved frame's torch-tip metadata. Monster fallback is also direction-aware: requested frame → previous available frame of the same action/direction → same-id `idle-<direction>_00` → directional procedural placeholder. Body and eyes resolve within their own ids; never rotate, mirror, or substitute another facing. The generic resolution pseudocode above applies to non-directional sprites.
+- `drawSprite(ctx, id, anim, frame, x, y, angle, scale, alpha)`: if `rect` is null or the sheet image failed → `PLACEHOLDERS[id](ctx, anim, frame, t)`; else `drawImage(sheet, x, y, w, h, -px, -py, w, h)` after translate/rotate. All authored actor art uses angle 0; choose `<action>-<direction>` for monster bodies and eyes and apply the per-kind scale 0.5/0.75/1.5. Only non-actor rotated draws use 16-step quantisation ([[architecture-assets-sprites]] Section 2). `imageSmoothingEnabled = false` once per frame in `render`.
 - When the fallback uses `idle_00` for a missing non-player anim, apply the placeholder transform for that anim (scale/alpha from the catalog) so telegraphs stay readable — this is the "static AI sprites only" cut ([[architecture-assets-sprites-3]] Section 5).
 - Dev aid: `?ph=1` in the URL forces all placeholders (compare art vs geometry); `?ph=0` default.
 

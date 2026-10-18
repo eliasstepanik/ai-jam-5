@@ -175,7 +175,7 @@ export const toScreen = (v: View, x: number, y: number): [number, number] => [(x
 1. Camera offset `ox`, `oy` are integers in device px (rounded once per frame).
 2. Tiles are drawn at integer world coordinates (`tx * 32`), so with integer `z` every texel covers exactly `z × z` device px: zero shimmer for the static world.
 3. Moving sprites are drawn at `round(x * z) / z` (snap to the device grid, not the world grid) so they move smoothly at `z ≥ 2` without sub-texel blur.
-4. Rotated sprites use nearest sampling; edge crawl during rotation is accepted (16-step quantisation, [[architecture-render-3]] §6).
+4. Actor sprites select one of eight authored directions without rotation or mirroring (R-154/R-155). Non-actor rotated sprites use nearest sampling and 16-step quantisation ([[architecture-render-3]] §6).
 5. Fractional DPR (1.25, 1.5) is handled automatically: `z` is integer in device px, so the CSS scale is fractional but the device mapping is exact.
 
 ### 4.4 Screen shake

@@ -106,32 +106,32 @@ Multi-state icons below store their states as anim `v` frames in the listed orde
 
 ## 5. Static fallback (cut-order rule 2)
 
-For the player, the minimum fallback delivery is `idle-<direction>_00` for each available direction in each torch/no-torch set. Missing directions may use same-set `idle-e_00`, then a procedural placeholder; this is a temporary fallback, not completion of the eight-direction catalog. Never substitute the other torch variant. Other actors retain frame `00` of each animation as their minimum fallback delivery. The loader treats a missing frame as "repeat the last available frame". If only `idle_00` exists, the engine uses it for every animation and applies the placeholder transforms (scale/alpha) from [[architecture-assets-sprites]]. This is how "ship static AI sprites only" works without code changes.
+For the player, the minimum fallback delivery is `idle-<direction>_00` for each available direction in each torch/no-torch set. Missing directions may use same-set `idle-e_00`, then a procedural placeholder; this is a temporary fallback, not completion of the eight-direction catalog. Never substitute the other torch variant. Monsters require frame `00` of each action in each of the eight directions for both body and eyes as their minimum fallback delivery. Resolve missing monster frames within the requested direction first, then same-id `idle-<direction>_00`, then a procedural placeholder for that direction. Never rotate or mirror another direction to fill a missing view. The loader treats a missing frame as "repeat the last available frame". For monsters, a delivered `idle-<direction>_00` may stand in for other actions in that same direction, with the catalog scale/alpha transforms. Non-directional sprites may still use `idle_00` for every animation. This is how "ship static AI sprites only" works without code changes.
 
 ## 6. Totals
 
 | Group | Atlas frames | Notes |
 |---|---|---|
 | Player (24 action frames × 8 directions × 2 torch variants) | 384 | 64×64 source, no separate torch sprite; [[architecture-assets-sprites]] 4, R-154 |
-| Lurker (15 + eyes 5) | 20 | |
-| Stalker (15 + eyes 5) | 20 | |
-| Devourer (19 + eyes 5) | 24 | first cut |
+| Lurker ((15 + eyes 5) × 8 directions) | 160 | 64×64 source, pivot (32,32), R-155 |
+| Stalker ((15 + eyes 5) × 8 directions) | 160 | 64×64 source, pivot (32,32), R-155 |
+| Devourer ((19 + eyes 5) × 8 directions) | 192 | 64×64 source, pivot (32,32); first cut |
 | Terrain tiles (4 zones × (4 floor + 16 wall + 4 inner)) | 96 | [[architecture-assets-sprites-2]] 2 |
 | Special tiles (entrance 1, beacon 11, veins 12 (3 × full 1 + mining 3), chamber 3, boulder 3, crater 1, dust 5) | 36 | R-138 dropped beacon glow 10, vein glows 12, depleted 3, small rocks 3, cracks 3 |
 | Pickups (resin 8, plant 4, minerals 3) | 15 | R-138 dropped plant glow 4, picked/wilted 2 |
 | Props | 13 | |
 | UI (hp-pip 3, slot 2, depth 1, exit-arrow 1, keycap 1) | 8 | `ui_cursor` 2 dropped (R-097) |
-| **Atlas total** | **616 frames** | 45 distinct `SpriteId`s (wildcards expanded: actors 8, tiles 12, special 9, pickups 6, props 5, UI 5); two player set ids replace body + separate torch, so id count is unchanged (R-154) |
+| **Atlas total** | **1064 frames** | 45 distinct `SpriteId`s (wildcards expanded: actors 8, tiles 12, special 9, pickups 6, props 5, UI 5); two player set ids replace body + separate torch, so id count is unchanged (R-154) |
 | Non-atlas bundled (key art, logo, 2 help, favicon) | 5 | |
 | Non-bundled (itch cover, 4 screenshots) | 5 | |
 
-**Atlas estimate (R-154):** the old one-sheet / 270–400 KB estimate is obsolete. Player cells alone use `384 × 68 × 68 = 1 775 616 px²` with a conservative 4 px total padding/extrusion allowance per dimension. Adding the other 232 frames exceeds two 1024² sheets before shelf-packing waste. Allow up to **four 1024×1024 sheets**; pack delivered frames and measure, rather than assuming full delivery today. Compressed byte estimates and the old 0.6 MB bundled-art estimate must be re-measured. Keep the existing byte budgets until actual packing demonstrates a required change; do not silently raise the download budget or drop directions.
+**Atlas estimate (R-154/R-155):** the full target is now **1064 frames**, including **512 monster frames** and 384 player frames. The 896 actor cells alone need `896 × 68 × 68 = 4 143 104 px²` with the conservative 4 px total padding/extrusion allowance per dimension. This leaves only 51 200 px² in four 1024² sheets before packing waste and the remaining 168 non-actor frames; the full untrimmed catalog therefore exceeds the existing four-sheet ceiling. Pack delivered frames and measure. The current four-sheet and compressed-byte budgets remain limits; full delivery requires an explicit follow-up packing/budget decision. Do not silently omit directions or treat the old size estimate as proof the full catalog fits.
 
 ## 7. Production order (per priority, tied to [[last-ember-production-plan]])
 
 | When | Deliver | Priority |
 |---|---|---|
-| Day 2 (Oct 18) | Style guide lock; palette strip PNGs; **style test**: `player_body-torch idle-e_00`, `mon_lurker idle_00`, `tile_z1_floor v0` approved by the team | P0 |
+| Day 2 (Oct 18) | Style guide lock; palette strip PNGs; **style test**: `player_body-torch idle-e_00`, `mon_lurker idle-e_00`, `tile_z1_floor v0` approved by the team | P0 |
 | Day 3–4 (Oct 19–20) | zone 1 floor + 16 walls; `item_resin-small`; `ui_hp-pip` (Day 4 descent test may still run on placeholders) | P0 |
 | Day 5 (Oct 21) | player torch-set idle/walk/swing in eight directions; lurker full set + eyes; 3 veins (full/mining); 3 mineral items; plant idle; Beacon unlit/lit; entrance; `ui_slot`; title key art | P0 |
 | Day 6–8 (Oct 22–24) | stalker set; zones 2–4 floors + walls; remaining player action/direction frames and no-torch set; resin-large; Beacon charging; boulder; crater; `ui_depth`, `ui_exit-arrow`, `ui_keycap`; inner corners zone 1 | P1 |

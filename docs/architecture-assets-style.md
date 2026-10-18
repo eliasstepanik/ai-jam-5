@@ -30,12 +30,12 @@ Rejected: painterly high-res (inconsistent between generations, large files), ve
 | Rule | Value |
 |---|---|
 | Tile size | **32 × 32 art pixels = 32 world units.** CONFIRMED (the architect default is kept): 32 px holds enough detail for vein colours and cracks; 16 px could not show three mineral colours legibly. |
-| Art pixel to world unit | Tiles and monsters: 1 art pixel = 1 world unit. Player: 64×64 source frames drawn at scale 0.5; collision and world footprint unchanged (R-154). |
-| Screen zoom | Integer zoom **2×** world zoom (tile/monster art pixel = 2×2 CSS px; player source pixel = 1×1 CSS px at scale 0.5). At 1920×1080 the view shows 30 × 17 tiles. Implementer may pick 3× above 2560 px width; always an integer. |
-| Smoothing | Tiles, UI and props: `imageSmoothingEnabled = false`. Rotated actors: see [[architecture-assets-sprites]] Section "Facing". |
+| Art pixel to world unit | Tiles: 1 art pixel = 1 world unit. Monsters: 64×64 source frames, draw scales 0.5 / 0.75 / 1.5 for Lurker / Stalker / Devourer (R-155). Player: 64×64 source frames drawn at scale 0.5; collision and world footprint unchanged (R-154). |
+| Screen zoom | Integer zoom **2×** world zoom (tile art pixel = 2×2 CSS px; actor source pixels use their documented draw scales). At 1920×1080 the view shows 30 × 17 tiles. Implementer may pick 3× above 2560 px width; always an integer. |
+| Smoothing | Tiles, UI and props: `imageSmoothingEnabled = false`. Actors use authored directions without rotation: see [[architecture-assets-sprites]] Section "Facing". |
 | Camera | Straight down. No perspective, no visible wall faces, no cast shadows drawn into sprites. |
-| Facing reference | Player: eight authored directions `e,se,s,sw,w,nw,n,ne`, separate with/without-torch sets, no runtime sprite rotation. Monsters: facing RIGHT (+x, angle 0), rotated by the engine. See R-154. |
-| Pixel density | Never mix pixel sizes. No sub-pixel detail or anti-aliased soft brushes in source files. Player source density is twice world density (R-154); use its documented scale 0.5 rather than changing world units. |
+| Facing reference | Player: eight authored directions `e,se,s,sw,w,nw,n,ne`, separate with/without-torch sets, no runtime sprite rotation. Monsters: eight authored directions in the same order, selected by facing; no runtime sprite rotation or mirroring. See R-154/R-155. |
+| Pixel density | Never mix pixel sizes. No sub-pixel detail or anti-aliased soft brushes in source files. Player source density is twice world density (R-154); use its documented scale 0.5 rather than changing world units. Monster source density varies by kind; use the R-155 draw scales without changing collision or tiles. |
 
 ## 3. Outline and value rules
 
@@ -217,7 +217,7 @@ Lowercase ASCII, words joined by `-`, fields joined by `_`. Frame numbers two di
 | group | Example |
 |---|---|
 | `player` | `player_body-torch_walk-ne_03.png` (64×64; no-torch example: `player_body_walk-ne_03.png`) |
-| `mon` | `mon_lurker_lunge_01.png`, `mon_devourer_eyes_idle_00.png` |
+| `mon` | `mon_lurker_lunge-ne_01.png`, `mon_devourer_eyes_idle-s_00.png` (64×64) |
 | `tile` | `tile_z2_floor_v_02.png` (variant 2), `tile_z4_wall_v_13.png` (mask 13) |
 | `spec` | `spec_beacon_lit_05.png`, `spec_vein-copper_full_00.png` |
 | `item` | `item_resin-small_idle_00.png`, `item_mineral-sodium_idle_00.png` |
@@ -225,7 +225,7 @@ Lowercase ASCII, words joined by `-`, fields joined by `_`. Frame numbers two di
 | `ui` | `ui_hp-pip_v_00.png` (full; 01 empty, 02 lost) |
 | `art` | delivered as `art_itch-cover.png` (not bundled); bundled screens use the pipeline names without prefix: `src/assets/art/title-keyart.png` (code `SCREENS.keyart`, R-141), `logo.png`, `help-parry.png`, `help-goal.png` |
 
-Player animation names append the direction with a hyphen (`walk-ne`, `idle-s`); player set ids are `player_body` and `player_body-torch`. Variant sets and multi-state UI icons use the anim name `v`; the frame number is the variant/state index. Actor eye sprites are their own `SpriteId` (`mon_lurker_eyes`).
+Player and monster animation names (including monster eyes) append the direction with a hyphen (`walk-ne`, `idle-s`); player set ids are `player_body` and `player_body-torch`. Variant sets and multi-state UI icons use the anim name `v`; the frame number is the variant/state index. Actor eye sprites are their own `SpriteId` (`mon_lurker_eyes`).
 
 The atlas frame key is the file name without `.png`. The engine-facing `SpriteId` is `<group>_<id>[_<variant>]` (for example `mon_lurker`); animation names, frame counts and fps are defined in the TS manifest `src/assets/sprites.ts` ([[architecture-assets-pipeline]]). Versions are NOT in file names; git history is the version record.
 
@@ -236,7 +236,7 @@ Every delivered asset (or asset family sharing one prompt) gets one row in the R
 ```
 | Asset id | Tool (model/version) | Prompt (asset part; master prompt by reference) | Seed | Post-processing | Date | Author |
 |---|---|---|---|---|---|---|
-| mon_lurker (idle, lunge, death) | Midjourney v7 | "small shadow creature ..." + master style prompt | 18233 | rembg, Lanczos→nearest 32 px, remap zone palette, hand-edited frames 1–3 | 2026-10-21 | kittingsl |
+| mon_lurker (idle, lunge, death) | Midjourney v7 | "small shadow creature ..." + master style prompt | 18233 | rembg, Lanczos→nearest 64 px, remap zone palette, separately authored frames in all eight directions | 2026-10-21 | kittingsl |
 ```
 
 - The master style prompt (Section 6) is quoted once in the README; rows refer to it as "+ master style prompt".

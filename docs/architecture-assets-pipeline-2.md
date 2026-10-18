@@ -17,7 +17,7 @@ Part 1 (layout, manifests, loading, fallbacks): [[architecture-assets-pipeline]]
 What it must do (implementer spec):
 
 1. **Collect** `art/frames/**/*.png`, sorted by name (determinism). Key = file name without `.png`.
-   Player keys append direction to the animation (`walk-ne`) and select `player_body` or `player_body-torch`; never infer player facing by rotating a right-facing frame. Validate per-frame torch-tip anchors against the manifest.
+   Player keys append direction to the animation (`walk-ne`) and select `player_body` or `player_body-torch`; never infer player facing by rotating a right-facing frame. Validate per-frame torch-tip anchors against the manifest. Monster body and eye keys also append direction (`lunge-ne`, `telegraph_a-sw`, `blink-n`), with 64×64 frames and all eight directions per action; never synthesize a view by rotation or mirroring (R-155).
 2. **Decode PNG** with `node:zlib` `inflateSync`: accept only 8-bit RGBA, non-interlaced (colour type 6, bit depth 8, interlace 0) — the export rule in style Section 9. Undo the 5 PNG scanline filters (None, Sub, Up, Average, Paeth). Anything else → exit 1 with `pack: <file> must be PNG-32 RGBA 8-bit non-interlaced`.
 3. **Validate** each frame against `SPRITES` (imported from `src/assets/sprites.ts`): the `SpriteId` and anim exist, frame index `< n`, PNG size equals `w×h`. Unknown key → error (catches typos like `mon_lurkr_idle_00`).
 4. **Pack** with shelf packing: sort frames by height desc then name, fill rows left to right in a 1024-wide sheet; cell = frame + 1 px extrusion on each side + 1 px transparent gap (style Section 9). Sheet height = next power of two ≥ used height, max 1024; overflow starts `atlas-1.png`. Tiles and actors get no special treatment.
@@ -56,7 +56,7 @@ The script imports `src/assets/sprites.ts` and `sounds.ts`; they stay DOM-free (
 
 | Item | Limit | Target / estimate |
 |---|---|---|
-| Atlas sheets total | ≤ 1.2 MB | 616 catalog frames; up to 4 sheets 1024×1024; compressed size must be measured after packing (R-154) ([[architecture-assets-sprites-3]] Section 6) |
+| Atlas sheets total | ≤ 1.2 MB | 1064 catalog frames (512 monster frames); full untrimmed target exceeds the existing 4-sheet ceiling. Measure delivered packing; full delivery needs a follow-up packing/budget decision (R-155) ([[architecture-assets-sprites-3]] Section 6) |
 | Screens (`src/assets/art/`) | ≤ 0.6 MB, each ≤ 250 KB, max 960×540 | ≈ 0.24 MB |
 | **Art total (bundled)** | **≤ 2 MB** (plan target) | Previous estimate obsolete; measure the two player sets plus screens (R-154) |
 | Audio, one format | **≤ 3.3 MB** (R-140; 3 MB left only 1.7 % VBR headroom) | ≈ 2.95 MB ([[architecture-assets-audio]] Section 3) |
@@ -65,7 +65,7 @@ The script imports `src/assets/sprites.ts` and `sounds.ts`; they stay DOM-free (
 | JS bundle (gzip) | ≤ 150 KB | code + atlas.json |
 | **`dist/` total on disk** | **≤ 9 MB** | ≈ 6.8 MB |
 | Downloaded per player | ≤ 5.5 MB | ≈ 3.8 MB |
-| Single frame | ≤ 96×96 (devourer); tiles exactly 32×32 | — |
+| Single frame | Actors exactly 64×64; tiles exactly 32×32; other sprites per catalog (≤ 96×96) | — |
 | Atlas sheet | ≤ 1024×1024, max 4 sheets (R-154) | — |
 
 itch.io HTML5 games may be up to several hundred MB per file, so these limits are about load time for voters, not hosting.
@@ -90,7 +90,7 @@ Who: TEAM produces assets (saile2204, undertaker7431, kittingsl); the AI orchest
 
 **PR flow:** feature branch → PR → `ci` job (`npm ci`, `npm run check`, `npm run build`, dist sanity) must pass → branch up to date with `master` → merge. Commits/merges go through the user's workflow (AGENTS.md "Git and docs"). Two PRs touching `atlas.json`/`atlas-*.png` conflict by design: rebase, rerun `npm run pack`, commit the regenerated files — never hand-merge them.
 
-**300-line rule:** `src/assets/atlas.json` is an auto-generated data blob — valid exception #1 (auto-generated) / #2 (inherently-one-blob data) of the file-size rule; ~622 lines at 616 frames (after R-154). `sprites.ts`, `sounds.ts`, placeholder and synth files are hand-written code and stay ≤ 300 lines (split plan in part 1 Sections 2–3).
+**300-line rule:** `src/assets/atlas.json` is an auto-generated data blob — valid exception #1 (auto-generated) / #2 (inherently-one-blob data) of the file-size rule; ~1070 lines at 1064 frames (after R-155). `sprites.ts`, `sounds.ts`, placeholder and synth files are hand-written code and stay ≤ 300 lines (split plan in part 1 Sections 2–3).
 
 ## 5. Licensing and credit rules
 
