@@ -12,8 +12,17 @@ export const MAP_W = 320
 export const MAP_H = 240
 export const FX_EVENTS_MAX = 32
 export const HELP_PAGES = 3
+export const TOAST_S = 1.8 // architecture-ui-2.md §1 toast row: seconds a toast stays up
+export const TOAST_MAX = 3 // same row: at most 3 on screen; a 4th drops the oldest
 
 export const flameOut = (p: Player): boolean => p.energy <= 0
+
+// R-009: the one toast helper, usable from any layer (L0 storage, L3 systems). Keeps the newest TOAST_MAX.
+export function toast(s: State, text: string): void {
+  const q = s.ui.toasts
+  q.push({ text, t: TOAST_S })
+  if (q.length > TOAST_MAX) q.splice(0, q.length - TOAST_MAX)
+}
 
 // "Default" column of architecture-state.md §8; startRun sets position and facing = PI / 2.
 export function initPlayer(): Player {
