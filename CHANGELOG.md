@@ -29,7 +29,6 @@ Initial scaffold.
 
 ### Added
 
-- A23 monster foundations: complete spawn records with deterministic gameplay randomness and light-aware ring defaults, plus arrival steering and smooth velocity blending. The spawn caller supplies the light radius to preserve the layer rules.
 - Vite 7 + TypeScript canvas game scaffold.
 - Stable host `src/main.ts`: fixed 60 Hz timestep loop, DPR-aware canvas, keyboard and pointer input.
 - Hot-swappable game module `src/game.ts` (`init` / `update` / `render`).
