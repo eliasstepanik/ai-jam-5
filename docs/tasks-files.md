@@ -3,12 +3,12 @@ type: reference
 title: "Last Ember – Per-File Assignment (Elias vs Kittingsl)"
 description: Per-file table for Last Ember (section 3 of the task plan) – every source, script, asset and check file with the slice in which it is first created, the owner (E = Elias, K = Kittingsl), the task id and an estimated line count.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-18T21:00:00Z
+timestamp: 2026-10-18T19:20:00Z
 ---
 
 # Last Ember – Per-File Assignment (Elias vs Kittingsl)
 
-Section 3 of the task plan (author: project-manager, 2026-10-18). The overview, assignment principles, ownership summary, task index (slices A, B, C), totals, risks and process live in [[tasks]]. Task ids (A1 … C8) are defined in [[tasks]] section 4. File specs are in the module trees linked under Related and in [[architecture]].
+Section 3 of the task plan (author: project-manager, 2026-10-18). The overview, assignment principles, ownership summary, task index (slices A, B, C), totals, risks and process live in [[tasks]]. Task ids (A1 … C8) are defined in [[tasks]] section 4. File specs are in the module trees linked under Related and in [[architecture]]. Done and partial status per task: see [[progress]].
 
 ## 3. Per-file table
 
@@ -25,7 +25,7 @@ Legend:
 |---|---|---|---|---|
 | src/main.ts (EDIT) | A | E | A1 | +13 |
 | index.html (EDIT) | A | E | A1 | 40 |
-| package.json (EDIT; A6 wires `node src/checks/all.ts && node scripts/check-guard.ts`; check-assets is added in the C8 review, see note below) | A | E | A6 | +5 |
+| package.json (EDIT; A6 wires `node src/check.ts && node src/checks/all.ts && node scripts/check-guard.ts`; check-assets is added in the C8 review, see note below) | A | E | A6 | +5 |
 | scripts/check-guard.ts | A | E | A5 | ~80 |
 | scripts/check-assets.ts | A | K | A10 | ~150 |
 | scripts/pack-atlas.ts | B | K | B15 | ~350 |
@@ -33,7 +33,7 @@ Legend:
 
 `ci.yml`, `merge.ts`, `check.ts` and `vite.config.ts` are unchanged.
 
-Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node src/checks/all.ts && node scripts/check-guard.ts` (check-guard is created in A5, so the chain is green on master from A6). `scripts/check-assets.ts` (A10, K) is NOT part of `npm run check` until C8 (asset integration, K). Exception: the one-line `package.json` hunk for check-assets is made by Elias in the C8 PR review, as a commit on the PR branch or a follow-up PR. See [[tasks]] section 1.
+Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node src/check.ts && node src/checks/all.ts && node scripts/check-guard.ts` (the original scaffold check `src/check.ts` stays first; check-guard is created in A5, so the chain is green on master from A6). `scripts/check-assets.ts` (A10, K) is NOT part of `npm run check` until C8 (asset integration, K). Exception: the one-line `package.json` hunk for check-assets is made by Elias in the C8 PR review, as a commit on the PR branch or a follow-up PR. See [[tasks]] section 1.
 
 ### core
 
@@ -81,7 +81,7 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 
 | File | Slice | Owner | Task | Lines |
 |---|---|---|---|---|
-| src/entities/monster.ts | A | K | A23; +C1 | 70 |
+| src/entities/monster.ts | A | K | A23; +A24 (devourerMul, #23) | 70 |
 | src/entities/steer.ts | A | K | A23 | 30 |
 | src/systems/fx.ts | A | E | A24 | 45 |
 | src/systems/camera.ts | A | E | A24 | 30 |
@@ -92,7 +92,6 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 | src/systems/explore.ts | A* | E | A25 | 45 |
 | src/systems/flame.ts | A | E | A26; +B7 | 80 |
 | src/systems/pickups.ts | A | E | A26; +B7 | 40 |
-| src/systems/toast.ts | A | E | A26 | ~30 |
 | src/systems/combat.ts | A | E | A27 | 210 |
 | src/systems/monsters.ts | A | E | A28 | 220 |
 | src/systems/ai-lurker.ts | A | E | A28 | 60 |
@@ -107,6 +106,8 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 | src/systems/ai-stalker.ts | B | E | B3 | 70 |
 | src/systems/ai-escape.ts | B | E | B3 | 50 |
 | src/systems/ai-devourer.ts | C | E | C1 | 40 |
+
+`toast()` lives in `src/core/state.ts` (R-009); there is no `src/systems/toast.ts`.
 
 ### render
 
@@ -191,6 +192,7 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 
 ## Related
 
+- [[progress]]
 - [[tasks]]
 - [[architecture]]
 - [[index]]
