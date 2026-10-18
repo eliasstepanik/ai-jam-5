@@ -11,12 +11,12 @@ export function bfs4(g: Uint8Array, w: number, h: number, src: number, out: Int3
   queue[tail++] = src
   while (head < tail) {
     const i = queue[head++], x = i % w, d = out[i] + 1
-    // E S W N, with explicit bounds so open map edges never wrap rows.
-    const nb = [x + 1 < w ? i + 1 : -1, i + w < n ? i + w : -1, x > 0 ? i - 1 : -1, i >= w ? i - w : -1]
-    for (const j of nb) if (j >= 0 && !g[j] && out[j] < 0) {
-      out[j] = d
-      queue[tail++] = j
-    }
+    // E S W N, without allocating a neighbour array for every visited cell.
+    // Explicit bounds keep open edges from wrapping rows.
+    if (x + 1 < w && !g[i + 1] && out[i + 1] < 0) { out[i + 1] = d; queue[tail++] = i + 1 }
+    if (i + w < n && !g[i + w] && out[i + w] < 0) { out[i + w] = d; queue[tail++] = i + w }
+    if (x > 0 && !g[i - 1] && out[i - 1] < 0) { out[i - 1] = d; queue[tail++] = i - 1 }
+    if (i >= w && !g[i - w] && out[i - w] < 0) { out[i - w] = d; queue[tail++] = i - w }
   }
   return out
 }
