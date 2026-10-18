@@ -130,14 +130,11 @@ export function drawSprite(
 - `tint`: `tinted(rect, hex)` caches a per-frame tinted copy (`res.images.tints`, key `id:anim:frame:hex`, `'source-atop'` fill), used only for the white hit flash and the 30 % hotbar icons. Cap 64 entries.
 - Placeholders draw with `fillStyle`/`arc` around the origin (pivot) in the same transform.
 
-## 6. Rotation decision: runtime `setTransform`, no pre-rotated cache
+## 6. Actor facing: authored directions, no sprite rotation
 
-| Option | Memory | CPU per sprite | Quality | Verdict |
-|---|---|---|---|---|
-| Pre-rotate 16 angles into a cache canvas per frame-id | 16 × 298 frames × ≤ 96² × 4 B ≈ up to 40 MB (actors only ~6 MB) | 1 `drawImage`, no transform | crisp | rejected: memory, build hitch on load, art hot reload rebuilds all |
-| **Runtime `setTransform(cos, sin, -sin, cos, …)` with nearest sampling, angle quantised to 16 steps** | 0 | 1 matrix set + 1 `drawImage` (GPU handles rotation) | chunky pixel rotation, matches [[architecture-assets-sprites]] §2 | **CHOSEN** |
+R-154/R-155 supersede the old 16-step actor rotation decision. Player and all monster body/eye frames are 64×64, with eight authored views per action. Select the direction suffix from facing and pass `rot = 0` to `drawSprite`. Do not rotate, mirror, or build a rotated cache for actor art. Monster body and eyes use the same direction and per-kind scale; hold death facing from the first frame. See [[architecture-assets-sprites]] Sections 2 and 5, and [[architecture-render-2]] Section 3.2.
 
-Rotated draws per frame ≤ 60 (actors + torch + exit arrow); GPU canvas cost is identical to an axis-aligned draw. Upgrade path (already in the sprite catalog): pre-rotate in the offline packer if shimmer bothers playtesters.
+Runtime transforms and `quantAngle` remain available for non-actor sprites such as veins and the exit arrow. Actor procedural placeholders generate the selected directional geometry at world scale 1 with rotation 0. Nearest sampling remains enabled for all pixel art.
 
 ## 7. Wall-shadow raycasting seam (STRETCH, not in the core build)
 

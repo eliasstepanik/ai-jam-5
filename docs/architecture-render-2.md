@@ -99,22 +99,22 @@ for (const m of s.monsters) {
   if (!inView(v, m.x, m.y)) continue
   if (!inLight(s, m.x, m.y)) continue // SAME predicate as update (src/systems/light.ts); equals m.seen
   const [anim, frame] = monsterFrame(s, m)
-  drawSprite(ctx, MON_ID[m.kind], anim, frame, m.x, m.y, monsterAngle(s, m), 1)
-  drawSprite(ctx, EYES_ID[m.kind], eyeAnim(m), 0, m.x, m.y, monsterAngle(s, m), 1)
+  drawSprite(ctx, MON_ID[m.kind], `${anim}-${monsterDirection(s, m)}`, frame, m.x, m.y, 0, MON_SCALE[m.kind])
+  drawSprite(ctx, EYES_ID[m.kind], `${eyeAnim(m)}-${monsterDirection(s, m)}`, eyeFrame(s, m), m.x, m.y, 0, MON_SCALE[m.kind])
 }
 // pass 16, after the darkness, ctx.globalCompositeOperation === 'lighter'
 for (const m of s.monsters) {
   if (!inView(v, m.x, m.y) || inLight(s, m.x, m.y) || m.ai === 'dying') continue
   const a = eyeAlpha(s, m) // 0.55 idle with blink, 1.0 telegraph
   drawGlowSprite(ctx, 'eye', m.x + ex, m.y + ey, EYE_HALO_R[m.kind], a) // halo #6b4fb8 / telegraph #b48cff
-  drawSprite(ctx, EYES_ID[m.kind], eyeAnim(m), 0, m.x, m.y, monsterAngle(s, m), 1, a)
+  drawSprite(ctx, EYES_ID[m.kind], `${eyeAnim(m)}-${monsterDirection(s, m)}`, eyeFrame(s, m), m.x, m.y, 0, MON_SCALE[m.kind], a)
 }
 ```
 
 - `monsterFrame`: `ring`/`stalk`/`recover`/`stunned` → `idle`, loop frame `floor(meta.time * fps + m.id * 0.37) % n`; `windup` → `telegraph` (devourer: `telegraph_a` when `beat === 0`, else `telegraph_b`), once frame `min(n - 1, floor(aiT * fps))`; `lunge` → `lunge`; `dying` → `death`.
-- `monsterAngle`: `windup` and `lunge` → `lungeDir`; `dying` → frozen `lungeDir` (no State field needed); else `atan2(vy, vx)` when speed > 5 px/s, else angle to the player. Quantised by `drawSprite`.
+- `monsterAngle`: `windup` and `lunge` → `lungeDir`; `dying` → frozen `lungeDir` (no State field needed); else `atan2(vy, vx)` when speed > 5 px/s, else angle to the player. This is only an input to direction selection, never a sprite rotation. `monsterDirection` selects the nearest of `e,se,s,sw,w,nw,n,ne` with clockwise halfway ties. Hold the selected death direction from its first frame; switching other actions’ facing retains the action timer/frame. `MON_SCALE = { lurker: 0.5, stalker: 0.75, devourer: 1.5 }` for both body and eyes; procedural placeholders draw at scale 1 (R-155).
 - Eye blink (idle): blink when `hash2(floor(meta.time / 3), m.id, 7) < 0.25` and `meta.time % 3 < 0.25` (stateless).
-- Eye offsets `ex, ey` = rotated eye centre per kind (lurker `(5, 0)`, stalker `(10, 0)`, devourer `(12, 0)`).
+- `eyeFrame` selects the 3-frame blink sequence when blinking, otherwise frame 0. Eye halo offsets `ex, ey` come from per-kind, per-direction authored eye centres relative to pivot (32,32), multiplied by `MON_SCALE`; do not rotate the east eye positions to approximate another view. Fallback uses the centres for the resolved eye action/direction.
 
 ### 3.3 Player (pass 11)
 

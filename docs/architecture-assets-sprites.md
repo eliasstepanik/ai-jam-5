@@ -21,22 +21,22 @@ Every asset has one block:
 
 Priorities: **P0** = needed for the vertical slice (Day 4 descent test, Day 5 core sprites). **P1** = full game (Day 6 loop through Day 11 freeze). **P2** = polish/stretch, first to cut.
 
-Frame file names follow style Section 10: `<SpriteId>_<anim>_<nn>.png`, for example `mon_lurker_lunge_02.png`.
+Frame file names follow style Section 10: `<SpriteId>_<anim>_<nn>.png`, for example `mon_lurker_lunge-ne_02.png`.
 
 ## 2. Facing / rotation policy (decision)
 
-**Player update (user decision, 2026-10-18; R-154): eight authored directions, with separate torch and no-torch animation sets.** Monster facing remains one right-facing sprite rotated by the engine.
+**Actor facing (user decisions, 2026-10-18; R-154 and R-155): player and all three monsters use eight separately authored directions for every animation.** All monster body and eye frames are 64×64. Facing changes select a different directional animation; the engine never rotates or mirrors actor sprite art.
 
 - Player direction order is clockwise in canvas coordinates: `e`, `se`, `s`, `sw`, `w`, `nw`, `n`, `ne`. Select the nearest 45° direction to the aim angle in descent and movement angle in escape; retain facing when stationary. Exact halfway ties select the next clockwise direction. Do not rotate or mirror authored player frames.
-- Monsters keep the existing 16-step (22.5°) quantised rotation, with `imageSmoothingEnabled = false`.
-- Player death holds the direction selected on its first frame. Monster death freezes its rotation on its first frame.
+- Monster direction order is also `e`, `se`, `s`, `sw`, `w`, `nw`, `n`, `ne`. Select the nearest 45° direction to the monster facing angle, with exact halfway ties going clockwise. Body and eyes use the same direction; draw both with angle 0 and `imageSmoothingEnabled = false`.
+- Player and monster death hold the direction selected on their first frame. Changing direction during other actions switches the direction suffix while retaining the action timer and frame index.
 - The torch stick is included in the player's torch-set frames; no separate torch sprite or stick draw is used. Flame, glow, sparks and the swing trail remain procedural.
 
 ## 3. Shared conventions for actors
 
 - Canvas: square, pivot at the exact centre pixel `(w/2, h/2)` = the collision centre = rotation centre.
 - Body occupies about 60–70 % of the canvas; the rest is room for lunge stretch and death particles.
-- Monsters face right (+x). Player frames face their named direction (Section 2).
+- Player and monster frames face their named direction (Section 2). The right-facing descriptions below are the east reference pose; author all eight views separately.
 - Emissive parts (eyes) are NOT in body frames. They are separate `eyes` frames on the same canvas size and pivot, so the engine can draw them additively above the darkness mask (spec: outside the light a shade is only glowing eyes).
 - Flames are never in sprites. The player torch stick is baked into the torch-set frames; its flame, glow, sparks, light mask, Beacon light and pickup glow are procedural ([[last-ember-production-plan]] Art pipeline).
 
@@ -64,7 +64,7 @@ That is **24 frames × 8 directions × 2 sets = 384 player frames**. This is the
 
 **Keys:** `<SpriteId>_<action>-<direction>_<nn>.png`, e.g. `player_body-torch_walk-ne_03.png` or `player_body_idle-s_00.png`. Animation keys are `walk-ne`, `idle-s`, etc. This retains the pipeline's three underscore-separated fields. Manifest entries enumerate all 48 action/direction combinations per set.
 
-**World-size default:** 64×64 is the source canvas size. Draw player art at scale **0.5** (32×32 world units), preserving collision radius **10** and the existing camera/gameplay scale; pivot becomes (16,16) world units. Do not enlarge collision or tiles. Monsters retain their catalog sizes and scale 1.
+**World-size default:** 64×64 is the source canvas size. Draw player art at scale **0.5** (32×32 world units), preserving collision radius **10** and the existing camera/gameplay scale; pivot becomes (16,16) world units. Do not enlarge collision or tiles. Monster source canvases are also 64×64; their per-kind draw scales are defined in Section 5.
 
 **Looks:** a small hooded cave-walker, with dark brown hood, worn leather shoulders, backpack and rope, no visible face. Keep the silhouette, palette and aligned centre consistent across all directions and both sets. Torch-set frames contain the wooden stick and charred head, without baked flame or glow. No-torch frames contain no stick. `swing` lasts 0.2 s; `roll` 0.25 s; `hurt` recoils then returns; `death` slumps and holds its last frame.
 
@@ -82,41 +82,45 @@ That is **24 frames × 8 directions × 2 sets = 384 player frames**. This is the
 
 Shared look: shades are living shadow — semi-solid ink with ragged wispy edges, body `#0d0b12`/`#1b1726`, wisps `#2c2540`. They have no visible mouth except the Devourer. They are drawn fully only inside the light; outside, only the `eyes` frames show (spec Monsters).
 
+**Directional delivery (R-155):** every body action and every eye action below is authored for all eight directions. All six monster `SpriteId`s use a **64×64** source canvas and pivot **(32,32)**. Keys append the direction to the action, including compound actions: `idle-e`, `lunge-ne`, `telegraph_a-sw`, `blink-n`. File examples: `mon_lurker_lunge-ne_02.png`, `mon_devourer_eyes_telegraph-sw_00.png`. Body and eyes must align in each direction. Frame counts and fps below are **per direction**. Lurker and Stalker each have 32 body action/direction combinations and 24 eye combinations; Devourer has 40 body combinations and 24 eye combinations.
+
+**World-size default:** preserve the existing size hierarchy and collision radii. Draw Lurker at scale **0.5** (32×32 world canvas, radius 9), Stalker at **0.75** (48×48, radius 14), and Devourer at **1.5** (96×96, radius 30). Apply the same scale to body and eyes. The visual dimensions, eye offsets and procedural placeholder geometry below remain world-unit references for the east pose; divide them by the per-kind scale when placing source pixels in the 64×64 frame. Keep all poses and death particles inside that source canvas. Procedural placeholders draw in world units at scale 1 and select geometry for the named direction.
+
 Shared eyes rules (all three): `eyes` frames contain ONLY the eye pixels on a transparent canvas the size of the body canvas. Animations: `idle:1@0` (dim, core `#cbb8ff`, halo `#6b4fb8`), `telegraph:1@0` (bright, core `#ffffff`, halo `#b48cff`, 1 px bigger), `blink:3@12 once` (open, half, closed). The engine adds an additive radial glow under each eye (procedural). The eyes switch to `telegraph` exactly when the lunge telegraph starts (spec: about 0.4 s before the lunge) and stay until the lunge ends. Death: eyes fade out over the first 3 death frames (engine alpha).
 
 ### 5.1 `mon_lurker` (small, zone 1+)
 
-`mon_lurker` | 32×32 | `idle:4@8 loop` (orbit uses idle), `telegraph:2@6 once (hold last)`, `lunge:3@16 once`, `death:6@12 once` | (16,16) | 9 | **P0**
+`mon_lurker` | 64×64 | `idle:4@8 loop` (orbit uses idle), `telegraph:2@6 once (hold last)`, `lunge:3@16 once`, `death:6@12 once` | (32,32) | 9 | **P0**
 
-`mon_lurker_eyes` | 32×32 | `idle`, `telegraph`, `blink` (shared rules) | (16,16) | — | **P0**
+`mon_lurker_eyes` | 64×64 | `idle`, `telegraph`, `blink` (shared rules) | (32,32) | — | **P0**
 
-**Looks:** a fist-sized drop of ink, round front, tapering into 3–4 thin trailing tendrils toward the left (it always seems to flow forward). Body ellipse about 16×14 px. Two eyes close together near the front (+5,±2), each 2×2 px. `idle`: tendrils sway (each frame moves tendril tips 1 px). `telegraph`: body compresses to about 12×16 (wider, flatter, crouched), tendrils pull in. `lunge`: body stretches to about 24×10 toward +x, tendrils stream straight back. `death`: the body splits into 4–6 ink droplets that drift outward and shrink to single pixels; final frame empty. Mood: nervous, quick, a nuisance.
+**Looks:** a fist-sized drop of ink, round front, tapering into 3–4 thin trailing tendrils toward the left (in the east reference pose; it always seems to flow forward). Body ellipse about 16×14 px. Two eyes close together near the front (+5,±2), each 2×2 px. `idle`: tendrils sway (each frame moves tendril tips 1 px). `telegraph`: body compresses to about 12×16 (wider, flatter, crouched), tendrils pull in. `lunge`: body stretches to about 24×10 toward +x, tendrils stream straight back. `death`: the body splits into 4–6 ink droplets that drift outward and shrink to single pixels; final frame empty. Mood: nervous, quick, a nuisance.
 
-**Prompt:** `{MASTER}, a small shadow creature seen from above, a drop of black-violet ink with a round front and three thin wispy tendrils trailing to the left, two tiny pale violet eyes near the right front, living shadow, 32x32 sprite`. Lunge: `same creature stretched long and thin dashing to the right`. Death: `same creature bursting into small ink droplets`.
+**Prompt:** `{MASTER}, a small shadow creature seen from above, a drop of black-violet ink with a round front and three thin wispy tendrils trailing to the left, two tiny pale violet eyes near the right front, living shadow, 64x64 sprite, named facing direction, consistent reference for all eight authored directions`. Lunge: `same creature stretched long and thin dashing in the named facing direction`. Death: `same creature bursting into small ink droplets`.
 
 **Placeholder:** circle r=8 `#1b1726`, outline `#2c2540`. Eyes: two circles r=1.5 at (5,−2),(5,2) `#cbb8ff` (telegraph: `#ffffff`, r=2). `telegraph`: scale x 0.8, y 1.15. `lunge`: scale x 1.5, y 0.7. `death`: alpha fades 1→0 over 0.5 s while scale grows 1→1.4.
 
 ### 5.2 `mon_stalker` (medium, zone 2+)
 
-`mon_stalker` | 48×48 | `idle:4@8 loop`, `telegraph:2@6 once (hold last)`, `lunge:3@16 once`, `death:6@12 once` | (24,24) | 14 | **P1**
+`mon_stalker` | 64×64 | `idle:4@8 loop`, `telegraph:2@6 once (hold last)`, `lunge:3@16 once`, `death:6@12 once` | (32,32) | 14 | **P1**
 
-`mon_stalker_eyes` | 48×48 | shared rules | (24,24) | — | **P1**
+`mon_stalker_eyes` | 64×64 | shared rules | (32,32) | — | **P1**
 
 **Looks:** long, low and angular — a mantis-like shadow seen from above. Narrow elongated body 30×12 px along the x axis, a wedge-shaped head at the front, and **four long jointed limbs** (two pairs) splayed to the sides like a water strider, limbs 1–2 px thick `#2c2540`. Three eyes in a tight triangle on the head (+11,0),(+9,±2), each 2×2. The silhouette must read as "spiky X", never as a blob (the Lurker is the blob). `idle`: limbs shift in a slow gait, each frame moves one limb pair 1–2 px. `telegraph`: body lowers and limbs fold back (silhouette shrinks to a tight arrow). `lunge`: arrow shape, limbs fully swept back, body stretched to 38 px. `death`: limbs snap off and drift, body unravels into wisps. Mood: patient, predatory, circles behind you.
 
-**Prompt:** `{MASTER}, a medium shadow predator seen from above, long narrow black-violet body pointing right with a wedge-shaped head, four long thin jointed legs splayed out like a water strider, three small pale violet eyes in a triangle on the head, living shadow, wispy edges, 48x48 sprite`.
+**Prompt:** `{MASTER}, a medium shadow predator seen from above, long narrow black-violet body pointing right with a wedge-shaped head, four long thin jointed legs splayed out like a water strider, three small pale violet eyes in a triangle on the head, living shadow, wispy edges, 64x64 sprite, named facing direction, consistent reference for all eight authored directions`.
 
 **Placeholder:** ellipse rx=14 ry=5 `#1b1726`, outline `#2c2540`; 4 lines width 1.5 `#2c2540` from (±4,0) to (±10,±14) in an X; eyes: 3 circles r=1.5 at (11,0),(9,−2),(9,2). Telegraph/lunge/death scaling as Lurker.
 
 ### 5.3 `mon_devourer` (large, zones 3–4)
 
-`mon_devourer` | 96×96 | `idle:4@6 loop`, `telegraph_a:2@6 once (hold last)` (beat 1), `telegraph_b:2@8 once (hold last)` (beat 2), `lunge:3@12 once`, `death:8@10 once` | (48,48) | 30 | **P1** (first cut per [[last-ember-production-plan]])
+`mon_devourer` | 64×64 | `idle:4@6 loop`, `telegraph_a:2@6 once (hold last)` (beat 1), `telegraph_b:2@8 once (hold last)` (beat 2), `lunge:3@12 once`, `death:8@10 once` | (32,32) | 30 | **P1** (first cut per [[last-ember-production-plan]])
 
-`mon_devourer_eyes` | 96×96 | shared rules, plus the eyes show only 2 of 4 eyes open in `idle` and all 4 in `telegraph` | (48,48) | — | **P1**
+`mon_devourer_eyes` | 64×64 | shared rules, plus the eyes show only 2 of 4 eyes open in `idle` and all 4 in `telegraph` | (32,32) | — | **P1**
 
-**Looks:** a huge round mass of shadow, body circle about 64 px across, with a heavy fringe of thick wisps all round that make the edge "boil". At the front (+x) a wide crescent maw, closed in `idle` as a dark seam `#3a0f2a`. Four eyes in a horizontal arc behind the maw (+14,±6) and (+10,±14), each 3×3. `telegraph_a` (beat 1): the body swells 6 % and the maw opens halfway, showing `#3a0f2a` inside with jagged shadow teeth `#2c2540`. `telegraph_b` (beat 2): maw fully open (a half-moon gap 20 px wide), fringe wisps pulled forward. `lunge`: body stretched forward 20 %, maw wide. `death`: the mass collapses inward, the maw closes, the fringe peels off in big flakes, last two frames a dissolving puddle. Mood: slow, inevitable, hungry — the light itself shrinks near it (engine effect).
+**Looks:** a huge round mass of shadow, body circle about 64 world units across (about 43 source pixels at scale 1.5), with a heavy fringe of thick wisps all round that make the edge "boil". At the front (+x) a wide crescent maw, closed in `idle` as a dark seam `#3a0f2a`. Four eyes in a horizontal arc behind the maw (+14,±6) and (+10,±14), each 3×3. `telegraph_a` (beat 1): the body swells 6 % and the maw opens halfway, showing `#3a0f2a` inside with jagged shadow teeth `#2c2540`. `telegraph_b` (beat 2): maw fully open (a half-moon gap 20 px wide), fringe wisps pulled forward. `lunge`: body stretched forward 20 %, maw wide. `death`: the mass collapses inward, the maw closes, the fringe peels off in big flakes, last two frames a dissolving puddle. Mood: slow, inevitable, hungry — the light itself shrinks near it (engine effect).
 
-**Prompt:** `{MASTER}, a huge round shadow beast seen from above, boiling black-violet mass with thick wispy fringe all around, a wide crescent-shaped mouth on the right side, four small pale violet eyes in an arc behind the mouth, living shadow, 96x96 sprite`. Beat frames: `same beast with mouth half open`, `same beast with mouth wide open showing dark red inside and shadowy teeth`.
+**Prompt:** `{MASTER}, a huge round shadow beast seen from above, boiling black-violet mass with thick wispy fringe all around, a wide crescent-shaped mouth on the right side, four small pale violet eyes in an arc behind the mouth, living shadow, 64x64 sprite, named facing direction, consistent reference for all eight authored directions`. Beat frames: `same beast with mouth half open`, `same beast with mouth wide open showing dark red inside and shadowy teeth`.
 
 **Placeholder:** circle r=28 `#0d0b12`, ring stroke width 3 `#2c2540`; maw arc from −40° to +40° at r=20, width 3 `#3a0f2a` (telegraph_a width 6, telegraph_b width 10); eyes 4 circles r=2.5. Death: scale 1→0.6 and alpha 1→0 over 0.8 s.
 
