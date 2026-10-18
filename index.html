@@ -3,13 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Jam 5 Game</title>
+    <meta name="description" content="Last Ember: carry a dying flame into a seeded cave, light the Beacon, escape alive." />
+    <meta name="theme-color" content="#000000" />
+    <meta name="color-scheme" content="dark" />
+    <title>Last Ember</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23000'/%3E%3Cpath d='M8 2C10 6 13 8 11 12A3 3 0 0 1 5 12C3 9 7 7 8 2Z' fill='%23ff8a1f'/%3E%3Ccircle cx='8' cy='11' r='1.6' fill='%23fff6d8'/%3E%3C/svg%3E" />
     <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; background: #111; }
-      canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #000; user-select: none; -webkit-user-select: none; }
+      canvas { display: block; width: 100%; height: 100%; touch-action: none; outline: none; cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Cg stroke='%230a0809' stroke-width='4'%3E%3Cpath d='M16 3v8M16 21v8M3 16h8M21 16h8'/%3E%3C/g%3E%3Cg stroke='%23ff8a1e' stroke-width='2'%3E%3Cpath d='M16 4v6M16 22v6M4 16h6M22 16h6'/%3E%3C/g%3E%3C/svg%3E") 16 16, crosshair; }
+      noscript { color: #ccc; font: 16px sans-serif; display: block; padding: 2em; }
     </style>
   </head>
   <body>
+    <noscript>Last Ember needs JavaScript and a canvas-capable browser.</noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

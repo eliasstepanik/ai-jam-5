@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - A22 terrain attempts and derived world caches: deterministic cave-core generation with rejection rules, base depth and zones, Beacon-room masks, pending masks, and reusable escape-distance buffers. The populated generator wrapper and cave-result memo helper remain deferred until B4–B6 are available.
+- Host input: `'Blur'` pseudo-key in `Input.pressed` on window blur or tab hide, and `Input.view` with the canvas size in CSS pixels and `devicePixelRatio`.
+- Host loop: fixed-step time budget (12 ms) so a slow frame drops its backlog instead of freezing.
 - A21 cave layout helpers: seeded macro trees and masks, connected spine carving, entrance and Beacon placement with guarded chamber carving, and verified loop tunnels that preserve the descent path length.
 - A23 monster foundations: complete spawn records with deterministic gameplay randomness and light-aware ring defaults, plus arrival steering and smooth velocity blending. The spawn caller supplies the light radius to preserve the layer rules.
 - A20 cave foundations: deterministic grid BFS and shortest paths, border-safe carving brushes, largest-region selection, noise fill, five-pass cellular smoothing, widening and diagonal repair.
@@ -19,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Host input: only the primary mouse button counts as a click, and the right-click menu is suppressed on the canvas.
+- `index.html`: page title, description, favicon, black background and crosshair cursor for Last Ember.
 - Player animation specification: 64×64 frames, eight authored directions, separate torch/no-torch sets with the stick integrated, and four-frame walk cycles. Updated rendering, naming, fallback and atlas-planning contracts; graphics delivery remains in progress.
 
 - `AGENTS.md`: documents the `docs/` snapshot, its precedence order and the rule that the knowledge base stays the source of truth.
