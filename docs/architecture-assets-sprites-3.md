@@ -106,13 +106,13 @@ Multi-state icons below store their states as anim `v` frames in the listed orde
 
 ## 5. Static fallback (cut-order rule 2)
 
-If animation frames are late, the minimum delivery per actor is frame `00` of each animation. The loader treats a missing frame as "repeat the last available frame". If only `idle_00` exists, the engine uses it for every animation and applies the placeholder transforms (scale/alpha) from [[architecture-assets-sprites]]. This is how "ship static AI sprites only" works without code changes.
+For the player, the minimum fallback delivery is `idle-<direction>_00` for each available direction in each torch/no-torch set. Missing directions may use same-set `idle-e_00`, then a procedural placeholder; this is a temporary fallback, not completion of the eight-direction catalog. Never substitute the other torch variant. Other actors retain frame `00` of each animation as their minimum fallback delivery. The loader treats a missing frame as "repeat the last available frame". If only `idle_00` exists, the engine uses it for every animation and applies the placeholder transforms (scale/alpha) from [[architecture-assets-sprites]]. This is how "ship static AI sprites only" works without code changes.
 
 ## 6. Totals
 
 | Group | Atlas frames | Notes |
 |---|---|---|
-| Player (body 26 + torch 1) | 27 | [[architecture-assets-sprites]] 4 |
+| Player (24 action frames × 8 directions × 2 torch variants) | 384 | 64×64 source, no separate torch sprite; [[architecture-assets-sprites]] 4, R-154 |
 | Lurker (15 + eyes 5) | 20 | |
 | Stalker (15 + eyes 5) | 20 | |
 | Devourer (19 + eyes 5) | 24 | first cut |
@@ -121,22 +121,20 @@ If animation frames are late, the minimum delivery per actor is frame `00` of ea
 | Pickups (resin 8, plant 4, minerals 3) | 15 | R-138 dropped plant glow 4, picked/wilted 2 |
 | Props | 13 | |
 | UI (hp-pip 3, slot 2, depth 1, exit-arrow 1, keycap 1) | 8 | `ui_cursor` 2 dropped (R-097) |
-| **Atlas total** | **259 frames** | 45 distinct `SpriteId`s (wildcards expanded: actors 8, tiles 12, special 9, pickups 6, props 5, UI 5); was 298 / 53 before R-097/R-138 |
+| **Atlas total** | **616 frames** | 45 distinct `SpriteId`s (wildcards expanded: actors 8, tiles 12, special 9, pickups 6, props 5, UI 5); two player set ids replace body + separate torch, so id count is unchanged (R-154) |
 | Non-atlas bundled (key art, logo, 2 help, favicon) | 5 | |
 | Non-bundled (itch cover, 4 screenshots) | 5 | |
 
-**Atlas size estimate:** padded area ≈ 550 000 px² (devourer 230 k, special ≈ 82 k, tiles 111 k, rest ≈ 127 k; the R-138 drops remove ≈ 70 k, mostly the 64×64 Beacon glow frames) → **one 1024×1024 sheet** at ~52 % fill. Dark, palette-locked pixel art compresses well: **≈ 270–400 KB** after oxipng. Second sheet only if it overflows (then split: `atlas-world` tiles+special, `atlas-actors` actors+items+UI).
-
-**Per-image size estimates (PNG, loose frames before packing):** 16×16 ≈ 0.4 KB, 32×32 ≈ 1 KB, 48×48 ≈ 2 KB, 64×64 ≈ 3 KB, 96×96 ≈ 6 KB. Bundled art total ≈ 0.35 MB atlas + 0.24 MB screens ≈ **0.6 MB** (upper estimate 0.65 MB kept in the dist budget), well under the 2 MB budget ([[architecture-assets-pipeline]]).
+**Atlas estimate (R-154):** the old one-sheet / 270–400 KB estimate is obsolete. Player cells alone use `384 × 68 × 68 = 1 775 616 px²` with a conservative 4 px total padding/extrusion allowance per dimension. Adding the other 232 frames exceeds two 1024² sheets before shelf-packing waste. Allow up to **four 1024×1024 sheets**; pack delivered frames and measure, rather than assuming full delivery today. Compressed byte estimates and the old 0.6 MB bundled-art estimate must be re-measured. Keep the existing byte budgets until actual packing demonstrates a required change; do not silently raise the download budget or drop directions.
 
 ## 7. Production order (per priority, tied to [[last-ember-production-plan]])
 
 | When | Deliver | Priority |
 |---|---|---|
-| Day 2 (Oct 18) | Style guide lock; palette strip PNGs; **style test**: `player_body idle_00`, `mon_lurker idle_00`, `tile_z1_floor v0` approved by the team | P0 |
+| Day 2 (Oct 18) | Style guide lock; palette strip PNGs; **style test**: `player_body-torch idle-e_00`, `mon_lurker idle_00`, `tile_z1_floor v0` approved by the team | P0 |
 | Day 3–4 (Oct 19–20) | zone 1 floor + 16 walls; `item_resin-small`; `ui_hp-pip` (Day 4 descent test may still run on placeholders) | P0 |
-| Day 5 (Oct 21) | player idle/walk/swing + torch; lurker full set + eyes; 3 veins (full/mining); 3 mineral items; plant idle; Beacon unlit/lit; entrance; `ui_slot`; title key art | P0 |
-| Day 6–8 (Oct 22–24) | stalker set; zones 2–4 floors + walls; player roll/hurt/death; resin-large; Beacon charging; boulder; crater; `ui_depth`, `ui_exit-arrow`, `ui_keycap`; inner corners zone 1 | P1 |
+| Day 5 (Oct 21) | player torch-set idle/walk/swing in eight directions; lurker full set + eyes; 3 veins (full/mining); 3 mineral items; plant idle; Beacon unlit/lit; entrance; `ui_slot`; title key art | P0 |
+| Day 6–8 (Oct 22–24) | stalker set; zones 2–4 floors + walls; remaining player action/direction frames and no-torch set; resin-large; Beacon charging; boulder; crater; `ui_depth`, `ui_exit-arrow`, `ui_keycap`; inner corners zone 1 | P1 |
 | Day 9–10 (Oct 25–26) | devourer set (if not cut); inner corners zones 2–4; logo; 2 Help illustrations | P1 |
 | Day 10–11 (Oct 26–27) | props, chamber decor, dust, favicon | P2 |
 | **Day 11 (Oct 27)** | **ALL in-game assets frozen** | — |

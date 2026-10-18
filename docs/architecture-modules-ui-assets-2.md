@@ -81,7 +81,7 @@ public/
   favicon.png                                only if delivered (C14)
 src/assets/
   atlas-0.png [atlas-1.png]                  GEN
-  atlas.json                                 GEN – 300-line exception #1 (auto-generated) / #2 (one data blob), ~265 lines at 259 frames (R-138)
+  atlas.json                                 GEN – 300-line exception #1 (auto-generated) / #2 (one data blob), ~622 lines at 616 frames (R-154)
   art/title-keyart.png logo.png help-parry.png help-goal.png   hand-delivered screens, ≤ 960×540, ≤ 250 KB each
   audio/<id>.ogg  audio/<id>.m4a             hand-delivered, both formats per sample
   resources.ts sprites.ts sounds.ts placeholders-{actors,world,ui}.ts images.ts   code, ≤ 300 lines each

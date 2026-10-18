@@ -62,7 +62,10 @@ src/audio/                        R-021: engine, mixer, music, sfx, synth, synth
 ### 3.1 `src/assets/sprites.ts`
 
 ```ts
-export type Anim = { readonly n: number; readonly fps: number; readonly loop: boolean }
+export type Anim = {
+  readonly n: number; readonly fps: number; readonly loop: boolean
+  readonly torchTips?: readonly (readonly [number, number])[] // R-154, torch-set only
+}
 export type SpriteDef = {
   readonly w: number; readonly h: number   // canvas px, must equal every frame's PNG size
   readonly px: number; readonly py: number // pivot in art px from top-left
@@ -71,19 +74,20 @@ export type SpriteDef = {
   readonly anims: Readonly<Record<string, Anim>>
 }
 export const SPRITES = {
-  player_body: { w: 32, h: 32, px: 16, py: 16, r: 10, pri: 0, anims: {
-    idle: { n: 4, fps: 4, loop: true }, walk: { n: 6, fps: 10, loop: true },
-    swing: { n: 4, fps: 20, loop: false }, roll: { n: 4, fps: 16, loop: false },
-    hurt: { n: 2, fps: 12, loop: false }, death: { n: 6, fps: 8, loop: false } } },
+  // Player definitions: 64x64, pivot (32,32), r:10; player_body and player_body-torch.
+  // Each contains 48 action-direction animations (6 actions x 8 directions).
+  // walk-e, walk-se, walk-s, walk-sw, walk-w, walk-nw, walk-n, walk-ne:
+  // each is { n: 4, fps: 10, loop: true }. See catalog Section 4 for the full table.
   tile_z1_wall: { w: 32, h: 32, px: 0, py: 0, pri: 0, anims: { v: { n: 16, fps: 0, loop: false } } },
   // … one entry per SpriteId in the catalog (45 ids after R-097/R-138)
 } as const satisfies Record<string, SpriteDef>
 export type SpriteId = keyof typeof SPRITES
 ```
 
+- Player `Anim` extends its existing fields with `torchTips?: readonly (readonly [number, number])[]`. Require `torchTips.length === n` for each torch-set animation; prohibit it on the no-torch set. Anchors are source-pixel coordinates in the 64×64 frame (R-154).
 - Every value comes from the catalog data rows ([[architecture-assets-sprites]] Section 1 format). Variant sets (tiles, props, boulders) are one anim named `v` with `fps: 0`; the caller passes the variant as the frame index.
 - Non-atlas screens are not `SpriteId`s; they have a tiny separate record `SCREENS = { keyart: 'title-keyart', logo: 'logo', helpParry: 'help-parry', helpGoal: 'help-goal' } as const`.
-- File size: 45 entries at 2–6 lines each ≈ 170 lines. If it grows past 300, split by group into `sprites-actors.ts` / `sprites-world.ts` and spread them into `SPRITES` in `sprites.ts`.
+- File size: 45 sprite ids; player sets each contain 48 action-direction animation entries. The old ~170-line estimate is obsolete. If it grows past 300, split by group into `sprites-actors.ts` / `sprites-world.ts` and spread them into `SPRITES` in `sprites.ts`.
 
 ### 3.2 `src/assets/sounds.ts`
 
@@ -133,7 +137,7 @@ export const PLACEHOLDERS: Record<SpriteId, DrawFn> = { ...ACTORS, ...WORLD, ...
 ```
 
 - `frames[key] = [sheetIndex, x, y, w, h]`: the inner rect (without extrusion/padding). One frame per line in the file so diffs are readable.
-- No pivots, no anims (they are in `sprites.ts`). No trimming (frames keep their full canvas so pivots stay trivial). `ponytail:` no trim; add trimming only if the atlas overflows 2 sheets.
+- No pivots, no anims (they are in `sprites.ts`). No trimming (frames keep their full canvas so pivots stay trivial). `ponytail:` no trim; add trimming only if the atlas overflows 4 sheets (R-154).
 
 ## 5. Vite import mechanism
 
@@ -163,8 +167,9 @@ for each SpriteId id, for each anim a, for i in 0..n-1:
               ?? null                                  // nothing delivered: placeholder
 ```
 
-- `drawSprite(ctx, id, anim, frame, x, y, angle, scale, alpha)`: if `rect` is null or the sheet image failed → `PLACEHOLDERS[id](ctx, anim, frame, t)`; else `drawImage(sheet, x, y, w, h, -px, -py, w, h)` after translate/rotate. Angle quantised to 16 steps for actors ([[architecture-assets-sprites]] Section 2). `imageSmoothingEnabled = false` once per frame in `render`.
-- When the fallback uses `idle_00` for a missing anim, apply the placeholder transform for that anim (scale/alpha from the catalog) so telegraphs stay readable — this is the "static AI sprites only" cut ([[architecture-assets-sprites-3]] Section 5).
+- Player fallback is variant- and direction-aware: requested frame → previous available frame of the same action/direction → same-set `idle-<direction>_00` → same-set `idle-e_00` → procedural placeholder. Never cross from torch to no-torch or vice versa. Pass angle 0 for authored player art and scale 0.5; placeholders already draw in world units and use scale 1. Use the resolved frame's torch-tip metadata. The generic resolution pseudocode above applies to other sprites.
+- `drawSprite(ctx, id, anim, frame, x, y, angle, scale, alpha)`: if `rect` is null or the sheet image failed → `PLACEHOLDERS[id](ctx, anim, frame, t)`; else `drawImage(sheet, x, y, w, h, -px, -py, w, h)` after translate/rotate. Angle quantised to 16 steps for monsters only; player art uses angle 0 ([[architecture-assets-sprites]] Section 2). `imageSmoothingEnabled = false` once per frame in `render`.
+- When the fallback uses `idle_00` for a missing non-player anim, apply the placeholder transform for that anim (scale/alpha from the catalog) so telegraphs stay readable — this is the "static AI sprites only" cut ([[architecture-assets-sprites-3]] Section 5).
 - Dev aid: `?ph=1` in the URL forces all placeholders (compare art vs geometry); `?ph=0` default.
 
 ## 7. HMR-safe stores

@@ -30,12 +30,12 @@ Rejected: painterly high-res (inconsistent between generations, large files), ve
 | Rule | Value |
 |---|---|
 | Tile size | **32 × 32 art pixels = 32 world units.** CONFIRMED (the architect default is kept): 32 px holds enough detail for vein colours and cracks; 16 px could not show three mineral colours legibly. |
-| Art pixel to world unit | 1 art pixel = 1 world unit. |
-| Screen zoom | Integer zoom **2×** (1 art pixel = 2×2 CSS px). At 1920×1080 the view shows 30 × 17 tiles. Implementer may pick 3× above 2560 px width; always an integer. |
+| Art pixel to world unit | Tiles and monsters: 1 art pixel = 1 world unit. Player: 64×64 source frames drawn at scale 0.5; collision and world footprint unchanged (R-154). |
+| Screen zoom | Integer zoom **2×** world zoom (tile/monster art pixel = 2×2 CSS px; player source pixel = 1×1 CSS px at scale 0.5). At 1920×1080 the view shows 30 × 17 tiles. Implementer may pick 3× above 2560 px width; always an integer. |
 | Smoothing | Tiles, UI and props: `imageSmoothingEnabled = false`. Rotated actors: see [[architecture-assets-sprites]] Section "Facing". |
 | Camera | Straight down. No perspective, no visible wall faces, no cast shadows drawn into sprites. |
-| Facing reference | Every actor sprite is authored **facing RIGHT (+x, angle 0)**, because canvas angle 0 points to +x. The engine rotates it. |
-| Pixel density | Never mix pixel sizes. No sub-pixel detail, no half-size pixels, no anti-aliased soft brushes in the final file. |
+| Facing reference | Player: eight authored directions `e,se,s,sw,w,nw,n,ne`, separate with/without-torch sets, no runtime sprite rotation. Monsters: facing RIGHT (+x, angle 0), rotated by the engine. See R-154. |
+| Pixel density | Never mix pixel sizes. No sub-pixel detail or anti-aliased soft brushes in source files. Player source density is twice world density (R-154); use its documented scale 0.5 rather than changing world units. |
 
 ## 3. Outline and value rules
 
@@ -186,7 +186,7 @@ Fallback when AI output is unusable at small size: draw the frame by hand over t
 ## 8. Consistency checklist (run on every asset before delivery)
 
 - [ ] Camera straight down; no visible side faces, no horizon.
-- [ ] Faces RIGHT (actors) / symmetric or orientation-free (tiles, pickups).
+- [ ] Player matches its named direction and torch variant; monsters face RIGHT; tiles/pickups are symmetric or orientation-free.
 - [ ] Light direction = none: no highlight side, no shadow side, no drop shadow.
 - [ ] 1 px `#0a0809` outline (actors, props, pickups, icons); none on tiles.
 - [ ] Only palette colours (Section 4), ≤ 32 colours, binary alpha.
@@ -202,7 +202,7 @@ Fallback when AI output is unusable at small size: draw the frame by hand over t
 
 - **Format:** PNG-32 (RGBA 8-bit), sRGB, no colour profile chunk (strip with `magick -strip` or `oxipng --strip safe`).
 - **Delivery unit:** one PNG per frame (team delivers loose frames; the packer builds the atlas, see [[architecture-assets-pipeline]]).
-- **Atlas sheets** (packer output): power-of-two dimensions (≤ 1024 × 1024, max 2 sheets), **1 px transparent padding + 1 px edge extrusion** around each frame to stop bleeding under scaling/rotation.
+- **Atlas sheets** (packer output): power-of-two dimensions (≤ 1024 × 1024, max 4 sheets (R-154; measure actual packing and compressed bytes)), **1 px transparent padding + 1 px edge extrusion** around each frame to stop bleeding under scaling/rotation.
 - **Compression:** `oxipng -o 4 --strip safe --nc` on final sheets (lossless; `--nc` keeps the RGBA colour type; do NOT pngquant the atlas — the check requires RGBA); bundled screens (key art, logo, Help) are PNG (palette-quantised allowed); JPEG only for the non-bundled itch cover and screenshots.
 - **Transparent background** for everything except tiles, key art, Help illustrations, cover and screenshots (opaque). The logo is transparent.
 
@@ -216,7 +216,7 @@ Lowercase ASCII, words joined by `-`, fields joined by `_`. Frame numbers two di
 
 | group | Example |
 |---|---|
-| `player` | `player_body_walk_03.png` |
+| `player` | `player_body-torch_walk-ne_03.png` (64×64; no-torch example: `player_body_walk-ne_03.png`) |
 | `mon` | `mon_lurker_lunge_01.png`, `mon_devourer_eyes_idle_00.png` |
 | `tile` | `tile_z2_floor_v_02.png` (variant 2), `tile_z4_wall_v_13.png` (mask 13) |
 | `spec` | `spec_beacon_lit_05.png`, `spec_vein-copper_full_00.png` |
@@ -225,7 +225,7 @@ Lowercase ASCII, words joined by `-`, fields joined by `_`. Frame numbers two di
 | `ui` | `ui_hp-pip_v_00.png` (full; 01 empty, 02 lost) |
 | `art` | delivered as `art_itch-cover.png` (not bundled); bundled screens use the pipeline names without prefix: `src/assets/art/title-keyart.png` (code `SCREENS.keyart`, R-141), `logo.png`, `help-parry.png`, `help-goal.png` |
 
-Variant sets and multi-state UI icons use the anim name `v`; the frame number is the variant/state index. Actor eye sprites are their own `SpriteId` (`mon_lurker_eyes`).
+Player animation names append the direction with a hyphen (`walk-ne`, `idle-s`); player set ids are `player_body` and `player_body-torch`. Variant sets and multi-state UI icons use the anim name `v`; the frame number is the variant/state index. Actor eye sprites are their own `SpriteId` (`mon_lurker_eyes`).
 
 The atlas frame key is the file name without `.png`. The engine-facing `SpriteId` is `<group>_<id>[_<variant>]` (for example `mon_lurker`); animation names, frame counts and fps are defined in the TS manifest `src/assets/sprites.ts` ([[architecture-assets-pipeline]]). Versions are NOT in file names; git history is the version record.
 
