@@ -58,7 +58,7 @@ Import DAG (no cycles, [[architecture-host-changes-2]] §4): `core ← world ←
 | 8 | pickups [ents] | world | sprite with bob `y + sin(meta.time·2π + bob)` | always |
 | 9 | Beacon + entrance [ents] | world | `spec_beacon` frame by state; `spec_entrance` | always |
 | 10 | monsters FULL [ents] | world | body sprite + eyes sprite for `m` with `inLight(s, m.x, m.y)` | per monster |
-| 11 | player + torch [ents] | world | body (16-step rotation), torch stick at hand anchor, swing arc | always |
+| 11 | player [ents] | world | eight-direction 64×64 body at scale 0.5, torch/no-torch set by phase, stick included in torch set; procedural swing trail in pass 17 (R-154) | always |
 | 12 | rocks [ents] | world | telegraph shadow circles, falling/landed boulders | `phase === 'escape'` |
 | 13 | world particles, normal blend [fx] | world | dust, ink droplets, chips | always |
 | 14 | DARKNESS composite [dark] | screen | build offscreen darkness, then `drawImage(dark, 0, 0, w, h)` | `!reveal` and Beacon transition < 1 |

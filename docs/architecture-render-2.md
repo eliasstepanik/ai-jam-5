@@ -119,8 +119,8 @@ for (const m of s.monsters) {
 ### 3.3 Player (pass 11)
 
 - Body anim priority: `death` (`screen === 'dead'`) > `roll` (`roll.t > 0`) > `hurt` (`hitFlash > 0`) > `swing` (`swing.active`) > `walk` (`hypot(vx, vy) > 10`) > `idle`. Walk fps ×1.6 in `escape`.
-- Angle: `descent` → `facing`; `escape` → `atan2(vy, vx)` when moving, else `facing`.
-- Torch (descent only): pivot at hand anchor `(+9, +6)` rotated by the body angle; torch angle = `swing.active ? swing.dir + lerp(-π/3, π/3, swing.t / SWING_ACTIVE) : body angle`. Tip = anchor + rot(12, 0). `torchTip(s)` is exported for the glow pass.
+- Player direction: nearest of `e,se,s,sw,w,nw,n,ne` to `facing` in descent or `atan2(vy, vx)` while moving in escape, otherwise retained facing. Halfway ties go clockwise. Use `<action>-<direction>` and sprite angle 0; do not rotate or mirror player art. Freeze direction when death begins (R-154).
+- Player set: `player_body-torch` in descent (even with energy 0), `player_body` in escape. Both are 64×64 with pivot (32,32), drawn at scale 0.5; collision radius stays 10. Walk has 4 frames. The stick is baked into the torch-set frames; never draw `player_torch`. `torchTip(s)` remains the glow seam: resolve the displayed frame and its source-pixel tip anchor, then return player position plus `(tip - [32,32]) * 0.5`. In escape, the flame/glow caller skips the torch effect. Missing art uses the matching fallback frame and anchor. See catalog Section 4 (R-154).
 - Hit flash: while `hitFlash > 0`, a second `drawSprite` of the same frame with `tint = '#ffffff'` and alpha `hitFlash / HIT_FLASH` ([[architecture-render-3]] §5 tint path).
 - Swing arc trail: in pass 17 (additive), `ctx.arc(px, py, 22, a0, a1)` stroke width 6 in the flame mantle colour, alpha `1 - swing.t / SWING_ACTIVE`. One path per frame, no allocation beyond `beginPath`.
 
