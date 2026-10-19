@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A8 asset foundations: complete sprite and sound catalogs, a lazy resource registry that survives hot reload, and actor-sheet helpers for eight north-first direction rows with frame counts derived from image width. Actual art loading and integration remain separate tasks.
 - A19 exploration and spawn queries: signed JSON-safe explored bits, occluded radius reveal, deterministic nearest-floor recovery and fixed-draw spawn sampling, with registered world-query and cache checks.
 - A22 terrain attempts and derived world caches: deterministic cave-core generation with rejection rules, base depth and zones, Beacon-room masks, pending masks, and reusable escape-distance buffers. The populated generator wrapper and cave-result memo helper remain deferred until B4–B6 are available.
 - Host input: `'Blur'` pseudo-key in `Input.pressed` on window blur or tab hide, and `Input.view` with the canvas size in CSS pixels and `devicePixelRatio`.
