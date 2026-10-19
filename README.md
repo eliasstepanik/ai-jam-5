@@ -155,3 +155,5 @@ This repo was scaffolded with Claude Code and opencode agents. The jam rewards s
 - The pipeline for generated assets: how each sprite, sound or music track was produced, then processed and included.
 - Third-party assets and their sources and licences, so credits are complete.
 - What AI got wrong and how you corrected it.
+
+- A8 asset foundations were implemented with Codex from the catalog and Kittingsl's sheet layout: one actor animation per sheet, 64×64 cells, direction rows N/NE/E/SE/S/SW/W/NW, with frame counts derived from width. This adds metadata and resource handling; artwork, palettes and torch-colour sheets are not integrated yet.
