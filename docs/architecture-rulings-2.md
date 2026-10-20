@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Architecture Rulings (binding conflict resolutions)
 description: Part 2 of 2 – binding rulings R-066 to R-107 for systems and monster AI, render and audio, UI/assets/host, and the 320x240 scale rulings; the consolidated State additions list; the owner decisions that need a product or approval answer; and the gaps that no spec covers, each with a proposed owner file and slice.
 tags: [project, ai-jam-5, architecture, last-ember, rulings]
-timestamp: 2026-10-17T23:00:00Z
+timestamp: 2026-10-20T23:00:00Z
 ---
 
 # Last Ember – Architecture Rulings (2/2)
@@ -31,7 +31,7 @@ Part 2 of 3. Part 1 (precedence, layer rule, how to apply, severity key, R-001�
 | R-080 | m | two `score.check.ts` | [[architecture-modules-core]] §4 and [[architecture-modules-systems-2]] §1 both define it | One file, owned by core; it also asserts the 5488 worked win. | modules-systems-2 §1 row → "see core" | first save PR |
 | R-081 | m | single `systems.check.ts` | systems-4 §8 one file; 300-line rule (MS-20) | Split per modules-systems-2 §1. | systems-4 §8 heading | first check PR |
 | R-082 | M | duplicate event kinds | systems-4 §6 adds `windup`, `lunge`, `dodge` and encodes resin as `relight a=1`, empty toss as `toss a=-1`; [[architecture-resources-2]] §8 adds `telegraph`, `lunge`, `resin`, `denied`, `uiMove`, `uiConfirm`, `uiBack`, emitter `src/entities/monster.ts` | Union adds exactly: `dodge`, `windup`, `lunge`, `uiMove`, `uiConfirm`, `uiBack`, `copyLink`. `telegraph` = `windup`; `resin` = `relight a=1`; `denied` = `toss a=-1`. Windup/lunge are emitted by `src/systems/monsters.ts`. `TRIGGERS` maps these. **Refined 2026-10-18:** `denied` is ALSO a member (Beacon START GATE, a separate emitter `stepBeacon`; empty toss stays `toss a=-1`). Authoritative union: [[architecture-state-2]] §7. | resources-2 §8 list and emitters (applied 2026-10-18); [[architecture-ui-2]] §8 last row; [[architecture-modules-render-2]] §3 last row | first audio PR |
-| R-083 | M | light query names | render specs call `inLight(s, x, y)` and `lightSources(s)`; [[architecture-modules-systems]] S8 exports `insideLight(s, x, y, pad = 0)`, no `lightSources` | `insideLight` is the name. `src/systems/light.ts` also exports `lightSources(s: State): { x: number; y: number; r: number; kind: FlameKind \| 'beacon' \| 'shaft' \| 'ember' }[]`. | [[architecture-render-2]] §5.6, modules-render §2 S5 and §3 rows: `inLight` → `insideLight`; modules-systems S8 add `lightSources` | first render PR |
+| R-083 | M | light query names | render specs call `inLight(s, x, y)` and `lightSources(s)`; [[architecture-modules-systems]] S8 exports `insideLight(s, x, y, pad = 0)`, no `lightSources` | `insideLight` is the name. `src/systems/light.ts` also exports `lightSources(s: State): { x: number; y: number; r: number; kind: FlameKind \| 'beacon' \| 'shaft' \| 'ember' }[]`. Status 2026-10-20: not implemented; render/light.ts builds its own mask sources (A16, #31). Owner decision pending: add lightSources to systems/light.ts or amend this ruling. | [[architecture-render-2]] §5.6, modules-render §2 S5 and §3 rows: `inLight` → `insideLight`; modules-systems S8 add `lightSources` | first render PR |
 
 ## 7. Render and audio
 

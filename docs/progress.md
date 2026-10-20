@@ -1,20 +1,20 @@
 ---
 type: reference
-title: "Last Ember - Build Progress (2026-10-19)"
-description: Build status of Last Ember synced to origin/master bd04c05 on 2026-10-19 - which plan tasks are done, partial or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
+title: "Last Ember - Build Progress (2026-10-20)"
+description: Build status of Last Ember synced to origin/master 1d02b08 on 2026-10-20 - which plan tasks are done, partial or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
 tags: [project, ai-jam-5, progress, last-ember]
-timestamp: 2026-10-19T22:30:00Z
+timestamp: 2026-10-20T23:00:00Z
 ---
 
-# Last Ember - Build Progress (2026-10-19)
+# Last Ember - Build Progress (2026-10-20)
 
-Status of the implementation compared with the plan in [[tasks]] and [[tasks-files]]. Source of the facts: git and GitHub state of `origin/master` at commit `bd04c05` on 2026-10-19. Task ids, owners and hour estimates come from [[tasks]]. Hub: [[index]].
+Status of the implementation compared with the plan in [[tasks]] and [[tasks-files]]. Source of the facts: git and GitHub state of `origin/master` at commit `1d02b08` on 2026-10-20. Task ids, owners and hour estimates come from [[tasks]]. Hub: [[index]].
 
 ## Snapshot
 
-- **Date:** 2026-10-19. **Master:** `bd04c05`. 27 PRs merged (#1, #2, #4 to #29), no open PRs. #3 was closed without merging.
+- **Date:** 2026-10-20. **Master:** `1d02b08`. 28 PRs merged (#1, #2, #4 to #31), no open PRs. #3 was closed without merging.
 - **`src/game.ts` is still the scaffold demo** (74 lines, dot collector). **Nothing is playable yet.**
-- **What exists vs what is wired:** the foundation (host, core types, state, rng, tuning, migration, score, checks chain), the world generation core (grid, collision, LOS, BFS, carving, macro layout, places, loops, caches, explored and sample queries), the monster base and the full set of A-slice systems below the step loop (fx, camera, intent, movement, explore, depth, light, flame, pickups, combat, monsters, ai-lurker, director), the asset catalogs and resource registry (`assets/sprites.ts`, `sounds.ts`, `resources.ts`) and the first render modules (`render/keys.ts`, `view.ts`, `flame.ts`, `quality.ts`) are on master. None of it is called from `game.ts` yet. Not on master: the step loop (`systems/step.ts`, `run.ts`, `screens.ts`), the rest of the render tree, the UI, the audio and the placeholder assets.
+- **What exists vs what is wired:** the foundation (host, core types, state, rng, tuning, migration, score, checks chain), the world generation core (grid, collision, LOS, BFS, carving, macro layout, places, loops, caches, explored and sample queries), the monster base and the full set of A-slice systems below the step loop (fx, camera, intent, movement, explore, depth, light, flame, pickups, combat, monsters, ai-lurker, director), the asset catalogs and resource registry (`assets/sprites.ts`, `sounds.ts`, `resources.ts`) and the first render modules (`render/keys.ts`, `view.ts`, `flame.ts`, `quality.ts`, plus the draw passes `light.ts`, `glow.ts`, `entities.ts` from A16) are on master. The render passes are on master but unwired: nothing consumes them until `render/index.ts` (A17). None of it is called from `game.ts` yet. Not on master: the step loop (`systems/step.ts`, `run.ts`, `screens.ts`), the rest of the render tree, the UI, the audio and the placeholder assets.
 - **Slice A is due 2026-10-20.**
 
 ## Done
@@ -31,6 +31,7 @@ Task ids and file lists follow [[tasks]]. "K" = Kittingsl, "E" = Elias (eliasste
 | A6 | `checks/all.ts`, `checks/input.ts`, `checks/state.check.ts`, check chain in `package.json` | #13 | E | 4f3735e | `npm run check` runs `node src/check.ts && node src/checks/all.ts && node scripts/check-guard.ts` (the original scaffold check `src/check.ts` stays first). |
 | A8 | `assets/sprites.ts` (109 lines), `assets/sounds.ts` (61), `assets/resources.ts` (145) | #28 | K | 19b6d82 | Sprite and sound catalogs; lazy resource registry that survives hot reload (`getResources()`, the perf ring lives there); actor-sheet helpers (eight north-first direction rows, frame counts from image width). Also added `checks/assets.check.ts` (78 lines, wired in `checks/all.ts`), which is not in the plan. CHANGELOG +1 line, README +2 lines. True merge commit. |
 | A14 | `render/keys.ts` (38), `render/view.ts` (51), `render/flame.ts` (16), `render/quality.ts` (82) | #29 | E | bd04c05 | New directory `src/render`. `quality.ts` already holds the auto ladder pulled forward from C6 (see Deviations). |
+| A16 | `render/light.ts` (169 lines), `render/glow.ts` (166), `render/entities.ts` (215) | #31 | E | 1d02b08 | Passes: `drawDarkness` (14), `drawMonsters` (10), `drawPlayer` (11), `drawEyes` (16, in `glow.ts`), `drawGlow` (17), `torchTip`. Medium tier, 2 chunks; retrospect found 1 major (escape darkness fade unreachable); quality gate `@ultrathink` 68/100 then 96/100 (PASS, 2 of 3 invocations); 129 behaviour mutants caught. Nothing consumes the passes until A17; missing art draws nothing (A15 and A9/A10 are not on master). |
 | A18 | `world/grid.ts`, `world/collide.ts`, `world/los.ts` | #10 | K | 1a45469 | Also brought `caches.getSolid` forward from A22. Also added `scripts/check-a18.ts` (181 lines), which is not in the plan. |
 | A19 | `world/explored.ts`, `world/sample.ts`, `checks/world.check.ts` | #21 | K | 3b00021 | `world.check` wired in `checks/all.ts`. |
 | A20 | `world/bfs.ts`, `world/gen/carve.ts`, `world/gen/region.ts`, `world/gen/ca.ts` | #14 | K | 7146339 | |
@@ -63,7 +64,7 @@ Nothing in these lists is on master. Slice A items carry an owner; the full plan
 
 **Slice A**
 
-- Elias: A15 (render tiles, memory, props), A16 (render light, entities, glow), A17 (render index), A29 (`run.ts`, `screens.ts`, `step.ts`), A30 (`game.ts` facade).
+- Elias: A15 (render tiles, memory, props), A17 (render index), A29 (`run.ts`, `screens.ts`, `step.ts`), A30 (`game.ts` facade).
 - Kittingsl: A7 (determinism and score checks), A9, A10 (assets), A11, A12, A13 (UI), A31, A32 (systems checks), the rest of A22.
 
 **Slice B (due 2026-10-22)**
@@ -76,7 +77,7 @@ Nothing in these lists is on master. Slice A items carry an owner; the full plan
 - Elias: C1, C2, C6.
 - Kittingsl: C3, C4, C5, C7, C8.
 
-Also absent from master: in `src/render`, everything except `keys`, `view`, `flame` and `quality` (no tiles, memory, props, light, entities, glow, index); `src/ui` and `src/audio` entirely; in `src/assets`, everything except `sprites`, `sounds` and `resources` (no placeholders, images, atlas); `systems/run.ts`, `screens.ts`, `step.ts`; `core/storage.ts`; `world/route.ts`; `world/validate.ts`; `world/gen/populate.ts`, `pockets.ts`, `teach.ts`, `fallback.ts`; and the checks of A7, A31, A32 and slice B (including `src/checks/caves.ts`).
+Also absent from master: in `src/render`, everything except `keys`, `view`, `flame`, `quality`, `light`, `glow` and `entities` (no tiles, memory, props, index, overlay, particles); `src/ui` and `src/audio` entirely; in `src/assets`, everything except `sprites`, `sounds` and `resources` (no placeholders, images, atlas); `systems/run.ts`, `screens.ts`, `step.ts`; `core/storage.ts`; `world/route.ts`; `world/validate.ts`; `world/gen/populate.ts`, `pockets.ts`, `teach.ts`, `fallback.ts`; and the checks of A7, A31, A32 and slice B (including `src/checks/caves.ts`).
 
 ## Remaining slice A and critical path
 
@@ -84,12 +85,12 @@ Slice A is due **2026-10-20**. The hours below are the **estimates** from the ta
 
 | Owner | Remaining tasks | Estimate |
 |---|---|---|
-| Elias | A15 3 h, A16 3.5 h, A17 1 h, A29 2.5 h, A30 1.5 h | 11.5 h |
+| Elias | A15 3 h, A17 1 h, A29 2.5 h, A30 1.5 h | 8.0 h |
 | Kittingsl | A7 1.5 h, A9 3 h, A10 2 h, A11 2.5 h, A12 2.5 h, A13 1.5 h, rest of A22 (2.5 h in total), A31 2.5 h, A32 3 h | 21.0 h |
 
-Done so far, by plan estimates: **Elias 21.0 h** (A1 1 + A2 1.5 + A3 2 + A4 1 + A5 2 + A6 2 + A24 1.5 + A25 1.5 + A26 1.5 + A27 2 + A28 3 + A14 2). **Kittingsl 11.5 h** (A18 1.5 + A19 2 + A20 2 + A21 3 + A23 1 + A8 2) plus part of A22.
+Done so far, by plan estimates: **Elias 24.5 h** (A1 1 + A2 1.5 + A3 2 + A4 1 + A5 2 + A6 2 + A24 1.5 + A25 1.5 + A26 1.5 + A27 2 + A28 3 + A14 2 + A16 3.5). **Kittingsl 11.5 h** (A18 1.5 + A19 2 + A20 2 + A21 3 + A23 1 + A8 2) plus part of A22.
 
-**Critical path:** A29 (waits for the populated `generateCave` of Kittingsl's A22) -> A15-A17 -> A30. A15 needs A9 (A8 is done), A17 needs A12 and A13. See the Cross-person critical path section in [[tasks]].
+**Critical path:** A29 (waits for the populated `generateCave` of Kittingsl's A22) -> A15, A17 -> A30. A15 needs A9 (A8 is done), A17 needs A12 and A13. See the Cross-person critical path section in [[tasks]].
 
 ## Deviations and decisions made during the build
 
@@ -112,6 +113,13 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - **A27 part 2 defaults:** the early parry window skips when `delta + 1e-9 < -earlyMaxS`; `flameOut` in `resolveParries` fires only when the parry actually took energy; `damagePlayer` returns early for a dying shade. Call order for A29: `stepSwing`, `stepMonsters`, `resolveParries`, `resolveBites`, `tickPlayerTimers`.
 - **A14 pulled the quality auto ladder forward from C6** (fully specified in render-3 section 3.3): 120-frame window, 18.5 / 12 ms thresholds, 2 windows down and 5 up, 3 s cool-down, 30 Hz exemption, `dprCap` via `globalThis.__lastEmberDprCap`. The host read of `dprCap` needs the still-open `main.ts` change Q1. C6 drops the ladder.
 - **`perf.pass` reserved key `'@'`** holds the previous mark timestamp. The debug overlay (C15) must skip it.
+- **A16 escape darkness (#31):** follows render-3 section 2 (fade alpha `1 - k` over 1.5 s with `flameRadius` masks) over render-2 sections 5.3 and 5.6.
+- **A16 dying-eye fade:** the eye fades over the first 3 death frames (assets-sprites section 5), resolved against the render-2 pass-16 sketch.
+- **A16 devourer telegraph:** each beat plays from its own frame 0 (`aiT - beat * telegraphS / beats`, R-130).
+- **A16 `entities.ts` `drawFrame`** reads `getResources().images.rects/sheets` directly until A10's `drawSprite` lands; it draws nothing if the art is missing.
+- **A16 eye halo** sits at the monster centre until per-direction eye anchors exist. `drawEyes` has no `Quality` parameter.
+- **A16 entity cull:** 48 px margin inside `entities.ts`; `view.ts` `inView` is unchanged.
+- **A16 direction pick (R-155):** `Math.round(a / (pi / 4) + 1e-9)`, clockwise.
 - **A8 added `checks/assets.check.ts`,** which is not in the plan (like `scripts/check-a18.ts`).
 - **R-007:** `depthOf` and `zoneOfDepth` live in `core/score.ts`, not in `systems/depth.ts`.
 - **`devourerMul` pulled forward from C1** into `entities/monster.ts` (done in #23, A24 part 2). This closes open question 8 of [[tasks]] (E adds it; K reviews the hunk).
@@ -127,7 +135,11 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - Decide whether `scripts/check-a18.ts` stays or is folded into `world.check`.
 - `AGENTS.md` says the docs manifest has 68 files; it now has 69. `AGENTS.md` is a protected path, so the fix is a follow-up PR.
 - Test gaps for Kittingsl's A31/A32 checks (from the A28 and A14 retrospects): stuck relocate timing, `stuckFrac`, `lungeRangePx` for stalker and devourer; quality ladder thresholds 18.5 / 12 ms, the vsync30 work limit, `VIG_STEP`, the top mask bucket.
-- A16 follow-up: `inView` has no 48 px entity margin (render-2 section 2.3); A16 adds it or `inView` gets a pad argument.
+- A16 follow-up: `inView` has no 48 px entity margin (render-2 section 2.3); A16 adds it or `inView` gets a pad argument. Resolved in #31: the margin lives inside `entities.ts`, `inView` is unchanged.
+- **Owner decision from #31 (R-083):** `lightSources` does not exist in `systems/light.ts`, and no `FLAME` table exists in `systems/flame.ts`. `render/light.ts` builds the sources itself (player flame or ember r=22, entrance shaft r=72, beacon r=96*hold/holdS), and flicker uses `T.flame` per tuning section 3 instead of render-2 section 5.5 `FLICKER_AMP` 0.04. Either add `lightSources` to `systems/light.ts` later or amend R-083 (status note added to R-083 in [[architecture-rulings-2]]).
+- **Owner decision from #31 (escape blend):** `render/light.ts` has a local `blend(s)` that treats escape without `beaconLit`, or with `beaconLitAt <= 0`, as fully faded. This duplicates `view.ts` `beaconBlend`, which returns 0 there and would keep the screen dark forever. Move the guard into `beaconBlend` in A17 so there is one source.
+- **A17 notes (from #31):** `drawDarkness` leaves identity transform, source-over, alpha 1 and smoothing off on EVERY path, so A17 must call `worldXf` again before the next world-space pass. `drawEyes` and `drawGlow` leave `'lighter'` set. Pass order: `drawMonsters` (10), `drawPlayer` (11), `drawDarkness` (14), `drawEyes` (16), `drawGlow` with `torchTip` (17).
+- Minor test gaps from the A16 retrospect (add to the A31/A32 test-gap item above): torch-tip per-frame anchors; tint-canvas height after eviction.
 - C15 follow-up: the debug overlay must skip the `'@'` key of `perf.pass`.
 - C6 scope drop: the quality auto ladder is already in A14 (#29); update the C6 estimate when C6 starts.
 - Fix the modules-systems S7 and S8 drift in the KB (`losTiles` is gone, `baseRadius` has a second parameter).

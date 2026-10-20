@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)"
 description: Task plan for Last Ember – who owns which code (Elias and Kittingsl), assignment principles, ownership summary, task index for slices A, B and C with hours and dependencies, per-person totals, risks, working process and open questions for the owner.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-19T22:30:00Z
+timestamp: 2026-10-20T23:00:00Z
 ---
 
 # Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)
@@ -22,7 +22,7 @@ Task plan written by the project-manager on 2026-10-18. It splits the Last Ember
 - Slice A due **2026-10-20**. Slice B due **2026-10-22**.
 - Asset freeze **2026-10-27**.
 - Deadline **2026-10-31 03:00 UTC**. Oct 30 is the last working day.
-- Build status (done, partial, remaining) as of 2026-10-19: see [[progress]].
+- Build status (done, partial, remaining) as of 2026-10-20: see [[progress]].
 
 ## 1. Assignment principles
 
@@ -92,7 +92,7 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | A13 | K | hud | 1.5 | A11, A2 (x-person) |
 | A14 | E | render keys, view, flame, quality | 2 | A2, A4; camera.shakeOffset from A24. **DONE** (#29; also holds the quality auto ladder pulled forward from C6) |
 | A15 | E | render tiles, memory, props | 3 | A14, A8, A9 (x-person: A8, A9 are K's) |
-| A16 | E | render light, entities, glow | 3.5 | A14, A24 (light.ts) |
+| A16 | E | render light, entities, glow | 3.5 | A14, A24 (light.ts). **DONE** (#31) |
 | A17 | E | render index | 1 | A15, A16, A12, A13 (x-person: seam S1, A12/A13 are K's) |
 | A18 | K | grid, collide, los | 1.5 | A2 (x-person). **DONE** (#10) |
 | A19 | K | explored, sample, world.check | 2 | A18, A22. **DONE** (#21) |
@@ -238,6 +238,7 @@ Closed by the owner on 2026-10-18: the split of render and lighting (Elias) and 
 - 2026-10-18 (3): progress synced to the merged state (see [[progress]]); A24/A26/A27 rows corrected; devourerMul pulled forward into A24 part 2
 - 2026-10-18 (4): corrected PR count (23, including #24), check chain, file totals after the toast.ts removal; approvals-pending statements retired; invite status corrected (K is a collaborator), #24 added, approvals wording retired in the ownership row and A1 row
 - 2026-10-19 (5): progress synced to master bd04c05 (A8, A14, A27, A28 done; PRs #26 to #29; R-127 owner ruling: covers all countdowns)
+- 2026-10-20 (6): progress synced to master 1d02b08 (A16 done, PR #31)
 
 ## Related
 
