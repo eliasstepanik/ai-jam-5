@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Gameplay Systems (1/4) – Step Order, Screens, Runs, Intent, Movement
 description: Last Ember gameplay systems part 1 – the fixed-step update order for descent and escape, the step() skeleton with hitstop, screen state machine with transitions and resets, startRun and endRun contracts, intent resolution from Input (movement vector, aim via camera and view) and player movement with circle-vs-tile collision and sliding, with formulas and worked examples.
 tags: [project, ai-jam-5, architecture, last-ember, systems]
-timestamp: 2026-10-17T21:10:00Z
+timestamp: 2026-10-19T22:30:00Z
 ---
 
 # Last Ember – Gameplay Systems (1/4)
@@ -32,7 +32,7 @@ Binding for every system: mutate `State` only; randomness only via `rand(s, 'gam
 | 9 | `stepMinerals(s, it)` (`src/systems/flame.ts`) | select, toss, shake-off |
 | 10 | `stepSwing(s, it, dt)` (`src/systems/combat.ts`) | start swing, buffer, timers |
 | 11 | `stepDirector(s, dt)` (`src/systems/director.ts`) | spawn outside light, despawn, caps |
-| 12 | `stepMonsters(s, dt)` (`src/entities/monster.ts`) | per-kind AI, windup, lunge movement, devourer light push |
+| 12 | `stepMonsters(s, dt)` (`src/systems/monsters.ts`) (R-004) | per-kind AI, windup, lunge movement, devourer light push |
 | 13 | `resolveParries(s)` (`src/systems/combat.ts`) | swing arc vs lunging shades, grade, flame loss |
 | 14 | `resolveBites(s)` (`src/systems/combat.ts`) | lunge contacts → `damagePlayer` |
 | 15 | timers (`tickPlayerTimers(s, dt)` in `combat.ts`) | `hurtT`, `hitFlash` |
