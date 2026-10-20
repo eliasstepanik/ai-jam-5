@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)"
 description: Task plan for Last Ember – who owns which code (Elias and Kittingsl), assignment principles, ownership summary, task index for slices A, B and C with hours and dependencies, per-person totals, risks, working process and open questions for the owner.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-18T19:20:00Z
+timestamp: 2026-10-19T22:30:00Z
 ---
 
 # Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)
@@ -22,7 +22,7 @@ Task plan written by the project-manager on 2026-10-18. It splits the Last Ember
 - Slice A due **2026-10-20**. Slice B due **2026-10-22**.
 - Asset freeze **2026-10-27**.
 - Deadline **2026-10-31 03:00 UTC**. Oct 30 is the last working day.
-- Build status (done, partial, remaining) as of 2026-10-18: see [[progress]].
+- Build status (done, partial, remaining) as of 2026-10-19: see [[progress]].
 
 ## 1. Assignment principles
 
@@ -84,13 +84,13 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | A5 | E | migrate, score, scripts/check-guard.ts (moved from A7, 2026-10-18) | 2 | A3. **DONE** (#11) |
 | A6 | E | checks/input, checks/all, state.check, package.json (wires `node src/check.ts && node src/checks/all.ts && node scripts/check-guard.ts`; check-assets from A10 is NOT wired until C8, see section 1) | 2 | A5. **DONE** (#13) |
 | A7 | K | determinism.check, score.check | 1.5 | A6 (x-person) |
-| A8 | K | sprites, sounds, resources | 2 | None, start now |
+| A8 | K | sprites, sounds, resources | 2 | None, start now. **DONE** (#28) |
 | A9 | K | 3x placeholders-* | 3 | A8 |
 | A10 | K | images, atlas.json seed, check-assets | 2 | A8, A9, A4 (x-person) |
 | A11 | K | layout, strings, draw | 2.5 | None for the code; Input.view from A1 (x-person) |
 | A12 | K | menus, platform | 2.5 | A11, A2 (x-person) |
 | A13 | K | hud | 1.5 | A11, A2 (x-person) |
-| A14 | E | render keys, view, flame, quality | 2 | A2, A4; camera.shakeOffset from A24 |
+| A14 | E | render keys, view, flame, quality | 2 | A2, A4; camera.shakeOffset from A24. **DONE** (#29; also holds the quality auto ladder pulled forward from C6) |
 | A15 | E | render tiles, memory, props | 3 | A14, A8, A9 (x-person: A8, A9 are K's) |
 | A16 | E | render light, entities, glow | 3.5 | A14, A24 (light.ts) |
 | A17 | E | render index | 1 | A15, A16, A12, A13 (x-person: seam S1, A12/A13 are K's) |
@@ -103,8 +103,8 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | A24 | E | fx, camera, depth, light | 1.5 | A3; depth.ts needs A22 caches (getDepthField), light.ts needs devourerMul (entities/monster.ts, pulled forward from C1). **DONE** (#9, #23) |
 | A25 | E | intent, movement, explore | 1.5 | A24, A18 (x-person: A18 is K's); explore.ts done in #23 after A19/A24 part 2. **DONE** (#19, #23) |
 | A26 | E | flame, pickups (the toast helper is `toast()` in core/state.ts per R-009; no systems/toast.ts) | 1.5 | A24. **DONE** (#15) |
-| A27 | E | combat | 2 | A24, A26, A25 (Intent); resolveParries/resolveBites/damagePlayer also need A28 (setDying/toRecover; monsters.ts must never import combat.ts). **PARTIAL** (part 1 #22: parryLoss, hurtPlayerHp, tickPlayerTimers, stepSwing; part 2 waits for A28) |
-| A28 | E | monsters, ai-lurker, director | 3 | A23, A25, A27 (x-person: A23 is K's) |
+| A27 | E | combat | 2 | A24, A26, A25 (Intent); resolveParries/resolveBites/damagePlayer also need A28 (setDying/toRecover; monsters.ts must never import combat.ts). **DONE** (#22, #27) |
+| A28 | E | monsters, ai-lurker, director | 3 | A23, A25, A27 (x-person: A23 is K's). **DONE** (#26) |
 | A29 | E | run, screens, step | 2.5 | A22, A28 (x-person: A22 is K's; critical path) |
 | A30 | E | game.ts facade and slice-A integration | 1.5 | A17, A29 |
 | A31 | K | flow, order, ai checks | 2.5 | A29 (x-person); may slip to B day 1 |
@@ -145,7 +145,7 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | C3 | K | debug.ts; devourer rows in src/checks/ai.check.ts (file owned by K via A31; tests the C1 behaviour) | 1.5 |
 | C4 | K | Music layers and stingers (music, trigger) | 3 |
 | C5 | K | P1/P2 recipes (synth-2, sfx) | 3 |
-| C6 | E | particles full table, quality auto ladder, overlay polish, tiles atlas swap | 3 |
+| C6 | E | particles full table, quality auto ladder, overlay polish, tiles atlas swap (the quality auto ladder moved to A14, #29) | 3 |
 | C7 | K | UI fades and pulses (menus, hud) | 2 |
 | C8 | K | Final asset integration by Oct 27 freeze (repack, check-assets, PENDING_AUDIO empty, README AI-process rows; the `package.json` hunk that adds check-assets to `npm run check` is made by Elias in the C8 PR review, as a commit on the PR branch or a follow-up PR; see section 1) | 2 |
 
@@ -237,6 +237,7 @@ Closed by the owner on 2026-10-18: the split of render and lighting (Elias) and 
 - 2026-10-18 (2): check-guard moved to A5 (Elias); check-assets wiring deferred to C8; A10 ordering note
 - 2026-10-18 (3): progress synced to the merged state (see [[progress]]); A24/A26/A27 rows corrected; devourerMul pulled forward into A24 part 2
 - 2026-10-18 (4): corrected PR count (23, including #24), check chain, file totals after the toast.ts removal; approvals-pending statements retired; invite status corrected (K is a collaborator), #24 added, approvals wording retired in the ownership row and A1 row
+- 2026-10-19 (5): progress synced to master bd04c05 (A8, A14, A27, A28 done; PRs #26 to #29; R-127 owner ruling: covers all countdowns)
 
 ## Related
 
