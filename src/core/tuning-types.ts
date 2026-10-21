@@ -2,7 +2,8 @@
 // Spec: docs/architecture-tuning.md §1.1 (shape), architecture-modules-core.md §3.5 (split, C7/R-033).
 // Applied rulings: R-056 (T.escape.rockIntervalS deleted, T.rocks added), R-131 (T.view / heightPx deleted),
 // R-146 (T.player.hpMax), R-147 (T.escape.firstSpawnS), R-061 (T.hud.exitLookTiles),
-// R-074 (T.escape.{frictionMul,attackSlots,chaseMul,interceptS,recoverS}, T.ai.{recoverBackPx,stalkerRetreatPx}).
+// R-074 (T.escape.{frictionMul,attackSlots,chaseMul,interceptS,recoverS}, T.ai.{recoverBackPx,stalkerRetreatPx}),
+// R-163 (T.cave.{pocketDepth,fallbackPocketDepth}).
 import type { MonsterKind, FlameKind } from './types.ts'
 
 export type Z4 = [number, number, number, number] // per zone 1..4, index zone-1
@@ -79,6 +80,7 @@ export type Tuning = {
     bfsTestsMax: number
   }
   hud: { exitLookTiles: number }
+  cave: { pocketDepth: number; fallbackPocketDepth: number }
   cam: { lerpPerS: number; shakeMaxPx: number; shakeDecayS: number }
   shake: Record<'flameHit' | 'hpHit' | 'rockLand' | 'parryPerfect', { s: number; px: number }>
   score: { depthPts: number; winPts: number; timeCapS: number; mineralPts: number; hpPts: number }

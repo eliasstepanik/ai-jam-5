@@ -120,6 +120,7 @@ export const T = {
     bfsTestsMax: 3,
   },
   hud: { exitLookTiles: 4 }, // R-061
+  cave: { pocketDepth: 10, fallbackPocketDepth: 5 }, // R-163
   cam: { lerpPerS: 8, shakeMaxPx: 12, shakeDecayS: 0.35 },
   shake: {
     flameHit: { s: 0.25, px: 5 },
