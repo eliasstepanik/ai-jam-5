@@ -1,20 +1,20 @@
 ---
 type: reference
-title: "Last Ember - Build Progress (2026-10-20)"
-description: Build status of Last Ember synced to origin/master 1d02b08 on 2026-10-20 - which plan tasks are done, partial or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
+title: "Last Ember - Build Progress (2026-10-21)"
+description: Build status of Last Ember synced to origin/master 0350025 on 2026-10-21 - which plan tasks are done, partial, in progress or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
 tags: [project, ai-jam-5, progress, last-ember]
-timestamp: 2026-10-20T23:00:00Z
+timestamp: 2026-10-21T02:00:00Z
 ---
 
-# Last Ember - Build Progress (2026-10-20)
+# Last Ember - Build Progress (2026-10-21)
 
-Status of the implementation compared with the plan in [[tasks]] and [[tasks-files]]. Source of the facts: git and GitHub state of `origin/master` at commit `1d02b08` on 2026-10-20. Task ids, owners and hour estimates come from [[tasks]]. Hub: [[index]].
+Status of the implementation compared with the plan in [[tasks]] and [[tasks-files]]. Source of the facts: git and GitHub state of `origin/master` at commit `0350025` on 2026-10-21. Task ids, owners and hour estimates come from [[tasks]]. Hub: [[index]].
 
 ## Snapshot
 
-- **Date:** 2026-10-20. **Master:** `1d02b08`. 28 PRs merged (#1, #2, #4 to #31), no open PRs. #3 was closed without merging.
+- **Date:** 2026-10-21. **Master:** `0350025`. 29 PRs merged (#1, #2, #4 to #33), no open PRs. #3 was closed without merging.
 - **`src/game.ts` is still the scaffold demo** (74 lines, dot collector). **Nothing is playable yet.**
-- **What exists vs what is wired:** the foundation (host, core types, state, rng, tuning, migration, score, checks chain), the world generation core (grid, collision, LOS, BFS, carving, macro layout, places, loops, caches, explored and sample queries), the monster base and the full set of A-slice systems below the step loop (fx, camera, intent, movement, explore, depth, light, flame, pickups, combat, monsters, ai-lurker, director), the asset catalogs and resource registry (`assets/sprites.ts`, `sounds.ts`, `resources.ts`) and the first render modules (`render/keys.ts`, `view.ts`, `flame.ts`, `quality.ts`, plus the draw passes `light.ts`, `glow.ts`, `entities.ts` from A16) are on master. The render passes are on master but unwired: nothing consumes them until `render/index.ts` (A17). None of it is called from `game.ts` yet. Not on master: the step loop (`systems/step.ts`, `run.ts`, `screens.ts`), the rest of the render tree, the UI, the audio and the placeholder assets.
+- **What exists vs what is wired:** the foundation (host, core types, state, rng, tuning, migration, score, checks chain), the world generation core (grid, collision, LOS, BFS, carving, macro layout, places, loops, caches, explored and sample queries), the monster base and the full set of A-slice systems below the step loop (fx, camera, intent, movement, explore, depth, light, flame, pickups, combat, monsters, ai-lurker, director), the asset catalogs and resource registry (`assets/sprites.ts`, `sounds.ts`, `resources.ts`), the procedural placeholder art (`assets/placeholders-actors.ts`, `-world.ts`, `-ui.ts` from A9) and the first render modules (`render/keys.ts`, `view.ts`, `flame.ts`, `quality.ts`, plus the draw passes `light.ts`, `glow.ts`, `entities.ts` from A16) are on master. The render passes are on master but unwired: nothing consumes them until `render/index.ts` (A17). None of it is called from `game.ts` yet. Not on master: the step loop (`systems/step.ts`, `run.ts`, `screens.ts`), the rest of the render tree, the UI, the audio, the images and the atlas.
 - **Slice A is due 2026-10-20.**
 
 ## Done
@@ -32,6 +32,7 @@ Task ids and file lists follow [[tasks]]. "K" = Kittingsl, "E" = Elias (eliasste
 | A8 | `assets/sprites.ts` (109 lines), `assets/sounds.ts` (61), `assets/resources.ts` (145) | #28 | K | 19b6d82 | Sprite and sound catalogs; lazy resource registry that survives hot reload (`getResources()`, the perf ring lives there); actor-sheet helpers (eight north-first direction rows, frame counts from image width). Also added `checks/assets.check.ts` (78 lines, wired in `checks/all.ts`), which is not in the plan. CHANGELOG +1 line, README +2 lines. True merge commit. |
 | A14 | `render/keys.ts` (38), `render/view.ts` (51), `render/flame.ts` (16), `render/quality.ts` (82) | #29 | E | bd04c05 | New directory `src/render`. `quality.ts` already holds the auto ladder pulled forward from C6 (see Deviations). |
 | A16 | `render/light.ts` (169 lines), `render/glow.ts` (166), `render/entities.ts` (215) | #31 | E | 1d02b08 | Passes: `drawDarkness` (14), `drawMonsters` (10), `drawPlayer` (11), `drawEyes` (16, in `glow.ts`), `drawGlow` (17), `torchTip`. Medium tier, 2 chunks; retrospect found 1 major (escape darkness fade unreachable); quality gate `@ultrathink` 68/100 then 96/100 (PASS, 2 of 3 invocations); 129 behaviour mutants caught. Nothing consumes the passes until A17; missing art draws nothing (A15 and A9/A10 are not on master). |
+| A9 | `assets/placeholders-actors.ts` (226 lines), `placeholders-world.ts` (220), `placeholders-ui.ts` (108) | #33 | E | 0350025 | The task is K's in the plan; E built it at the owner's request. 45 ids / 314 anims / 1064 frames = the `SPRITES` manifest. `DrawFn` is declared in `placeholders-actors.ts` and re-exported by `placeholders-ui.ts` (R-150 cycle rule). Medium tier, retrospect clean (3 chunks incl. one empty-result retry), no gate. **A10 integration note:** placeholders draw in world units at scale 1, while `render/entities.ts` `drawFrame` scales 64 px sources by 0.5 / monster scale. So `drawSprite` must call `PLACEHOLDERS[id]` directly at scale 1 when no atlas rect exists; the hit-flash tint path needs its own placeholder branch; beacon charge uses `frame = floor(progress*4)`. Minor: devourer lunge stretch 5% (20% would fit), a mid-line `;` in `placeholders-world.ts`, `spec_entrance` without the additive r=48 circle. |
 | A18 | `world/grid.ts`, `world/collide.ts`, `world/los.ts` | #10 | K | 1a45469 | Also brought `caches.getSolid` forward from A22. Also added `scripts/check-a18.ts` (181 lines), which is not in the plan. |
 | A19 | `world/explored.ts`, `world/sample.ts`, `checks/world.check.ts` | #21 | K | 3b00021 | `world.check` wired in `checks/all.ts`. |
 | A20 | `world/bfs.ts`, `world/gen/carve.ts`, `world/gen/region.ts`, `world/gen/ca.ts` | #14 | K | 7146339 | |
@@ -56,7 +57,20 @@ Docs and CI PRs (no plan task):
 
 ## Partial
 
-- **A22 (K): PARTIAL.** On master via #20 (`d39b7a6`): `world/generate.ts` with `caveSeed`, `carveCore` and `MAX_ATTEMPTS` (the terrain attempts), and `world/caches.ts` with `getSolid`, `getDepthField`, `getZoneField`, `zoneAt`, `getBeaconRoom`, `isBeaconRoom`, `pathDistAt` and related derived caches, plus a BFS performance change. Still missing: the populated generator wrapper `generateCave`, the cave-result memo helper and `src/checks/caves.ts`. Per Kittingsl's CHANGELOG line, the wrapper and the memo helper are deferred to B4-B6. This status is to be confirmed by Kittingsl. A29 needs the populated cave.
+- **A22 (K): PARTIAL.** On master via #20 (`d39b7a6`): `world/generate.ts` with `caveSeed`, `carveCore` and `MAX_ATTEMPTS` (the terrain attempts), and `world/caches.ts` with `getSolid`, `getDepthField`, `getZoneField`, `zoneAt`, `getBeaconRoom`, `isBeaconRoom`, `pathDistAt` and related derived caches, plus a BFS performance change. Still missing: the populated generator wrapper `generateCave`, the cave-result memo helper and `src/checks/caves.ts`. Per Kittingsl's CHANGELOG line, the wrapper and the memo helper are deferred to B4-B6. This status is to be confirmed by Kittingsl. A29 needs the populated cave. The remainder is now built by E (see In progress).
+
+## In progress
+
+**Cave generator chain (in progress, built by E at the owner's request).** Owner decision 2026-10-21 (R-156..R-165 in [[architecture-rulings-3]] section 7): E implements the full chain now instead of waiting for Kittingsl. These tasks stay K-listed in [[tasks]]. Status of all four chunks: planned, plan in KB `notes/ai-jam-5-cave-generator-chain-plan`, about 8.5 plan hours (6-9 h wall clock). Merge order C1, C2, C3; A29 waits for C3.
+
+| Chunk | Scope | Plan task | Tier |
+|---|---|---|---|
+| C1 | pockets + teach | B4 | medium |
+| C2 | populate + validate | B5 | high, `@ultrathink` gate |
+| C3 | fallback + `generateCave` + attempt loop + memo helper + `src/checks/caves.ts` | B6 and the A22 rest | medium+, gate |
+| C4 | `cave.check` (fresh session, mutation proofs, retrospect, gate) | B9 part (R-162) | medium |
+
+Tunable cave depth: depth classes (R-164) are planned as chunk C5 after C4. The generator gets a `CaveParams` object (default class 3, no behaviour change).
 
 ## Not started
 
@@ -65,7 +79,7 @@ Nothing in these lists is on master. Slice A items carry an owner; the full plan
 **Slice A**
 
 - Elias: A15 (render tiles, memory, props), A17 (render index), A29 (`run.ts`, `screens.ts`, `step.ts`), A30 (`game.ts` facade).
-- Kittingsl: A7 (determinism and score checks), A9, A10 (assets), A11, A12, A13 (UI), A31, A32 (systems checks), the rest of A22.
+- Kittingsl: A7 (determinism and score checks), A10 (assets), A11, A12, A13 (UI), A31, A32 (systems checks). The rest of A22 is moving to E (see In progress).
 
 **Slice B (due 2026-10-22)**
 
@@ -77,7 +91,7 @@ Nothing in these lists is on master. Slice A items carry an owner; the full plan
 - Elias: C1, C2, C6.
 - Kittingsl: C3, C4, C5, C7, C8.
 
-Also absent from master: in `src/render`, everything except `keys`, `view`, `flame`, `quality`, `light`, `glow` and `entities` (no tiles, memory, props, index, overlay, particles); `src/ui` and `src/audio` entirely; in `src/assets`, everything except `sprites`, `sounds` and `resources` (no placeholders, images, atlas); `systems/run.ts`, `screens.ts`, `step.ts`; `core/storage.ts`; `world/route.ts`; `world/validate.ts`; `world/gen/populate.ts`, `pockets.ts`, `teach.ts`, `fallback.ts`; and the checks of A7, A31, A32 and slice B (including `src/checks/caves.ts`).
+Also absent from master: in `src/render`, everything except `keys`, `view`, `flame`, `quality`, `light`, `glow` and `entities` (no tiles, memory, props, index, overlay, particles); `src/ui` and `src/audio` entirely; in `src/assets`, everything except `sprites`, `sounds`, `resources` and the three `placeholders-*` files (no images, atlas); `systems/run.ts`, `screens.ts`, `step.ts`; `core/storage.ts`; `world/route.ts`; `world/validate.ts`; `world/gen/populate.ts`, `pockets.ts`, `teach.ts`, `fallback.ts`; and the checks of A7, A31, A32 and slice B (including `src/checks/caves.ts`).
 
 ## Remaining slice A and critical path
 
@@ -86,11 +100,11 @@ Slice A is due **2026-10-20**. The hours below are the **estimates** from the ta
 | Owner | Remaining tasks | Estimate |
 |---|---|---|
 | Elias | A15 3 h, A17 1 h, A29 2.5 h, A30 1.5 h | 8.0 h |
-| Kittingsl | A7 1.5 h, A9 3 h, A10 2 h, A11 2.5 h, A12 2.5 h, A13 1.5 h, rest of A22 (2.5 h in total), A31 2.5 h, A32 3 h | 21.0 h |
+| Kittingsl | A7 1.5 h, A10 2 h, A11 2.5 h, A12 2.5 h, A13 1.5 h, rest of A22 (2.5 h in total; now being done by E, see In progress), A31 2.5 h, A32 3 h | 18.0 h |
 
-Done so far, by plan estimates: **Elias 24.5 h** (A1 1 + A2 1.5 + A3 2 + A4 1 + A5 2 + A6 2 + A24 1.5 + A25 1.5 + A26 1.5 + A27 2 + A28 3 + A14 2 + A16 3.5). **Kittingsl 11.5 h** (A18 1.5 + A19 2 + A20 2 + A21 3 + A23 1 + A8 2) plus part of A22.
+Done so far, by plan estimates: **Elias 24.5 h** (A1 1 + A2 1.5 + A3 2 + A4 1 + A5 2 + A6 2 + A24 1.5 + A25 1.5 + A26 1.5 + A27 2 + A28 3 + A14 2 + A16 3.5). **Kittingsl 11.5 h** (A18 1.5 + A19 2 + A20 2 + A21 3 + A23 1 + A8 2) plus part of A22 (plan estimates unchanged). Done by Elias on Kittingsl's behalf, stated separately: **A9, 3 h** (#33).
 
-**Critical path:** A29 (waits for the populated `generateCave` of Kittingsl's A22) -> A15, A17 -> A30. A15 needs A9 (A8 is done), A17 needs A12 and A13. See the Cross-person critical path section in [[tasks]].
+**Critical path:** A15 is now unblocked on the art side (A8 and A9 are done). A29 waits for `generateCave` (chain C1-C3, built by E; see In progress). A17 needs A15, A12 and A13. A30 needs A17 and A29. See the Cross-person critical path section in [[tasks]].
 
 ## Deviations and decisions made during the build
 
@@ -121,6 +135,12 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - **A16 entity cull:** 48 px margin inside `entities.ts`; `view.ts` `inView` is unchanged.
 - **A16 direction pick (R-155):** `Math.round(a / (pi / 4) + 1e-9)`, clockwise.
 - **A8 added `checks/assets.check.ts`,** which is not in the plan (like `scripts/check-a18.ts`).
+- **A9 (#33):** `DrawFn` is declared in `placeholders-actors.ts` and re-exported by `placeholders-ui.ts` (R-150 cycle rule). Extra world helpers were added beyond the plan list. Simplifications: devourer lunge stretch 5% (20% would fit), `spec_entrance` without the additive r=48 circle. A10 rule: placeholders draw in world units at scale 1, so `drawSprite` calls `PLACEHOLDERS[id]` directly at scale 1 when no atlas rect exists (`drawFrame` scales 64 px sources by 0.5 / monster scale).
+- **T3 window [15,60] (R-156, owner):** the T3 carved-dark-patch scan widens from `[15, 30]` to `[15, 60]` tiles (the old window passed on only 29/62 seeds). Rulings: [[architecture-rulings-3]] section 7.
+- **Validation rule 6 cuts at 25 / 50 / 75 % (R-157, owner):** the line-of-route test cuts the segment at those points instead of blocking the whole segment (62/62 vs 54/62 seeds). The exact blocked footprint per cut is a GAP for the implementer.
+- **Populate widens `main` tiles (R-158, owner):** fixes rule 7 after `fixDiagonals` (4/62 seeds failed); adds floor only, `carveCore` and `ca.ts` are not reordered.
+- **Fallback (R-163, owner):** fixed ring geometry, 0 draws; new keys `T.cave.pocketDepth` 10 (main caves) and `T.cave.fallbackPocketDepth` 5.
+- **`finalizeCave` (R-160, owner):** new export of `world/generate.ts`; computes `stats.mainLoop` once per accepted cave for `generateCave` and the chunked game path. Signature is a GAP for the implementer.
 - **R-007:** `depthOf` and `zoneOfDepth` live in `core/score.ts`, not in `systems/depth.ts`.
 - **`devourerMul` pulled forward from C1** into `entities/monster.ts` (done in #23, A24 part 2). This closes open question 8 of [[tasks]] (E adds it; K reviews the hunk).
 - **A18 brought `caches.getSolid` forward from A22** and added `scripts/check-a18.ts`, which is not in the plan.
@@ -148,6 +168,12 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - KB follow-ups: `genPending` and `genAttempt` in state-2 section 9 and rulings-2 section 9; the stale `init()` literal in state-2 section 10; `wrapPi` and `segDist` in modules-core section 3.6.
 - Compare the runner labels in `AGENTS.md` and `README.md` with `ci.yml`.
 - Run the browser check of A1: `npm run dev`, no right-click menu, console shows `[hmr] game.ts swapped, state kept`.
+- **Depth classes (R-164):** owner to approve or trim them (classes 3 + 4 about 4 h, classes 1 + 2 optional) and to confirm they ship after C4 as chunk C5.
+- **A10 note (scale 1):** `drawSprite` must call `PLACEHOLDERS[id]` directly at scale 1 when no atlas rect exists; the hit-flash tint path needs its own placeholder branch; beacon charge uses `frame = floor(progress*4)` (see the A9 row).
+- **T3 window vs teaching text (architect call needed):** the widened T3 window `[15, 60]` (R-156) contradicts CG2 section 4 ("all values <= 34 < beaconDist"), SAE1 section 5 ("T1-T4 path 7-24") and CG2 section 6.1 row 12.
+- **Leftover "4 draws" mentions** of `'cave:fallback'` (SAE1 section 6, `architecture-determinism.md` line 107): R-163 makes it 0 draws; fix when determinism is next edited.
+- **Rulings-3 intro line** still calls every ruling of the file an architect default; section 7 overrides it (R-156..R-165 include OWNER rulings). The intro line is not edited.
+- **Fallback ring has zero plant slack:** it yields exactly 6 chamber plants, the rule-11 minimum. Verify in chunk C2.
 - Questions already in [[last-ember-open-questions]] stay open there.
 
 ## Related
@@ -159,6 +185,7 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - [[architecture-rulings]]
 - [[architecture-rulings-2]]
 - [[architecture-rulings-3]]
+- [[ai-jam-5-cave-generator-chain-plan]]
 - [[architecture-systems]]
 - [[architecture-systems-3]]
 - [[architecture-systems-4]]

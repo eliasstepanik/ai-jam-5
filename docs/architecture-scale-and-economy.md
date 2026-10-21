@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Map Scale Ruling (binding) – 1/3 Map Size and Path Length
 description: Binding ruling part 1 – owner decision 2026-10-18 keeps the 6–8 minute run target and enlarges the map. Time model solved for the entrance→Beacon path length band, escape-time check, map-size comparison (256x192, 320x240, 384x288), the 320x240 decision with a deterministic macro-layout pass, new rejection rules and loop-tunnel constants, generation time budget with chunked generation, unchanged depth/zone normalisation, and the rescaled fallback ring cave.
 tags: [project, ai-jam-5, architecture, last-ember, rulings, balance]
-timestamp: 2026-10-18T09:00:00Z
+timestamp: 2026-10-21T01:00:00Z
 ---
 
 # Last Ember – Map Scale Ruling (binding) – 1/3
@@ -29,7 +29,7 @@ Design point: competent (mid) run = **420 s**.
 
 Solve: `0.4267 D + 0.1733 D + 12 + 30 + 10 + 5 = 420` → `0.6 D = 363` → **D = 605**, rounded **D\* = 600 tiles**.
 
-Band: ±20 % (480–720) gives runs of 345–489 s = 5.75–8.15 min, outside 6–8 min at both ends. **Band = ±15 %: `DMIN = 510`, `DMAX = 690`.** Mid run at DMIN: `0.6 × 510 + 57 = 363 s` (6.05 min); at DMAX: `0.6 × 690 + 57 = 471 s` (7.85 min).
+Band: ±20 % (480–720) gives runs of 345–489 s = 5.75–8.15 min, outside 6–8 min at both ends. **Band = ±15 %: `DMIN = 510`, `DMAX = 690`.** Mid run at DMIN: `0.6 × 510 + 57 = 363 s` (6.05 min); at DMAX: `0.6 × 690 + 57 = 471 s` (7.85 min). Band is the class-3 default; see [[architecture-rulings-3]] R-164 for planned depth classes.
 
 Split at D\* = 600 (mid): descent 256 s walk + 52 s stops = **308 s (73 %)**, Beacon 5 s (1 %), escape **104 s (25 %)**.
 
