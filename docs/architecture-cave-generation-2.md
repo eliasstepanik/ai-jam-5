@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Cave Generation (2/4) – Zones, Placement, Validation, Tests
 description: Last Ember cave generator part 2 – zone assignment from path depth and the zone cache, dead-end pocket detection and dark chambers, per-zone placement tables for resin, plants, veins, decor and initial monsters with spacing and sub-stream tags, the zone-1 teaching layout, render classification, bounded retries with a deterministic ring-cave fallback, validateCave invariants, performance budget, cache rules and npm run check tests.
 tags: [project, ai-jam-5, architecture, last-ember, world]
-timestamp: 2026-10-18T12:00:00Z
+timestamp: 2026-10-21T01:00:00Z
 ---
 
 # Last Ember – Cave Generation (2/4)
@@ -67,7 +67,7 @@ Pre-pass fields (no draws), built once per attempt on `CaveCore`:
 Pocket detection:
 
 1. **Leaves:** floor tiles `L` with `dist[L] > 0`, not in `beaconMask`, and every floor 4-neighbour `j` has `dist[j] <= dist[L]`. Scan in index order.
-2. **Flood:** from `L` over floor tiles with `dist >= dist[L] - POCKET_DEPTH` (`POCKET_DEPTH = 10`). A shared `stamp: Int32Array` (stamp = leaf ordinal) bounds the work.
+2. **Flood:** from `L` over floor tiles with `dist >= dist[L] - POCKET_DEPTH` (`POCKET_DEPTH = T.cave.pocketDepth = 10` for main caves, unchanged behaviour; the fallback ring uses `T.cave.fallbackPocketDepth = 5`; **amended by [[architecture-rulings-3]] R-163**, key in [[architecture-tuning]] §8). A shared `stamp: Int32Array` (stamp = leaf ordinal) bounds the work.
 3. **Reject** if the flood reaches a tile with `dist > dist[L]` (bump, not a dead end), touches `main` or `beaconMask`, has size outside `12..90` tiles, or its **neck** (flood tiles with `dist = dist[L] - POCKET_DEPTH`) has more than 4 tiles.
 4. **Dedupe:** a leaf already stamped by an accepted pocket is skipped. Result: `Pocket = { leaf, tiles: number[], zone: zoneOfDepth(depthOf(dist[leaf], bd)), size }` in leaf index order.
 
@@ -156,13 +156,13 @@ Goal: within the first ~25 path tiles the player meets light refuel, a vein, a d
 |---|---|---|
 | T1 resin (small) | `main` tile with `dist` in `[7, 11]`, `wide2`; first in `main` order drawn by `rnd.int` | widen to `[7, 20]`; `main` always has such tiles |
 | T2 vein `copper`, 2 pieces | wall 4-adjacent to a `main` tile with `dist` in `[12, 20]` | any wall with a floor neighbour, `dist` in `[8, 40]`, zone 1 |
-| T3 dark patch | zone-1 pocket with leaf `dist <= 40`, chosen in `'cave:rooms'` | carve (below) |
+| T3 dark patch | zone-1 pocket with leaf `dist <= 40`, chosen in `'cave:rooms'` | carve (below; scan window widened to `[15, 60]` by [[architecture-rulings-3]] R-156) |
 | T3 loot | 1 plant (zone-1 plant quota) | – |
 | T4 lurker spawn | floor tile, all 8 neighbours floor, `dist` in `[14, 24]`, Euclid 8–16 tiles from the entrance, not on `main` | allow `main`; then `dist` in `[14, 40]` |
 
 Copper for T2: its flame keeps the radius and widens the perfect window, so the first toss never punishes. Euclid ≥ 8 tiles keeps the lurker outside the start light (170 px + 60 px gap ≈ 7.2 tiles) and inside `despawnPx = 560` (≤ 24 path tiles ≈ ≤ 768 px straight, so also require Euclid ≤ 16 tiles = 512 px). Its `lungeCd` starts from `T.monsters.lurker.lungeCdStartS`.
 
-**Carved dark patch** (when zone 1 has no pocket): scan `main` tiles with `dist` in `[15, 30]` in order; for each, try the 4 directions E, S, W, N; the 3×3 block one step beyond the wall neighbour must be all wall, and every 4-neighbour of the block except the attachment tile must be wall (no break-through, so no new shortcut). Carve the wall neighbour as `'.'` and the block as `','`; set `dist` locally by BFS from the attachment (all values ≤ 34 < `beaconDist`). The first success wins; no draw. If none succeeds, the attempt fails (§6).
+**Carved dark patch** (when zone 1 has no pocket): scan `main` tiles with `dist` in `[15, 60]` in order (**amended by [[architecture-rulings-3]] R-156**: was `[15, 30]`, which passes T3 on only 29/62 seeds; `[15, 60]` is needed for the ≥ 50/62 attempt-0 rule of [[architecture-cave-generation-4]] §7 test 2); for each, try the 4 directions E, S, W, N; the 3×3 block one step beyond the wall neighbour must be all wall, and every 4-neighbour of the block except the attachment tile must be wall (no break-through, so no new shortcut). Carve the wall neighbour as `'.'` and the block as `','`; set `dist` locally by BFS from the attachment (all values ≤ 34 < `beaconDist`). The first success wins; no draw. If none succeeds, the attempt fails (§6).
 
 Initial monsters elsewhere: **none.** Pre-placed shades in zones 2–4 would be deleted at once by the despawn rule (`!seen && dist > 560 px`, [[architecture-monsters-ai-2]]). The director spawns by zone weights ([[architecture-tuning-2]]).
 
@@ -200,14 +200,14 @@ export function generateCave(seed: number, opts: GenOpts = {}): CaveResult {
 
 Expected: ≈ 1.1 attempts per seed, ≥ 50 of 62 test seeds on attempt 0 ([[architecture-cave-generation-4]] §7 test 2). Attempts are pure in `(seed, a)`, so the same seed always ends on the same attempt. In the game the loop is chunked, one attempt per `update` ([[architecture-cave-generation-3]] §7); `generateCave` stays the synchronous form for checks.
 
-**Fallback ring cave** (`fallbackCave(seed)`, stream `'cave:fallback'`, 4 draws). Steps 1, 3, 4, 6 at 320×240 → [[architecture-cave-generation-4]] §4 (centre `(160, 120)`, `rx 148`, `ry 108`, chord `y 119..121`, column 160, Beacon `(160, 222)`, accept `beaconDist >= 459`). Shape:
+**Fallback ring cave** (`fallbackCave(seed)`). **Amended by [[architecture-rulings-3]] R-163, R-165:** the ring is built from FIXED geometry (`A = 0`, six rooms at `k·60°`, no wobble, no angle jitter), so it makes **0 draws** (the former "4 draws" of R-152 and the planner's 8 draws are both superseded); the tag `'cave:fallback'` (`hashSeed(seed >>> 0, 'cave:fallback')`) is used only to derive `cs`. The steps below that mention `A`, `φ` or `rnd.int` describe the superseded wobble variant and are kept as history. Steps 1, 3, 4, 6 at 320×240 → [[architecture-cave-generation-4]] §4 (centre `(160, 120)`, `rx 148`, `ry 108`, chord `y 119..121`, column 160, Beacon `(160, 222)`, accept `beaconDist >= 459`). Shape:
 
 1. All wall `w×h`. Centre `(cx, cy)`, radii `rx`, `ry`.
 2. Ring corridor: carve every tile where `q = hypot((x - cx) / rx', (y - cy) / ry')` is in `[1 - 2/ry', 1 + 2/ry']` (≈ 4 tiles wide), with `rx' = rx + A sin(3θ + φ)`, `ry' = ry + A sin(3θ + φ)`, `A = rnd.int(0, 3)`, `φ = rnd.next() * 2π`, `θ = atan2`.
 3. Chord: horizontal corridor 3 tall at `y = cy - 1..cy + 1`, from the left ring to the right ring (second loop).
 4. Entrance: topmost ring floor tile in column `cx`. Beacon chamber: 7×7 room centred at `(cx, cy + ry - 6)` merged into the bottom of the ring; Beacon = its max-`dist` tile (BFS, lowest index tie).
-5. Six dead-end pockets: 4×4 rooms attached outward to the ring at angles `θk = k·60° + rnd.int(0, 20)°`, `k = 0..5`, each via a 2-wide, 3-long stub. They become chambers by §2.
-6. Then the normal `populate` (Beacon cluster in the chamber band) + `validateCave`. Distance ≈ 511 ≥ fallback floor 459. If validation still fails (should be impossible), retry with `A = 0` and angles `k·60°` exactly; that parameter set is a fixed test case (part 4 §7 test 6). `res.fallback = true`, logged once with `console.warn` by `startRun` (not in the pure generator).
+5. Six dead-end pockets: 4×4 rooms attached outward to the ring at angles `θk = k·60° + rnd.int(0, 20)°`, `k = 0..5`, each via a 2-wide, 3-long stub. They become chambers by §2. **R-163:** no wobble and no jitter (fixed `k·60°`); the six pockets are detected at `T.cave.fallbackPocketDepth = 5` (probe: 200/200 seeds at depth 4, 5, 6; 0/200 at 10 with the spec wobble).
+6. Then the normal `populate` (Beacon cluster in the chamber band) + `validateCave`. **R-165 (DEFAULT, architect):** `populate` for the fallback gets `cs = hashSeed(seed, 'cave:fallback')`, `a = 8`. Distance ≈ 511 ≥ fallback floor 459. The former "retry with `A = 0`" is now the only variant (see the R-163 note above); that fixed parameter set is the test case of part 4 §7 test 6. Known leftover risk (R-163): the ring yields exactly 6 chamber plants = the rule-11 minimum, no slack; verify in chunk C2. `res.fallback = true`, logged once with `console.warn` by `startRun` (not in the pure generator).
 
 ### 6.1 `validateCave(res): { ok: boolean; why: string }` – every invariant
 
@@ -218,8 +218,8 @@ Expected: ≈ 1.1 attempts per seed, ≥ 50 of 62 test seeds on attempt 0 ([[arc
 | 3 | Connected | one BFS from the entrance reaches EVERY floor tile (no orphan regions) |
 | 4 | Entrance | floor, `dist = 0`, all 8 neighbours floor (spawn space) |
 | 5 | Beacon reachable | Beacon floor, `dist = beaconDist = max(dist)`, `510 <= beaconDist <= 690` (`BEACON_DIST_BAND`); fallback `459 <= beaconDist <= 690` ([[architecture-cave-generation-4]] §5) |
-| 6 | Loops exist | for each `main` quarter between 20 % and 80 % of the path, block tiles within Chebyshev 2 of that segment; ≥ 1 of the 3 quarter-tests still reaches the Beacon (a real bypass, not a 2×2 cycle) |
-| 7 | Corridors wide enough | every `main` tile is `wide2` (fits r = 16 movers; devourer r = 30 may brush walls, it slides) |
+| 6 | Loops exist | for each `main` quarter between 20 % and 80 % of the path, block tiles within Chebyshev 2 of that segment; ≥ 1 of the 3 quarter-tests still reaches the Beacon (a real bypass, not a 2×2 cycle). **Amended by [[architecture-rulings-3]] R-157:** the line-of-route test cuts the segment at the 25 / 50 / 75 % points instead of blocking the whole segment (whole-segment reading fails 8/62 seeds, quarter-point cuts pass 62/62) |
+| 7 | Corridors wide enough | every `main` tile is `wide2` (fits r = 16 movers; devourer r = 30 may brush walls, it slides). **Amended by [[architecture-rulings-3]] R-158:** `fixDiagonals` runs after `widen` in `ca.ts` and can carve lone tiles, so `populate` widens those `main` tiles (adds floor only, R-049 stays true); otherwise 4/62 seeds (19, 53, 56, 59) fail |
 | 8 | Zones monotone | `zoneOfDepth(depthOf(dist, bd))` along `main` never decreases; first is 1, last is 4 |
 | 9 | Items on floor | every pickup tile and vein `stand` is floor with `dist >= 0`; every vein `tile` is `'#'` 4-adjacent to its `stand`; plants on `','` |
 | 10 | Spacing | all rules of §3.3, re-checked |

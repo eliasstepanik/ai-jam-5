@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)"
 description: Task plan for Last Ember – who owns which code (Elias and Kittingsl), assignment principles, ownership summary, task index for slices A, B and C with hours and dependencies, per-person totals, risks, working process and open questions for the owner.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-20T23:00:00Z
+timestamp: 2026-10-21T03:00:00Z
 ---
 
 # Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)
@@ -22,7 +22,7 @@ Task plan written by the project-manager on 2026-10-18. It splits the Last Ember
 - Slice A due **2026-10-20**. Slice B due **2026-10-22**.
 - Asset freeze **2026-10-27**.
 - Deadline **2026-10-31 03:00 UTC**. Oct 30 is the last working day.
-- Build status (done, partial, remaining) as of 2026-10-20: see [[progress]].
+- Build status (done, partial, remaining) as of 2026-10-21: see [[progress]].
 
 ## 1. Assignment principles
 
@@ -37,7 +37,7 @@ Task plan written by the project-manager on 2026-10-18. It splits the Last Ember
   - Checks: the systems checks (A31, A32, B11, devourer rows in `ai.check` via C3), `world.check`, and the determinism and score checks (A7). `scripts/check-guard.ts` is E's (A5).
 - **Seam S1 is a cross-person integration point.** `render/index.ts` (A17, E) calls `ui/hud` and `ui/menus` (A12, A13, K), so A17 depends on A12 and A13. Agree the call signatures from [[architecture-modules-render]] and [[architecture-modules-ui-assets]] before E starts A17, and merge A12 and A13 first.
 - **Test author is not the implementer.** K writes world generation and world queries; E writes `cave.check` and `rocks.check` (the author differs from the implementer for cave generation). K still writes the systems checks A31/A32 (and B11), which cover E's code, and the determinism and score checks, which cover E's core. `world.check` tests K's own world queries (same author). This gives cross-review for free.
-- **Start order.** K can start now, with no E dependency, on A8 and A11 (A9 follows A8). K waits for merged core types (A2) before A12, A13 and A18, and for A3 before A20 and A23. E can start now on A1, A2, A3 and A4 (noise, view and render.check need no State). A10 (images, atlas.json seed, check-assets) needs Elias's A4 (earliest hour 21.5): schedule A10 after A19 and A7, or the Kittingsl slice-A finish slips from hour 32.5 to about 38.5.
+- **Start order.** K can start now, with no E dependency, on A8 and A11 (A9 follows A8). (A9 was built by E on 2026-10-21 at the owner's request, PR #33.) K waits for merged core types (A2) before A12, A13 and A18, and for A3 before A20 and A23. E can start now on A1, A2, A3 and A4 (noise, view and render.check need no State). A10 (images, atlas.json seed, check-assets) needs Elias's A4 (earliest hour 21.5): schedule A10 after A19 and A7, or the Kittingsl slice-A finish slips from hour 32.5 to about 38.5.
 - **Load balance.** Raw hours are E 56.5 and K 71.2. E also spends about 20h reviewing and merging about 32 K PRs (one per K task) and runs the Day-4 and Day-6 tuning. So E carries about 76.5h against K's 71.2h, and the real load is roughly equal. K carries the most complex algorithmic work (cave generation).
 - **One PR per task.** A task has at most 4 cohesive files and must be complete, with no stubs. Foundation tasks (A1, A2, A3) merge first. Each new code surface carries its wiring: import and call site, mount in the render tree, and an import in `all.ts`.
 - **Cut and slip order.** If slice A overruns, A31 and A32 (checks) slip first, then the partial hud parts. Gameplay files never slip. The cut order from the production plan applies after that (Devourer, then AI animation, then escape simplification).
@@ -85,7 +85,7 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | A6 | E | checks/input, checks/all, state.check, package.json (wires `node src/check.ts && node src/checks/all.ts && node scripts/check-guard.ts`; check-assets from A10 is NOT wired until C8, see section 1) | 2 | A5. **DONE** (#13) |
 | A7 | K | determinism.check, score.check | 1.5 | A6 (x-person) |
 | A8 | K | sprites, sounds, resources | 2 | None, start now. **DONE** (#28) |
-| A9 | K | 3x placeholders-* | 3 | A8 |
+| A9 | K | 3x placeholders-* | 3 | A8. **DONE** (#33; built by E at the owner's request) |
 | A10 | K | images, atlas.json seed, check-assets | 2 | A8, A9, A4 (x-person) |
 | A11 | K | layout, strings, draw | 2.5 | None for the code; Input.view from A1 (x-person) |
 | A12 | K | menus, platform | 2.5 | A11, A2 (x-person) |
@@ -98,7 +98,7 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | A19 | K | explored, sample, world.check | 2 | A18, A22. **DONE** (#21) |
 | A20 | K | bfs, carve, region, ca | 2 | A3 (x-person); start right after A3 merges. **DONE** (#14) |
 | A21 | K | macro, places, loops | 3 | A20. **DONE** (#17) |
-| A22 | K | generate, caches, checks/caves | 2.5 | A21; gates E's A29 (x-person). **PARTIAL** (#20 on master; generateCave wrapper and checks/caves.ts pending) |
+| A22 | K | generate, caches, checks/caves | 2.5 | A21; gates E's A29 (x-person). **PARTIAL** (#20 on master; generateCave wrapper and checks/caves.ts pending); remainder (generateCave, memo helper, checks/caves.ts) now being built by E together with B4-B6 as chunks C1-C4 (rulings R-156..R-165) |
 | A23 | K | monster, steer | 1 | A3 (x-person). **DONE** (#16) |
 | A24 | E | fx, camera, depth, light | 1.5 | A3; depth.ts needs A22 caches (getDepthField), light.ts needs devourerMul (entities/monster.ts, pulled forward from C1). **DONE** (#9, #23) |
 | A25 | E | intent, movement, explore | 1.5 | A24, A18 (x-person: A18 is K's); explore.ts done in #23 after A19/A24 part 2. **DONE** (#19, #23) |
@@ -118,12 +118,12 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | B2a | K | world/route.ts (routeDist, downhill, playerSources, exitHeading); split out of the original B2 (3 h = 1.2 + 1.8) | 1.2 | A22 |
 | B2 | E | quake, rocks (imports route.ts) | 1.8 | B1, B2a (x-person) |
 | B3 | E | ai-stalker, ai-escape | 1 | A28 |
-| B4 | K | gen/pockets, gen/teach | 2 | A22 |
-| B5 | K | validate, gen/populate | 3 | B4 |
-| B6 | K | gen/fallback; extends caches and generate | 1.5 | B5 |
+| B4 | K | gen/pockets, gen/teach | 2 | A22; being built by E at the owner's request (2026-10-21), see A22 |
+| B5 | K | validate, gen/populate | 3 | B4; being built by E at the owner's request (2026-10-21), see A22 |
+| B6 | K | gen/fallback; extends caches and generate | 1.5 | B5; being built by E at the owner's request (2026-10-21), see A22 |
 | B7 | E | core/storage; extends flame (minerals), pickups (size) | 2 | A26 |
 | B8 | E | Extends movement (roll), run (escape win), director (escape table), game.ts (audioStep) | 2 | B2, B3, B12 (x-person: B12 is K's) |
-| B9 | E | cave.check, rocks.check | 3 | B6, B2 (x-person: B6 is K's; E tests K's generator) |
+| B9 | E | cave.check, rocks.check | 3 | B6, B2 (x-person: B6 is K's; E tests K's generator); split by R-162: cave.check is chunk C4 (E, fresh session), rocks.check stays after B2 |
 | B10 | E | Slice-B integration, Day-6 playtest, tuning | 2 | All of B |
 | B11 | K | economy.check, escape.check | 1.5 | B1, B7 (x-person) |
 | B12 | K | audio trigger, mixer, engine | 3 | A8 |
@@ -148,6 +148,8 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | C6 | E | particles full table, quality auto ladder, overlay polish, tiles atlas swap (the quality auto ladder moved to A14, #29) | 3 |
 | C7 | K | UI fades and pulses (menus, hud) | 2 |
 | C8 | K | Final asset integration by Oct 27 freeze (repack, check-assets, PENDING_AUDIO empty, README AI-process rows; the `package.json` hunk that adds check-assets to `npm run check` is made by Elias in the C8 PR review, as a commit on the PR branch or a follow-up PR; see section 1) | 2 |
+
+Note (2026-10-21): tunable cave depth classes (R-164) are planned as chunk C5 after C4 of the cave generator chain (see A22); not counted in the hours above.
 
 ## 5. Per-person totals
 
@@ -239,6 +241,7 @@ Closed by the owner on 2026-10-18: the split of render and lighting (Elias) and 
 - 2026-10-18 (4): corrected PR count (23, including #24), check chain, file totals after the toast.ts removal; approvals-pending statements retired; invite status corrected (K is a collaborator), #24 added, approvals wording retired in the ownership row and A1 row
 - 2026-10-19 (5): progress synced to master bd04c05 (A8, A14, A27, A28 done; PRs #26 to #29; R-127 owner ruling: covers all countdowns)
 - 2026-10-20 (6): progress synced to master 1d02b08 (A16 done, PR #31)
+- 2026-10-21 (7): progress synced to master 0350025 (A9 done, PR #33); owner decision: E builds the cave generator chain (A22 rest, B4-B6) now, rulings R-156..R-165
 
 ## Related
 

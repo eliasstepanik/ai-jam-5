@@ -3,12 +3,12 @@ type: architecture
 title: Last Ember – Architecture Hub (precedence, reading order, layer rule, slices, owner decisions)
 description: Entry point for the Last Ember architecture – lists every architecture file with title and purpose in groups, the precedence order, a reading order per task, the layer rule, the vertical slices A/B/C with first chunks, the pending owner decisions (OD-1 to OD-7) and the resolved design issues E-1, E-2.
 tags: [project, ai-jam-5, architecture, last-ember]
-timestamp: 2026-10-18T19:20:00Z
+timestamp: 2026-10-21T01:00:00Z
 ---
 
 # Last Ember – Architecture Hub
 
-**Status (2026-10-18):** Architecture written 2026-10-17 by parallel authors; conflicts resolved in [[architecture-rulings]], [[architecture-rulings-2]] and [[architecture-rulings-3]]; map enlarged to 320×240 (scale and economy rulings, SAE1–SAE4). E-1 and E-2 are RESOLVED (section 6). **OD-1, OD-3 and OD-7 were approved on 2026-10-18; implementation is under way (see [[progress]]).**
+**Status (2026-10-18):** Architecture written 2026-10-17 by parallel authors; conflicts resolved in [[architecture-rulings]], [[architecture-rulings-2]] and [[architecture-rulings-3]]; map enlarged to 320×240 (scale and economy rulings, SAE1–SAE4). E-1 and E-2 are RESOLVED (section 6). **OD-1, OD-3 and OD-7 were approved on 2026-10-18; implementation is under way (see [[progress]]).** Cave generator chain (A22 rest, B4-B6) implementation started 2026-10-21 under R-156..R-165 ([[architecture-rulings-3]] §7); depth classes R-164 planned.
 
 Project hub: [[index]]. Jam facts: [[jam-brief]]. Implementation agents read this file first, then the files for their task (section 2).
 
@@ -17,7 +17,7 @@ Two review tasks (gameplay consistency, and render/world consistency) did not pr
 ## 1. Precedence
 
 1. [[last-ember-design]] – the product spec. Outranks everything.
-2. [[architecture-rulings]], [[architecture-rulings-2]] and [[architecture-rulings-3]] – binding conflict resolutions (R-001 to R-124), together with the binding scale and economy rulings SAE1–SAE4 ([[architecture-scale-and-economy]] … [[architecture-scale-and-economy-4]]).
+2. [[architecture-rulings]], [[architecture-rulings-2]] and [[architecture-rulings-3]] – binding conflict resolutions (R-001 to R-165), together with the binding scale and economy rulings SAE1–SAE4 ([[architecture-scale-and-economy]] … [[architecture-scale-and-economy-4]]).
 3. `architecture-modules-*` – file ownership, layers, signatures.
 4. Topical specs (state, systems, tuning, monsters, world, render, resources, ui, assets).
 5. Older text.
@@ -58,7 +58,7 @@ Always first: this hub, [[architecture-rulings]], [[architecture-rulings-2]], [[
 |---|---|---|
 | [[architecture-rulings]] | Last Ember – Architecture Rulings (binding conflict resolutions) | Part 1: precedence, layer rule, R-001 to R-065 (layering, core/state/save, checks, world, rocks) |
 | [[architecture-rulings-2]] | Last Ember – Architecture Rulings (binding conflict resolutions) | Part 2: systems and AI, render and audio, UI/assets/host rulings, scale rulings R-102–R-107, consolidated State additions, owner decisions, gaps |
-| [[architecture-rulings-3]] | Last Ember – Architecture Rulings (3/3) – Scale Follow-ups and Gap Closures | R-108–R-124: cave-generator GAP closures (incl. per-attempt seed derivation), scale follow-ups, accepted known weaknesses, Day-4 calibration assumptions |
+| [[architecture-rulings-3]] | Last Ember – Architecture Rulings (3/3) – Scale Follow-ups and Gap Closures | R-108–R-165: cave-generator GAP closures (incl. per-attempt seed derivation), scale follow-ups, accepted known weaknesses, Day-4 calibration assumptions; §7 R-156–R-165 cave generator chain rulings of 2026-10-21 (T3 window, rule 6/7, finalizeCave, fallback pockets, planned depth classes) |
 
 ### Scale and economy rulings (BINDING, 320×240)
 

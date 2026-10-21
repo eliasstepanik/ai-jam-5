@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Cave Generation (4/4) – 320x240 Placement Quotas, Validation, Fallback, Tests
 description: Last Ember cave generator part 4 – per-zone placement quotas with densities per 100 path tiles and count scaling by beaconDist, front-loaded near-path resin, the Beacon resin cluster placed first, replaced validateCave rules #1, #5, #11, #13 and the new always-winnable rule #14, the rescaled fallback ring cave, the 320x240 performance numbers and the rewritten npm run check cave test list. Copies the binding values of the scale and economy rulings.
 tags: [project, ai-jam-5, architecture, last-ember, world]
-timestamp: 2026-10-18T12:00:00Z
+timestamp: 2026-10-21T01:00:00Z
 ---
 
 # Last Ember – Cave Generation (4/4) – Placement, Validation, Fallback, Tests at 320×240
@@ -53,12 +53,12 @@ Order (replaces part 2 §3.4 step 5): the cluster is placed **FIRST** in `'cave:
 
 ## 4. Fallback ring cave at 320×240 (replaces part 2 §6 steps 1, 3, 4, 6; SAE1 §6)
 
-1. All wall 320×240. Centre `(160, 120)`. `rx = 148`, `ry = 108`. Ring band and wobble as part 2 §6 step 2 (stream `'cave:fallback'`, still 4 draws).
+1. All wall 320×240. Centre `(160, 120)`. `rx = 148`, `ry = 108`. Ring band as part 2 §6 step 2. **Amended by [[architecture-rulings-3]] R-163 / R-165:** FIXED geometry (`A = 0`, six rooms at `k·60°`, no wobble, no angle jitter), so the ring makes **0 draws** (was "still 4 draws"; R-152's 4 and the planner's 8 are superseded); the tag `'cave:fallback'` is used only to derive `cs = hashSeed(seed, 'cave:fallback')`, passed to `populate` with `a = 8`. The six pockets are accepted at `T.cave.fallbackPocketDepth = 5` (200/200 seeds at 4, 5, 6; 0/200 at 10 with the old wobble); `T.cave.pocketDepth = 10` stays for main caves.
 2. Chord: horizontal corridor 3 tall at `y = 119..121`.
 3. Entrance: topmost ring floor tile in column 160. Beacon chamber 7×7 centred at `(160, 222)`.
 4. Pockets unchanged (six 4×4 rooms, 2-wide 3-long stubs, outward). Outermost `x = 316 < 318`, `y = 236 < 238`: inside `MAP_BORDER`.
 5. Same Beacon-cluster rule (§3); the 7×7 chamber band always has candidates.
-6. Distance ≈ 511 (half ring `2(rx + ry) = 512`). `validateCave` accepts `fallback === true` with `beaconDist >= 0.9 × DMIN = 459`; the upper bound 690 still applies. Retry with `A = 0` and angles `k·60°` unchanged (fixed test case). ponytail: ring kept for its code and test; swap for a fixed macro tree (ecc 13, no CA) if fallback runs feel short.
+6. Distance ≈ 511 (half ring `2(rx + ry) = 512`). `validateCave` accepts `fallback === true` with `beaconDist >= 0.9 × DMIN = 459`; the upper bound 690 still applies. The former "retry with `A = 0`" is now the only variant (R-163; it remains the fixed test case). Known leftover risk (R-163): the ring yields exactly 6 chamber plants = the rule-11 minimum, no slack; verify in chunk C2. ponytail: ring kept for its code and test; swap for a fixed macro tree (ecc 13, no CA) if fallback runs feel short.
 
 ## 5. `validateCave` changes (replaces part 2 §6.1 rows 1, 5, 11, 13; adds #14)
 
@@ -81,7 +81,9 @@ export const MARGIN = 15
 // 14b: E4 >= 1.163 * (bd / 4) + T.beacon.minStartE + MARGIN          // 1.163 = mid zone-4 E per path tile
 ```
 
-Rows 2–4, 6–10, 12 of part 2 §6.1 unchanged. Row 6 quarters run on a ≤ 1 000-tile `main`.
+Rows 2–4, 6–10, 12 of part 2 §6.1 unchanged apart from the amendments there (row 6: quarter-point cuts, [[architecture-rulings-3]] R-157; row 7: `populate` widens `main` tiles, R-158). Row 6 quarters run on a ≤ 1 000-tile `main`.
+
+**Depth classes (planned, R-164, chunk C5, not started):** the band `510..690` of row 5 (and fallback `>= 459`), the quotas of §1 (bd 510–690) and the rule-11 absolute minimums are the **class-3 default**. `validateCave` will take a `CaveParams`; for other classes the rule-11 minimums scale as `min(abs, floor(abs·bd/510))`, the fallback floor becomes `min(0.9·lo, 459)`, and the pickup cap of 60 is exceeded above bd 895 (rock cap 200 is reached near bd 865). Until C5 lands, every statement of this file is class 3.
 
 ## 6. Performance (replaces part 2 §7; SAE1 §4, SAE4 §1.7)
 
@@ -108,15 +110,20 @@ Zone field (part 2 §1): 76 800 writes ≈ 0.2 ms once per run. `wide2`: 4 × 76
 3. **Loops exist:** invariant 6 passes and `stats.loops >= 2` (macro loops + tunnels).
 4. **Beacon reachable:** BFS from the entrance reaches `beacon` with exactly `beaconDist` steps; `510 <= beaconDist <= 690`.
 5. **Zones monotone:** along `main`, `zoneOfDepth(depthOf(dist, bd))` non-decreasing, covers 1..4.
-6. **Fallback valid:** `fallbackCave(s)` for 20 seeds and the fixed `A = 0` set → valid, `fallback === true`, `459 <= beaconDist <= 690`, Beacon cluster present; `{ forceFail: true }` returns the fallback.
+6. **Fallback valid** (R-163: the ring now has only fixed geometry, so "the fixed `A = 0` set" is the ring itself): `fallbackCave(s)` for 20 seeds and the fixed `A = 0` set → valid, `fallback === true`, `459 <= beaconDist <= 690`, Beacon cluster present; `{ forceFail: true }` returns the fallback.
 7. **Placement counts:** per zone, counts equal the §1 scaling formula for the seed's `beaconDist` (short slots allowed, ≤ formula; unit-pin the bd 510 and 690 rows of the §1 table against the R-153 formula); totals ≥ §5 #11; near-path resin dist inside the first 60 % of its zone; cluster 3 resin in `[bd − 40, bd − 8]`; rule #14 holds; T1–T4 in range; no pickup off `wide2`; nothing with `dist < 6`.
 8. **Time budget:** `performance.now()` around the 62 generations of test 2: **total < 6 000 ms, max single attempt < 200 ms**; log mean and p95.
 9. **Cache agreement:** after `startRun(s, '42')`, `getDepthField(s)` (`Int32Array`) equals the generator's `dist`; `zoneAt` matches `zoneOfDepth(depthOf(d, bd))` on 500 sampled tiles.
-10. **Sub-stream isolation:** `{ skip: ['veins'] }` leaves `tiles`, resin and plant positions identical.
+10. **Sub-stream isolation:** `{ skip: ['veins'] }` leaves `tiles`, resin and plant positions identical. **Amended by [[architecture-rulings-3]] R-159:** `generateCave({ skip: ['veins'] })` would fail validation rule 11 (veins ≥ 24) and run the fallback, so the check calls `populate` twice (with and without `skip: ['veins']`) on ONE shared `carveCore` result and compares those, instead of calling `generateCave` twice.
 11. **Macro layout** (new, direct on `buildMacro`): 20 seeds → 47 tree edges + 2 loop edges unless `treeDraws === 64` (R-109: 0–2 loop edges), `'cave:macro'` draws = `1 + 81 × treeDraws + 96 + 47 + loops.length` (R-110), tree spans 48 cells, root in row 0, `ECC_MIN <= ecc <= ECC_MAX` or `treeDraws === 64`; Fisher–Yates uses exactly 81 draws per tree (count via a wrapping `Rnd`); free tiles of `M` = 52 288; log min/mean pockets per zone (R-116, not asserted).
 12. **Mask draw count** (new): `noiseFill` with any `M` consumes exactly `w·h` draws (next value of the stream equals the unmasked run's).
 13. **Rejection rows** (new): for the 62 seeds, `keep >= 16 000`, bbox ≥ 90 % of `w`, `h`, every macro cell ≥ 150 region floor tiles, entrance inside the root cell with `ty < 18`; log min cell floor and rejecting rule per seed (R-114: ≤ 3 / 62 attempt-0 failures from `CELL_FLOOR_MIN`).
 14. **Loop pair filter** (new): every committed pass-8 tunnel joins tiles in the same or graph-adjacent macro cells; post-tunnel `max D >= max(510, 0.95 Dmax0)`.
+15. **Fallback pockets** (new, [[architecture-rulings-3]] R-163): for 20 seeds, `fallbackCave(s)` accepts all 6 pockets at `T.cave.fallbackPocketDepth = 5` (6 chamber plants, the rule-11 minimum, no slack).
+
+**`finalizeCave` (R-160):** `stats.mainLoop` is computed once per accepted cave (R-115) by the new export `finalizeCave` of `src/world/generate.ts`, used by both `generateCave` and the chunked game path (the chunked path does not call `generateCave`). Its signature is a GAP for the implementer.
+
+Authorship (R-162): `cave.check` is written as chunk C4 in a fresh session from this §7 and the exported signatures only; independence comes from ≥ 8 mutation proofs against copies, an independent retrospect and the `@ultrathink` gate ≥ 95.
 
 Heavy only (`CHECK_HEAVY=1`, R-048): fallback rate `fallback === false` for ≥ 99 % of seeds 1..200 (≈ 13 s). Check runtime budget: SAE4 §1.10 (target < 15 s).
 

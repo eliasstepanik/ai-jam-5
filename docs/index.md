@@ -3,7 +3,7 @@ type: index
 title: ai-jam-5 – AI Browser Game Jam 5 (Last Ember)
 description: Hub for the ai-jam-5 project – itch.io AI Browser Game Jam 5 entry, theme TORCH; chosen concept Last Ember, scope status, and links to all project files.
 tags: [project, ai-jam-5, game-design, last-ember, index, game-jam]
-timestamp: 2026-10-18T19:15:00Z
+timestamp: 2026-10-21T03:00:00Z
 ---
 
 # ai-jam-5 – AI Browser Game Jam 5
@@ -18,7 +18,8 @@ timestamp: 2026-10-18T19:15:00Z
 
 ## Status
 
-- **Status (2026-10-18):** Last Ember chosen; scope: build what we can. Architecture written; map enlarged to 320×240. E-1 RESOLVED by architect (O2 + O3, O1 rejected), E-2 RESOLVED (owner: bigger map). **Implementation started 2026-10-18 after the owner approved OD-1, OD-3 and OD-7.** 23 PRs are merged: the foundation, the world generation core and most of the player-side systems are on master. `src/game.ts` is still the scaffold, so the game is not playable yet. Slice A is due 2026-10-20. Details: [[progress]].
+- **Status (2026-10-18):** Last Ember chosen; scope: build what we can. Architecture written; map enlarged to 320×240. E-1 RESOLVED by architect (O2 + O3, O1 rejected), E-2 RESOLVED (owner: bigger map). **Implementation started 2026-10-18 after the owner approved OD-1, OD-3 and OD-7.** 29 PRs are merged (#1, #2, #4 to #33): the foundation, the world generation core and most of the player-side systems are on master. `src/game.ts` is still the scaffold, so the game is not playable yet. Slice A is due 2026-10-20. Details: [[progress]].
+- **Cave generator chain (2026-10-21):** Cave generator chain (A22 rest, B4-B6) implementation started 2026-10-21 under R-156..R-165 ([[architecture-rulings-3]] §7); depth classes R-164 planned.
 - **Scope (owner, 2026-10-17):** "we will build what we can and see how far we get". Cut order is guidance only ([[last-ember-production-plan]]). The global leaderboard is dropped; the game has no online services.
 - Design lead: saile2204. Team: undertaker7431, kittingsl. Repo owner: eliasstepanik. Open items: [[last-ember-open-questions]].
 - **Architecture exists:** [[architecture]] is the hub (56 linked files: rulings, scale and economy rulings, module trees, topical specs, asset library). Agents read `projects/ai-jam-5/architecture.md` first; [[architecture-rulings]] (parts 1–3) is binding. OD-1, OD-3 and OD-7 are approved; slice A is under way ([[progress]]).

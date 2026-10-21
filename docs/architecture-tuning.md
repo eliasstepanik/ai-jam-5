@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Tuning Architecture (1/2) – tuning.ts Shape, Player, Flame, Actions, Parry
 description: Exact shape of src/core/tuning.ts for Last Ember and all initial values for player movement, flame energy and radius curve, flicker, resin, plant, mining, Beacon hold, swing, parry window and loss curve, roll and hurt invulnerability, with units, formulas and worked numbers.
 tags: [project, ai-jam-5, architecture, last-ember, systems]
-timestamp: 2026-10-17T21:00:00Z
+timestamp: 2026-10-21T01:00:00Z
 ---
 
 # Last Ember – Tuning Architecture (1/2)
@@ -258,6 +258,16 @@ loss = |δ| <= P + 1e-9 ? 0
 | `roll.cooldownS` | 1.5 | s | **spec** start value, from roll start |
 | `hurt.hpInvulnS` | 0.8 | s | after losing an HP pip |
 | `hurt.flashS` | 0.25 | s | `player.hitFlash` |
+
+## 8. Cave generation (`T.cave`, [[architecture-rulings-3]] R-163, R-164)
+
+New group, shape intent (add to `Tuning` in §1.1 when implemented; not yet in `tuning.ts`): `cave: { pocketDepth: number; fallbackPocketDepth: number; depthClasses?: …planned }`.
+
+| Key | Value | Notes |
+|---|---|---|
+| `cave.pocketDepth` | 10 | main-cave pocket detector depth ([[architecture-cave-generation-2]] §2), behaviour unchanged. Do NOT lower: at 5 main caves get about 3× the pockets |
+| `cave.fallbackPocketDepth` | 5 | fallback ring only (fixed geometry, 0 draws); probe 200/200 seeds at 4, 5, 6 |
+| `cave.depthClasses` | PLANNED | R-164, chunk C5, not started. `CaveParams` per class 1–4 (grid, ecc window, band, pocket depth), default class 3; shape decided in C5, not here |
 
 ## Related
 

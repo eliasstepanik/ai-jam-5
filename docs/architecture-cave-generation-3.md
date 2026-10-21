@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Cave Generation (3/4) – Macro Layout Pass, 320x240 Constants, Rejection
 description: Last Ember cave generator part 3 – the 320x240 macro-layout pass (8x6 grid of 40-tile cells, random spanning tree with a fixed draw count, eccentricity window, macro loops, forced-wall mask, spine carve), its interplay with noise fill and CA, the new pass order, rejection thresholds, loop-tunnel constants with the macro-cell pair filter, chunked attempts, touched constants and the GAP list. Copies the binding values of the scale ruling.
 tags: [project, ai-jam-5, architecture, last-ember, world]
-timestamp: 2026-10-18T12:00:00Z
+timestamp: 2026-10-21T01:00:00Z
 ---
 
 # Last Ember – Cave Generation (3/4) – Macro Layout and 320×240
@@ -105,6 +105,8 @@ Expected D (SAE1 §2.2): ≈ 44 tiles per cell step; `D ≈ 44 · ecc + 35` → 
 
 `BEACON_DIST_MIN = 120` is removed. Entrance (part 1 §6 step 1): candidates are region floor tiles with `ty < 18` **and** `macroCellOf(i) === root`, rest unchanged.
 
+**Depth classes (planned, [[architecture-rulings-3]] R-164, chunk C5, not started):** the band `[510, 690]` of this section, the 8×6 grid and `ECC_MIN/MAX 12/14` are the **class-3 default**. The generator will take a `CaveParams` object (band, ecc window, active grid, pocket depth) instead of importing `BEACON_DIST_BAND` directly; C1–C3 pass the default class 3, no behaviour change. Changing the band alone gives 0/62 seeds, so other classes change grid and ecc window together (classes 1, 2, 4 of R-164). Until C5 lands, every statement of this file is class 3.
+
 ## 6. Loop guarantee changes (replaces part 1 §9.1 values; SAE1 §3.1)
 
 - **Macro loops:** the 2 loop edges are verified by `hasAlternativeRoute(g, w, h, centre[a], centre[b])` (part 1 §9.3, `k = 2`, `minLen = 40` unchanged). Verified at the start of pass 8 (after D0; monotone carving keeps them valid); `mv` = number verified; failed loops do not count; tunnel target `kt = max(k, 2 − mv)` (R-112).
@@ -147,7 +149,7 @@ One attempt ≈ 55 ms (macro 0.3, noise + CA 10, spine/widen/diagonals 1.5, regi
 | path fields | `bfs4`, `shortestPath`, `beaconRoomMask`, `CaveCore.dist`: **`Int32Array`** (w·h = 76 800 > 32 767); BFS ≈ 1.2 ms; one shared module-level queue of length `w·h` (SAE4 §1.2) |
 | `floorHash` | `ty * w + tx` |
 | `CaveStats` | `+ ecc: number`, `+ treeDraws: number`; `loops` = verified macro loops + tunnels |
-| unchanged | `MAP_BORDER 2`, `FILL_WALL 0.45`, `CA_ITERS 5`, `widen`, `TUN_MAX 12`, `GAIN_MIN`, `minLen 40`, `ENTRANCE_R 3`, `CHAMBER_R 3`, `CHAMBER_MASK_R 5`, `SAFE_START 6`, `POCKET_DEPTH 10`, pocket 12..90, T1–T4 |
+| unchanged | `MAP_BORDER 2`, `FILL_WALL 0.45`, `CA_ITERS 5`, `widen`, `TUN_MAX 12`, `GAIN_MIN`, `minLen 40`, `ENTRANCE_R 3`, `CHAMBER_R 3`, `CHAMBER_MASK_R 5`, `SAFE_START 6`, `POCKET_DEPTH 10` (now `T.cave.pocketDepth`, plus `T.cave.fallbackPocketDepth = 5` for the fallback ring: [[architecture-rulings-3]] R-163), pocket 12..90, T1–T4 (T3 carve scan window `[15, 60]`: R-156) |
 
 ```ts
 // src/world/bfs.ts (replaces part 1 §7 signatures)
