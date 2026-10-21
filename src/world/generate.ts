@@ -1,11 +1,14 @@
-import type { CaveCore } from '../core/types.ts'
+import type { CaveCore, CaveResult, GenOpts } from '../core/types.ts'
 import { MAP_W, MAP_H } from '../core/state.ts'
 import { hashSeed, makeRnd } from '../core/rng.ts'
 import { buildMacro, carveSpine, macroCellOf, MW, MH, CELL_FLOOR_MIN, BEACON_DIST_BAND } from './gen/macro.ts'
 import { noiseFill, smooth, widen, fixDiagonals } from './gen/ca.ts'
 import { largestRegion } from './gen/region.ts'
 import { placeEntrance, placeBeacon } from './gen/places.ts'
-import { pickLoopPairs } from './gen/loops.ts'
+import { hasAlternativeRoute, pickLoopPairs } from './gen/loops.ts'
+import { populate } from './gen/populate.ts'
+import { fallbackCave } from './gen/fallback.ts'
+import { validateCave } from './validate.ts'
 
 export type { CaveCore, CaveResult, CaveStats, GenOpts, SpawnHint } from '../core/types.ts'
 export const MAX_ATTEMPTS = 8
@@ -13,8 +16,7 @@ export const MAX_ATTEMPTS = 8
 export const caveSeed = (seed: number, a: number): number =>
   a === 0 ? seed >>> 0 : hashSeed(seed >>> 0, 'cave:' + a)
 
-// One terrain attempt only. Population, validation and the guaranteed fallback
-// wrapper belong to B4-B6; this module does not claim a complete CaveResult yet.
+// One terrain attempt (passes 0-9); populate, validateCave and fallbackCave complete it in generateCave below.
 export function carveCore(cs: number): CaveCore | null {
   const w = MAP_W, h = MAP_H, stream = (tag: string) => makeRnd(hashSeed(cs, 'cave:' + tag))
   const layout = buildMacro(stream('macro'), w, h), raw = new Uint8Array(w * h)
@@ -60,4 +62,23 @@ export function carveCore(cs: number): CaveCore | null {
       mainLoop: false, fallback: false, ecc: layout.ecc, treeDraws: layout.treeDraws,
     },
   }
+}
+
+// R-115 / R-160: stats.mainLoop (CG1 §9.3: hasAlternativeRoute entrance -> Beacon on the final tiles) is computed once per accepted
+// cave, for the sync loop below and the chunked game path alike. Pure: returns a copy, the input result is not written.
+export function finalizeCave(res: CaveResult): CaveResult {
+  const w = MAP_W, g = new Uint8Array(w * MAP_H)
+  for (let i = 0; i < g.length; i++) g[i] = res.tiles.charCodeAt(i) === 35 ? 1 : 0 // '#'
+  const mainLoop = hasAlternativeRoute(g, w, MAP_H, res.entrance.ty * w + res.entrance.tx, res.beacon.ty * w + res.beacon.tx)
+  return { ...res, stats: { ...res.stats, mainLoop } }
+}
+
+// CG2 §6: up to MAX_ATTEMPTS attempts, each pure in (seed, a); the first valid one wins, else the fixed ring (fallbackCave validates it).
+export function generateCave(seed: number, opts: GenOpts = {}): CaveResult {
+  for (let a = 0; a < MAX_ATTEMPTS && !opts.forceFail; a++) {
+    const cs = caveSeed(seed, a), core = carveCore(cs)
+    const res = core && populate(core, cs, a, opts)
+    if (res && validateCave(res).ok) return finalizeCave(res)
+  }
+  return finalizeCave(fallbackCave(seed))
 }
