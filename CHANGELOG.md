@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- C3 cave generator wrapper: `generateCave(seed, opts)` runs up to 8 attempts, each carve, populate and `validateCave`, and the first valid cave wins (`forceFail` option for testing the fallback). `finalizeCave` sets `stats.mainLoop` once per accepted cave. `fallbackCave(seed)` builds a fixed-geometry ring cave with 0 RNG draws for the ring itself (populate still draws from a seed derived from `'cave:fallback'`); it returns a validated cave or throws, with `stats.attempts` of 9. `caveOf(seed)` in `src/checks/caves.ts` memoizes cave results for checks.
 - A8 asset foundations: complete sprite and sound catalogs, a lazy resource registry that survives hot reload, and actor-sheet helpers for eight north-first direction rows with frame counts derived from image width. Actual art loading and integration remain separate tasks.
 - A19 exploration and spawn queries: signed JSON-safe explored bits, occluded radius reveal, deterministic nearest-floor recovery and fixed-draw spawn sampling, with registered world-query and cache checks.
-- A22 terrain attempts and derived world caches: deterministic cave-core generation with rejection rules, base depth and zones, Beacon-room masks, pending masks, and reusable escape-distance buffers. The populated generator wrapper and cave-result memo helper remain deferred until B4–B6 are available.
+- A22 terrain attempts and derived world caches: deterministic cave-core generation with rejection rules, base depth and zones, Beacon-room masks, pending masks, and reusable escape-distance buffers. The populated generator wrapper and the cave-result memo helper are described in the `generateCave` entry above.
 - Host input: `'Blur'` pseudo-key in `Input.pressed` on window blur or tab hide, and `Input.view` with the canvas size in CSS pixels and `devicePixelRatio`.
 - Host loop: fixed-step time budget (12 ms) so a slow frame drops its backlog instead of freezing.
 - A21 cave layout helpers: seeded macro trees and masks, connected spine carving, entrance and Beacon placement with guarded chamber carving, and verified loop tunnels that preserve the descent path length.
