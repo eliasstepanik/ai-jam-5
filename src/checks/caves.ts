@@ -12,3 +12,6 @@ export function caveOf(seed: number): CaveResult {
   if (!res) { res = generateCave(key); memo.set(key, res) }
   return res
 }
+
+// Seeds the memo with an already generated result (timeBudget's timed run); same sharing rule as caveOf.
+export function primeCave(seed: number, r: CaveResult): void { memo.set(seed >>> 0, r) }
