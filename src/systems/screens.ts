@@ -11,7 +11,8 @@ import { SEED_MAX_LEN } from '../core/seed.ts'
 import { emit } from './fx.ts'
 import { genStep, runSeedText } from './run.ts'
 
-const DT = 1 / 60 // fixed update step (AGENTS.md); stepScreens has no dt parameter (S2 signature)
+// ponytail: DT mirrors the fixed step in main.ts (stepScreens has no dt parameter, S2 signature); if the host step changes, import it from a shared tuning constant
+const DT = 1 / 60
 const CHANGE_LOCK_S = 0.25 // ui.md §5 rule 6
 const END_LOCK_S = 0.5 // scoring-and-save §7
 const CONFIRM_S = 2 // ui-2 §2 quit confirm time (s)
@@ -61,7 +62,7 @@ function activate(s: State, item: number): void {
     if (item === 0) { ui(s, 'uiConfirm'); go(s, 'playing'); return }
     if (s.ui.confirmT > 0) { ui(s, 'uiBack'); go(s, 'title'); return } // Quit, second press: run abandoned
     s.ui.confirmT = CONFIRM_S
-    ui(s, 'uiMove')
+    ui(s, 'uiConfirm') // Quit, first press: arms the confirm; an activation emits uiConfirm (ui.md §5 rule 7)
     return
   }
   if (item === 3) { ui(s, 'copyLink'); return } // dead / won
