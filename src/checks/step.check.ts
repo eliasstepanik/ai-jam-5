@@ -1,6 +1,6 @@
 // A29 step() call-order checks: each scenario fixes a value that flips when two calls in src/systems/step.ts swap or one is dropped.
 // Spec: architecture-systems.md §1.1-§1.3 (D0-D18), R-067/R-068/MS-25 (hitstop click buffer), scoring-and-save §7 (end lockout).
-// Exports stepCheck(); no side effect on import; DOM-free; all state is local to each scenario.
+// Exports run(); no side effect on import; DOM-free; all state is local to each scenario.
 import type { Input } from '../main.ts'
 import type { CaveResult, Monster, State, Zone } from '../core/types.ts'
 import { init } from '../core/state.ts'
@@ -57,7 +57,7 @@ const count = (s: State): number => // explored tiles
 
 const zone = (d: number, bd: number): Zone => zoneOfDepth(depthOf(d, bd))
 
-export function stepCheck(): void {
+export function run(): void {
   const cave = generateCave(parseSeed('1')) // one cave for every scenario (startRun copies it; run.check.ts memoises the same way)
   // Order not pinned: D4 trackDepth vs stepExplore (stepExplore reads no zone/stats, trackDepth no explored/exploreKey) and D17 vs D18.
   // D3 before D4: the zone is read off the tile the player stands on AFTER the move (trackDepth before stepMovement lags one step).

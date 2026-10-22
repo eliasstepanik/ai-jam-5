@@ -1,6 +1,6 @@
 // A29 screens/step/run gap checks: each scenario pins one behaviour of src/systems/screens.ts, step.ts or run.ts that flips under a
 // single-line mutation the older step/run checks do not see. Spec: architecture-systems.md §1.3/§2, architecture-ui.md §5/§7,
-// architecture-ui-2.md §4, R-067, R-068, R-077. Exports screensCheck(); no side effect on import; DOM-free; state is local per scenario.
+// architecture-ui-2.md §4, R-067, R-068, R-077. Exports run(); no side effect on import; DOM-free; state is local per scenario.
 import type { Input } from '../main.ts'
 import type { CaveResult, Monster, Screen, State } from '../core/types.ts'
 import { HELP_PAGES, init } from '../core/state.ts'
@@ -52,7 +52,7 @@ function latched(s: State): Monster {
   return Object.assign(m, { ai: 'lunge' as const, aiT: T.monsters.lurker.contactS, contactT: 0.1 })
 }
 
-export function screensCheck(): void {
+export function run(): void {
   const cave = generateCave(parseSeed('1')) // one cave for every scenario (startRun copies it)
 
   // S26: Help returns to the screen it was opened from (ui.helpFrom): paused -> paused, title -> title.
@@ -114,6 +114,9 @@ export function screensCheck(): void {
     const n = s.meta.steps, x = s.player.x, e = s.player.energy
     step(s, inp(['KeyQ']), DT)
     ok(s.meta.screen === 'title' && s.meta.steps === n && s.player.x === x && s.player.energy === e, 'quit frame leaves steps, player and flame untouched (steps ' + s.meta.steps + ')')
+    const q = at(cave, 'paused', 4), k = q.fx.events.length
+    stepScreens(q, inp(['Enter']))
+    ok(q.ui.confirmT > 0 && q.fx.events.length === k + 1 && q.fx.events[k].kind === 'uiConfirm', 'first Quit press arms the confirm and emits one uiConfirm, not uiMove (ui.md §5 rule 7)')
   }
 
   // S23: the unpause frame simulates (stepScreens true, one world step).
@@ -125,7 +128,7 @@ export function screensCheck(): void {
     ok(s.meta.screen === 'playing' && s.meta.steps === n + 1, 'unpause frame is a world step (steps ' + n + ' -> ' + s.meta.steps + ')')
   }
 
-  // S11/S12: dead/won item 3 copies the link; KeyC does too, but not on the title (the title has no link to copy).
+  // S11/S12: dead/won item 3 copies the link; KeyC does too, but not on the title (no link to copy) nor on help (R-175: help returns first).
   for (const sc of ['dead', 'won'] as const) {
     const s = at(cave, sc, 3)
     stepScreens(s, inp(['Enter']))
@@ -134,10 +137,10 @@ export function screensCheck(): void {
     stepScreens(t, inp(['KeyC']))
     ok(links(t) === 1, 'KeyC on ' + sc + ' emits copyLink')
   }
-  {
-    const s = at(cave, 'title')
+  for (const sc of ['title', 'help'] as const) {
+    const s = at(cave, sc)
     stepScreens(s, inp(['KeyC']))
-    ok(links(s) === 0, 'KeyC on the title emits no copyLink')
+    ok(links(s) === 0, 'KeyC on ' + sc + ' emits no copyLink')
   }
 
   // S24: Escape inside the focused seed field clears it; with the focus elsewhere the text is kept.
@@ -192,8 +195,7 @@ export function screensCheck(): void {
     ok(s.fx.shake === 0.3 && s.cam.x === cx, 'ending step skips tickFx and stepCamera (shake ' + s.fx.shake + ')')
   }
 
-  // P27/P30/P31 phase guards. No production code sets meta.phase = 'escape' yet (B8 does), so it is set by hand here.
-  // step.ts guards swing, explore and parry by phase; stepExplore and resolveParries also guard themselves (direct calls pin that).
+  // P27/P30/P31 phase guards (step.ts guards by phase; stepExplore, resolveParries too). B8 sets phase 'escape' later, so by hand here.
   {
     const s = quiet(cave)
     s.meta.phase = 'escape'
@@ -258,8 +260,7 @@ export function screensCheck(): void {
     ok(s.ui.toasts.length === 0 && s.ui.copied === 0 && s.ui.copyMsg === '' && s.ui.denyT === 0, 'startRun resets toasts, copied, copyMsg, denyT')
   }
 
-  // N28: the volume step rounds: 0.35 + 0.1 lands on 0.5 (unrounded 0.45), 0.1 + 0.2 - 0.1 on exactly 0.2.
-  // Volume keys act only on title/paused: on dead/won ArrowRight from row 1 lands on row 2, Equal/Minus on row 2; volume stays 0.5.
+  // N28: the volume step rounds (0.35 + 0.1 -> 0.5, 0.1 + 0.2 - 0.1 -> 0.2). Volume keys act only on title/paused: on dead/won they leave 0.5.
   for (const [sc, row, v, key, want] of [
     ['title', 2, 0.35, 'ArrowRight', 0.5], ['title', 2, 0.1 + 0.2, 'ArrowLeft', 0.2],
     ['dead', 1, 0.5, 'ArrowRight', 0.5], ['dead', 2, 0.5, 'Equal', 0.5], ['won', 2, 0.5, 'Minus', 0.5],
