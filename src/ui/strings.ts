@@ -1,9 +1,16 @@
 // All player-facing English text (architecture-ui §4). Data plus tiny pure formatters; no Intl, no DOM.
 // ponytail: English only, no i18n table. Upgrade: key this object by locale if a second language is ever wanted.
+// ponytail: only the mining time is imported from tuning; other help numbers (plant heals one heart, half light) are prose and
+// can drift if tuning changes. Upgrade: template them from T too.
+import { T } from '../core/tuning.ts'
 
 export const STR = {
   tagline: 'Carry the last flame down. Light the Beacon. Get out.',
   loading: 'Carving the cave…',
+  loadingBtn: 'Loading', // Play button while assets load; caller appends pct(progress) (architecture-ui §7)
+  logoFallback: 'LAST EMBER', // text logo when art_logo is missing (architecture-ui §7)
+  best: 'Best', // personal-best line prefix; the 'escaped' tag is spec'd, the death tag is not
+  bestEscaped: 'escaped',
   play: 'Play',
   help: 'Help',
   resume: 'Resume',
@@ -25,7 +32,7 @@ export const STR = {
   // help chrome
   helpTabs: ['Goal', 'Parry', 'Minerals'],
   helpFooter: '← → / A D page · Esc back',
-  helpArt: { entrance: 'ENTRANCE', zones: 'ZONES 1–4', beacon: 'BEACON', eyes: 'EYES GLOW', click: 'CLICK NOW', perfect: 'PERFECT' },
+  helpArt: { entrance: 'ENTRANCE', zones: 'ZONES 1–4', beacon: 'BEACON', eyes: 'EYES GLOW', click: 'CLICK NOW', perfect: 'PERFECT', ringClick: 'CLICK' },
   helpCols: { mineral: 'MINERAL', flame: 'FLAME', effect: 'EFFECT', key: 'KEY' },
   // end screen
   died: 'THE EMBER DIED',
@@ -92,7 +99,7 @@ export const HELP = [
     tips: [
       'Resin relights a dead flame instantly.',
       'Plants heal one heart. They grow in side rooms.',
-      'Mining takes 2 s of standing still – that costs light.',
+      `Mining takes ${T.mining.holdS} s of standing still – that costs light.`,
       'Keep half your light for the way back.',
       'After the Beacon, the cave is lit – but it is collapsing. Roll through lunges.',
     ],

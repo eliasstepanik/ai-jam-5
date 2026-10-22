@@ -216,7 +216,7 @@ export function hudLayout(w: number, h: number, s: State): HudLayout {
     hotbarHint: pt(w, h, u, 0.5, 1, 640, 708),
     toast: tc(640, 120),
     toastPitch: Math.round(26 * u),
-    parry: tc(640, 300),
+    parry: pt(w, h, u, 0.5, 0.5, 640, 300), // centre-anchored (architecture-ui-2 §1)
     exitBanner: tc(640, 200),
   }
 }

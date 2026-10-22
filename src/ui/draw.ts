@@ -59,7 +59,7 @@ export function panel(ctx: CanvasRenderingContext2D, r: Rect, u: number, border:
 export type ButtonState = { focused: boolean; enabled: boolean }
 
 // Menu button. Focused (keyboard cursor or hover): gold border + text and two 4u ember ticks outside the left/right edges.
-// t = meta.time, drives the optional tick flicker (0.8..1.0 alpha); pass reduced = true to hold it steady.
+// t = meta.time, drives the optional tick flicker (0.8 + 0.2 * vnoise in [-1, 1] = 0.6..1.0 alpha, architecture-ui-2 §3); pass reduced = true to hold it steady.
 export function button(
   ctx: CanvasRenderingContext2D, r: Rect, label: string, st: ButtonState, u: number, t = 0, reduced = false, size = 18,
 ): void {
