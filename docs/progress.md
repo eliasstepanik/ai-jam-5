@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember - Build Progress (2026-10-22)"
 description: Build status of Last Ember synced to origin/master b33c7fe on 2026-10-22 (A29 merged) - which plan tasks are done, partial, in progress or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
 tags: [project, ai-jam-5, progress, last-ember]
-timestamp: 2026-10-22T20:00:00Z
+timestamp: 2026-10-22T21:00:00Z
 ---
 
 # Last Ember - Build Progress (2026-10-22)
@@ -200,7 +200,7 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - **Depth classes (R-164):** owner to approve or trim them (classes 3 + 4 about 4 h, classes 1 + 2 optional) and to confirm they ship after C4 as chunk C5.
 - **A10 note (scale 1):** `drawSprite` must call `PLACEHOLDERS[id]` directly at scale 1 when no atlas rect exists; the hit-flash tint path needs its own placeholder branch; beacon charge uses `frame = floor(progress*4)` (see the A9 row).
 - **T3 window vs teaching text (architect call needed):** the widened T3 window `[15, 60]` (R-156) contradicts CG2 section 4 ("all values <= 34 < beaconDist"), SAE1 section 5 ("T1-T4 path 7-24") and CG2 section 6.1 row 12.
-- **Leftover "4 draws" mentions** of `'cave:fallback'` (SAE1 section 6, `architecture-determinism.md` line 107): R-163 makes it 0 draws; fix when determinism is next edited.
+- **Leftover "4 draws" mentions** of `'cave:fallback'`: R-163 makes it 0 draws. `architecture-determinism.md` line 115 already says 0 draws (fixed 2026-10-22), so it is no longer a leftover. Still stale (checked by grep of `docs/` and the KB on 2026-10-22): [[architecture-scale-and-economy]] (SAE1) section 6, `docs/architecture-scale-and-economy.md` line 163 ("Stream `'cave:fallback'`, still 4 draws"), and row 14 of the review note `docs/notes/last-ember-review-world-vs-modules.md` (line 30, a dated review proposal that says "ring, 4 draws"). Fix SAE1 when it is next edited; [[architecture-rulings-3]] R-163 already supersedes it and the review note is a historical record.
 - **Rulings-3 intro line** still calls every ruling of the file an architect default; section 7 overrides it (R-156..R-165 include OWNER rulings). The intro line is not edited.
 - **Fallback ring has zero plant slack:** it yields exactly 6 chamber plants, the rule-11 minimum. Verify in chunk C2.
 - **A29 (R-170):** hit-test ownership: A30 or A11 must set `ui.cursor`/`ui.hover` from `hit()` before step; until then a click activates the focused menu item wherever it lands.
