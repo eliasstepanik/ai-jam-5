@@ -50,8 +50,9 @@ export function run(): void {
   ok(parryLoss(-P, 'lurker', 'none').grade === 'perfect', '-perfectS is perfect')
   ok(parryLoss(P, 'lurker', 'none').grade === 'perfect', '+perfectS is perfect')
   ok(parryLoss(-P - 1e-6, 'lurker', 'none').grade === 'good', 'just outside the perfect band is graded')
-  ok(parryLoss(-P * 1.6 + 1e-9 / 2, 'lurker', 'copper').grade === 'perfect', 'copper perfect band is perfectS * perfectMul')
-  ok(parryLoss(-P * 1.6 - 1e-6, 'lurker', 'copper').grade === 'good', 'just outside the copper perfect band is graded')
+  const PC = P * T.minerals.table.copper.perfectMul
+  ok(parryLoss(-PC, 'lurker', 'copper').grade === 'perfect', 'copper perfect band is perfectS * perfectMul')
+  ok(parryLoss(-PC - 1e-6, 'lurker', 'copper').grade === 'good', 'just outside the copper perfect band is graded')
 
   // 3. Monotonic loss outside the perfect band, both directions; late is punished harder than early at the same |d|.
   for (const sign of [-1, 1]) {
@@ -66,7 +67,7 @@ export function run(): void {
   for (const d of [-0.14, -0.08, -0.04, 0.04, 0.08, 0.09]) {
     ok(parryLoss(d, 'lurker', 'copper').loss < parryLoss(d, 'lurker', 'none').loss, 'copper loss < plain loss at d=' + d)
   }
-  ok(parryLoss(-0.14, 'lurker', 'none').loss <= 12 * T.parry.lossMaxFrac + 1e-9, 'loss never exceeds energyHitE * lossMaxFrac')
+  ok(parryLoss(-0.14, 'lurker', 'none').loss <= T.monsters.lurker.energyHitE * T.parry.lossMaxFrac + 1e-9, 'loss never exceeds energyHitE * lossMaxFrac')
 
   // 4. resolveParries: every graded parry kills; perfect costs nothing and fires flare + hitstop.
   {

@@ -83,9 +83,7 @@ export function run(): void {
   // 2. Substeps (§5.2 #4): n = ceil(hypot / (0.9 r)). A 9.3 px/step lunge at r = 9 is 2 substeps; the 7 px roll step is 1.
   {
     const lunge = 560 / 60, r = T.monsters.lurker.radiusPx
-    ok(Math.ceil(lunge / (0.9 * r)) === 2, 'lunge step ' + lunge + ' px at r=9 needs 2 substeps')
-    ok(Math.ceil((T.roll.speedPxS / 60) / (0.9 * R)) === 1, 'roll step 7 px at r=10 needs 1 substep')
-    // behaviour: a 9.3 px step aimed at a 6 px-thick-in-reach wall from 8 px away is stopped, not tunnelled.
+    // behaviour (no formula re-derivation): a 9.3 px lunge step toward a wall 3 px away is stopped, not tunnelled.
     const s = room() // wall tile column 11 starts at x = 352; circle r = 9 at x = 352 - 9 - 3 = 340
     const res = moveCircle(s, 340, 6 * TILE, lunge, 0, r)
     near(res.x, 352 - r, 1e-6, 'fast move stops at the wall (no tunnelling)')

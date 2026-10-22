@@ -125,8 +125,8 @@ export function run(): void {
     ok(hold.player.energy === T.beacon.minEnergyE && count(hold, 'flameOut') === 0, 'a Beacon hold floors the burn at minEnergyE and never snuffs the flame')
   }
 
-  // 5. Full step() burn (§8 #3): started run, zone 1, energy 10, no input. 10 / (0.5 / 60) = 1200 steps. Accumulated float
-  // residue (R-127) may leave ~1e-15 after step 1200, so the flame must be out by step 1201, never earlier, never negative.
+  // 5. Full step() burn (§8 #3): started run, zone 1, energy 10, no input. 10 / (0.5 / 60) = 1200 steps: still lit after
+  // step 1199, exactly 0 with the single flameOut at step 1200, never negative.
   {
     const s = init()
     startRun(s, '1', caveOf(parseSeed('1')))
@@ -143,10 +143,10 @@ export function run(): void {
       ok(s.meta.zone === 1, 'player stays in zone 1 at the entrance (step ' + k + ')')
       for (const e of s.fx.events) if (e.seq >= lastSeq && e.kind === 'flameOut') { outs++; if (outStep < 0) outStep = k }
       lastSeq = s.fx.seq
-      if (k === 1198) ok(s.player.energy > 0, 'flame still lit at step 1198')
+      if (k === 1199) ok(s.player.energy > 0, 'flame still lit at step 1199 (got ' + s.player.energy + ')')
     }
     ok(s.player.energy === 0, 'energy is exactly 0 after the burn (got ' + s.player.energy + ')')
     ok(outs === 1, 'exactly one flameOut over 1210 steps (got ' + outs + ')')
-    ok(outStep >= 1199 && outStep <= 1201, 'flameOut at step 1200 +-1 float residue (got ' + outStep + ')')
+    ok(outStep === 1200, 'flameOut at step 1200 exactly (got ' + outStep + ')')
   }
 }
