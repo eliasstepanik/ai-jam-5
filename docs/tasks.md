@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)"
 description: Task plan for Last Ember – who owns which code (Elias and Kittingsl), assignment principles, ownership summary, task index for slices A, B and C with hours and dependencies, per-person totals, risks, working process and open questions for the owner.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-22T18:00:00Z
+timestamp: 2026-10-22T23:50:00Z
 ---
 
 # Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)
@@ -83,17 +83,17 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | A4 | E | noise, view, render.check | 1 | None, start now (pure, no State); render consumes it. **DONE** (#8) |
 | A5 | E | migrate, score, scripts/check-guard.ts (moved from A7, 2026-10-18) | 2 | A3. **DONE** (#11) |
 | A6 | E | checks/input, checks/all, state.check, package.json (wires `node src/check.ts && node src/checks/all.ts && node scripts/check-guard.ts`; check-assets from A10 is NOT wired until C8, see section 1) | 2 | A5. **DONE** (#13) |
-| A7 | K | determinism.check, score.check | 1.5 | A6 (x-person) |
+| A7 | K | determinism.check, score.check | 1.5 | A6 (x-person). **DONE** (#48). The fake-store Best round trip belongs to B7 (R-168): B7 must add it to `score.check.ts` |
 | A8 | K | sprites, sounds, resources | 2 | None, start now. **DONE** (#28) |
 | A9 | K | 3x placeholders-* | 3 | A8. **DONE** (#33; built by E at the owner's request) |
-| A10 | K | images, atlas.json seed, check-assets | 2 | A8, A9, A4 (x-person) |
-| A11 | K | layout, strings, draw | 2.5 | None for the code; Input.view from A1 (x-person); `hit()` feeds ui.cursor/ui.hover, set before step by A30 (R-170) |
-| A12 | K | menus, platform | 2.5 | A11, A2 (x-person) |
-| A13 | K | hud | 1.5 | A11, A2 (x-person) |
+| A10 | K | images, atlas.json seed, check-assets | 2 | A8, A9, A4 (x-person). **DONE** (#47). `drawSprite` placeholder path fixed to scale 1; `render/index.ts` calls `startPreload(res)` |
+| A11 | K | layout, strings, draw | 2.5 | None for the code; Input.view from A1 (x-person); `hit()` feeds ui.cursor/ui.hover, set before step by A30 (R-170). **DONE** (#46). `titleLayout` has an optional `ready` param (`menus.ts` and `game.ts` pass the same value) |
+| A12 | K | menus, platform | 2.5 | A11, A2 (x-person). **DONE** (#52). Defaults: `SHARE_BASE=''` (OD-5b), non-escaped Best has no tag, stateless `?seed=` write |
+| A13 | K | hud | 1.5 | A11, A2 (x-person). **DONE** (#53). Beacon prompt reach `T.beacon.reachPx` 36; HUD energy bar + Beacon-gate tick; hud exit marker deferred to B20 |
 | A14 | E | render keys, view, flame, quality | 2 | A2, A4; camera.shakeOffset from A24. **DONE** (#29; also holds the quality auto ladder pulled forward from C6) |
-| A15 | E | render tiles, memory, props | 3 | A14, A8, A9 (x-person: A8, A9 are K's) |
+| A15 | E | render tiles, memory, props | 3 | A14, A8, A9 (x-person: A8, A9 are K's). **DONE** (#51). Decor pass 6 not drawn (`decor.ts` has no owner); rocks pass 12 = B17; entrance drawn in `drawLandmarks` (GAP G6) |
 | A16 | E | render light, entities, glow | 3.5 | A14, A24 (light.ts). **DONE** (#31) |
-| A17 | E | render index | 1 | A15, A16, A12, A13 (x-person: seam S1, A12/A13 are K's) |
+| A17 | E | render index | 1 | A15, A16, A12, A13 (x-person: seam S1, A12/A13 are K's). **DONE** (#54, with A30). Skipped passes: 2, 13, 18 (particles B18), 6, 12, 15, 19 and `drawDebug` |
 | A18 | K | grid, collide, los | 1.5 | A2 (x-person). **DONE** (#10) |
 | A19 | K | explored, sample, world.check | 2 | A18, A22. **DONE** (#21) |
 | A20 | K | bfs, carve, region, ca | 2 | A3 (x-person); start right after A3 merges. **DONE** (#14) |
@@ -106,9 +106,9 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | A27 | E | combat | 2 | A24, A26, A25 (Intent); resolveParries/resolveBites/damagePlayer also need A28 (setDying/toRecover; monsters.ts must never import combat.ts). **DONE** (#22, #27) |
 | A28 | E | monsters, ai-lurker, director | 3 | A23, A25, A27 (x-person: A23 is K's). **DONE** (#26) |
 | A29 | E | run, screens, step | 2.5 | A22, A28 (x-person: A22 is K's; critical path). **DONE** (merged #39, squash 81f766b; follow-up nits #40, f738703). Delivers its own checks run.check, step.check, screens.check (wired in checks/all.ts, R-177). Does NOT include the B-slice step calls (B1, B2, B7, B8 each add their call at the index comment in step.ts, R-169) or storage calls (B7, R-168). Rulings R-166..R-177 in [[architecture-rulings-3]] section 8 |
-| A30 | E | game.ts facade and slice-A integration | 1.5 | A17, A29; must set ui.cursor/ui.hover from hit() before step (R-170) |
-| A31 | K | flow, order, ai checks | 2.5 | A29 (x-person); may slip to B day 1; order.check cannot rely on a counting spy in step.ts (R-176); names run.check, step.check, screens.check are taken by A29 (R-177) |
-| A32 | K | light-flame, parry, damage, movement checks | 3 | A27 (x-person); may slip to B day 1 |
+| A30 | E | game.ts facade and slice-A integration | 1.5 | A17, A29; must set ui.cursor/ui.hover from hit() before step (R-170). **DONE** (#54, with A17). `audioStep` and `drawDebug` not wired (`src/audio`, `src/ui/debug.ts` absent); dev keys DEV-only, Shift+Digit1..6 filtered from step input; `beaconBlend` escape guard folded into `src/render/view.ts` (decision #31) |
+| A31 | K | flow, order, ai checks | 2.5 | A29 (x-person); may slip to B day 1; order.check cannot rely on a counting spy in step.ts (R-176); names run.check, step.check, screens.check are taken by A29 (R-177). **DONE** (#49). Order check (b) resin-before-mining needs B1 `stepMining`; stalker (B3) and devourer (C1) brain rows deferred |
+| A32 | K | light-flame, parry, damage, movement checks | 3 | A27 (x-person); may slip to B day 1. **DONE** (#50) |
 
 ### Slice B (due Oct 22)
 
@@ -121,7 +121,7 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | B4 | K | gen/pockets, gen/teach | 2 | A22; **DONE** (#35, chunk C1; built by E at the owner's request, see A22) |
 | B5 | K | validate, gen/populate | 3 | B4; **DONE** (#36, chunk C2; built by E at the owner's request, see A22) |
 | B6 | K | gen/fallback; extends caches and generate | 1.5 | B5; **DONE** (#37, chunk C3; built by E at the owner's request, see A22) |
-| B7 | E | core/storage; extends flame (minerals), pickups (size) | 2 | A26; adds its call to src/systems/step.ts (R-169) and the commitBest/loadSettings/loadBest/saveSettings calls to run.ts/screens.ts (R-168) |
+| B7 | E | core/storage; extends flame (minerals), pickups (size) | 2 | A26; adds its call to src/systems/step.ts (R-169) and the commitBest/loadSettings/loadBest/saveSettings calls to run.ts/screens.ts (R-168); also adds the fake-store Best round trip to `src/checks/score.check.ts` (deferred from A7) |
 | B8 | E | Extends movement (roll), run (escape win), director (escape table), game.ts (audioStep) | 2 | B2, B3, B12 (x-person: B12 is K's); adds its call to src/systems/step.ts (R-169) |
 | B9 | E | cave.check, rocks.check | 3 | B6, B2 (x-person: B6 is K's; E tests K's generator); split by R-162: cave.check part **DONE** (chunk C4, #38; E, fresh session); rocks.check still open, after B2 |
 | B10 | E | Slice-B integration, Day-6 playtest, tuning | 2 | All of B |
@@ -199,8 +199,8 @@ Gameplay needs K's world work. E's A25 (movement) needs K's A18, E's A28 needs K
 - **Approvals:** OD-1, OD-3 and OD-7 were approved on 2026-10-18 (A1 merged as #18). K is a collaborator with write access; K's PRs come from same-repo branches and run the `ci` check on the self-hosted runner.
 - **Day-4 checkpoint.** The descent must be tense by Oct 20. If it isn't, fix the flame economy before B starts, and C2 (tuning) moves earlier.
 - **Slice A is the tightest.** Slice A hours after the rebalance: **Elias 32.5 h, Kittingsl 32.5 h** in 3 days (about 11 h per person per day with zero slack). The mitigation is slipping checks, not shrinking gameplay files.
-- **K slip order for slice A:** the chain A18 and A20-A22 (plus A23) is critical and never slips: E's A25, A28 and A29 depend on it (see Cross-person critical path). K's A31 and A32 checks slip first (to B day 1), then A7 and the partial hud parts.
-- **E slip order for slice A (PROPOSAL for the owner to confirm):** A7 is now K's, so the E-side order is: A6 `state.check` first (the rest of A6 stays: input, all, package.json wiring), then render polish (glow and memory refinement in A15/A16, the A14 quality ladder beyond the minimum) to slice B day 1. Gameplay files A24-A30 and the core path A2, A3, A5 never slip, and the render path (A14-A17) must exist in plain form so A30 integrates.
+- **K slip order for slice A (MOOT since 2026-10-22: slice A is complete, A31 and A32 are done in #49 and #50, nothing slipped; kept as history):** the chain A18 and A20-A22 (plus A23) is critical and never slips: E's A25, A28 and A29 depend on it (see Cross-person critical path). K's A31 and A32 checks slip first (to B day 1), then A7 and the partial hud parts.
+- **E slip order for slice A (MOOT since 2026-10-22: slice A is complete and nothing slipped, A6 `state.check` is done; question 5 below is moot too; kept as history. Original PROPOSAL for the owner to confirm):** A7 is now K's, so the E-side order is: A6 `state.check` first (the rest of A6 stays: input, all, package.json wiring), then render polish (glow and memory refinement in A15/A16, the A14 quality ladder beyond the minimum) to slice B day 1. Gameplay files A24-A30 and the core path A2, A3, A5 never slip, and the render path (A14-A17) must exist in plain form so A30 integrates.
 - **Cave generation is the most complex algorithmic work** and now sits with K. If K is short on capacity, the fallback is that E takes A21 (macro, places, loops) while K keeps A20 and A22; that changes this plan and needs the owner's decision.
 - **Seam S1 across people.** E's `render/index.ts` (A17) calls K's `ui/hud` and `ui/menus` (A12, A13). A signature mismatch surfaces only at A17. Mitigation: merge A12 and A13 before A17 starts; both follow [[architecture-modules-ui-assets]] signatures.
 - **`entities/monster.ts` is K's file but E added `devourerMul`.** RESOLVED: the small additive hunk was pulled forward from C1 and done in #23 (A24 part 2), because `light.ts` needs it. K still reviews that hunk. If K objects, K adds the function from the spec in a one-line follow-up PR.
@@ -226,9 +226,9 @@ Closed by the owner on 2026-10-18: the split of render and lighting (Elias) and 
 
 1. Closed 2026-10-18: Kittingsl is a collaborator with write access.
 2. Who produces the AI art and music? See [[architecture-assets-pipeline-2]] (hand-off and licensing). B16 and C8 depend on delivered art.
-3. A31 and A32 (checks) may slip to B day 1. Is that acceptable?
+3. MOOT (resolved 2026-10-22): A31 and A32 did not slip; both are done (#49, #50), slice A is complete (32/32). Original question: A31 and A32 (checks) may slip to B day 1. Is that acceptable?
 4. Closed 2026-10-18: OD-1, OD-3 and OD-7 approved; A1 merged (#18).
-5. Confirm the E-side slip order proposal (A6 `state.check` first, then render polish).
+5. MOOT (resolved 2026-10-22): slice A is complete and nothing slipped. Original question: confirm the E-side slip order proposal (A6 `state.check` first, then render polish).
 6. Confirm that Kittingsl has capacity for the world-generation chain (A20-A22, B2a, B4-B6). It is the most complex algorithmic work in the plan and gates E's A29.
 7. Confirm that A4 (`core/noise.ts`, `core/view.ts`, `checks/render.check.ts`) moves to Elias together with render.
 8. RESOLVED: E adds `devourerMul` to K's `entities/monster.ts`; done in #23 (A24 part 2). K reviews the hunk.
@@ -245,6 +245,8 @@ Closed by the owner on 2026-10-18: the split of render and lighting (Elias) and 
 - 2026-10-22 (8): A29 implemented (branch feature/A29-run-screens-step, PR pending): run.ts, screens.ts, step.ts and three checks (run.check, step.check, screens.check) wired in checks/all.ts; decisions R-166..R-177 in [[architecture-rulings-3]] section 8. Not merged yet.
 - 2026-10-22 (9): A22 row marked done (complete on master via C1-C4, #35-#38)
 - 2026-10-22 (10): A29 merged (#39 squash 81f766b, follow-up nits #40 f738703); R-172 owner-confirmed (hitstop keeps `tickFx` running, [[architecture-rulings-3]] section 8); B4-B6 marked done (#35-#37) and the cave.check part of B9 done (#38); rocks.check and depth classes (C5, R-164) still open
+- 2026-10-22 (11): slice A complete, 32/32, on master 2d91fe5: A7 (#48), A10 (#47), A11 (#46), A15 (#51), A12 (#52), A13 (#53), A31 (#49), A32 (#50), A17 and A30 (#54) marked done; follow-ups: B7 adds the fake-store Best round trip to `score.check.ts` (R-168), A31 order check (b) waits for B1, stalker/devourer brain rows wait for B3/C1; see [[progress]]
+- 2026-10-22 (12): fix round 2: open questions 3 and 5 and the K/E slip-order risks marked MOOT (A31, A32 done in #49, #50); [[progress]] snapshot rewritten to the 2d91fe5 state, A10, R-170 and A17 notes marked RESOLVED (#47, #54), PR rows #43 to #45 added
 
 ## Related
 
