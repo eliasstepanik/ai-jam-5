@@ -44,7 +44,10 @@ export const toScreen = (v: View, x: number, y: number): [number, number] => [(x
 export const inView = (v: View, x: number, y: number): boolean => x >= v.x0 && x <= v.x1 && y >= v.y0 && y <= v.y1
 
 // Eased 0..1 ramp after the Beacon is lit, 0 before. GAP G3, State field world.beaconLitAt.
+// Escape without a recorded ignition (beaconLit false or beaconLitAt unset = 0, e.g. tests and debug phase jumps) counts as
+// fully faded (1): the ramp would return 0 there and leave the screen dark for good.
 export function beaconBlend(s: State): number {
+  if (s.meta.phase === 'escape' && (!s.world.beaconLit || s.world.beaconLitAt <= 0)) return 1
   if (!s.world.beaconLit) return 0
   const k = clamp((s.meta.time - s.world.beaconLitAt) / BEACON_BLEND_S, 0, 1)
   return k * k * (3 - 2 * k)
