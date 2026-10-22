@@ -1,9 +1,9 @@
 ---
 type: reference
 title: "Last Ember - Build Progress (2026-10-22)"
-description: Build status of Last Ember synced to origin/master b33c7fe on 2026-10-22 (A29 merged) - which plan tasks are done, partial, in progress or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
+description: Build status of Last Ember synced to origin/master 2d91fe5 on 2026-10-22 (Slice A complete, A17 + A30 merged) - which plan tasks are done, partial, in progress or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
 tags: [project, ai-jam-5, progress, last-ember]
-timestamp: 2026-10-22T23:00:00Z
+timestamp: 2026-10-22T23:30:00Z
 ---
 
 # Last Ember - Build Progress (2026-10-22)
@@ -87,7 +87,7 @@ Slice A is 32/32 done. All tasks below are merged to master `2d91fe5` (verified)
 
 | Task | PR | Notes |
 |---|---|---|
-| A7 | #48 | Determinism and score checks. The fake-store Best round trip belongs to B7 (R-168): B7 must add it to `score.check.ts` (R-168). |
+| A7 | #48 | Determinism and score checks. The fake-store Best round trip belongs to B7 (R-168): B7 must add it to `score.check.ts`. |
 | A10 | #47 | `drawSprite` placeholder path fixed to scale 1 (closes the A9/A10 integration note); `render/index.ts` calls `startPreload(res)`. |
 | A11 | #46 | `titleLayout` has an optional `ready` param; `menus.ts` and `game.ts` pass the same value. |
 | A12 | #52 | Defaults: `SHARE_BASE=''` (OD-5b), non-escaped Best has no tag, stateless `?seed=` write. |
@@ -131,7 +131,7 @@ Nothing in these lists is on master. Slice A items carry an owner; the full plan
 - Elias: C1, C2, C6.
 - Kittingsl: C3, C4, C5, C7, C8.
 
-Also absent from master: in `src/render`, everything except `keys`, `view`, `flame`, `quality`, `light`, `glow` and `entities` (no tiles, memory, props, index, overlay, particles); `src/ui` and `src/audio` entirely; in `src/assets`, everything except `sprites`, `sounds`, `resources` and the three `placeholders-*` files (no images, atlas); `core/storage.ts`; `world/route.ts`; and the checks of A7, A31, A32 and slice B (`caves.ts` and the `cave*` checks are on master). `systems/run.ts`, `screens.ts`, `step.ts` and their three checks are on master since A29 (#39). `world/validate.ts` and `world/gen/populate.ts`, `pockets.ts`, `teach.ts`, `fallback.ts` are on master since C1-C3.
+Still absent from master at `2d91fe5` (checked with `ls src`, 2026-10-22): `src/audio` entirely; `src/ui/debug.ts`; in `src/render`, `particles.ts`, `decor.ts` and `overlay.ts` (the other render modules, including `tiles`, `memory`, `props` and `index`, and the `src/ui` files `draw`, `hud`, `layout`, `menu-kit`, `menus`, `menus-end`, `platform`, `strings` are on master); `core/storage.ts`; `world/route.ts`; the final art (`src/assets/atlas.json` is only a seed, no packed images); and the slice B systems and checks (the checks of A7, A31 and A32, `caves.ts` and the `cave*` checks are on master). `systems/run.ts`, `screens.ts`, `step.ts` and their three checks are on master since A29 (#39). `world/validate.ts` and `world/gen/populate.ts`, `pockets.ts`, `teach.ts`, `fallback.ts` are on master since C1-C3.
 
 ## Remaining slice A and critical path
 
@@ -209,7 +209,7 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - Test gaps for Kittingsl's A31/A32 checks (from the A28 and A14 retrospects): stuck relocate timing, `stuckFrac`, `lungeRangePx` for stalker and devourer; quality ladder thresholds 18.5 / 12 ms, the vsync30 work limit, `VIG_STEP`, the top mask bucket.
 - A16 follow-up: `inView` has no 48 px entity margin (render-2 section 2.3); A16 adds it or `inView` gets a pad argument. Resolved in #31: the margin lives inside `entities.ts`, `inView` is unchanged.
 - **Owner decision from #31 (R-083):** `lightSources` does not exist in `systems/light.ts`, and no `FLAME` table exists in `systems/flame.ts`. `render/light.ts` builds the sources itself (player flame or ember r=22, entrance shaft r=72, beacon r=96*hold/holdS), and flicker uses `T.flame` per tuning section 3 instead of render-2 section 5.5 `FLICKER_AMP` 0.04. Either add `lightSources` to `systems/light.ts` later or amend R-083 (status note added to R-083 in [[architecture-rulings-2]]).
-- **Owner decision from #31 (escape blend):** `render/light.ts` has a local `blend(s)` that treats escape without `beaconLit`, or with `beaconLitAt <= 0`, as fully faded. This duplicates `view.ts` `beaconBlend`, which returns 0 there and would keep the screen dark forever. Move the guard into `beaconBlend` in A17 so there is one source.
+- **Owner decision from #31 (escape blend; RESOLVED in #54):** `render/light.ts` had a local `blend(s)` that treated escape without `beaconLit`, or with `beaconLitAt <= 0`, as fully faded, duplicating `view.ts` `beaconBlend`, which returned 0 there and would have kept the screen dark forever. The guard now lives in `beaconBlend` (`render/view.ts`), `light.ts` imports it, and the local copy is gone.
 - **A17 notes (from #31):** `drawDarkness` leaves identity transform, source-over, alpha 1 and smoothing off on EVERY path, so A17 must call `worldXf` again before the next world-space pass. `drawEyes` and `drawGlow` leave `'lighter'` set. Pass order: `drawMonsters` (10), `drawPlayer` (11), `drawDarkness` (14), `drawEyes` (16), `drawGlow` with `torchTip` (17).
 - Minor test gaps from the A16 retrospect (add to the A31/A32 test-gap item above): torch-tip per-frame anchors; tint-canvas height after eviction.
 - C15 follow-up: the debug overlay must skip the `'@'` key of `perf.pass`.
@@ -231,7 +231,7 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - **A29 (R-168, R-169):** B7 must add the storage calls and each B task (B1, B2, B7, B8) must add its own step call at the index comment in `step.ts`.
 - **A29 (R-176):** A31 `order.check` item (e) cannot use a counting spy in `step.ts`; it must observe call order through behaviour (as `step.check.ts` does) or another owner-approved route.
 - **A29 timing margin:** `run.check.ts` `run()` takes about 1.0-1.45 s against its 1.6 s ceiling; watch it when the checks or the cave generator change.
-- **Check guard gap (found by the #40 gate review):** `scripts/check-guard.ts` has no guard that each `src/checks/*.check.ts` file is imported and called in `src/checks/all.ts`; a new check file that is forgotten there never runs. Add such a guard in a follow-up.
+- **Check guard gap (found by the #40 gate review; RESOLVED):** `scripts/check-guard.ts` had no guard that each `src/checks/*.check.ts` file is imported and called in `src/checks/all.ts`, so a forgotten new check file never ran. Resolved in #43 (`6e11f87`): `check-guard.ts` now verifies that every `src/checks/*.check.ts` is imported and called in `all.ts`.
 - **Style nit (A29):** four lines exceed 160 characters: `src/checks/screens.check.ts` lines 116, 119 and 257, and `src/systems/screens.ts` line 14 (`awk 'length>160'`, 2026-10-22).
 - Questions already in [[last-ember-open-questions]] stay open there.
 
