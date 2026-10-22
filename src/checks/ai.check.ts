@@ -21,7 +21,9 @@ import { caveOf } from './caves.ts'
 
 const DT = 1 / 60
 const K = T.monsters.lurker
-const BUDGET_MS = 1000 // monsters-ai-2 §8: 3 600 steps with 24 shades, generous for CI noise
+// monsters-ai-2 §8: 3 600 steps with 24 shades, generous for CI noise. The wall-clock timer (performance.now) runs in a
+// check, which check-guard does not scan and determinism §6 (clock ban in simulation code) does not cover.
+const BUDGET_MS = 1000
 
 function ok(cond: boolean, msg: string): void {
   if (!cond) throw new Error('check failed: ' + msg)
@@ -166,7 +168,7 @@ function budget(): void {
   s.director.spawnT = 1e9
   s.debug.god = true
   const n = T.director.monstersMax
-  const t0 = new Date().getTime()
+  const t0 = performance.now()
   for (let k = 0; k < 3600; k++) {
     while (s.monsters.length < n) {
       const pos = findSpawn(s, 'lurker') ?? { x: s.player.x + 30, y: s.player.y }
@@ -174,7 +176,7 @@ function budget(): void {
     }
     step(s, idle, DT)
   }
-  const ms = new Date().getTime() - t0
+  const ms = performance.now() - t0
   ok(s.meta.steps === 3600 && s.meta.screen === 'playing' && s.monsters.length > 0, '3 600 steps simulated with shades alive')
   ok(ms < BUDGET_MS, '3 600 steps with ' + n + ' shades in ' + ms + ' ms (budget ' + BUDGET_MS + ' ms)')
 }
