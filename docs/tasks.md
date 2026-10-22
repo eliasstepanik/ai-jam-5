@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)"
 description: Task plan for Last Ember – who owns which code (Elias and Kittingsl), assignment principles, ownership summary, task index for slices A, B and C with hours and dependencies, per-person totals, risks, working process and open questions for the owner.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-22T23:00:00Z
+timestamp: 2026-10-22T23:50:00Z
 ---
 
 # Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)
@@ -199,8 +199,8 @@ Gameplay needs K's world work. E's A25 (movement) needs K's A18, E's A28 needs K
 - **Approvals:** OD-1, OD-3 and OD-7 were approved on 2026-10-18 (A1 merged as #18). K is a collaborator with write access; K's PRs come from same-repo branches and run the `ci` check on the self-hosted runner.
 - **Day-4 checkpoint.** The descent must be tense by Oct 20. If it isn't, fix the flame economy before B starts, and C2 (tuning) moves earlier.
 - **Slice A is the tightest.** Slice A hours after the rebalance: **Elias 32.5 h, Kittingsl 32.5 h** in 3 days (about 11 h per person per day with zero slack). The mitigation is slipping checks, not shrinking gameplay files.
-- **K slip order for slice A:** the chain A18 and A20-A22 (plus A23) is critical and never slips: E's A25, A28 and A29 depend on it (see Cross-person critical path). K's A31 and A32 checks slip first (to B day 1), then A7 and the partial hud parts.
-- **E slip order for slice A (PROPOSAL for the owner to confirm):** A7 is now K's, so the E-side order is: A6 `state.check` first (the rest of A6 stays: input, all, package.json wiring), then render polish (glow and memory refinement in A15/A16, the A14 quality ladder beyond the minimum) to slice B day 1. Gameplay files A24-A30 and the core path A2, A3, A5 never slip, and the render path (A14-A17) must exist in plain form so A30 integrates.
+- **K slip order for slice A (MOOT since 2026-10-22: slice A is complete, A31 and A32 are done in #49 and #50, nothing slipped; kept as history):** the chain A18 and A20-A22 (plus A23) is critical and never slips: E's A25, A28 and A29 depend on it (see Cross-person critical path). K's A31 and A32 checks slip first (to B day 1), then A7 and the partial hud parts.
+- **E slip order for slice A (MOOT since 2026-10-22: slice A is complete and nothing slipped, A6 `state.check` is done; question 5 below is moot too; kept as history. Original PROPOSAL for the owner to confirm):** A7 is now K's, so the E-side order is: A6 `state.check` first (the rest of A6 stays: input, all, package.json wiring), then render polish (glow and memory refinement in A15/A16, the A14 quality ladder beyond the minimum) to slice B day 1. Gameplay files A24-A30 and the core path A2, A3, A5 never slip, and the render path (A14-A17) must exist in plain form so A30 integrates.
 - **Cave generation is the most complex algorithmic work** and now sits with K. If K is short on capacity, the fallback is that E takes A21 (macro, places, loops) while K keeps A20 and A22; that changes this plan and needs the owner's decision.
 - **Seam S1 across people.** E's `render/index.ts` (A17) calls K's `ui/hud` and `ui/menus` (A12, A13). A signature mismatch surfaces only at A17. Mitigation: merge A12 and A13 before A17 starts; both follow [[architecture-modules-ui-assets]] signatures.
 - **`entities/monster.ts` is K's file but E added `devourerMul`.** RESOLVED: the small additive hunk was pulled forward from C1 and done in #23 (A24 part 2), because `light.ts` needs it. K still reviews that hunk. If K objects, K adds the function from the spec in a one-line follow-up PR.
@@ -226,9 +226,9 @@ Closed by the owner on 2026-10-18: the split of render and lighting (Elias) and 
 
 1. Closed 2026-10-18: Kittingsl is a collaborator with write access.
 2. Who produces the AI art and music? See [[architecture-assets-pipeline-2]] (hand-off and licensing). B16 and C8 depend on delivered art.
-3. A31 and A32 (checks) may slip to B day 1. Is that acceptable?
+3. MOOT (resolved 2026-10-22): A31 and A32 did not slip; both are done (#49, #50), slice A is complete (32/32). Original question: A31 and A32 (checks) may slip to B day 1. Is that acceptable?
 4. Closed 2026-10-18: OD-1, OD-3 and OD-7 approved; A1 merged (#18).
-5. Confirm the E-side slip order proposal (A6 `state.check` first, then render polish).
+5. MOOT (resolved 2026-10-22): slice A is complete and nothing slipped. Original question: confirm the E-side slip order proposal (A6 `state.check` first, then render polish).
 6. Confirm that Kittingsl has capacity for the world-generation chain (A20-A22, B2a, B4-B6). It is the most complex algorithmic work in the plan and gates E's A29.
 7. Confirm that A4 (`core/noise.ts`, `core/view.ts`, `checks/render.check.ts`) moves to Elias together with render.
 8. RESOLVED: E adds `devourerMul` to K's `entities/monster.ts`; done in #23 (A24 part 2). K reviews the hunk.
@@ -246,6 +246,7 @@ Closed by the owner on 2026-10-18: the split of render and lighting (Elias) and 
 - 2026-10-22 (9): A22 row marked done (complete on master via C1-C4, #35-#38)
 - 2026-10-22 (10): A29 merged (#39 squash 81f766b, follow-up nits #40 f738703); R-172 owner-confirmed (hitstop keeps `tickFx` running, [[architecture-rulings-3]] section 8); B4-B6 marked done (#35-#37) and the cave.check part of B9 done (#38); rocks.check and depth classes (C5, R-164) still open
 - 2026-10-22 (11): slice A complete, 32/32, on master 2d91fe5: A7 (#48), A10 (#47), A11 (#46), A15 (#51), A12 (#52), A13 (#53), A31 (#49), A32 (#50), A17 and A30 (#54) marked done; follow-ups: B7 adds the fake-store Best round trip to `score.check.ts` (R-168), A31 order check (b) waits for B1, stalker/devourer brain rows wait for B3/C1; see [[progress]]
+- 2026-10-22 (12): fix round 2: open questions 3 and 5 and the K/E slip-order risks marked MOOT (A31, A32 done in #49, #50); [[progress]] snapshot rewritten to the 2d91fe5 state, A10, R-170 and A17 notes marked RESOLVED (#47, #54), PR rows #43 to #45 added
 
 ## Related
 
