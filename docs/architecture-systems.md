@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Gameplay Systems (1/4) – Step Order, Screens, Runs, Intent, Movement
 description: Last Ember gameplay systems part 1 – the fixed-step update order for descent and escape, the step() skeleton with hitstop, screen state machine with transitions and resets, startRun and endRun contracts, intent resolution from Input (movement vector, aim via camera and view) and player movement with circle-vs-tile collision and sliding, with formulas and worked examples.
 tags: [project, ai-jam-5, architecture, last-ember, systems]
-timestamp: 2026-10-22T17:00:00Z
+timestamp: 2026-10-22T20:00:00Z
 ---
 
 # Last Ember – Gameplay Systems (1/4)
@@ -129,7 +129,7 @@ Notes (A29), stale rows of the table above; the code follows [[architecture-ui-2
 - `paused` + `Enter` does not resume: it activates the focused menu item (cursor starts on Resume, `playing` -> `paused` sets `ui.cursor = 0`); see R-175 in [[architecture-rulings-3]] §8.
 - `help` returns to `ui.helpFrom`, not always to `title`; see R-175.
 - `KeyC` only emits the `copyLink` fx event; `platformStep` writes `ui.copied`, `stepScreens` only counts it down (no `ui.copied = 2` here, no `ui.urlSeed`). `KeyC` acts on paused, dead and won, not on title and not on help; see R-171, R-175, R-077.
-- Mouse: `stepScreens` does not write `ui.hover` from `hit()`. A click activates the item under `ui.cursor` until A30/A11 set `ui.cursor` and `ui.hover` from `hit()` before `step`; see R-170 (open) and the extra navigation and lockout rules in R-174.
+- Mouse: `stepScreens` does not write `ui.hover` from `hit()`. A click activates the item under `ui.cursor` until A30/A11 set `ui.cursor` and `ui.hover` from `hit()` before `step`; see R-170 (OWNER ruling, deferred to A30/A11) and the extra navigation and lockout rules in R-174.
 - Settings and best load (`settings.loaded`) and `saveSettings` calls are not in `screens.ts` until B7 creates `core/storage.ts`; see R-168.
 - `stepScreens` also runs `genStep(s)` while `ui.genPending !== ''` (see section 3 note); see R-166.
 
