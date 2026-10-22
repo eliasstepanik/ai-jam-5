@@ -103,11 +103,12 @@ export function drawSprite(ctx: CanvasRenderingContext2D, id: SpriteId, anim: st
   // ponytail: getTransform allocates a DOMMatrix per call (~120 per frame). Upgrade: pass View (v.z, v.ox, v.oy) in if a profile shows GC.
   const b = ctx.getTransform(), z = b.a
   const sx = Math.round(x * z) / z, sy = Math.round(y * z) / z // snap to the device grid (render §4.3)
-  const a = quantAngle(rot), c = Math.cos(a) * scale * z, sn = Math.sin(a) * scale * z
-  ctx.setTransform(c, sn, -sn, c, b.e + sx * z, b.f + sy * z)
-  ctx.globalAlpha = alpha
   const r = forcePlaceholders() ? null : resolved(id, anim, frame)
   const img = r ? sheetImage(r[0]) : null
+  // Placeholders are authored in world units: scale applies to atlas art only (callers pass 0.5/0.75/1.5 for 64 px sources).
+  const a = quantAngle(rot), k = r && img ? scale : 1, c = Math.cos(a) * k * z, sn = Math.sin(a) * k * z
+  ctx.setTransform(c, sn, -sn, c, b.e + sx * z, b.f + sy * z)
+  ctx.globalAlpha = alpha
   const key = id + '|' + anim + '|' + frame + '|' + tint
   if (r && img) {
     if (tint) {
@@ -115,7 +116,7 @@ export function drawSprite(ctx: CanvasRenderingContext2D, id: SpriteId, anim: st
       if (t) ctx.drawImage(t, -d.px, -d.py)
     } else ctx.drawImage(img, r[1], r[2], r[3], r[4], -d.px, -d.py, r[3], r[4])
   } else if (tint) {
-    // No atlas rect to tint: bake the placeholder once at 1x (it is static, t = 0), then recolour that. Ceiling: soft when zoomed in.
+    // No atlas rect to tint: bake the placeholder once at 1x world units (it is static, t = 0; drawn unscaled above), then recolour that. Ceiling: soft when zoomed in.
     const t = tintCached(key + '|ph', d.w, d.h, g => {
       g.translate(d.px, d.py)
       PLACEHOLDERS[id](g, anim, frame, 0)
