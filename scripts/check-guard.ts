@@ -26,7 +26,7 @@ for (const f of files) {
   })
 }
 // Wiring pass: every src/checks/*.check.ts must be imported in all.ts and each imported binding called as `x()` there.
-const all = readFileSync('src/checks/all.ts', 'utf8').replace(/\/\/.*$/gm, '')
+const all = readFileSync('src/checks/all.ts', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 const body = all.replace(/^import[^;\n]*$/gm, '')
 for (const f of readdirSync('src/checks').sort().filter((n) => n.endsWith('.check.ts'))) {
   const m = new RegExp(`^import\\s*\\{([^}]*)\\}\\s*from\\s*'\\./${f.replace(/\./g, '\\.')}'`, 'm').exec(all)
@@ -37,4 +37,4 @@ for (const f of readdirSync('src/checks').sort().filter((n) => n.endsWith('.chec
 if (hits.length > 0) throw new Error(hits.join('\n'))
 console.log(`check-guard ok (${files.length} files)`)
 // ponytail: line-based grep; catches aliases like `const r = Math.random` but not `Math['random']` and flags banned names in comments. Add an AST check if someone gets clever.
-// ponytail: wiring pass is a regex over all.ts text (named single-line imports only; a call inside a string or an uncalled-but-referenced binding in dead code still passes). Upgrade: parse with the TypeScript API, or generate all.ts from a readdir glob.
+// ponytail: wiring pass is a regex over all.ts text (named single-line imports only; block and line comments are stripped but strings are not, so a call inside a string or an uncalled-but-referenced binding in dead code still passes). Upgrade: parse with the TypeScript API, or generate all.ts from a readdir glob.
