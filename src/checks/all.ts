@@ -15,6 +15,8 @@ import { run as caveReject4 } from './cave-reject4.check.ts'
 import { run as caveReject5 } from './cave-reject5.check.ts'
 import { run as caveReject6 } from './cave-reject6.check.ts'
 import { run as caveReject7 } from './cave-reject7.check.ts'
+import { run as determinism } from './determinism.check.ts'
+import { run as score } from './score.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -31,4 +33,6 @@ caveReject4()
 caveReject5()
 caveReject6()
 caveReject7()
+determinism()
+score()
 console.log('checks ok')
