@@ -15,6 +15,10 @@ import { run as caveReject4 } from './cave-reject4.check.ts'
 import { run as caveReject5 } from './cave-reject5.check.ts'
 import { run as caveReject6 } from './cave-reject6.check.ts'
 import { run as caveReject7 } from './cave-reject7.check.ts'
+import { run as lightFlame } from './light-flame.check.ts'
+import { run as parry } from './parry.check.ts'
+import { run as damage } from './damage.check.ts'
+import { run as movement } from './movement.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -31,4 +35,8 @@ caveReject4()
 caveReject5()
 caveReject6()
 caveReject7()
+lightFlame()
+parry()
+damage()
+movement()
 console.log('checks ok')
