@@ -3,12 +3,12 @@ type: reference
 title: "Last Ember – Per-File Assignment (Elias vs Kittingsl)"
 description: Per-file table for Last Ember (section 3 of the task plan) – every source, script, asset and check file with the slice in which it is first created, the owner (E = Elias, K = Kittingsl), the task id and an estimated line count.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-22T20:00:00Z
+timestamp: 2026-10-22T21:00:00+02:00
 ---
 
 # Last Ember – Per-File Assignment (Elias vs Kittingsl)
 
-Section 3 of the task plan (author: project-manager, 2026-10-18). The overview, assignment principles, ownership summary, task index (slices A, B, C), totals, risks and process live in [[tasks]]. Task ids (A1 … C8) are defined in [[tasks]] section 4. File specs are in the module trees linked under Related and in [[architecture]]. Done and partial status per task: see [[progress]].
+Section 3 of the task plan (author: project-manager, 2026-10-18). The overview, assignment principles, ownership summary, task index (slices A, B, C, D), totals, risks and process live in [[tasks]]. Slice D (2.5D migration, [[ADR-123-2-5d-view]]) is planned only: its rows are marked D below and nothing is implemented yet. Task ids (A1 … D15) are defined in [[tasks]] section 4. File specs are in the module trees linked under Related and in [[architecture]]. Done and partial status per task: see [[progress]].
 
 ## 3. Per-file table
 
@@ -25,11 +25,15 @@ Legend:
 |---|---|---|---|---|
 | src/main.ts (EDIT) | A | E | A1 | +13 |
 | index.html (EDIT) | A | E | A1 | 40 |
-| package.json (EDIT; A6 wires `node src/check.ts && node src/checks/all.ts && node scripts/check-guard.ts`; check-assets is added in the C8 review, see note below) | A | E | A6 | +5 |
+| package.json (EDIT; A6 wires `node src/check.ts && node src/checks/all.ts && node scripts/check-guard.ts`; check-assets is added in the C8 review, see note below; D12 reworks the `check` script hunk for the rewritten check-assets, E-only edit) | A | E | A6; +D12 (planned) | +5 |
 | scripts/check-guard.ts | A | E | A5 | ~80 |
-| scripts/check-assets.ts | A | K | A10 | ~150 |
-| scripts/pack-atlas.ts | B | K | B15 | ~350 |
+| scripts/check-assets.ts | A | K | A10; +D12 (rewrite, planned) | ~150 |
+| scripts/pack-atlas.ts (SUPERSEDED by ADR-123: no packer; not created) | B | K | B15 | ~350 |
+| scripts/trim-characters.ts (planned, D) | D | K | D2 | ~80 |
+| art/characters-source.json (planned, D; untrimmed source atlas, 485 KB) | D | K | D2 | data |
 | src/game.ts (EDIT) | A | E | A30; +B8 | 60 |
+| README.md (EDIT; D14: AI process rows and credits for both delivered atlases, marked provenance line) | D | E | D14 (planned) | +15 |
+| CHANGELOG.md (EDIT; D14: Added and Changed entries under `[Unreleased]`) | D | E | D14 (planned) | +4 |
 
 `ci.yml`, `merge.ts`, `check.ts` and `vite.config.ts` are unchanged.
 
@@ -113,17 +117,21 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 
 | File | Slice | Owner | Task | Lines |
 |---|---|---|---|---|
-| src/render/keys.ts | A | E | A14 | 50 |
-| src/render/view.ts | A | E | A14 | 90 |
+| src/render/keys.ts | A | E | A14; +D4 | 50 |
+| src/render/view.ts | A | E | A14; +D8 | 90 |
+| src/render/tileset.ts (planned, D) | D | E | D3 | <=120 |
+| src/render/charatlas.ts (planned, D) | D | E | D5 | <=200 |
 | src/render/flame.ts | A | E | A14 | 25 |
 | src/render/quality.ts | A | E | A14; +C6 | 120 |
-| src/render/tiles.ts | A | E | A15; +C6 | 190 |
+| src/render/tiles.ts | A | E | A15; D6 rewrite (replaces the C6 tile swap) | <=300 |
+| src/render/tiles-paint.ts (only if tiles.ts would pass 300 lines; planned, D) | D | E | D6 | ~150 |
 | src/render/memory.ts | A | E | A15 | 110 |
-| src/render/props.ts | A | E | A15; +B17 | 130 |
+| src/render/props.ts | A | E | A15; +B17; +D11 | 130 |
 | src/render/light.ts | A | E | A16 | 170 |
-| src/render/entities.ts | A | E | A16 | 200 |
+| src/render/entities.ts | A | E | A16; D10 rewrite | <=300 |
+| src/render/entities-player.ts (only if entities.ts would pass 300 lines; planned, D) | D | E | D10 | ~120 |
 | src/render/glow.ts | A | E | A16; +B17 | 180 |
-| src/render/index.ts | A | E | A17 | 130 |
+| src/render/index.ts | A | E | A17; +D9 | 130 |
 | src/render/overlay.ts | B | E | B17; +C6 | 150 |
 | src/render/particles.ts | B | E | B18; +C6 | 200 |
 
@@ -156,15 +164,19 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 
 | File | Slice | Owner | Task | Lines |
 |---|---|---|---|---|
-| src/assets/sprites.ts | A | K | A8 | 200 |
+| src/assets/sprites.ts | A | K | A8; +D13 | 200 |
 | src/assets/sounds.ts | A | K | A8 | 120 |
-| src/assets/resources.ts | A | K | A8 | 150 |
+| src/assets/resources.ts | A | K | A8; +D7 (render types; DEFAULT edited by E) | 150 |
 | src/assets/placeholders-actors.ts | A | K | A9 | 200 |
-| src/assets/placeholders-world.ts | A | K | A9 | 250 |
+| src/assets/placeholders-world.ts | A | K | A9; +D13 (cleanup) | 250 |
 | src/assets/placeholders-ui.ts | A | K | A9 | 150 |
-| src/assets/images.ts | A | K | A10; +B16 | 200 |
-| src/assets/atlas.json (seed, then GEN) | A | K | A10; +B16 | ~5 / 265 |
-| src/assets/atlas-0.png (GEN) | B | K | B16 | binary |
+| src/assets/images.ts | A | K | A10; +D13 | 200 |
+| src/assets/atlas.json (seed; the B16 generated version is SUPERSEDED by ADR-123) | A | K | A10 | ~5 |
+| src/assets/atlas-0.png (SUPERSEDED by D1/D2: no packed atlas; not created) | B | K | B16 | binary |
+| src/assets/cave_tileset.png (planned, D; byte-identical import, 1024x1024 max, <=100 KB) | D | K | D1 | binary |
+| src/assets/cave_tileset.json (planned, D; byte-identical import) | D | K | D1 | data |
+| src/assets/characters.png (planned, D; generated from the source by trim-characters, <=4096x4096, <=600 KB) | D | K | D2 | binary |
+| src/assets/characters.json (planned, D; generated) | D | K | D2 | data |
 
 ### checks
 
@@ -179,7 +191,7 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 | src/checks/determinism.check.ts | A | K | A7 | 200 |
 | src/checks/score.check.ts (merged with the systems one) | A | K | A7 | 80 |
 | src/checks/caves.ts | A | K | A22 | 17 |
-| src/checks/render.check.ts | A | E | A4 | 40 |
+| src/checks/render.check.ts | A | E | A4; +D4 | 40 |
 | src/checks/world.check.ts | A | K | A19 | ~250 |
 | src/checks/light-flame.check.ts | A | K | A32 | ~100 |
 | src/checks/parry.check.ts | A | K | A32 | ~120 |
@@ -195,6 +207,8 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 
 ## Related
 
+- [[ADR-123-2-5d-view]]
+- [[ai-jam-5-asset-formats-25d]]
 - [[progress]]
 - [[tasks]]
 - [[architecture]]

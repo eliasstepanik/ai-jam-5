@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember - Build Progress (2026-10-22)"
 description: Build status of Last Ember synced to origin/master 2d91fe5 on 2026-10-22 (Slice A complete, A17 + A30 merged) - which plan tasks are done, partial, in progress or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
 tags: [project, ai-jam-5, progress, last-ember]
-timestamp: 2026-10-22T23:50:00Z
+timestamp: 2026-10-22T22:00:00+02:00
 ---
 
 # Last Ember - Build Progress (2026-10-22)
@@ -117,6 +117,8 @@ None. A22 was the last partial task; it is complete on master (see the A22 row u
 ## In progress
 
 None. A29 and the cave generator chain C1-C4 are merged (see Done).
+
+**2026-10-22, 2.5D pivot decided (nothing implemented yet).** The owner approved a fixed-south 3/4 view with a 2.5D look ([[ADR-123-2-5d-view]], rulings R-178 to R-186 in [[architecture-rulings-3]] section 9, formats in [[ai-jam-5-asset-formats-25d]]). Slice D (D0 to D15) is planned in [[tasks]]. No code and no asset has been changed. B15 and B16 (atlas packer, atlas-0.png), the C6 tile atlas swap and the C8 repack are superseded by D1, D2, D6 and D12. Open owner defaults OD-D1 to OD-D8 and the asset provenance question are in [[last-ember-open-questions]]. Plan `drawTileRow` is named `drawWallRow` in docs; plan section 7 is [[architecture-rulings-3]] section 9; docs govern.
 
 ## Not started
 
@@ -242,6 +244,8 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 
 ## Related
 
+- [[ADR-123-2-5d-view]]
+- [[ai-jam-5-asset-formats-25d]]
 - [[tasks]]
 - [[tasks-files]]
 - [[index]]

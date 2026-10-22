@@ -3,10 +3,12 @@ type: architecture
 title: Last Ember – Render Architecture (1/3) – Modules, Frame Pipeline, Camera Transform
 description: Last Ember rendering part 1 – render module map, purity rules, the numbered per-frame draw order with exact canvas calls, the world-to-screen camera transform with integer device zoom, DPR handling, pixel snapping and screen shake.
 tags: [project, ai-jam-5, architecture, last-ember, render]
-timestamp: 2026-10-17T22:00:00Z
+timestamp: 2026-10-22T22:00:00+02:00
 ---
 
 # Last Ember – Render Architecture (1/3)
+
+> **2.5D view pivot (2026-10-22, [[ADR-123-2-5d-view]], R-178..R-186 in [[architecture-rulings-3]] §9).** The world is drawn in a fixed-south 3/4 look: the floor is a 24 px repeating pattern, walls are caps plus 48-unit faces that hang into the south cell, and walls and actors are depth-sorted per tile row (R-180). Pass 5 below is split into 5a/5b, the camera is clamped (R-181), and actors draw at scale 1.0 (R-184). Asset facts: [[ai-jam-5-asset-formats-25d]]. Where this file disagrees with those rulings, the rulings win.
 
 Part 1 of 3. Next: [[architecture-render-2]] (tile pass, entities, particles, darkness layer), [[architecture-render-3]] (glow, Beacon mode, overlays, budget, quality ladder, `drawSprite`, raycast seam, debug overlay). Non-State resources: [[architecture-resources]], [[architecture-resources-2]]. HUD and menus: [[architecture-ui]], [[architecture-ui-2]]. Hub: [[architecture]]. Spec (governs): [[last-ember-design]]. State: [[architecture-state]], [[architecture-state-2]], [[architecture-state-3]]. Host contract: [[architecture-host-changes]], [[architecture-host-changes-2]]. Colours: [[architecture-assets-style]]. Sprites: [[architecture-assets-sprites]], [[architecture-assets-sprites-2]], [[architecture-assets-sprites-3]]. Loader: [[architecture-assets-pipeline]].
 
@@ -27,8 +29,9 @@ Part 1 of 3. Next: [[architecture-render-2]] (tile pass, entities, particles, da
 |---|---|---|
 | `src/render/index.ts` | `render(ctx, s, w, h)` – the orchestrator below; re-exported by `src/game.ts` | ~120 |
 | `src/render/view.ts` | `type View`, `makeView(ctx, s, w, h): View`, `worldXf(ctx, v)`, `screenXf(ctx, v)`, `toScreen(v, x, y)` | ~80 |
-| `src/render/tiles.ts` | `drawTiles(ctx, s, v)`, tile layer cache keyed by `tilesHash` | ~180 |
-| `src/render/entities.ts` | `drawVeins`, `drawPickups`, `drawMonsters`, `drawPlayer`, `drawRocks`, `drawEyes` | ~250 |
+| `src/render/tiles.ts` | `drawFloor(ctx, s, v, q)`, `drawWallRow(ctx, s, v, ty)`, chunk cache keyed by `tilesHash` (2.5D, [[architecture-modules-render]]) | ~180 |
+| `src/render/entities.ts` | `actorRows(s, v)`, `drawRowEntities(ctx, s, v, ty)`, `drawMonsters`, `drawPlayer`; `drawEyes` lives in `glow.ts` (C5) | ~200 |
+| `src/render/props.ts` | `drawVeins`, `drawPickups`, `drawLandmarks`, `drawRocks`; pickups, landmarks and landed rocks go into the actor row buckets (R-180), telegraph and falling rocks are drawn after the row loop ([[architecture-modules-render]] §3) | ~130 |
 | `src/render/particles.ts` | `consumeEvents(s)`, `drawParticles(ctx, s, v, pass)` | ~200 |
 | `src/render/light.ts` | light sprite cache, `drawDarkness(ctx, s, v, q)`, `drawGlow(ctx, s, v, q)` | ~220 |
 | `src/render/memory.ts` | memory canvas cache (`w × h` px, 1 px per tile), dirty-rect upload ([[architecture-render-2]] §5.2), `drawMemory(dctx, s, v, q)` | ~110 |
@@ -52,14 +55,15 @@ Import DAG (no cycles, [[architecture-host-changes-2]] §4): `core ← world ←
 | 2 | consume events | – | `consumeEvents(s)` spawns particles for new `fx.events` | always while a world exists |
 | 3 | clear [clear] | device | `setTransform(1,0,0,1,0,0)`; `fillStyle = '#000'`; `fillRect(0,0,cw,ch)` | always |
 | 4 | camera [view] | world | `v = makeView(ctx,s,w,h)`; `setTransform(v.z,0,0,v.z,v.ox,v.oy)`; `imageSmoothingEnabled = false` | always |
-| 5 | tiles [tiles] | world | floor + wall + inner-corner `drawImage` per visible tile; decals | always |
-| 6 | decor [tiles] (crater: pass 12; no cracks, R-138) | world | `drawImage` of decor list entries in range | `q.decor` |
-| 7 | veins [ents] | world | vein overlay sprites rotated in 90° steps | always |
+| 5a | floor [tiles] | world | `drawFloor`: visible floor chunks (24 px floor pattern + ground overlays, R-179) | always |
+| 5b | wall rows interleaved with actor rows [tiles] | world | for `ty` in `ty0..ty1`: `drawWallRow(ctx, s, v, ty)` (caps, faces, wall overlays), then the actors, pickups, veins and landmarks whose foot row is `ty`, sorted by foot y (R-180). Passes 7–12 below are drawn inside this loop | always |
+| 6 | decor [tiles] | world | closed: ground overlays are part of the floor chunks (5a), no separate decor pass (G6 closed, [[tasks]]) | – |
+| 7 | veins [ents] (inside 5b) | world | south-facing veins: tileset ore frames; other facings: rotated `spec_vein-*` placeholders (R-186) | always |
 | 8 | pickups [ents] | world | sprite with bob `y + sin(meta.time·2π + bob)` | always |
 | 9 | Beacon + entrance [ents] | world | `spec_beacon` frame by state; `spec_entrance` | always |
-| 10 | monsters FULL [ents] | world | body sprite + eyes sprite for `m` with `inLight(s, m.x, m.y)` | per monster |
-| 11 | player [ents] | world | eight-direction 64×64 body at scale 0.5, torch/no-torch set by phase, stick included in torch set; procedural swing trail in pass 17 (R-154) | always |
-| 12 | rocks [ents] | world | telegraph shadow circles, falling/landed boulders | `phase === 'escape'` |
+| 10 | monsters FULL [ents] | world | atlas body sprite at scale 1.0 + eyes placeholder for `m` with `inLight(s, m.x, m.y)`, y-sorted with the wall rows (R-180, R-184) | per monster |
+| 11 | player [ents] | world | eight-direction 64×64 atlas frame at scale 1.0 (R-184), animation set by phase, lit player uses the flame-palette copy (R-185); y-sorted with the wall rows; procedural swing trail in pass 17 | always |
+| 12 | rocks [ents] | world | telegraph shadow circles and falling boulders after the row loop (`drawRocks`); landed boulders are drawn in the row bucket pass by foot row (R-180, `props.ts`) | `phase === 'escape'` |
 | 13 | world particles, normal blend [fx] | world | dust, ink droplets, chips | always |
 | 14 | DARKNESS composite [dark] | screen | build offscreen darkness, then `drawImage(dark, 0, 0, w, h)` | `!reveal` and Beacon transition < 1 |
 | 15 | Beacon-lit warm overlay [dark] | screen | `'multiply'` fill `#ffb36b` at `0.55·k` | `world.beaconLit` |
@@ -90,14 +94,14 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   ctx.fillRect(0, 0, v.cw, v.ch)
   worldXf(ctx, v)
   ctx.imageSmoothingEnabled = false
-  drawTiles(ctx, s, v, q)
-  drawVeins(ctx, s, v)
-  drawPickups(ctx, s, v)
-  drawLandmarks(ctx, s, v)
-  drawMonsters(ctx, s, v)
-  drawPlayer(ctx, s, v)
+  drawFloor(ctx, s, v, q) // 5a
+  actorRows(s, v) // bucket actors, pickups, veins, landmarks by foot row (R-180)
+  for (let ty = v.ty0; ty <= v.ty1; ty++) { // 5b: walls and actors interleaved per tile row
+    drawWallRow(ctx, s, v, ty)
+    drawRowEntities(ctx, s, v, ty) // veins, pickups, landmarks, monsters, player sorted by foot y
+  }
   drawRocks(ctx, s, v)
-  drawParticles(ctx, s, v, 'normal')
+  drawParticles(ctx, s, v, 'normal') // after the row loop
   passMark('ents')
   drawDarkness(ctx, s, v, q)
   drawBeaconMode(ctx, s, v)
@@ -158,13 +162,18 @@ export function makeView(ctx: CanvasRenderingContext2D, s: State, w: number, h: 
   const z = deviceZoom(ch) // src/core/view.ts; equals viewZoomCss(h, dpr) * dpr
   const { x: sx, y: sy } = shakeOffset(s) // src/systems/camera.ts (R-017)
   const k = s.settings.reducedFlash ? 0.4 : 1
-  const ox = Math.round(cw / 2 - (s.cam.x + sx * k) * z)
-  const oy = Math.round(ch / 2 - (s.cam.y + sy * k) * z)
+  // 2.5D (R-181): camera clamped to the map; the south edge has a 48 px overhang for the wall faces
+  const hx = cw / 2 / z, hy = ch / 2 / z
+  const cx = Math.min(Math.max(s.cam.x, hx), Math.max(hx, s.world.w * TILE - hx))
+  const cy = Math.min(Math.max(s.cam.y, hy), Math.max(hy, s.world.h * TILE + 48 - hy))
+  const ox = Math.round(cw / 2 - (cx + sx * k) * z)
+  const oy = Math.round(ch / 2 - (cy + sy * k) * z)
   const x0 = -ox / z - TILE, y0 = -oy / z - TILE
   const x1 = (cw - ox) / z + TILE, y1 = (ch - oy) / z + TILE
   return { dpr, cw, ch, w, h, z, ox, oy, x0, y0, x1, y1,
     tx0: Math.max(0, Math.floor(x0 / TILE)), ty0: Math.max(0, Math.floor(y0 / TILE)),
-    tx1: Math.min(s.world.w - 1, Math.floor(x1 / TILE)), ty1: Math.min(s.world.h - 1, Math.floor(y1 / TILE)) }
+    tx1: Math.min(s.world.w - 1, Math.floor(x1 / TILE)),
+    ty1: Math.min(s.world.h - 1, Math.floor(y1 / TILE) + 2) } // +2 rows: a wall face hangs 48 px into the south cell
 }
 export const worldXf = (ctx: CanvasRenderingContext2D, v: View): void => ctx.setTransform(v.z, 0, 0, v.z, v.ox, v.oy)
 export const toScreen = (v: View, x: number, y: number): [number, number] => [(x * v.z + v.ox) / v.dpr, (y * v.z + v.oy) / v.dpr]
@@ -175,7 +184,7 @@ export const toScreen = (v: View, x: number, y: number): [number, number] => [(x
 1. Camera offset `ox`, `oy` are integers in device px (rounded once per frame).
 2. Tiles are drawn at integer world coordinates (`tx * 32`), so with integer `z` every texel covers exactly `z × z` device px: zero shimmer for the static world.
 3. Moving sprites are drawn at `round(x * z) / z` (snap to the device grid, not the world grid) so they move smoothly at `z ≥ 2` without sub-texel blur.
-4. Actor sprites select one of eight authored directions without rotation or mirroring (R-154/R-155). Non-actor rotated sprites use nearest sampling and 16-step quantisation ([[architecture-render-3]] §6).
+4. Actor sprites select one of eight authored directions without rotation or mirroring (R-184, which replaces R-154/R-155). Non-actor rotated sprites use nearest sampling and 16-step quantisation ([[architecture-render-3]] §6).
 5. Fractional DPR (1.25, 1.5) is handled automatically: `z` is integer in device px, so the CSS scale is fractional but the device mapping is exact.
 
 ### 4.4 Screen shake
@@ -219,4 +228,7 @@ The offset enters `ox/oy` BEFORE rounding, so shaken frames stay pixel-snapped. 
 - [[architecture-rulings-2]]
 - [[architecture-rulings-3]]
 - [[architecture-systems-4]]
+- [[architecture-modules-render]]
+- [[ADR-123-2-5d-view]]
+- [[ai-jam-5-asset-formats-25d]]
 - [[index]]

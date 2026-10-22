@@ -1,9 +1,9 @@
 ---
 type: reference
 title: "Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)"
-description: Task plan for Last Ember – who owns which code (Elias and Kittingsl), assignment principles, ownership summary, task index for slices A, B and C with hours and dependencies, per-person totals, risks, working process and open questions for the owner.
+description: Task plan for Last Ember – who owns which code (Elias and Kittingsl), assignment principles, ownership summary, task index for slices A, B, C and D (2.5D migration) with hours and dependencies, per-person totals, risks, working process and open questions for the owner.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-22T23:50:00Z
+timestamp: 2026-10-22T22:00:00+02:00
 ---
 
 # Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)
@@ -31,7 +31,7 @@ Task plan written by the project-manager on 2026-10-18. It splits the Last Ember
 - **E owns the interface-defining foundation:** the host PR (OD-1, OD-3, OD-7), core (types, State, rng, seed, tuning, migrate, score, storage, plus the pure `noise.ts` and `view.ts`), all systems (except systems checks), render and lighting (all of `src/render/*`, including `render/index.ts`), `game.ts`, CI and tooling (`package.json`, `scripts/check-guard.ts`), the input, state, cave and rocks checks, and integration and merging. E is also the only reviewer and merger, and owns the runner.
 - **K owns world generation, world queries and the leaf areas that start from the specs.**
   - World: the whole `src/world/` directory (generation: bfs, gen/*, generate, caches, validate, route; queries: grid, collide, los, explored, sample) and `src/entities/*` (monster, steer). Cave generation is the most complex algorithmic work in the plan.
-  - Assets: manifests, placeholders, images, pack-atlas, check-assets.
+  - Assets: manifests, placeholders, images, trim-characters, check-assets.
   - UI: layout, strings, draw, menus, hud, platform, debug.
   - Audio, all 7 files.
   - Checks: the systems checks (A31, A32, B11, devourer rows in `ai.check` via C3), `world.check`, and the determinism and score checks (A7). `scripts/check-guard.ts` is E's (A5).
@@ -59,7 +59,7 @@ Task plan written by the project-manager on 2026-10-18. It splits the Last Ember
 | src/entities/* (2 files: monster, steer) | K | A | 1 |
 | src/checks/ determinism, score (A7) | K | A | 1.5 |
 | src/checks/ systems (A31, A32, B11) | K | A, B | 7 |
-| src/assets/* plus scripts/pack-atlas.ts, check-assets.ts | K | A, B, C | 13 |
+| src/assets/* plus scripts/trim-characters.ts, check-assets.ts | K | A, B, C | 13 |
 | src/ui/* (incl. C3: debug.ts and the devourer rows in ai.check) | K | A, B, C | 14.5 |
 | src/audio/* | K | B, C | 15.5 |
 
@@ -129,8 +129,8 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | B12 | K | audio trigger, mixer, engine | 3 | A8 |
 | B13 | K | audio sfx, music | 2.5 | B12 |
 | B14 | K | audio synth, synth-2 (P0 recipes) | 4 | B12 |
-| B15 | K | scripts/pack-atlas.ts | 3 | A10 |
-| B16 | K | images atlas and screens; atlas.json; atlas-0.png | 1 | B15; needs delivered art |
+| B15 | K | scripts/pack-atlas.ts | 3 | A10. SUPERSEDED by D1/D2 (ADR-123), no packer |
+| B16 | K | images atlas and screens; atlas.json; atlas-0.png | 1 | B15. SUPERSEDED by D1/D2 (ADR-123) |
 | B17 | E | render overlay; extends glow and props (rocks) | 2.5 | A17 |
 | B18 | E | render particles (core events) | 2 | A17 |
 | B19 | K | Extends layout, strings, platform (help, end, copy link) | 1.5 | A12 |
@@ -151,6 +151,33 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 
 Note (2026-10-21): tunable cave depth classes (R-164) are planned as chunk C5 of the cave generator chain (see A22). C1-C4 are merged (#35-#38); C5 is still pending owner approval. Not counted in the hours above.
 
+### Slice D (2.5D migration, ADR-123, planned 2026-10-22, nothing implemented yet)
+
+Owner-approved pivot to a fixed-south 3/4 view ([[ADR-123-2-5d-view]], rulings R-178..R-186 in [[architecture-rulings-3]] section 9, formats in [[ai-jam-5-asset-formats-25d]]). Epic tier HIGH: one file per build delegation, retrospect per chunk, gate >= 95. Parallel groups: G1 {D1, D2, D4}, G2 {D3, D5, D7, D8}, G3 {D6, D10, D11}, G4 {D9, D12, D13}; D0, D14, D15 any time after ADR-123. Critical path D1, D3, D6, D9, D15 and D2, D5, D10, D9. Done before the 2026-10-27 asset freeze.
+
+| Task | Owner | Files | h | Deps / note |
+|---|---|---|---|---|
+| D0 | E | KB `projects/ai-jam-5/*`; then `docs/**` copy and `docs/MANIFEST.sha256` (one re-sync PR, last) | 3 | ADR-123; high |
+| D1 | K | `src/assets/cave_tileset.png`, `src/assets/cave_tileset.json` (byte-identical import) | 0.5 | none; high |
+| D2 | K | `art/characters-source.json`, `scripts/trim-characters.ts`, `src/assets/characters.png`, `src/assets/characters.json` (generated) | 2 | none; high |
+| D3 | E | `src/render/tileset.ts` (new, <= 120 lines): tileFrame, capName, faceName, oreName, floorName; pure, no DOM | 1.5 | D1; high |
+| D4 | E | `src/render/keys.ts` (floorVariant, faceKind, footRow, dirIndex), `src/checks/render.check.ts` | 1.5 | none; high |
+| D5 | E | `src/render/charatlas.ts` (new, <= 200 lines): charFrame, animLen, animLoop, swappedFrame, flameAnchor | 3 | D2; high |
+| D6 | E | `src/render/tiles.ts` rewrite: floor pattern and wall layer chunks (split into `tiles.ts` + `tiles-paint.ts` if over 300, both E) | 5 | D3, D4; high |
+| D7 | E | `src/assets/resources.ts`: chunk type, `scratch.rows` Int32Array, tint cache slot, `RES_VERSION` 2. File is K's; DEFAULT E (render-only types) | 1 | none; high |
+| D8 | E | `src/render/view.ts`: view range ty1 + 2, camera clamp in `makeView` (R-181) | 1 | none; high |
+| D9 | E | `src/render/index.ts`: row-interleaved world pass | 2 | D6, D8, D10; high |
+| D10 | E | `src/render/entities.ts` (split to `entities-player.ts` if over 300): atlas animation, scale 1.0, footY buckets, torch tip | 4 | D5, D7; high |
+| D11 | E | `src/render/props.ts`: props, veins, landmarks in row buckets; south-facing ores | 1.5 | D3, D7; high |
+| D12 | K | `scripts/check-assets.ts` rewrite; `package.json` `check` hunk (E-only edit) | 2 | D1, D2; high |
+| D13 | K | `src/assets/sprites.ts`, `placeholders-world.ts`, `images.ts` cleanup | 2 | D10, D11; high |
+| D14 | E | `README.md` (AI process, credits, marked provenance line), `CHANGELOG.md` | 0.5 | D1, D2; medium |
+| D15 | E | none (manual browser smoke test; findings go to [[progress]]) | 1 | D9 to D13; high |
+
+- SUPERSEDED or removed: B15 (no packer), B16 (`atlas-0.png`, replaced by D1/D2), the "tiles atlas swap" part of C6 (now D6), the repack part of C8 (C8 keeps check-assets wiring = D12 and screens). Slice D adds about 25 h, not counted in section 5.
+- MODIFIED: B2 rocks (landed boulders use `ground_rock_01/02` frames, row-sorted), G6 decor closed (ground overlays live in chunks, no `decor.ts`). B17 and B18 stay; particles go after the row loop (normal) and after darkness (additive). R-154 and R-155 draw scales are replaced by R-184.
+- Owner defaults OD-D1..OD-D8 and the asset provenance question: [[last-ember-open-questions]]. Implementers use the defaults and do not stop.
+
 ## 5. Per-person totals
 
 New files by first creation; hours include extension tasks.
@@ -160,7 +187,7 @@ New files by first creation; hours include extension tasks.
 | Elias | 47 | 32.5 | 11 | 17.5 | 1 | 6.5 | 59 | 56.5 |
 | Kittingsl | 42 | 32.5 | 18* | 27.2 | 1 | 11.5 | 61 | 71.2 |
 
-\* Includes the conditional `menus-end.ts`, plus `atlas-0.png` (generated). Total: 120 file rows (59 + 61). B2a adds a task, not a file. Elias also spends about 20h on PR review and merging (not in the table).
+\* Includes the conditional `menus-end.ts`, plus `cave_tileset.png`/`characters.png` (external, 2.5D). Total: 120 file rows (59 + 61). B2a adds a task, not a file. Elias also spends about 20h on PR review and merging (not in the table).
 
 Slice A hours per person (due Oct 20): **Elias 32.5 h, Kittingsl 32.5 h** (total 65 h). Since the rebalance of 2026-10-18 E carries render (A14-A17, 9.5 h) and A4, K carries the generation chain (A20-A22, 7.5 h), A23 and A7. 0.5 h moved from K to E with `scripts/check-guard.ts` (A7 to A5, see Change log).
 
@@ -204,7 +231,7 @@ Gameplay needs K's world work. E's A25 (movement) needs K's A18, E's A28 needs K
 - **Cave generation is the most complex algorithmic work** and now sits with K. If K is short on capacity, the fallback is that E takes A21 (macro, places, loops) while K keeps A20 and A22; that changes this plan and needs the owner's decision.
 - **Seam S1 across people.** E's `render/index.ts` (A17) calls K's `ui/hud` and `ui/menus` (A12, A13). A signature mismatch surfaces only at A17. Mitigation: merge A12 and A13 before A17 starts; both follow [[architecture-modules-ui-assets]] signatures.
 - **`entities/monster.ts` is K's file but E added `devourerMul`.** RESOLVED: the small additive hunk was pulled forward from C1 and done in #23 (A24 part 2), because `light.ts` needs it. K still reviews that hunk. If K objects, K adds the function from the spec in a one-line follow-up PR.
-- **Assumptions.** Line counts for `rocks.ts`, the checks and `pack-atlas` are estimates. Hours are estimates, not taken from the specs.
+- **Assumptions.** Line counts for `rocks.ts`, the checks and `trim-characters` are estimates. Hours are estimates, not taken from the specs.
 
 ## How to use this plan
 
@@ -247,9 +274,12 @@ Closed by the owner on 2026-10-18: the split of render and lighting (Elias) and 
 - 2026-10-22 (10): A29 merged (#39 squash 81f766b, follow-up nits #40 f738703); R-172 owner-confirmed (hitstop keeps `tickFx` running, [[architecture-rulings-3]] section 8); B4-B6 marked done (#35-#37) and the cave.check part of B9 done (#38); rocks.check and depth classes (C5, R-164) still open
 - 2026-10-22 (11): slice A complete, 32/32, on master 2d91fe5: A7 (#48), A10 (#47), A11 (#46), A15 (#51), A12 (#52), A13 (#53), A31 (#49), A32 (#50), A17 and A30 (#54) marked done; follow-ups: B7 adds the fake-store Best round trip to `score.check.ts` (R-168), A31 order check (b) waits for B1, stalker/devourer brain rows wait for B3/C1; see [[progress]]
 - 2026-10-22 (12): fix round 2: open questions 3 and 5 and the K/E slip-order risks marked MOOT (A31, A32 done in #49, #50); [[progress]] snapshot rewritten to the 2d91fe5 state, A10, R-170 and A17 notes marked RESOLVED (#47, #54), PR rows #43 to #45 added
+- 2026-10-22 (13): 2.5D pivot ([[ADR-123-2-5d-view]], R-178..R-186): slice D (D0-D15) planned; B15, B16, the C6 tile swap and the C8 repack SUPERSEDED, B2 rocks and G6 decor MODIFIED; nothing implemented yet, see [[progress]]
 
 ## Related
 
+- [[ADR-123-2-5d-view]]
+- [[ai-jam-5-asset-formats-25d]]
 - [[progress]]
 - [[tasks-files]]
 - [[architecture]]

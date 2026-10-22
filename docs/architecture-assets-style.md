@@ -1,9 +1,9 @@
 ---
 type: architecture
 title: Last Ember – Asset Style Guide (Art Direction)
-description: Binding art direction for Last Ember – chosen style (dark low-res hand-painted pixel art, top-down flat, unlit sprites), scale and tile size, full hex palette per zone and per flame colour, ambient tints, master style prompt and negative prompt, consistency checklist, export rules, downscale/palette-lock workflow, naming convention and the README AI-process logging template.
+description: Binding art direction for Last Ember – chosen style (dark low-res hand-painted pixel art, fixed-south 3/4 front view per ADR-123, unlit sprites), scale and tile size, full hex palette per zone and per flame colour, ambient tints, master style prompt and negative prompt, consistency checklist, export rules, downscale/palette-lock workflow, naming convention and the README AI-process logging template.
 tags: [project, ai-jam-5, architecture, last-ember, assets]
-timestamp: 2026-10-17T20:00:00Z
+timestamp: 2026-10-22T21:00:00+02:00
 ---
 
 # Last Ember – Asset Style Guide
@@ -14,35 +14,35 @@ Part of the asset library. Hub: [[architecture]]. Product spec (governs): [[last
 
 ## 1. Chosen style (ONE style, no mixing)
 
-**Dark, low-resolution hand-painted pixel art, seen strictly from directly above (top-down flat, 90° camera), drawn UNLIT in dark values.**
+**Dark, low-resolution hand-painted pixel art, seen in a fixed-south 3/4 front view (2.5D look, orthographic, no rotation; [[ADR-123-2-5d-view]]), drawn UNLIT in dark values.** Walls show a top (cap, 32 × 32) and a south-facing front face (32 × 48) that hangs into the cell below; characters are drawn as front/side views in eight directions.
 
 Why this style:
 
-- AI generators (Midjourney, FLUX, SDXL) produce "top-down pixel art game sprite" reliably. After downscale and palette-lock (Section 7) every asset ends up in the same pixel grid and colours, which hides generator drift.
+- AI generators (Midjourney, FLUX, SDXL) produce "pixel art game sprite, 3/4 front view" reliably. After downscale and palette-lock (Section 7) every asset ends up in the same pixel grid and colours, which hides generator drift.
 - Small sprites (32–96 px) stay readable as silhouettes. Painterly detail would turn to mush at this size.
 - The flame is the only light source. Unlit dark sprites let the engine's radial light and additive glow ([[last-ember-design]] Rendering notes) do all the shading. Baked highlights would contradict the moving torch.
 - Pixel art scales cleanly with integer zoom and keeps the atlas small (≤ 2 MB budget, [[last-ember-production-plan]]).
 
-Rejected: painterly high-res (inconsistent between generations, large files), vector/flat (looks cheap in darkness, weak in the Graphics category), isometric/3/4 view (spec rejects isometric; 3/4 sprites look wrong under a top-down radial light).
+Rejected: painterly high-res (inconsistent between generations, large files), vector/flat (looks cheap in darkness, weak in the Graphics category), isometric diamond projection (the grid is square; the spec still rejects isometric). Pure top-down was the earlier choice and is superseded by [[ADR-123-2-5d-view]] and R-178..R-186 ([[architecture-rulings-3]]).
 
 ## 2. Scale, grid and camera
 
 | Rule | Value |
 |---|---|
-| Tile size | **32 × 32 art pixels = 32 world units.** CONFIRMED (the architect default is kept): 32 px holds enough detail for vein colours and cracks; 16 px could not show three mineral colours legibly. |
-| Art pixel to world unit | Tiles: 1 art pixel = 1 world unit. Monsters: 64×64 source frames, draw scales 0.5 / 0.75 / 1.5 for Lurker / Stalker / Devourer (R-155). Player: 64×64 source frames drawn at scale 0.5; collision and world footprint unchanged (R-154). |
-| Screen zoom | Integer zoom **2×** world zoom (tile art pixel = 2×2 CSS px; actor source pixels use their documented draw scales). At 1920×1080 the view shows 30 × 17 tiles. Implementer may pick 3× above 2560 px width; always an integer. |
+| Tile size | **Wall cap 32 × 32 art pixels = 32 world units** (the logical tile cell). CONFIRMED (the architect default is kept): 32 px holds enough detail for vein colours and cracks. The **wall face is 32 × 48** and is overdrawn into the south cell below the cap. The **floor texture is 24 × 24 art pixels**, a repeating pattern independent of the 32 px grid, with 10 variants chosen by `floor(hash2(fx, fy, seed) * 10)` (R-179). |
+| Art pixel to world unit | Tiles: 1 art pixel = 1 world unit. All characters (player, Lurker, Stalker, Devourer): 1:1, 64×64 frame, pivot (32,32), draw scale 1.0 (R-184); collision radii and world footprint unchanged. |
+| Screen zoom | Integer zoom **2×** world zoom (every art pixel = 2×2 CSS px; characters draw at scale 1.0). At 1920×1080 the view shows 30 × 17 tiles. Implementer may pick 3× above 2560 px width; always an integer. |
 | Smoothing | Tiles, UI and props: `imageSmoothingEnabled = false`. Actors use authored directions without rotation: see [[architecture-assets-sprites]] Section "Facing". |
-| Camera | Straight down. No perspective, no visible wall faces, no cast shadows drawn into sprites. |
-| Facing reference | Player: eight authored directions `e,se,s,sw,w,nw,n,ne`, separate with/without-torch sets, no runtime sprite rotation. Monsters: eight authored directions in the same order, selected by facing; no runtime sprite rotation or mirroring. See R-154/R-155. |
-| Pixel density | Never mix pixel sizes. No sub-pixel detail or anti-aliased soft brushes in source files. Player source density is twice world density (R-154); use its documented scale 0.5 rather than changing world units. Monster source density varies by kind; use the R-155 draw scales without changing collision or tiles. |
+| Camera | Fixed south, orthographic (R-178). Wall faces are visible, but only south-facing ones; no E/W/N faces. No cast shadows drawn into sprites; actors have no ground shadows. |
+| Facing reference | All characters: eight directions in the atlas order `n,ne,e,se,s,sw,w,nw`, selected by facing; no runtime sprite rotation or mirroring; frame timing from per-frame `duration_ms` (R-184). The player has separate torch states (lit / unlit / none) mapped to atlas animation names, see [[architecture-assets-sprites]]. |
+| Pixel density | Never mix pixel sizes. No sub-pixel detail or anti-aliased soft brushes in source files. Source density equals world density for tiles and characters (1:1, R-184); no draw scales other than 1.0. |
 
 ## 3. Outline and value rules
 
 - **Outline:** 1 art-pixel outline on actors, pickups and props, colour `#0a0809` (near-black, warm). Tiles have NO outline. UI icons use a 1 px outline `#0a0809`.
 - **No selective outlining** (no coloured outlines). Same 1 px weight everywhere.
 - **Values:** body colours stay between 8 % and 45 % lightness (HSL). Only these elements may go brighter: eyes, mineral crystals, flame-related pickups (resin glint), Beacon crystal, UI.
-- **Lighting rule:** sprites are drawn **WITHOUT baked lighting** — no directional highlights, no rim light, no drop shadow, no ambient occlusion beyond a 1-pixel darker edge inside the outline. "Light direction = none." The engine lights everything with the flame.
+- **Lighting rule:** sprites are drawn **WITHOUT baked lighting** — no directional highlights, no rim light, no drop shadow, no ambient occlusion beyond a 1-pixel darker edge inside the outline. "Light direction = none." The engine lights everything with the flame. Faces carry baked top lip shading as authored; no drop shadows.
 - **Emissive parts** (eyes, crystals, Beacon core, resin glint) are drawn at full brightness because they glow on their own. There are NO separate `_glow` frames: every glow above the darkness mask is procedural (additive radial sprites, [[architecture-render-3]] §1; the `*_glow` ids were dropped, [[architecture-rulings-3]] R-138).
 
 ## 4. Global palette (hex)
@@ -144,12 +144,14 @@ The engine fills "darkness" not with pure black but with the zone tint, and colo
 | 4 | `#0a050c` | `#4a3a5c` | violet dread |
 | After Beacon (escape) | whole cave lit: multiply ambient `#ffb36b` at 55 % | n/a | warm, shaking, dusty |
 
+The delivered tileset is zone-agnostic (one rock set). Zone mood therefore comes from the tints above plus a per-chunk multiply tint applied when a chunk is painted (OD-D1, DEFAULT: zone 1 none; zone 2 `#b8c4d6` at 25 %; zone 3 `#b4d0b0` at 25 %; zone 4 `#c4b0d8` at 25 %). The per-zone rock ramps in Section 4.2 are the reference mood for new art and for those tint colours, not a recolour table for the tileset.
+
 ## 6. Master style prompt
 
 Paste this block first in every image prompt, then the asset-specific part from [[architecture-assets-sprites]].
 
 ```
-top-down pixel art game asset, viewed from directly above, orthographic 90 degree overhead view,
+fixed-south 3/4 front view, pixel art game asset, orthographic, 64x64 character cell,
 dark low-resolution hand-painted pixel art, limited palette, 1 pixel near-black outline,
 unlit flat colours, no lighting, no shadows, no highlights, dark muted values,
 crisp pixels, clean silhouette, centered single object, plain flat solid #00ff00 background,
@@ -159,7 +161,7 @@ style of a dark cave survival game, moody, gritty
 Negative prompt (FLUX/SDXL field; for Midjourney append as `--no ...`):
 
 ```
-perspective, isometric, three-quarter view, side view, front view, horizon, ground plane,
+perspective, isometric, top-down view, overhead view, horizon, ground plane,
 cast shadow, drop shadow, rim light, glow on background, bloom, lens flare, gradient background,
 text, watermark, signature, logo, UI frame, border, multiple objects, cropped, blurry,
 anti-aliasing, soft brush, 3d render, photorealistic, smooth shading, high detail noise, jpeg artifacts
@@ -167,7 +169,7 @@ anti-aliasing, soft brush, 3d render, photorealistic, smooth shading, high detai
 
 Midjourney parameters: `--style raw --stylize 50 --ar 1:1` (sprites), `--ar 16:9` (key art), `--seed <n>` fixed per asset family (log it). FLUX: guidance 3.5, 28–30 steps, 1024×1024, fixed seed per family.
 
-Key art, cover and Help illustrations use the **illustration variant**: replace the first two lines with `dark painterly pixel art illustration, high-angle top-down view of a cave,` and allow the flame to light the scene (they are not engine-lit).
+Key art, cover and Help illustrations use the **illustration variant**: replace the first two lines with `dark painterly pixel art illustration, 3/4 view of a cave,` and allow the flame to light the scene (they are not engine-lit).
 
 ## 7. Downscale and palette-lock workflow
 
@@ -185,8 +187,8 @@ Fallback when AI output is unusable at small size: draw the frame by hand over t
 
 ## 8. Consistency checklist (run on every asset before delivery)
 
-- [ ] Camera straight down; no visible side faces, no horizon.
-- [ ] Player matches its named direction and torch variant; monsters face RIGHT; tiles/pickups are symmetric or orientation-free.
+- [ ] Fixed-south view; south faces visible; no E/W/N faces; no horizon.
+- [ ] Player matches its named direction and torch variant; monsters are authored in all eight atlas directions (R-184), none is mirrored; tiles/pickups are symmetric or orientation-free (wall faces and south ores are south-facing by definition).
 - [ ] Light direction = none: no highlight side, no shadow side, no drop shadow.
 - [ ] 1 px `#0a0809` outline (actors, props, pickups, icons); none on tiles.
 - [ ] Only palette colours (Section 4), ≤ 32 colours, binary alpha.
@@ -201,8 +203,8 @@ Fallback when AI output is unusable at small size: draw the frame by hand over t
 ## 9. Export rules
 
 - **Format:** PNG-32 (RGBA 8-bit), sRGB, no colour profile chunk (strip with `magick -strip` or `oxipng --strip safe`).
-- **Delivery unit:** one PNG per frame (team delivers loose frames; the packer builds the atlas, see [[architecture-assets-pipeline]]).
-- **Atlas sheets** (packer output): power-of-two dimensions (≤ 1024 × 1024, max 4 sheets (R-154; measure actual packing and compressed bytes)), **1 px transparent padding + 1 px edge extrusion** around each frame to stop bleeding under scaling/rotation.
+- **Delivery unit:** the character atlas and the tileset are produced externally (atlas PNG + JSON), so there is no in-repo packer for them; see [[architecture-assets-pipeline]] and [[ai-jam-5-asset-formats-25d]]. Placeholders and non-atlas assets keep the manifest path.
+- **Atlas sheets** (R-183): character atlas = ONE sheet ≤ 4096 × 4096 and ≤ 600 KB; tileset = ONE sheet ≤ 1024 × 1024 and ≤ 100 KB. Measure actual compressed bytes. Externally produced sheets are used as delivered (no repacking, no extra padding step).
 - **Compression:** `oxipng -o 4 --strip safe --nc` on final sheets (lossless; `--nc` keeps the RGBA colour type; do NOT pngquant the atlas — the check requires RGBA); bundled screens (key art, logo, Help) are PNG (palette-quantised allowed); JPEG only for the non-bundled itch cover and screenshots.
 - **Transparent background** for everything except tiles, key art, Help illustrations, cover and screenshots (opaque). The logo is transparent.
 
@@ -226,6 +228,8 @@ Lowercase ASCII, words joined by `-`, fields joined by `_`. Frame numbers two di
 | `art` | delivered as `art_itch-cover.png` (not bundled); bundled screens use the pipeline names without prefix: `src/assets/art/title-keyart.png` (code `SCREENS.keyart`, R-141), `logo.png`, `help-parry.png`, `help-goal.png` |
 
 Player and monster animation names (including monster eyes) append the direction with a hyphen (`walk-ne`, `idle-s`); player set ids are `player_body` and `player_body-torch`. Variant sets and multi-state UI icons use the anim name `v`; the frame number is the variant/state index. Actor eye sprites are their own `SpriteId` (`mon_lurker_eyes`).
+
+**External atlas key schemes** (not file names; defined in [[ai-jam-5-asset-formats-25d]]): the tileset JSON uses frame keys such as `cap_<mask 00..15>`, `cap_fill_1..3`, `face_fill_0..3`, `face_left`, `face_right`, `face_pillar`, `floor_0..9`, `inner_cutout_0..3`, `inner_rim_0..3`, `ground_*`, `wall_*` and `wall_<mineral>_<01..03>`; the character atlas keys frames by animation id `<character>_<animation>` (for example `player_idle_lit_torch_base`) plus direction and frame index. `src/assets/sprites.ts` remains the manifest for placeholders and non-atlas ids.
 
 The atlas frame key is the file name without `.png`. The engine-facing `SpriteId` is `<group>_<id>[_<variant>]` (for example `mon_lurker`); animation names, frame counts and fps are defined in the TS manifest `src/assets/sprites.ts` ([[architecture-assets-pipeline]]). Versions are NOT in file names; git history is the version record.
 
@@ -259,3 +263,5 @@ Every delivered asset (or asset family sharing one prompt) gets one row in the R
 - [[architecture-assets-pipeline-2]]
 - [[architecture-render-3]]
 - [[architecture-rulings-3]]
+- [[ADR-123-2-5d-view]]
+- [[ai-jam-5-asset-formats-25d]]

@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Module Tree – UI, Assets, Host, Tooling
 description: Authoritative file list (part 1/2) for the UI, assets and facade areas of Last Ember – layer placement, the src/game.ts facade, every src/ui and src/assets file with exported signatures copied from the specs, allowed imports, spec section, line estimate and delivery slice. Part 2 covers host, tooling, package scripts, check wiring, asset folders and the conflict table.
 tags: [project, ai-jam-5, architecture, last-ember, modules]
-timestamp: 2026-10-21T03:00:00Z
+timestamp: 2026-10-22T22:00:00+02:00
 ---
 
 # Last Ember – Module Tree: UI, Assets, Host, Tooling (1/2)
@@ -74,19 +74,20 @@ Notes:
 
 | File | NEW / GEN | Responsibility | Exports (copied) | Allowed imports | Spec | Lines | Slice |
 |---|---|---|---|---|---|---|---|
-| `resources.ts` | NEW | Non-serialised registry kept in `import.meta.hot.data`. Data only, no functions in the registry. Created on first use. No `hot.dispose` | types `Canvas2D`, `ImageStore`, `TileCache`, `MemoryCache`, `LightCache`, `Particles`, `Perf`, `AudioRes`, `Voice`, `MusicRes`, `Resources`; `const RES_VERSION = 1`; `getResources(): Resources` (internal `fillRes`, `makeRes(ctx)`, `releaseRes(r)`) | `import type` from `./sprites.ts`, `./sounds.ts` only (C8) | [[architecture-resources]] §2–3 | ~150 | A |
+| `resources.ts` | NEW | Non-serialised registry kept in `import.meta.hot.data`. Data only, no functions in the registry. Created on first use. No `hot.dispose` | types `Canvas2D`, `ImageStore`, `TileCache`, `MemoryCache`, `LightCache`, `Particles`, `Perf`, `AudioRes`, `Voice`, `MusicRes`, `Resources`; `const RES_VERSION = 2` (R-178..R-186); `getResources(): Resources` (internal `fillRes`, `makeRes(ctx)`, `releaseRes(r)`) | `import type` from `./sprites.ts`, `./sounds.ts` only (C8) | [[architecture-resources]] §2–3 | ~150 | A |
 | `sprites.ts` | NEW | Sprite manifest. DOM-free and Node-runnable (scripts import it) | `type Anim`, `type SpriteDef`, `SPRITES` (`as const satisfies Record<string, SpriteDef>`, catalog ids as quoted keys), `type SpriteId = keyof typeof SPRITES`, `SCREENS = { keyart: 'title-keyart', logo: 'logo', helpParry: 'help-parry', helpGoal: 'help-goal' } as const` | none | [[architecture-assets-pipeline]] §3.1 | ~200; split into `sprites-actors.ts` / `sprites-world.ts` past 300 | A |
 | `sounds.ts` | NEW | Sound manifest. DOM-free and Node-runnable | `type Group = 'music' \| 'amb' \| 'sfx' \| 'ui'`, `type SoundDef`, `SOUNDS` (43 entries after R-138), `type SoundId = keyof typeof SOUNDS`, `PENDING_AUDIO` allow-list (empty by Day 11) | none | [[architecture-assets-pipeline]] §3.2; [[architecture-assets-pipeline-2]] §2 #5 | ~120 | A |
 | `placeholders-actors.ts` | NEW | `DrawFn` per `player_*`, `mon_*`; **declares `type DrawFn`** (R-150 cycle rule; implemented in A9 (PR #33, merged)) | `type DrawFn` (declared here, re-exported by `placeholders-ui.ts`); `ACTORS: Record<Extract<SpriteId, \`player_${string}\` \| \`mon_${string}\`>, DrawFn>` | `./sprites.ts` (type), L0 (no import from `./placeholders-ui.ts`: the type is declared here) | [[architecture-assets-pipeline]] §3.3 | ~200 | A |
 | `placeholders-world.ts` | NEW | `DrawFn` per `tile_*`, `spec_*`, `fx_*`, `prop_*`; `spec_chamber` is an explicit no-op | `WORLD` (same `Extract` pattern); also exports the helpers `sprite, rect, disc, seg, poly, MINERAL` (implemented in A9 (PR #33, merged)) | same | same | ~250 | A |
 | `placeholders-ui.ts` | NEW | `DrawFn` per `item_*`, `ui_*`; merges all three | re-exports `type DrawFn = (ctx: CanvasRenderingContext2D, anim: string, frame: number, t: number) => void` (declared in `placeholders-actors.ts`, R-150 cycle rule; implemented in A9 (PR #33, merged)); `UI`; `PLACEHOLDERS: Record<SpriteId, DrawFn> = { ...ACTORS, ...WORLD, ...UI }` | same + the two files above | same | ~150 | A |
 | `images.ts` | NEW | Atlas and screen loading, per-frame rect resolution, tint LRU, `drawSprite`. `?ph=1` forces placeholders | `drawSprite(ctx, id, anim, frame, x, y, angle, scale, alpha)`; `startPreload(res)` | `./atlas.json`, `./sprites.ts`, `./placeholders-ui.ts`, `./resources.ts`, `import.meta.glob` | [[architecture-assets-pipeline]] §5–6, §8; [[architecture-resources]] §4, §6 | ~200 | A (placeholders only), B (atlas + screens) |
-| `atlas.json` | GEN | Frame rects + source hash. 300-line exception #1/#2 | – | – | [[architecture-assets-pipeline]] §4 | ~1070 (1064 frames, R-155) | A (empty seed file, G3), B (real) |
-| `atlas-0.png` (`atlas-1.png`) | GEN | Packed sheets, ≤ 1024², max 4 (R-155) | – | – | [[architecture-assets-pipeline-2]] §1 | binary | B |
+| `atlas.json` | NEW (v2, hand-kept) | **2.5D pivot ([[ADR-123-2-5d-view]], R-183, R-184):** `version: 2`, empty `sheets`/`frames`, `external` list naming the two delivered atlases; not generated, no packer. The former ~1070-line v1 frame table (1064 frames, R-155) is obsolete | – | – | [[architecture-assets-pipeline]] §4 | ~15 | A (seed file, G3), D1/D2 (v2) |
+| `cave_tileset.png` + `.json`, `characters.png` + `.json` | EXTERNAL | Delivered atlases imported as they are (tileset byte-identical; `characters.json` trimmed by `scripts/trim-characters.ts` from `art/characters-source.json`). Read through `src/render/tileset.ts` and `src/render/charatlas.ts`. 300-line exception #1/#2 | – | – | [[architecture-assets-pipeline]] §2, §4; [[ai-jam-5-asset-formats-25d]] | binary / data | D1, D2 |
+| ~~`atlas-0.png` (`atlas-1.png`)~~ | SUPERSEDED | Packed sheets, ≤ 1024², max 4 (R-155) – not created: no packer ([[ADR-123-2-5d-view]], R-183; B15/B16 superseded in [[tasks]]) | – | – | [[architecture-assets-pipeline-2]] §1 (history) | – | – |
 
 - **A10 integration note (placeholders; 2026-10-21; A9 implemented, PR #33, merged):** placeholder `DrawFn`s draw in WORLD units at scale 1. `drawSprite` must therefore call `PLACEHOLDERS[id]` directly at scale 1 when no atlas rect exists. Do NOT bake placeholders into 64×64 sheets under `'id|anim|i'`: `render/entities.ts` `drawFrame` scales 64 px sources by 0.5 (player) / monster scale, so baked placeholders would be halved a second time. The hit-flash tint path needs its own placeholder branch (no atlas rect to tint). The Beacon charge animation uses `frame = floor(progress * 4)`: hold progress is not a `DrawFn` input (`DrawFn` takes `ctx, anim, frame, t` only).
 - **Not in `src/assets/`:** `audio.ts`, `synth.ts`, `synth-2.ts` move to `src/audio/{engine,mixer,synth,synth-2,music,sfx}.ts` ([[architecture-resources]] §0, C10). Owned by the render/audio module list [[architecture-modules-render]].
-- **Glob mechanism** ([[architecture-assets-pipeline]] §5): `import.meta.glob('./atlas-*.png' | './art/*.png' | './audio/*.{ogg,m4a}', { eager: true, query: '?url', import: 'default' })`. A missing file is just absent from the map, so undelivered art never breaks the build. `atlas.json` is a static import and must exist (G3).
+- **Glob mechanism** ([[architecture-assets-pipeline]] §5): `import.meta.glob(['./cave_tileset.png', './characters.png'] | './art/*.png' | './audio/*.{ogg,m4a}', { eager: true, query: '?url', import: 'default' })` (2.5D pivot: the packed `atlas-*.png` glob is replaced by the two external sheets, R-183). A missing file is just absent from the map, so undelivered art never breaks the build. `atlas.json` is a static import and must exist (G3).
 - Checks may import only `sprites.ts`, `sounds.ts` and type-only `resources.ts`. Never `images.ts` or the placeholder files: `import.meta.glob` is Vite-only ([[architecture-resources]] §7).
 
 ## Related
@@ -113,3 +114,5 @@ Notes:
 - [[architecture-rulings]]
 - [[architecture-rulings-2]]
 - [[architecture-rulings-3]]
+- [[ADR-123-2-5d-view]]
+- [[ai-jam-5-asset-formats-25d]]

@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Module Tree – Render and Audio (2/2) – Audio Files, Checks, State Additions, Conflicts
 description: Part 2 of the authoritative src/ file list for Last Ember render and audio – the src/audio files with exported signatures, allowed imports, slice tags and the game.ts call site, the checks that cover render- and audio-adjacent pure logic, the State additions those checks and modules imply, and the full list of conflicts and gaps between the source specs with the winning side and the exact edit.
 tags: [project, ai-jam-5, architecture, last-ember, modules]
-timestamp: 2026-10-17T22:30:00Z
+timestamp: 2026-10-22T21:00:00+02:00
 ---
 
 # Last Ember – Module Tree: Render and Audio (2/2)
@@ -72,7 +72,7 @@ Fields read but assumed to exist in [[architecture-state]] (verify in [[architec
 |---|---|---|---|---|
 | C1 | [[architecture-host-changes]] §1 `zoom = h / VIEW_H`, `VIEW_H = 360`, fractional | [[architecture-render]] §4.1 integer device zoom `round(ch / 480)` | B (brief rule) | applied 2026-10-18: host-changes §1 uses `viewZoomCss(h, dpr)` (R-084 refined by R-131; `Input.view.dpr` added) |
 | C2 | [[architecture-render]] §2 and [[architecture-render-2]] §1: `src/render/noise.ts` | layer rule: `src/assets/images.ts` (L1) uses `quantAngle`, `src/audio/sfx.ts` uses `hash2` | layer rule | move to `src/core/noise.ts`; render §2 row path; render-2 §1 heading; [[architecture-resources]] §7 check list `src/render/noise.ts` → `src/core/noise.ts` |
-| C3 | [[architecture-render]] §2 `drawTiles(ctx, s, v)` | [[architecture-render]] §3 sketch `drawTiles(ctx, s, v, q)` | B (`q.decor`) | render §2 row: `drawTiles(ctx, s, v, q)` |
+| C3 | [[architecture-render]] §2 `drawTiles(ctx, s, v)` | [[architecture-render]] §3 sketch `drawTiles(ctx, s, v, q)` | B (`q.decor`) | render §2 row: `drawTiles(ctx, s, v, q)`. **Renamed by [[ADR-123-2-5d-view]] (R-180):** `drawTiles` is replaced by `drawFloor` + `drawWallRow` (see [[architecture-modules-render]] and [[architecture-render]]); `drawFloor(ctx, s, v, q)` keeps the 4-arg `q` rule, `drawWallRow(ctx, s, v, ty)` takes the row index |
 | C4 | [[architecture-render]] §2 `drawMemory(dctx, s, v, q)` | [[architecture-render-2]] §5.3 `memoryCanvas(s)` blitted by `drawDarkness` | B | render §2 memory row: export `memoryCanvas(s)` |
 | C5 | [[architecture-render]] §2: `drawEyes` in entities.ts (~250), `drawGlow` in light.ts (~220) | 300-line limit; eyes need glow sprites, glow needs `torchTip` | split | add `src/render/glow.ts` (`drawEyes`, `drawGlow`, `drawGlowSprite`) and `src/render/props.ts` (veins, pickups, landmarks, rocks); entities.ts keeps monsters + player |
 | C6 | [[architecture-render-2]] §3.2 `drawGlowSprite(ctx, 'eye', x, y, r, a)` | [[architecture-render-3]] §1 glow cache keyed by colour hex | B | define `drawGlowSprite(ctx, hex: string, x, y, r, alpha): void`; render-2 §3.2 call passes `'#6b4fb8'` or `'#b48cff'` |
@@ -125,3 +125,4 @@ No spec found that requires render ↔ audio imports. Render → ui (S1) is the 
 - [[architecture-rulings]]
 - [[architecture-rulings-2]]
 - [[architecture-rulings-3]]
+- [[ADR-123-2-5d-view]]
