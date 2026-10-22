@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Gameplay Systems (1/4) – Step Order, Screens, Runs, Intent, Movement
 description: Last Ember gameplay systems part 1 – the fixed-step update order for descent and escape, the step() skeleton with hitstop, screen state machine with transitions and resets, startRun and endRun contracts, intent resolution from Input (movement vector, aim via camera and view) and player movement with circle-vs-tile collision and sliding, with formulas and worked examples.
 tags: [project, ai-jam-5, architecture, last-ember, systems]
-timestamp: 2026-10-22T12:00:00Z
+timestamp: 2026-10-22T17:00:00Z
 ---
 
 # Last Ember – Gameplay Systems (1/4)
@@ -99,7 +99,7 @@ Hitstop (perfect parry, 0.060 s = 4 steps) freezes the world but the run clock s
 Notes (A29), the code in `src/systems/step.ts` differs from the skeleton above in three places; the rulings win:
 
 - `stepRoll`, the `eStart` snapshot, `stepMining`, `stepBeacon`, `stepMinerals` and `stepQuake` are not called yet. `step.ts` marks each spot with an index comment; B8, B1, B7 and B2 add the calls (X3, D5, D7/D8, D9, X11); see R-169 in [[architecture-rulings-3]] §8.
-- Hitstop runs `tickFx` and sets the click buffer before the decrement; see R-172 in [[architecture-rulings-3]] §8 (owner to confirm).
+- Hitstop runs `tickFx` and sets the click buffer before the decrement; see R-172 in [[architecture-rulings-3]] §8 (OWNER-confirmed 2026-10-22).
 - `step.ts` has no counting spy; call-order checks observe behaviour instead; see R-176 in [[architecture-rulings-3]] §8.
 
 ## 2. Screen state machine (`src/systems/screens.ts`, R-003)

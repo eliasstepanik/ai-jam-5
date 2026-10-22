@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)"
 description: Task plan for Last Ember – who owns which code (Elias and Kittingsl), assignment principles, ownership summary, task index for slices A, B and C with hours and dependencies, per-person totals, risks, working process and open questions for the owner.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-22T12:00:00Z
+timestamp: 2026-10-22T18:00:00Z
 ---
 
 # Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)
@@ -22,7 +22,7 @@ Task plan written by the project-manager on 2026-10-18. It splits the Last Ember
 - Slice A due **2026-10-20**. Slice B due **2026-10-22**.
 - Asset freeze **2026-10-27**.
 - Deadline **2026-10-31 03:00 UTC**. Oct 30 is the last working day.
-- Build status (done, partial, remaining) as of 2026-10-21: see [[progress]].
+- Build status (done, partial, remaining) as of 2026-10-22: see [[progress]].
 
 ## 1. Assignment principles
 
@@ -98,14 +98,14 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | A19 | K | explored, sample, world.check | 2 | A18, A22. **DONE** (#21) |
 | A20 | K | bfs, carve, region, ca | 2 | A3 (x-person); start right after A3 merges. **DONE** (#14) |
 | A21 | K | macro, places, loops | 3 | A20. **DONE** (#17) |
-| A22 | K | generate, caches, checks/caves | 2.5 | A21; gates E's A29 (x-person). **DONE** (complete on master via chunks C1-C4 = #35, #36, #37, #38; earlier #20; generateCave in src/world/generate.ts, finalizeCave, fallbackCave in src/world/gen/fallback.ts, caveOf in src/checks/caves.ts; no memo helper on master; rulings R-156..R-165) |
+| A22 | K | generate, caches, checks/caves | 2.5 | A21; gates E's A29 (x-person). **DONE** (complete on master via chunks C1-C4 = #35, #36, #37, #38; earlier #20; generateCave in src/world/generate.ts, finalizeCave, fallbackCave in src/world/gen/fallback.ts, caveOf in src/checks/caves.ts memoises generateCave, and primeCave there is a check-only memo-seeding helper; rulings R-156..R-165) |
 | A23 | K | monster, steer | 1 | A3 (x-person). **DONE** (#16) |
 | A24 | E | fx, camera, depth, light | 1.5 | A3; depth.ts needs A22 caches (getDepthField), light.ts needs devourerMul (entities/monster.ts, pulled forward from C1). **DONE** (#9, #23) |
 | A25 | E | intent, movement, explore | 1.5 | A24, A18 (x-person: A18 is K's); explore.ts done in #23 after A19/A24 part 2. **DONE** (#19, #23) |
 | A26 | E | flame, pickups (the toast helper is `toast()` in core/state.ts per R-009; no systems/toast.ts) | 1.5 | A24. **DONE** (#15) |
 | A27 | E | combat | 2 | A24, A26, A25 (Intent); resolveParries/resolveBites/damagePlayer also need A28 (setDying/toRecover; monsters.ts must never import combat.ts). **DONE** (#22, #27) |
 | A28 | E | monsters, ai-lurker, director | 3 | A23, A25, A27 (x-person: A23 is K's). **DONE** (#26) |
-| A29 | E | run, screens, step | 2.5 | A22, A28 (x-person: A22 is K's; critical path). **IMPLEMENTED 2026-10-22 on branch feature/A29-run-screens-step, PR pending, not merged.** Delivers its own checks run.check, step.check, screens.check (wired in checks/all.ts, R-177). Does NOT include the B-slice step calls (B1, B2, B7, B8 each add their call at the index comment in step.ts, R-169) or storage calls (B7, R-168). Rulings R-166..R-177 in [[architecture-rulings-3]] section 8 |
+| A29 | E | run, screens, step | 2.5 | A22, A28 (x-person: A22 is K's; critical path). **DONE** (merged #39, squash 81f766b; follow-up nits #40, f738703). Delivers its own checks run.check, step.check, screens.check (wired in checks/all.ts, R-177). Does NOT include the B-slice step calls (B1, B2, B7, B8 each add their call at the index comment in step.ts, R-169) or storage calls (B7, R-168). Rulings R-166..R-177 in [[architecture-rulings-3]] section 8 |
 | A30 | E | game.ts facade and slice-A integration | 1.5 | A17, A29; must set ui.cursor/ui.hover from hit() before step (R-170) |
 | A31 | K | flow, order, ai checks | 2.5 | A29 (x-person); may slip to B day 1; order.check cannot rely on a counting spy in step.ts (R-176); names run.check, step.check, screens.check are taken by A29 (R-177) |
 | A32 | K | light-flame, parry, damage, movement checks | 3 | A27 (x-person); may slip to B day 1 |
@@ -118,12 +118,12 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | B2a | K | world/route.ts (routeDist, downhill, playerSources, exitHeading); split out of the original B2 (3 h = 1.2 + 1.8) | 1.2 | A22 |
 | B2 | E | quake, rocks (imports route.ts) | 1.8 | B1, B2a (x-person); adds its call to src/systems/step.ts (R-169) |
 | B3 | E | ai-stalker, ai-escape | 1 | A28 |
-| B4 | K | gen/pockets, gen/teach | 2 | A22; being built by E at the owner's request (2026-10-21), see A22 |
-| B5 | K | validate, gen/populate | 3 | B4; being built by E at the owner's request (2026-10-21), see A22 |
-| B6 | K | gen/fallback; extends caches and generate | 1.5 | B5; being built by E at the owner's request (2026-10-21), see A22 |
+| B4 | K | gen/pockets, gen/teach | 2 | A22; **DONE** (#35, chunk C1; built by E at the owner's request, see A22) |
+| B5 | K | validate, gen/populate | 3 | B4; **DONE** (#36, chunk C2; built by E at the owner's request, see A22) |
+| B6 | K | gen/fallback; extends caches and generate | 1.5 | B5; **DONE** (#37, chunk C3; built by E at the owner's request, see A22) |
 | B7 | E | core/storage; extends flame (minerals), pickups (size) | 2 | A26; adds its call to src/systems/step.ts (R-169) and the commitBest/loadSettings/loadBest/saveSettings calls to run.ts/screens.ts (R-168) |
 | B8 | E | Extends movement (roll), run (escape win), director (escape table), game.ts (audioStep) | 2 | B2, B3, B12 (x-person: B12 is K's); adds its call to src/systems/step.ts (R-169) |
-| B9 | E | cave.check, rocks.check | 3 | B6, B2 (x-person: B6 is K's; E tests K's generator); split by R-162: cave.check is chunk C4 (E, fresh session), rocks.check stays after B2 |
+| B9 | E | cave.check, rocks.check | 3 | B6, B2 (x-person: B6 is K's; E tests K's generator); split by R-162: cave.check part **DONE** (chunk C4, #38; E, fresh session); rocks.check still open, after B2 |
 | B10 | E | Slice-B integration, Day-6 playtest, tuning | 2 | All of B |
 | B11 | K | economy.check, escape.check | 1.5 | B1, B7 (x-person) |
 | B12 | K | audio trigger, mixer, engine | 3 | A8 |
@@ -149,7 +149,7 @@ Task numbers are ids, not an execution order. Dependencies may point to a higher
 | C7 | K | UI fades and pulses (menus, hud) | 2 |
 | C8 | K | Final asset integration by Oct 27 freeze (repack, check-assets, PENDING_AUDIO empty, README AI-process rows; the `package.json` hunk that adds check-assets to `npm run check` is made by Elias in the C8 PR review, as a commit on the PR branch or a follow-up PR; see section 1) | 2 |
 
-Note (2026-10-21): tunable cave depth classes (R-164) are planned as chunk C5 after C4 of the cave generator chain (see A22); not counted in the hours above.
+Note (2026-10-21): tunable cave depth classes (R-164) are planned as chunk C5 of the cave generator chain (see A22). C1-C4 are merged (#35-#38); C5 is still pending owner approval. Not counted in the hours above.
 
 ## 5. Per-person totals
 
@@ -244,6 +244,7 @@ Closed by the owner on 2026-10-18: the split of render and lighting (Elias) and 
 - 2026-10-21 (7): progress synced to master 0350025 (A9 done, PR #33); owner decision: E builds the cave generator chain (A22 rest, B4-B6) now, rulings R-156..R-165
 - 2026-10-22 (8): A29 implemented (branch feature/A29-run-screens-step, PR pending): run.ts, screens.ts, step.ts and three checks (run.check, step.check, screens.check) wired in checks/all.ts; decisions R-166..R-177 in [[architecture-rulings-3]] section 8. Not merged yet.
 - 2026-10-22 (9): A22 row marked done (complete on master via C1-C4, #35-#38)
+- 2026-10-22 (10): A29 merged (#39 squash 81f766b, follow-up nits #40 f738703); R-172 owner-confirmed (hitstop keeps `tickFx` running, [[architecture-rulings-3]] section 8); B4-B6 marked done (#35-#37) and the cave.check part of B9 done (#38); rocks.check and depth classes (C5, R-164) still open
 
 ## Related
 

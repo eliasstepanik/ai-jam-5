@@ -1,21 +1,21 @@
 ---
 type: reference
 title: "Last Ember - Build Progress (2026-10-22)"
-description: Build status of Last Ember synced to origin/master df9b558 on 2026-10-22, plus the A29 branch (PR pending) - which plan tasks are done, partial, in progress or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
+description: Build status of Last Ember synced to origin/master f738703 on 2026-10-22 (A29 merged) - which plan tasks are done, partial, in progress or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
 tags: [project, ai-jam-5, progress, last-ember]
-timestamp: 2026-10-22T14:00:00Z
+timestamp: 2026-10-22T19:00:00Z
 ---
 
 # Last Ember - Build Progress (2026-10-22)
 
-Status of the implementation compared with the plan in [[tasks]] and [[tasks-files]]. Source of the facts: git and GitHub state of `origin/master` at commit `df9b558` on 2026-10-22, plus branch `feature/A29-run-screens-step` (A29, PR not yet opened, not on master). Done by the A29 branch is stated as such. Task ids, owners and hour estimates come from [[tasks]]. Hub: [[index]].
+Status of the implementation compared with the plan in [[tasks]] and [[tasks-files]]. Source of the facts: git and GitHub state of `origin/master` at commit `f738703` on 2026-10-22 (includes A29, merged as #39 and #40). Task ids, owners and hour estimates come from [[tasks]]. Hub: [[index]].
 
 ## Snapshot
 
-- **Date:** 2026-10-22. **Master:** `df9b558`. 37 PRs merged (#1, #2, #4 to #38), no open PRs at the time of the check (the A29 PR is not opened yet). #3 was closed without merging.
-- **A29 (step loop) is implemented on branch `feature/A29-run-screens-step`** (worktree `~/.worktrees/ai-jam-5/A29-run-screens-step`, base `df9b558`): PR pending, **not on master**. See In progress.
+- **Date:** 2026-10-22. **Master:** `f738703`. 39 PRs merged (#1, #2, #4 to #40), no open PRs at the time of the check. #3 was closed without merging.
+- **A29 (step loop) is merged:** #39 (`81f766b`, `systems/run.ts`, `screens.ts`, `step.ts` and three checks) and the follow-up #40 (`f738703`). See Done.
 - **`src/game.ts` is still the scaffold demo** (74 lines, dot collector, checked on master). **Nothing is playable yet.**
-- **What exists vs what is wired:** the foundation (host, core types, state, rng, tuning, migration, score, checks chain), the world generation core (grid, collision, LOS, BFS, carving, macro layout, places, loops, caches, explored and sample queries, and since the cave generator chain C1-C4 (#35 to #38) also pockets, teach, populate, validate, fallback, `generateCave` and the cave checks), the monster base and the full set of A-slice systems below the step loop (fx, camera, intent, movement, explore, depth, light, flame, pickups, combat, monsters, ai-lurker, director), the asset catalogs and resource registry (`assets/sprites.ts`, `sounds.ts`, `resources.ts`), the procedural placeholder art (`assets/placeholders-actors.ts`, `-world.ts`, `-ui.ts` from A9) and the first render modules (`render/keys.ts`, `view.ts`, `flame.ts`, `quality.ts`, plus the draw passes `light.ts`, `glow.ts`, `entities.ts` from A16) are on master. The render passes are on master but unwired: nothing consumes them until `render/index.ts` (A17). None of it is called from `game.ts` yet. Not on master: the step loop (`systems/step.ts`, `run.ts`, `screens.ts`; A29 is on its branch, PR pending), the rest of the render tree, the UI, the audio, the images and the atlas.
+- **What exists vs what is wired:** the foundation (host, core types, state, rng, tuning, migration, score, checks chain), the world generation core (grid, collision, LOS, BFS, carving, macro layout, places, loops, caches, explored and sample queries, and since the cave generator chain C1-C4 (#35 to #38) also pockets, teach, populate, validate, fallback, `generateCave` and the cave checks), the monster base and the full set of A-slice systems including the step loop (fx, camera, intent, movement, explore, depth, light, flame, pickups, combat, monsters, ai-lurker, director, and since A29 run, screens, step), the asset catalogs and resource registry (`assets/sprites.ts`, `sounds.ts`, `resources.ts`), the procedural placeholder art (`assets/placeholders-actors.ts`, `-world.ts`, `-ui.ts` from A9) and the first render modules (`render/keys.ts`, `view.ts`, `flame.ts`, `quality.ts`, plus the draw passes `light.ts`, `glow.ts`, `entities.ts` from A16) are on master. The render passes are on master but unwired: nothing consumes them until `render/index.ts` (A17). None of it is called from `game.ts` yet, including the step loop (`step` is not called until A30). Not on master: the rest of the render tree, the UI, the audio, the images and the atlas.
 - **Slice A is due 2026-10-20.**
 
 ## Done
@@ -38,12 +38,31 @@ Task ids and file lists follow [[tasks]]. "K" = Kittingsl, "E" = Elias (eliasste
 | A19 | `world/explored.ts`, `world/sample.ts`, `checks/world.check.ts` | #21 | K | 3b00021 | `world.check` wired in `checks/all.ts`. |
 | A20 | `world/bfs.ts`, `world/gen/carve.ts`, `world/gen/region.ts`, `world/gen/ca.ts` | #14 | K | 7146339 | |
 | A21 | `world/gen/macro.ts`, `world/gen/places.ts`, `world/gen/loops.ts` | #17 | K | aeab2a4 | |
+| A22 | First part: `world/generate.ts`, `world/caches.ts`. Rest: `generateCave`, `finalizeCave`, `world/gen/fallback.ts`, `src/checks/caves.ts` (cave generator chain C1-C4) | #20; #35 to #38 | K (first part), E (rest) | d39b7a6; a8e4207, b64c59b, 133e047, df9b558 | Complete on master. First part via #20: `world/generate.ts` with `caveSeed`, `carveCore` and `MAX_ATTEMPTS` (the terrain attempts), and `world/caches.ts` with `getSolid`, `getDepthField`, `getZoneField`, `zoneAt`, `getBeaconRoom`, `isBeaconRoom`, `pathDistAt` and related derived caches, plus a BFS performance change. The rest was finished by E (the task stays K-listed in [[tasks]]) through chunks C1-C4 (#35 to #38, see the cave generator chain below): `generateCave` (`world/generate.ts:77`), `finalizeCave` (`generate.ts:69`), `fallbackCave` (`world/gen/fallback.ts:62`) and `src/checks/caves.ts`. A cave-result memo helper exists on master only as a check-only helper: `caveOf(seed)` (`src/checks/caves.ts:9`) memoises `generateCave`, and `primeCave` (`caves.ts:17`) seeds that memo; both are used only by files under `src/checks/` (grep of `src`, 2026-10-22). No game-side memo helper exists, and none is needed so far, because the chunked game path in `run.ts` (A29, merged) passes the finished cave to `startRun`. Kittingsl has still to confirm the status. |
 | A23 | `entities/monster.ts`, `entities/steer.ts` | #16 | K | 3d2c39f | `devourerMul` was added later in #23 (see A24). |
 | A24 | Part 1: `systems/fx.ts`, `systems/camera.ts`. Part 2: `systems/depth.ts`, `systems/light.ts` | #9, #23 | E | 45e3231, e172e63 | Part 2 also added `devourerMul` to `entities/monster.ts`, pulled forward from C1. Kittingsl still has to review that hunk. |
 | A25 | Part 1: `systems/intent.ts`, `systems/movement.ts`. Part 2: `systems/explore.ts` | #19, #23 | E | 71cbb64, e172e63 | `stepExplore` uses `flameRadius` (R-145). |
 | A26 | `systems/flame.ts`, `systems/pickups.ts` | #15 | E | 7b23ee9 | `toast()` lives in `core/state.ts` (R-009); there is no `systems/toast.ts`. |
 | A27 | Part 1: `systems/combat.ts` (`parryLoss`, `hurtPlayerHp`, `tickPlayerTimers`, `stepSwing`). Part 2: `resolveParries`, `resolveBites`, `damagePlayer` in the same file (now 155 lines) | #22, #27 | E | f259a9f, 41ae142 | Part 2 needed A28 (`setDying`, `toRecover`); `monsters.ts` never imports `combat.ts`. Defaults and call order: see Deviations. |
 | A28 | `systems/monsters.ts` (248 lines), `systems/ai-lurker.ts` (40), `systems/director.ts` (70) | #26 | E | 2a0cbb9 | Lurker brain only; see Deviations for the simplifications. |
+| A29 | `systems/run.ts` (130 lines: `startRun(s, seedText, cave?)`, `endRun`, `checkEnd`, `genStep`, `runSeedText`), `systems/screens.ts` (126: `stepScreens` state machine), `systems/step.ts` (54: fixed step D0-D18); checks `checks/run.check.ts` (277), `step.check.ts` (287), `screens.check.ts` (300), wired in `checks/all.ts` (34) | #39, #40 | E | 81f766b, f738703 | High tier. #39 was squash-merged as one commit (`81f766b`; the branch had about two dozen WIP commits per the build log, a count that cannot be re-verified after the branch deletion). The squash changed 8 files (7 in `src` plus `CHANGELOG.md`), 1179 insertions per `git diff --shortstat df9b558..81f766b -- src CHANGELOG.md`. Independent retrospects with 148 behaviour mutants: 118 killed, 10 equivalent, 20 gaps closed by the final check strengthening. Quality gates for #39: 92 and 92 (`@ultrathink`), final 95 (`@ultrathink-high`). #40 = follow-up nits F3, F4 and F7 plus related cleanups (first Quit press on the paused screen emits `uiConfirm` per ui section 5 rule 7; check exports renamed to `run` and aliased in `all.ts`; ponytail note on `DT`; `KeyC` on help asserted silent); gate 97 (`@ultrathink`). `npm run check` about 9.2 s. R-172 (hitstop runs `tickFx`) is OWNER-confirmed 2026-10-22. Rulings R-166..R-177 in [[architecture-rulings-3]] section 8 (see Deviations). Not wired by design: storage calls wait for B7 (R-168), slice-B step calls are index comments in `step.ts` (R-169), hit testing waits for A30/A11 (R-170). `step` is not called from `game.ts` until A30. |
+
+**A29 details kept from the branch phase** (merged: #39 `81f766b`, #40 `f738703`; no PR is open at the time of the check):
+
+- Timing: `npm run check` about 9.2 s; `run()` takes about 1.0-1.45 s against its 1.6 s ceiling (little margin at the top of that range, see Open items).
+- Verification (#39): findings fixed after gates 1 and 2 (CHANGELOG, `endRun` `result.zone`, volume guard, `lastSeed` sanitising, exact asserts, R-166/R-175 wording); retrospect at the final #39 HEAD clean (`tsc`, `npm run check` 9.2 s, build, manifest 69/69, 12/12 sampled mutants killed).
+- Deferred or not wired (open items): storage calls wait for B7, so `prevBest` is 0 and settings are not persisted until then (R-168); the slice-B step calls `stepRoll` (B8), `eStart` + `stepMining` + `stepBeacon` (B1), `stepMinerals` (B7) and `stepQuake` (B2) are marked by index comments in `step.ts`, and each task adds its own call (R-169); hit testing: a click activates the focused menu item wherever it lands, until A30/A11 set `ui.cursor`/`ui.hover` from `hit()` before step (R-170, owner decision); hitstop runs `tickFx` (R-172, OWNER-confirmed 2026-10-22); `startRun` keeps `ui.seedInput` (R-173); all input is ignored while generation is pending, including `KeyM` (R-174); stale rows of architecture-systems section 2 (R-175).
+
+**Cave generator chain (C1-C4 merged, built by E at the owner's request).** Owner decision 2026-10-21 (R-156..R-165 in [[architecture-rulings-3]] section 7): E implemented the chain instead of waiting for Kittingsl. These tasks stay K-listed in [[tasks]]. Plan in KB `notes/ai-jam-5-cave-generator-chain-plan`. A29 no longer waits for C3. Chunk status (PRs from `git log origin/master` subjects):
+
+| Chunk | Scope | Plan task | Tier | Status |
+|---|---|---|---|---|
+| C1 | pockets + teach | B4 | medium | merged #35 (`a8e4207`) |
+| C2 | populate + validate | B5 | high, `@ultrathink` gate | merged #36 (`b64c59b`) |
+| C3 | fallback + `generateCave` + attempt loop (+ `finalizeCave`) + `src/checks/caves.ts` | B6 and the A22 rest | medium+, gate | merged #37 (`133e047`) |
+| C4 | `cave.check` (fresh session, mutation proofs, retrospect, gate) | B9 part (R-162) | medium | merged #38 (`df9b558`) |
+
+C5 (depth classes, R-164) stays planned after C4 and needs owner approval (see Open items): the generator gets a `CaveParams` object (default class 3, no behaviour change). The memo helper named in the original C3 scope was not built (see the A22 row above).
 
 Docs and CI PRs (no plan task):
 
@@ -58,47 +77,32 @@ Docs and CI PRs (no plan task):
 
 ## Partial
 
-- **A22 (K): complete on master via the cave generator chain.** First part on master via #20 (`d39b7a6`): `world/generate.ts` with `caveSeed`, `carveCore` and `MAX_ATTEMPTS` (the terrain attempts), and `world/caches.ts` with `getSolid`, `getDepthField`, `getZoneField`, `zoneAt`, `getBeaconRoom`, `isBeaconRoom`, `pathDistAt` and related derived caches, plus a BFS performance change. The rest was finished by E (the task stays K-listed in [[tasks]]) through chunks C1-C4 (#35 to #38): `generateCave` (`world/generate.ts:77`), `finalizeCave` (`generate.ts:69`), `fallbackCave` (`world/gen/fallback.ts:62`) and `src/checks/caves.ts` are on master. A separate cave-result memo helper does not exist on master (no `caveOf` or similar export found by grep); nothing needs it so far, because the chunked game path in `run.ts` (A29, branch) passes the finished cave to `startRun`. Kittingsl has still to confirm the status.
+None. A22 was the last partial task; it is complete on master (see the A22 row under Done).
 
 ## In progress
 
-**A29 (E): implemented, PR pending, not on master.** Branch `feature/A29-run-screens-step` (worktree `~/.worktrees/ai-jam-5/A29-run-screens-step`, base master `df9b558`; 21 WIP commits at the time of writing, squashed into one commit at merge). Rulings R-166..R-177 in [[architecture-rulings-3]] section 8.
-- Files (line counts from `wc -l`): `src/systems/run.ts` (130: `startRun(s, seedText, cave?)`, `endRun`, `checkEnd`, `genStep`, `runSeedText`), `src/systems/screens.ts` (125: `stepScreens` state machine), `src/systems/step.ts` (54: fixed step D0-D18). Three checks wired in `src/checks/all.ts`: `run.check.ts` (277), `step.check.ts` (287), `screens.check.ts` (299). CHANGELOG +1 line. 8 files, 1179 insertions (`git diff --shortstat df9b558..HEAD -- src CHANGELOG.md`).
-- Timing: `npm run check` about 9.2 s; `run()` takes about 1.0-1.45 s against its 1.6 s ceiling (little margin at the top of that range, see Open items).
-- Verification: high tier. Independent retrospects with 148 behaviour mutants: 118 killed, 10 equivalent, 20 gaps closed by the final check strengthening. Quality gates so far: gate 1 = 92 and gate 2 = 92 (both `@ultrathink`); findings fixed afterwards (CHANGELOG, `endRun` `result.zone`, volume guard, `lastSeed` sanitising, exact asserts, R-166/R-175 wording); gate 3 pending. Retrospect at the newest HEAD clean (`tsc`, `npm run check` 9.2 s, build, manifest 69/69, 12/12 sampled mutants killed).
-- Deferred or not wired (open items): storage calls wait for B7, so `prevBest` is 0 and settings are not persisted until then (R-168); the slice-B step calls `stepRoll` (B8), `eStart` + `stepMining` + `stepBeacon` (B1), `stepMinerals` (B7) and `stepQuake` (B2) are marked by index comments in `step.ts`, and each task adds its own call (R-169); hit testing: a click activates the focused menu item wherever it lands, until A30/A11 set `ui.cursor`/`ui.hover` from `hit()` before step (R-170, owner decision); hitstop runs `tickFx` (R-172, owner to confirm the R-067 reading); `startRun` keeps `ui.seedInput` (R-173); all input is ignored while generation is pending, including `KeyM` (R-174); stale rows of architecture-systems section 2 (R-175).
-
-**Cave generator chain (C1-C4 merged, built by E at the owner's request).** Owner decision 2026-10-21 (R-156..R-165 in [[architecture-rulings-3]] section 7): E implemented the chain instead of waiting for Kittingsl. These tasks stay K-listed in [[tasks]]. Plan in KB `notes/ai-jam-5-cave-generator-chain-plan`. A29 no longer waits for C3. Chunk status (PRs from `git log origin/master` subjects):
-
-| Chunk | Scope | Plan task | Tier | Status |
-|---|---|---|---|---|
-| C1 | pockets + teach | B4 | medium | merged #35 (`a8e4207`) |
-| C2 | populate + validate | B5 | high, `@ultrathink` gate | merged #36 (`b64c59b`) |
-| C3 | fallback + `generateCave` + attempt loop (+ `finalizeCave`) + `src/checks/caves.ts` | B6 and the A22 rest | medium+, gate | merged #37 (`133e047`) |
-| C4 | `cave.check` (fresh session, mutation proofs, retrospect, gate) | B9 part (R-162) | medium | merged #38 (`df9b558`) |
-
-C5 (depth classes, R-164) stays planned after C4 and needs owner approval (see Open items): the generator gets a `CaveParams` object (default class 3, no behaviour change). The memo helper named in the original C3 scope was not built (see A22 under Partial).
+None. A29 and the cave generator chain C1-C4 are merged (see Done).
 
 ## Not started
 
-Nothing in these lists is on master. Slice A items carry an owner; the full plan is in [[tasks]]. A29 is no longer listed here: it is implemented on its branch (see In progress).
+Nothing in these lists is on master. Slice A items carry an owner; the full plan is in [[tasks]]. A29 is no longer listed here: it is merged (see Done).
 
 **Slice A**
 
 - Elias: A15 (render tiles, memory, props), A17 (render index), A30 (`game.ts` facade).
-- Kittingsl: A7 (determinism and score checks), A10 (assets), A11, A12, A13 (UI), A31, A32 (systems checks). The rest of A22 was finished by E (see Partial).
+- Kittingsl: A7 (determinism and score checks), A10 (assets), A11, A12, A13 (UI), A31, A32 (systems checks). The rest of A22 was finished by E (see the A22 row under Done).
 
 **Slice B (due 2026-10-22)**
 
-- Elias: B1, B2, B3, B7, B8, B9, B10, B17, B18.
-- Kittingsl: B2a, B11, B12, B13, B14, B15, B16, B19, B20. (B4, B5, B6 are on master via chunks C1-C3, built by E; the B9 part is covered by C4, see In progress.)
+- Elias: B1, B2, B3, B7, B8, B9 rocks.check (the cave.check part of B9 is done in C4, #38), B10, B17, B18.
+- Kittingsl: B2a, B11, B12, B13, B14, B15, B16, B19, B20. (B4, B5, B6 are on master via chunks C1-C3, built by E; the B9 cave.check part is covered by C4, see the cave generator chain under Done.)
 
 **Slice C**
 
 - Elias: C1, C2, C6.
 - Kittingsl: C3, C4, C5, C7, C8.
 
-Also absent from master: in `src/render`, everything except `keys`, `view`, `flame`, `quality`, `light`, `glow` and `entities` (no tiles, memory, props, index, overlay, particles); `src/ui` and `src/audio` entirely; in `src/assets`, everything except `sprites`, `sounds`, `resources` and the three `placeholders-*` files (no images, atlas); `core/storage.ts`; `world/route.ts`; and the checks of A7, A31, A32 and slice B (`caves.ts` and the `cave*` checks are on master). `systems/run.ts`, `screens.ts`, `step.ts` and their three checks are in the A29 branch, not on master. `world/validate.ts` and `world/gen/populate.ts`, `pockets.ts`, `teach.ts`, `fallback.ts` are on master since C1-C3.
+Also absent from master: in `src/render`, everything except `keys`, `view`, `flame`, `quality`, `light`, `glow` and `entities` (no tiles, memory, props, index, overlay, particles); `src/ui` and `src/audio` entirely; in `src/assets`, everything except `sprites`, `sounds`, `resources` and the three `placeholders-*` files (no images, atlas); `core/storage.ts`; `world/route.ts`; and the checks of A7, A31, A32 and slice B (`caves.ts` and the `cave*` checks are on master). `systems/run.ts`, `screens.ts`, `step.ts` and their three checks are on master since A29 (#39). `world/validate.ts` and `world/gen/populate.ts`, `pockets.ts`, `teach.ts`, `fallback.ts` are on master since C1-C3.
 
 ## Remaining slice A and critical path
 
@@ -109,11 +113,11 @@ Slice A is due **2026-10-20**. The hours below are the **estimates** from the ta
 | Elias | A15 3 h, A17 1 h, A30 1.5 h | 5.5 h |
 | Kittingsl | A7 1.5 h, A10 2 h, A11 2.5 h, A12 2.5 h, A13 1.5 h, A31 2.5 h, A32 3 h | 15.5 h |
 
-The Kittingsl row no longer lists the rest of A22 (2.5 h in the plan): E finished it through the cave generator chain (see Partial). Hours are the plan estimates only; no hours were invented for the chain, and the Kittingsl total 18.0 h minus 2.5 h is 15.5 h. A29 (2.5 h) moved from the Elias row to done, as implemented on its branch (PR pending).
+The Kittingsl row no longer lists the rest of A22 (2.5 h in the plan): E finished it through the cave generator chain (see the A22 row under Done). Hours are the plan estimates only; no hours were invented for the chain, and the Kittingsl total 18.0 h minus 2.5 h is 15.5 h. A29 (2.5 h) moved from the Elias row to done (merged as #39 and #40).
 
-Done so far, by plan estimates: **Elias 27.0 h** on the A29 branch (24.5 h on master: A1 1 + A2 1.5 + A3 2 + A4 1 + A5 2 + A6 2 + A24 1.5 + A25 1.5 + A26 1.5 + A27 2 + A28 3 + A14 2 + A16 3.5; plus A29 2.5 h, PR pending). **Kittingsl 11.5 h** (A18 1.5 + A19 2 + A20 2 + A21 3 + A23 1 + A8 2) plus the first part of A22 (plan estimates unchanged); the rest of A22 (2.5 h in the plan) was done by E through the chain C1-C4 and is not added to either total. Done by Elias on Kittingsl's behalf, stated separately: **A9, 3 h** (#33).
+Done so far, by plan estimates: **Elias 27.0 h** on master (A1 1 + A2 1.5 + A3 2 + A4 1 + A5 2 + A6 2 + A24 1.5 + A25 1.5 + A26 1.5 + A27 2 + A28 3 + A14 2 + A16 3.5 + A29 2.5 = 27.0). **Kittingsl 11.5 h** (A18 1.5 + A19 2 + A20 2 + A21 3 + A23 1 + A8 2) plus the first part of A22 (plan estimates unchanged); the rest of A22 (2.5 h in the plan) was done by E through the chain C1-C4 and is not added to either total. Done by Elias on Kittingsl's behalf, stated separately: **A9, 3 h** (#33).
 
-**Critical path:** A15 is now unblocked on the art side (A8 and A9 are done). A29 no longer waits for `generateCave` (chain C1-C4 is merged) and is implemented on its branch (PR pending; see In progress). A17 needs A15, A12 and A13. A30 needs A17 and A29 (A29 is done in the PR, so A30 waits on A17 and the A29 merge). See the Cross-person critical path section in [[tasks]].
+**Critical path:** A15 is now unblocked on the art side (A8 and A9 are done). A29 is done and merged (#39, #40) and no longer blocks anything. A17 needs A15, A12 and A13. A30 needs A17 and A29 (A29 is merged, so A30 waits only on A17). Elias remaining: A15, A17, A30. See the Cross-person critical path section in [[tasks]].
 
 ## Deviations and decisions made during the build
 
@@ -155,14 +159,14 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - **A18 brought `caches.getSolid` forward from A22** and added `scripts/check-a18.ts`, which is not in the plan.
 - **A24 and A27 dependency rows** in [[tasks]] were corrected in an earlier sync (see its Change log).
 - Kittingsl's #24 edited the repo snapshot directly; the edits were back-synced into the KB on 2026-10-18 (precedent #12).
-- **A29 (branch, PR pending), rulings R-166..R-177 in [[architecture-rulings-3]] section 8:**
+- **A29 (merged as #39 and #40), rulings R-166..R-177 in [[architecture-rulings-3]] section 8:**
   - **R-166:** `startRun(s, seedText, cave?)` has an optional `cave` parameter (additive); `genStep` runs the chunked generation (one attempt per update, `fallbackCave` when `genAttempt` reaches `MAX_ATTEMPTS`, `finalizeCave` once, then `startRun`); `runSeedText` is an extra export; `checkEnd` lives in `run.ts`.
   - **R-167:** `console.warn` once in `startRun` when the fallback ring is used (default).
   - **R-168 (owner):** storage calls (`commitBest`, `loadSettings`, `loadBest`, `saveSettings`) are not in `run.ts`/`screens.ts` until B7 creates `core/storage.ts`; until then `result.prevBest` is 0 and settings are not persisted.
   - **R-169 (owner):** the slice-B step calls (`stepRoll`, `eStart` + `stepMining` + `stepBeacon`, `stepMinerals`, `stepQuake`) are omitted from `step.ts`, marked by index comments; each B task adds its own call.
   - **R-170 (owner):** hit testing is deferred to A30/A11; `stepScreens` does not write `ui.hover` from `hit()`.
   - **R-171:** copy link only emits the `copyLink` fx and never writes `ui.copied`.
-  - **R-172 (default, owner to confirm):** during hitstop `step` runs `tickFx` (R-067 "only the clocks advance" read as "world frozen").
+  - **R-172 (OWNER-confirmed 2026-10-22):** during hitstop `step` runs `tickFx` (R-067 "only the clocks advance" read as "world frozen").
   - **R-173:** `startRun` keeps `ui.seedInput` on purpose (deviation from state-2 section 10).
   - **R-174:** screen navigation additions from the UI docs; all input except Escape is ignored while generation is pending, including `KeyM`.
   - **R-175, R-176, R-177:** stale rows of architecture-systems section 2; no counting spy in `step.ts`; the three A29 checks are `run.check.ts`, `step.check.ts`, `screens.check.ts` (the names `systems.check.ts` and `order.check.ts` stay reserved for A31/A32).
@@ -194,14 +198,13 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - **Leftover "4 draws" mentions** of `'cave:fallback'` (SAE1 section 6, `architecture-determinism.md` line 107): R-163 makes it 0 draws; fix when determinism is next edited.
 - **Rulings-3 intro line** still calls every ruling of the file an architect default; section 7 overrides it (R-156..R-165 include OWNER rulings). The intro line is not edited.
 - **Fallback ring has zero plant slack:** it yields exactly 6 chamber plants, the rule-11 minimum. Verify in chunk C2.
-- **A29 (R-172):** owner to confirm the R-067 reading: hitstop runs `tickFx` (one-line change to remove it).
 - **A29 (R-170):** hit-test ownership: A30 or A11 must set `ui.cursor`/`ui.hover` from `hit()` before step; until then a click activates the focused menu item wherever it lands.
-- **A29 (R-175, R-166):** the stale rows of architecture-systems section 2 and the modules-systems S3 table are annotated by rulings (R-175, R-166); the tables themselves are not rewritten. The orchestrator is annotating them in the KB; do not treat them as fixed.
+- **A29 (R-175, R-166):** the stale rows of architecture-systems section 2 and the modules-systems S3 table are annotated by rulings (R-175, R-166); the tables themselves are not rewritten. The rows are annotated only (notes added next to them in [[architecture-systems]] and [[architecture-modules-systems]]); do not treat them as fixed.
 - **A29 (R-168, R-169):** B7 must add the storage calls and each B task (B1, B2, B7, B8) must add its own step call at the index comment in `step.ts`.
 - **A29 (R-176):** A31 `order.check` item (e) cannot use a counting spy in `step.ts`; it must observe call order through behaviour (as `step.check.ts` does) or another owner-approved route.
-- **A29 docs snapshot:** `docs/` is re-synced with this update and the manifest regenerated; the orchestrator does that in the A29 PR at the owner's request.
 - **A29 timing margin:** `run.check.ts` `run()` takes about 1.0-1.45 s against its 1.6 s ceiling; watch it when the checks or the cave generator change.
-- **A29 quality gate 3:** pending (gate 1 = 92, gate 2 = 92, both `@ultrathink`); the orchestrator records the final score.
+- **Check guard gap (found by the #40 gate review):** `scripts/check-guard.ts` has no guard that each `src/checks/*.check.ts` file is imported and called in `src/checks/all.ts`; a new check file that is forgotten there never runs. Add such a guard in a follow-up.
+- **Style nit (A29):** four lines exceed 160 characters: `src/checks/screens.check.ts` lines 116, 119 and 257, and `src/systems/screens.ts` line 14 (`awk 'length>160'`, 2026-10-22).
 - Questions already in [[last-ember-open-questions]] stay open there.
 
 ## Related
@@ -217,5 +220,6 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - [[architecture-systems]]
 - [[architecture-systems-3]]
 - [[architecture-systems-4]]
+- [[architecture-modules-systems]]
 - [[architecture-assets-pipeline-2]]
 - [[last-ember-open-questions]]
