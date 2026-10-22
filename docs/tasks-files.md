@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Per-File Assignment (Elias vs Kittingsl)"
 description: Per-file table for Last Ember (section 3 of the task plan) – every source, script, asset and check file with the slice in which it is first created, the owner (E = Elias, K = Kittingsl), the task id and an estimated line count.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-22T16:00:00Z
+timestamp: 2026-10-22T20:00:00Z
 ---
 
 # Last Ember – Per-File Assignment (Elias vs Kittingsl)
@@ -178,7 +178,7 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 | src/checks/screens.check.ts (not in the original plan) | A | E | A29 | 300 |
 | src/checks/determinism.check.ts | A | K | A7 | 200 |
 | src/checks/score.check.ts (merged with the systems one) | A | K | A7 | 80 |
-| src/checks/caves.ts | A | K | A22 | 15 |
+| src/checks/caves.ts | A | K | A22 | 17 |
 | src/checks/render.check.ts | A | E | A4 | 40 |
 | src/checks/world.check.ts | A | K | A19 | ~250 |
 | src/checks/light-flame.check.ts | A | K | A32 | ~100 |

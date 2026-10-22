@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Determinism Architecture (PRNG, Streams, Seeds)
 description: Seeded PRNG for Last Ember – mulberry32 core, FNV-1a hashing, three streams (cave, gameplay, cosmetic) stored in State, tag-hashed sub-streams for stable cave generation, ?seed= parsing and sanitising, seed display and copy URL, pure functions required for property tests, and the grep check that bans Math.random in simulation code.
 tags: [project, ai-jam-5, architecture, last-ember, state, determinism]
-timestamp: 2026-10-17T20:00:00Z
+timestamp: 2026-10-22T20:00:00Z
 ---
 
 # Last Ember – Determinism Architecture
@@ -112,7 +112,7 @@ Restore: nothing to restore; a hot swap keeps `s.rng` (numbers) and the next dra
 | 0 macro tree + mask (runs FIRST in every attempt) | `'cave:macro'` | macro-cell tree and floor mask ([[architecture-scale-and-economy]] §2.2) |
 | 2b spine carve (after CA, before pass 4) | `'cave:spine'` | spine discs and 2-wide tunnels along macro edges ([[architecture-scale-and-economy]] §2.3) |
 | teaching placements (per attempt) | `'cave:teach'` | `makeRnd(hashSeed(caveSeed, 'cave:teach'))`: teaching spots T1–T4 + first lurker ([[architecture-cave-generation-2]] §3.4 step 3; R-152) |
-| fallback cave (attempt-independent) | `'cave:fallback'` | `hashSeed(seed >>> 0, 'cave:fallback')`, 4 draws, used only by `fallbackCave(seed)` ([[architecture-cave-generation-2]] §6; R-152) |
+| fallback cave (attempt-independent) | `'cave:fallback'` | `hashSeed(seed >>> 0, 'cave:fallback')`, 0 draws (fixed ring geometry; the tag only derives the `populate` seed `cs`, passed with `a = 8`), used only by `fallbackCave(seed)` ([[architecture-cave-generation-2]] §6; R-152, R-163, R-165 in [[architecture-rulings-3]]) |
 
 Rule: **a new pass gets a NEW tag** appended at the end of the table. Changing pass 7 cannot move walls from pass 1, and adding pass 11 cannot move anything earlier. Changing a pass's own logic changes only that pass's output. Within a pass, iterate tiles in index order so results do not depend on object-key order.
 

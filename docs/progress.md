@@ -1,22 +1,22 @@
 ---
 type: reference
 title: "Last Ember - Build Progress (2026-10-22)"
-description: Build status of Last Ember synced to origin/master f738703 on 2026-10-22 (A29 merged) - which plan tasks are done, partial, in progress or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
+description: Build status of Last Ember synced to origin/master b33c7fe on 2026-10-22 (A29 merged) - which plan tasks are done, partial, in progress or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
 tags: [project, ai-jam-5, progress, last-ember]
-timestamp: 2026-10-22T19:00:00Z
+timestamp: 2026-10-22T21:00:00Z
 ---
 
 # Last Ember - Build Progress (2026-10-22)
 
-Status of the implementation compared with the plan in [[tasks]] and [[tasks-files]]. Source of the facts: git and GitHub state of `origin/master` at commit `f738703` on 2026-10-22 (includes A29, merged as #39 and #40). Task ids, owners and hour estimates come from [[tasks]]. Hub: [[index]].
+Status of the implementation compared with the plan in [[tasks]] and [[tasks-files]]. Source of the facts: git and GitHub state of `origin/master` at commit `b33c7fe` on 2026-10-22 (includes A29, merged as #39 and #40, and the docs PRs #41 and #42). Task ids, owners and hour estimates come from [[tasks]]. Hub: [[index]].
 
 ## Snapshot
 
-- **Date:** 2026-10-22. **Master:** `f738703`. 39 PRs merged (#1, #2, #4 to #40), no open PRs at the time of the check. #3 was closed without merging.
+- **Date:** 2026-10-22. **Master:** `b33c7fe`. 41 PRs merged (#1, #2, #4 to #42), no open PRs at the time of the check. #3 was closed without merging.
 - **A29 (step loop) is merged:** #39 (`81f766b`, `systems/run.ts`, `screens.ts`, `step.ts` and three checks) and the follow-up #40 (`f738703`). See Done.
 - **`src/game.ts` is still the scaffold demo** (74 lines, dot collector, checked on master). **Nothing is playable yet.**
 - **What exists vs what is wired:** the foundation (host, core types, state, rng, tuning, migration, score, checks chain), the world generation core (grid, collision, LOS, BFS, carving, macro layout, places, loops, caches, explored and sample queries, and since the cave generator chain C1-C4 (#35 to #38) also pockets, teach, populate, validate, fallback, `generateCave` and the cave checks), the monster base and the full set of A-slice systems including the step loop (fx, camera, intent, movement, explore, depth, light, flame, pickups, combat, monsters, ai-lurker, director, and since A29 run, screens, step), the asset catalogs and resource registry (`assets/sprites.ts`, `sounds.ts`, `resources.ts`), the procedural placeholder art (`assets/placeholders-actors.ts`, `-world.ts`, `-ui.ts` from A9) and the first render modules (`render/keys.ts`, `view.ts`, `flame.ts`, `quality.ts`, plus the draw passes `light.ts`, `glow.ts`, `entities.ts` from A16) are on master. The render passes are on master but unwired: nothing consumes them until `render/index.ts` (A17). None of it is called from `game.ts` yet, including the step loop (`step` is not called until A30). Not on master: the rest of the render tree, the UI, the audio, the images and the atlas.
-- **Slice A is due 2026-10-20.**
+- **Slice A was due 2026-10-20 and is not complete.** The tasks still not on master are listed under Not started and Remaining slice A and critical path.
 
 ## Done
 
@@ -74,6 +74,12 @@ Docs and CI PRs (no plan task):
 | #5 | docs: rebalance task ownership | E | 2d0897b |
 | #12 | docs: player animation delivery contract | K | 2fcf8b5 |
 | #24 | docs: 64x64 enemy animations in eight authored directions (R-155 in architecture-rulings-3.md; 11 spec files) | K | 1060108 |
+| #25 | docs: sync build progress and task status to master 1060108 | E | 35c04bc |
+| #30 | docs: sync build progress and task status to master bd04c05 | E | 34b62f8 |
+| #32 | docs: sync build progress and task status to master 1d02b08 | E | 5e15b16 |
+| #34 | docs: sync build progress and architecture rulings to master 0350025 | E | eb63dd8 |
+| #41 | docs: resync A29 merge state and R-172/R-177 rulings | E | d4a20da |
+| #42 | docs: AGENTS.md manifest count 68 -> 69 | E | b33c7fe |
 
 ## Partial
 
@@ -106,7 +112,7 @@ Also absent from master: in `src/render`, everything except `keys`, `view`, `fla
 
 ## Remaining slice A and critical path
 
-Slice A is due **2026-10-20**. The hours below are the **estimates** from the task table in [[tasks]]. They are full-task estimates; the done part of A22 is not subtracted.
+Slice A was due **2026-10-20**; the tasks below are still open. The hours below are the **estimates** from the task table in [[tasks]]. They are full-task estimates; the done part of A22 is not subtracted.
 
 | Owner | Remaining tasks | Estimate |
 |---|---|---|
@@ -177,7 +183,6 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - Kittingsl still has to review the `devourerMul` hunk in `entities/monster.ts`.
 - Decide whether `src/checks/assets.check.ts` stays.
 - Decide whether `scripts/check-a18.ts` stays or is folded into `world.check`.
-- `AGENTS.md` says the docs manifest has 68 files; it now has 69. `AGENTS.md` is a protected path, so the fix is a follow-up PR.
 - Test gaps for Kittingsl's A31/A32 checks (from the A28 and A14 retrospects): stuck relocate timing, `stuckFrac`, `lungeRangePx` for stalker and devourer; quality ladder thresholds 18.5 / 12 ms, the vsync30 work limit, `VIG_STEP`, the top mask bucket.
 - A16 follow-up: `inView` has no 48 px entity margin (render-2 section 2.3); A16 adds it or `inView` gets a pad argument. Resolved in #31: the margin lives inside `entities.ts`, `inView` is unchanged.
 - **Owner decision from #31 (R-083):** `lightSources` does not exist in `systems/light.ts`, and no `FLAME` table exists in `systems/flame.ts`. `render/light.ts` builds the sources itself (player flame or ember r=22, entrance shaft r=72, beacon r=96*hold/holdS), and flicker uses `T.flame` per tuning section 3 instead of render-2 section 5.5 `FLICKER_AMP` 0.04. Either add `lightSources` to `systems/light.ts` later or amend R-083 (status note added to R-083 in [[architecture-rulings-2]]).
@@ -195,7 +200,7 @@ Rulings are in [[architecture-rulings]], [[architecture-rulings-2]] and [[archit
 - **Depth classes (R-164):** owner to approve or trim them (classes 3 + 4 about 4 h, classes 1 + 2 optional) and to confirm they ship after C4 as chunk C5.
 - **A10 note (scale 1):** `drawSprite` must call `PLACEHOLDERS[id]` directly at scale 1 when no atlas rect exists; the hit-flash tint path needs its own placeholder branch; beacon charge uses `frame = floor(progress*4)` (see the A9 row).
 - **T3 window vs teaching text (architect call needed):** the widened T3 window `[15, 60]` (R-156) contradicts CG2 section 4 ("all values <= 34 < beaconDist"), SAE1 section 5 ("T1-T4 path 7-24") and CG2 section 6.1 row 12.
-- **Leftover "4 draws" mentions** of `'cave:fallback'` (SAE1 section 6, `architecture-determinism.md` line 107): R-163 makes it 0 draws; fix when determinism is next edited.
+- **Leftover "4 draws" mentions** of `'cave:fallback'`: R-163 makes it 0 draws. `architecture-determinism.md` line 115 already says 0 draws (fixed 2026-10-22), so it is no longer a leftover. Still stale (checked by grep of `docs/` and the KB on 2026-10-22): [[architecture-scale-and-economy]] (SAE1) section 6, `docs/architecture-scale-and-economy.md` line 163 ("Stream `'cave:fallback'`, still 4 draws"), and row 14 of the review note `docs/notes/last-ember-review-world-vs-modules.md` (line 30, a dated review proposal that says "ring, 4 draws"). Fix SAE1 when it is next edited; [[architecture-rulings-3]] R-163 already supersedes it and the review note is a historical record.
 - **Rulings-3 intro line** still calls every ruling of the file an architect default; section 7 overrides it (R-156..R-165 include OWNER rulings). The intro line is not edited.
 - **Fallback ring has zero plant slack:** it yields exactly 6 chamber plants, the rule-11 minimum. Verify in chunk C2.
 - **A29 (R-170):** hit-test ownership: A30 or A11 must set `ui.cursor`/`ui.hover` from `hit()` before step; until then a click activates the focused menu item wherever it lands.
