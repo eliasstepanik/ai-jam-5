@@ -31,7 +31,7 @@ New files imported from `game.ts` get HMR automatically. They are re-evaluated w
 
 ## Verify before declaring done
 
-1. `npm run check` exits 0 (prints `check ok`). Needs Node >= 22.18.
+1. `npm run check` exits 0 (prints `check ok`, `checks ok` and `check-guard ok`). Needs Node >= 22.18.
 2. `npm run build` exits 0. It runs `tsc --noEmit` first, so type errors fail it.
 3. For gameplay changes, run `npm run dev` and watch the browser console. A good edit logs `[hmr] game.ts swapped, state kept`. A page reload, or a red overlay, means something broke the contract or threw.
 4. If you changed anything under `docs/` (owner re-sync only): `cd docs && sha256sum -c MANIFEST.sha256` exits 0. `MANIFEST.sha256` lists the sha256 of every `.md` file under `docs/` (69 at the time of writing; paths relative to `docs/`). A mismatch means a hand edit or a stale sync. The check also fails to notice an ADDED unmanifested file, so also compare `find docs -name "*.md" | wc -l` with `wc -l < docs/MANIFEST.sha256`.
