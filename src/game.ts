@@ -18,10 +18,11 @@ export { render } from './render/index.ts'
 const QUALITY = ['auto', 'q0', 'q1', 'q2', 'q3'] as const
 
 // Dev only (R-133): Backquote toggles the debug panel flag, Shift+Digit1..6 the debug flags and the quality override (R-132).
-function devKeys(s: State, input: Input): void {
+// Returns the Input step() sees: a copy without the Digit1..6 edges when a Shift chord fired, so they do not also select a mineral or type into the seed field.
+function devKeys(s: State, input: Input): Input {
   const p = input.pressed
   if (p.has('Backquote')) getResources().debug.on = !getResources().debug.on
-  if (!input.keys.has('ShiftLeft') && !input.keys.has('ShiftRight')) return
+  if (!input.keys.has('ShiftLeft') && !input.keys.has('ShiftRight')) return input
   const g = s.debug
   if (p.has('Digit1')) g.reveal = !g.reveal
   if (p.has('Digit2')) g.god = !g.god
@@ -29,6 +30,9 @@ function devKeys(s: State, input: Input): void {
   if (p.has('Digit4')) g.freezeAi = !g.freezeAi
   if (p.has('Digit5')) g.showPaths = !g.showPaths
   if (p.has('Digit6')) s.settings.quality = QUALITY[(QUALITY.indexOf(s.settings.quality) + 1) % QUALITY.length]
+  const rest = new Set(p)
+  for (let i = 1; i <= 6; i++) rest.delete('Digit' + i)
+  return rest.size === p.size ? input : { ...input, pressed: rest }
 }
 
 // Same rects the renderer draws (update and render call the same *Layout). Button order == focus order in systems/screens.ts.
@@ -80,7 +84,6 @@ function pointer(s: State, input: Input): Input {
 // R-096: (1) dev toggles, (2) step (runs stepScreens first, world systems only while playing), (3) platformStep.
 // ponytail: step 4 (audioStep) is absent because src/audio does not exist yet (slice B); add `try { audioStep(s, input) } catch (e) { warnOnce(e) }` after platformStep then.
 export function update(s: State, input: Input, dt: number): void {
-  if (import.meta.env.DEV) devKeys(s, input)
-  step(s, pointer(s, input), dt)
+  step(s, pointer(s, import.meta.env.DEV ? devKeys(s, input) : input), dt)
   platformStep(s)
 }
