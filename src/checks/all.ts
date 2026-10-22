@@ -3,6 +3,9 @@ import { run as state } from './state.check.ts'
 import { run as runCheck } from './run.check.ts'
 import { run as stepCheck } from './step.check.ts'
 import { run as screensCheck } from './screens.check.ts'
+import { run as flow } from './flow.check.ts'
+import { run as order } from './order.check.ts'
+import { run as ai } from './ai.check.ts'
 import { run as render } from './render.check.ts'
 import { run as world } from './world.check.ts'
 import { run as assets } from './assets.check.ts'
@@ -21,6 +24,9 @@ state()
 runCheck()
 stepCheck()
 screensCheck()
+flow()
+order()
+ai()
 render()
 world()
 assets()
