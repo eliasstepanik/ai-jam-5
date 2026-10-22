@@ -34,6 +34,15 @@ export const STR = {
   helpFooter: '← → / A D page · Esc back',
   helpArt: { entrance: 'ENTRANCE', zones: 'ZONES 1–4', beacon: 'BEACON', eyes: 'EYES GLOW', click: 'CLICK NOW', perfect: 'PERFECT', ringClick: 'CLICK' },
   helpCols: { mineral: 'MINERAL', flame: 'FLAME', effect: 'EFFECT', key: 'KEY' },
+  // shared words and templates (rendered text must not change)
+  depthWord: 'depth',
+  zoneWord: 'Zone',
+  breakdown: { depth: 'depth', win: 'escape', time: 'time', minerals: 'minerals', hp: 'hearts' },
+  parries: 'Parries',
+  perfectWord: 'perfect',
+  kills: 'Kills',
+  shareText: 'Last Ember seed', // clipboard text when SHARE_BASE is empty
+  copyFailed: 'Copy failed – seed',
   // end screen
   died: 'THE EMBER DIED',
   escaped: 'YOU ESCAPED',
