@@ -105,11 +105,6 @@ export const stampRadial: MaskStamp = (c, L, v, r, s) => {
   c.drawImage(maskSprite(L.kind, bucketOf(2 * px, MASK_BUCKETS)), xd - rd, yd - rd, 2 * rd, 2 * rd)
 }
 
-// beaconBlend, except that escape without a recorded ignition (beaconLit false or beaconLitAt unset = 0, e.g. tests and
-// debug phase jumps) counts as fully faded: beaconBlend would return 0 there and leave the screen dark for good.
-const blend = (s: State): number =>
-  s.meta.phase === 'escape' && (!s.world.beaconLit || s.world.beaconLitAt <= 0) ? 1 : beaconBlend(s)
-
 // Resized in place; never recreated (render-2 §5.1).
 function ensureDark(v: View, q: Quality): Canvas2D {
   const res = getResources()
@@ -142,7 +137,7 @@ export function drawDarkness(ctx: CanvasRenderingContext2D, s: State, v: View, q
   ctx.globalAlpha = 1
   ctx.imageSmoothingEnabled = false
   if (s.debug.reveal) return
-  const k = blend(s)
+  const k = beaconBlend(s)
   if (k >= 1) return
   const d = ensureDark(v, q)
   const c = d.ctx
