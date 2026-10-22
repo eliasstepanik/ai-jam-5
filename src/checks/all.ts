@@ -19,6 +19,8 @@ import { run as lightFlame } from './light-flame.check.ts'
 import { run as parry } from './parry.check.ts'
 import { run as damage } from './damage.check.ts'
 import { run as movement } from './movement.check.ts'
+import { run as determinism } from './determinism.check.ts'
+import { run as score } from './score.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -39,4 +41,6 @@ lightFlame()
 parry()
 damage()
 movement()
+determinism()
+score()
 console.log('checks ok')
