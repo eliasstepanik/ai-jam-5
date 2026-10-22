@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember - Build Progress (2026-10-22)"
 description: Build status of Last Ember synced to origin/master b33c7fe on 2026-10-22 (A29 merged) - which plan tasks are done, partial, in progress or not started, merged PRs, remaining slice A work and critical path, deviations and rulings applied during the build, and open items for the owner.
 tags: [project, ai-jam-5, progress, last-ember]
-timestamp: 2026-10-22T21:00:00Z
+timestamp: 2026-10-22T23:00:00Z
 ---
 
 # Last Ember - Build Progress (2026-10-22)
@@ -16,7 +16,7 @@ Status of the implementation compared with the plan in [[tasks]] and [[tasks-fil
 - **A29 (step loop) is merged:** #39 (`81f766b`, `systems/run.ts`, `screens.ts`, `step.ts` and three checks) and the follow-up #40 (`f738703`). See Done.
 - **`src/game.ts` is still the scaffold demo** (74 lines, dot collector, checked on master). **Nothing is playable yet.**
 - **What exists vs what is wired:** the foundation (host, core types, state, rng, tuning, migration, score, checks chain), the world generation core (grid, collision, LOS, BFS, carving, macro layout, places, loops, caches, explored and sample queries, and since the cave generator chain C1-C4 (#35 to #38) also pockets, teach, populate, validate, fallback, `generateCave` and the cave checks), the monster base and the full set of A-slice systems including the step loop (fx, camera, intent, movement, explore, depth, light, flame, pickups, combat, monsters, ai-lurker, director, and since A29 run, screens, step), the asset catalogs and resource registry (`assets/sprites.ts`, `sounds.ts`, `resources.ts`), the procedural placeholder art (`assets/placeholders-actors.ts`, `-world.ts`, `-ui.ts` from A9) and the first render modules (`render/keys.ts`, `view.ts`, `flame.ts`, `quality.ts`, plus the draw passes `light.ts`, `glow.ts`, `entities.ts` from A16) are on master. The render passes are on master but unwired: nothing consumes them until `render/index.ts` (A17). None of it is called from `game.ts` yet, including the step loop (`step` is not called until A30). Not on master: the rest of the render tree, the UI, the audio, the images and the atlas.
-- **Slice A was due 2026-10-20 and is not complete.** The tasks still not on master are listed under Not started and Remaining slice A and critical path.
+- **Slice A is complete (32/32) as of 2026-10-22, master `2d91fe5`.** It was due 2026-10-20. A7, A10, A11, A12, A13, A15, A17, A30, A31 and A32 landed after the `b33c7fe` check (PRs #46 to #54, see "Slice A completion" below). The facts above this bullet, the Done table and the Not started / Remaining sections describe the `b33c7fe` state; the "Slice A completion" section supersedes them for slice A.
 
 ## Done
 
@@ -81,6 +81,30 @@ Docs and CI PRs (no plan task):
 | #41 | docs: resync A29 merge state and R-172/R-177 rulings | E | d4a20da |
 | #42 | docs: AGENTS.md manifest count 68 -> 69 | E | b33c7fe |
 
+## Slice A completion (2026-10-22, master `2d91fe5`)
+
+Slice A is 32/32 done. All tasks below are merged to master `2d91fe5` (verified). This section supersedes the Not started and Remaining slice A lists for slice A.
+
+| Task | PR | Notes |
+|---|---|---|
+| A7 | #48 | Determinism and score checks. The fake-store Best round trip belongs to B7 (R-168): B7 must add it to `score.check.ts` (R-168). |
+| A10 | #47 | `drawSprite` placeholder path fixed to scale 1 (closes the A9/A10 integration note); `render/index.ts` calls `startPreload(res)`. |
+| A11 | #46 | `titleLayout` has an optional `ready` param; `menus.ts` and `game.ts` pass the same value. |
+| A12 | #52 | Defaults: `SHARE_BASE=''` (OD-5b), non-escaped Best has no tag, stateless `?seed=` write. |
+| A13 | #53 | Beacon prompt reach `T.beacon.reachPx` 36; HUD energy bar + Beacon-gate tick. The hud exit marker is deferred to B20. |
+| A15 | #51 | Decor pass 6 is not drawn (`decor.ts` has no owner); rocks pass 12 = B17; the entrance is drawn in `drawLandmarks` (GAP G6). |
+| A17 | #54 | Skipped passes: 2, 13, 18 (particles, B18), 6, 12, 15, 19 and `drawDebug`. |
+| A30 | #54 | `audioStep` and `drawDebug` are not wired (`src/audio` and `src/ui/debug.ts` are absent). Dev keys are DEV-only; Shift+Digit1..6 are filtered from the step input. The `beaconBlend` escape guard is folded into `src/render/view.ts` (decision #31 satisfied). |
+| A31 | #49 | Order check (b) resin-before-mining needs B1 `stepMining`. Stalker (B3) and devourer (C1) brain rows are deferred. |
+| A32 | #50 | Light-flame, parry, damage and movement checks. |
+
+**Browser smoke test (done):** title, help, play, pause, quit and HUD run with no console errors. Not yet exercised: death and won screens, and the `[hmr] game.ts swapped, state kept` log. Automation caveat: the mouse needs trusted pointer events.
+
+**Stale wording for the docs owner (not fixed here: the exact text is not in `progress.md` or `tasks.md`):**
+
+- MS-19 in the module-tree conflicts (`architecture-modules-systems-2`) says `initState()`; the code is `init()` in `src/core/state.ts`.
+- `architecture-determinism` section 7, sub-stream isolation row, is stale: the code uses `carveCore` + `populate(..., {skip})` because `generateCave` falls back to the ring.
+
 ## Partial
 
 None. A22 was the last partial task; it is complete on master (see the A22 row under Done).
@@ -95,8 +119,7 @@ Nothing in these lists is on master. Slice A items carry an owner; the full plan
 
 **Slice A**
 
-- Elias: A15 (render tiles, memory, props), A17 (render index), A30 (`game.ts` facade).
-- Kittingsl: A7 (determinism and score checks), A10 (assets), A11, A12, A13 (UI), A31, A32 (systems checks). The rest of A22 was finished by E (see the A22 row under Done).
+- None. Slice A is complete (32/32); A7, A10 to A13, A15, A17, A30, A31 and A32 are merged (see "Slice A completion"). The `b33c7fe` lists (Elias: A15, A17, A30; Kittingsl: A7, A10, A11, A12, A13, A31, A32) are retired.
 
 **Slice B (due 2026-10-22)**
 
@@ -112,7 +135,7 @@ Also absent from master: in `src/render`, everything except `keys`, `view`, `fla
 
 ## Remaining slice A and critical path
 
-Slice A was due **2026-10-20**; the tasks below are still open. The hours below are the **estimates** from the task table in [[tasks]]. They are full-task estimates; the done part of A22 is not subtracted.
+**Superseded 2026-10-22:** slice A is complete (32/32, master `2d91fe5`); no slice A task remains open and the table below is history as of `b33c7fe`. Slice A was due **2026-10-20**; at `b33c7fe` the tasks below were still open. The hours below are the **estimates** from the task table in [[tasks]]. They are full-task estimates; the done part of A22 is not subtracted.
 
 | Owner | Remaining tasks | Estimate |
 |---|---|---|
