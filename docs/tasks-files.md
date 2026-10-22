@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Per-File Assignment (Elias vs Kittingsl)"
 description: Per-file table for Last Ember (section 3 of the task plan) – every source, script, asset and check file with the slice in which it is first created, the owner (E = Elias, K = Kittingsl), the task id and an estimated line count.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-22T14:00:00Z
+timestamp: 2026-10-22T16:00:00Z
 ---
 
 # Last Ember – Per-File Assignment (Elias vs Kittingsl)
@@ -97,7 +97,7 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 | src/systems/ai-lurker.ts | A | E | A28 | 60 |
 | src/systems/director.ts | A | E | A28; +B8 | 100 |
 | src/systems/run.ts | A | E | A29; +B8 | 130 |
-| src/systems/screens.ts | A | E | A29 | 125 |
+| src/systems/screens.ts | A | E | A29 | 126 |
 | src/systems/step.ts | A | E | A29 | 54 |
 | src/systems/mining.ts | B | E | B1 | 70 |
 | src/systems/beacon.ts | B | E | B1 | 70 |
@@ -171,11 +171,11 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 | File | Slice | Owner | Task | Lines |
 |---|---|---|---|---|
 | src/checks/input.ts | A | E | A6 | 20 |
-| src/checks/all.ts | A | E | A6 | 15 |
+| src/checks/all.ts | A | E | A6 | 34 |
 | src/checks/state.check.ts | A | E | A6 | 150 |
 | src/checks/run.check.ts (not in the original plan) | A | E | A29 | 277 |
 | src/checks/step.check.ts (not in the original plan) | A | E | A29 | 287 |
-| src/checks/screens.check.ts (not in the original plan) | A | E | A29 | 299 |
+| src/checks/screens.check.ts (not in the original plan) | A | E | A29 | 300 |
 | src/checks/determinism.check.ts | A | K | A7 | 200 |
 | src/checks/score.check.ts (merged with the systems one) | A | K | A7 | 80 |
 | src/checks/caves.ts | A | K | A22 | 15 |
