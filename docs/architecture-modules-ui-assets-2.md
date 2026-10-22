@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Module Tree – UI, Assets, Host, Tooling (2/2)
 description: Authoritative file list part 2 for Last Ember – host and tooling table (main.ts, merge.ts, check.ts, index.html, vite.config.ts, tsconfig.json, package.json, ci.yml, check-assets and trim-characters scripts; the pack-atlas packer is superseded by ADR-123) with exact changes and approval needs, the proposed package.json scripts block, glob-free check wiring for Node 22.18, the asset folder layout with generated files, and the conflicts and gaps table.
 tags: [project, ai-jam-5, architecture, last-ember, modules]
-timestamp: 2026-10-22T21:00:00+02:00
+timestamp: 2026-10-22T22:30:00+02:00
 ---
 
 # Last Ember – Module Tree: UI, Assets, Host, Tooling (2/2)
@@ -31,7 +31,7 @@ Part 1: [[architecture-modules-ui-assets]] (layer rule, `game.ts` facade, `src/u
 | `package.json` | EDIT | `check` chain (§2); the `pack` script is superseded by ADR-123 (no packer). No dependency added | REQUIRED | low | – |
 | `.github/workflows/ci.yml` | UNCHANGED (default) | `npm run check` already runs `check-assets.ts` and `src/checks/all.ts`; job name `ci` stays. OPTIONAL: size-budget step after "Verify dist/index.html…" from [[architecture-host-changes-2]] §9, with the limit corrected to 9 MB (C13) | OPTIONAL | low (wrong limit = red CI on first art PR) | **APPROVAL** (CI change via the user's PR flow) |
 | ~~`scripts/pack-atlas.ts`~~ | **SUPERSEDED, NOT CREATED** ([[ADR-123-2-5d-view]], R-183, R-184) | The 2.5D view ships two externally delivered atlases (`src/assets/cave_tileset.{png,json}`, `src/assets/characters.{png,json}`) imported as delivered: no packer, no `art/frames/`, no `npm run pack`, no `atlas-0.png`. `atlas.json` is a hand-kept v2 index ([[architecture-assets-pipeline]]). Old v1 packer spec (PNG codec, shelf-pack, `--watch`) is historical only | – | – | – |
-| `scripts/trim-characters.ts` | NEW | Node built-ins only: reads `art/characters-source.json`, writes the trimmed `src/assets/characters.json` ([[architecture-assets-pipeline]], [[ai-jam-5-asset-formats-25d]]) | REQUIRED by D2 | low | – |
+| `scripts/trim-characters.ts` | NEW | Node built-ins only: reads `art/characters-source.json`, rewrites the JSON only, writing the trimmed `src/assets/characters.json` (no PNG codec; `characters.png` is copied as delivered, OD-D6; [[architecture-assets-pipeline]], [[ai-jam-5-asset-formats-25d]]) | REQUIRED by D2 | low | – |
 | `scripts/check-assets.ts` | NEW | Asserts #1–#10 of [[architecture-assets-pipeline-2]] §2 (atlas keys, rects, source hash, PNG IHDR, ogg+m4a pairs or `PENDING_AUDIO`, orphans, containers, budgets §3, loop points, file-name regex). Reads files with `node:fs`; never decodes images or audio | REQUIRED by slice A (must pass on an empty art set) | low | – |
 
 `check-assets.ts` validates both external atlases and the v2 `atlas.json` (not a packer source hash; R-183, [[architecture-assets-pipeline]]). It imports `../src/assets/sprites.ts` and `sounds.ts` (DOM-free, `.ts` extension, erasable syntax only). They are not type-checked by `npm run build` (outside `include`) – accepted ceiling, G5.

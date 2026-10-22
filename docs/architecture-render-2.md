@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Render Architecture (2/3) – Tiles, Entities, Particles, Darkness and Memory
 description: Last Ember rendering part 2 – chunked tile cache with zone map, floor variant hash and wall bitmask auto-tiling, entity passes with the shared inLight predicate, the analytic particle pool fed by the fx event queue, and the darkness layer with pre-rendered light mask sprites, flicker, memory map and flame-out look.
 tags: [project, ai-jam-5, architecture, last-ember, render]
-timestamp: 2026-10-22T21:00:00+02:00
+timestamp: 2026-10-22T22:30:00+02:00
 ---
 
 # Last Ember – Render Architecture (2/3)
@@ -54,7 +54,7 @@ Cost: one pass over 76 800 tiles (320×240) plus BFS, about 4–8 ms once per ru
 ### 2.2 Chunk cache (DEFAULT, architect)
 
 - Chunk = 8 × 8 tiles = 256 × 256 world px, drawn at 1 texel per world px into TWO canvases per chunk (`OffscreenCanvas`/`HTMLCanvasElement`): `floor` 256 × 256 and `walls` 256 × 304 (transparent; 256 + 48 px south overhang, R-181). `res.tiles.chunks: Map<number, { floor, walls }>`. Chunk grid `CHUNKS_W × CHUNKS_H = ceil(w / 8) × ceil(h / 8)` = 40 × 30 = 1 200 chunks at 320×240 (full map as chunks: 76 800 × 32² × 4 B ≈ 315 MB, never resident, the LRU below is mandatory).
-- Contents: floor pattern, ground overlays, wall caps, wall faces, inner-corner cutouts and rims, wall overlays, south-facing ores (all from the tileset atlas, [[architecture-assets-pipeline]] §5). The crater is excluded: it belongs to a landed rock, pass 12. Order: floor pattern → ground overlays → caps → faces → erase cutout then rim → wall overlays and south ores. The `floor` canvas holds the first two steps; the `walls` canvas holds the rest (the wall layer is built on a scratch canvas, then composited into it).
+- Contents: floor pattern, ground overlays, wall caps, wall faces, inner-corner cutouts and rims, wall overlays, south-facing ores (all from the tileset atlas, [[architecture-assets-pipeline]] §5). The crater is excluded: it belongs to a landed rock, pass 12. Order: floor pattern → ground overlays → caps → faces → erase cutout then rim → wall overlays and south ores. The `floor` canvas holds the first two steps; the `walls` canvas holds the rest (the wall layer is built on a scratch canvas, then composited into it). The floor pattern covers the whole chunk, wall cells included: the opaque caps hide it, and the inner-corner cutouts erase only the `walls` canvas, so the pattern beneath them shows through as floor (R-179).
 - **Overhang:** a chunk draws the faces of its last tile row into the 48 px below it. The next chunk repaints its own first-row faces on top, so overlapping pixels are identical and chunk build order does not matter.
 - **Cache key:** `cx + cy * CHUNKS_W` (no literal grid width) in a `Map<number, { floor, walls }>`, valid while `res.tiles.key === tilesHash + ':' + res.images.gen` (`gen` +1 when a sheet finishes loading or fails, so placeholder-built chunks get rebuilt with art). Key mismatch → clear map.
 - **LRU cap 40 chunks** (40 × (256 + 304) × 256 × 4 B ≈ 22 MB, viewport-bound). Visible at 1080p z=2: 960 × 540 world px → at most 5 × 4 = 20 chunks; 1440p z=3: 853 × 480 → 5 × 3 = 15.
@@ -63,11 +63,12 @@ Cost: one pass over 76 800 tiles (320×240) plus BFS, about 4–8 ms once per ru
 - Zone tint (OD-D1, DEFAULT on): each chunk is multiplied once with its majority zone colour at alpha 0.25 (z1 none, z2 `#b8c4d6`, z3 `#b4d0b0`, z4 `#c4b0d8`); the result is cached in the same canvases.
 
 ```ts
-// floor canvas: 24 px cells, each covered by one 32-tile (the tile under the cell centre)
+// floor canvas: 24 px pattern cells painted unconditionally over the whole 256 x 256 chunk (R-179).
+// A 24 px cell can straddle a 32 px tile edge, so skipping by one tile would leave strips at floor/wall seams;
+// the opaque wall caps (walls canvas, drawn above) hide the pattern on wall cells.
 function paintFloor(c: CanvasRenderingContext2D, s: State, ts: Tileset, cx: number, cy: number): void {
   for (let fy = Math.floor((cy * 256) / 24); fy < Math.ceil(((cy + 1) * 256) / 24); fy++) {
     for (let fx = Math.floor((cx * 256) / 24); fx < Math.ceil(((cx + 1) * 256) / 24); fx++) {
-      if (!isFloorAt(s, fx * 24 + 12, fy * 24 + 12)) continue
       blit(c, ts, `floor_${floorVariant(fx, fy, s.meta.seed)}`, fx * 24 - cx * 256, fy * 24 - cy * 256)
     }
   }

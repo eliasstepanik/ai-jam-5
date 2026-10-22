@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Gameplay Systems (1/4) – Step Order, Screens, Runs, Intent, Movement
 description: Last Ember gameplay systems part 1 – the fixed-step update order for descent and escape, the step() skeleton with hitstop, screen state machine with transitions and resets, startRun and endRun contracts, intent resolution from Input (movement vector, aim via camera and view) and player movement with circle-vs-tile collision and sliding, with formulas and worked examples.
 tags: [project, ai-jam-5, architecture, last-ember, systems]
-timestamp: 2026-10-22T20:00:00Z
+timestamp: 2026-10-22T22:30:00+02:00
 ---
 
 # Last Ember – Gameplay Systems (1/4)
@@ -38,7 +38,7 @@ Binding for every system: mutate `State` only; randomness only via `rand(s, 'gam
 | 15 | timers (`tickPlayerTimers(s, dt)` in `combat.ts`) | `hurtT`, `hitFlash` |
 | 16 | `checkEnd(s)` (`src/core/run.ts`) | `hp <= 0` → `endRun(s, false)` |
 | 17 | `tickFx(s, dt)` (`src/systems/fx.ts`) | fx timers, event pruning |
-| 18 | `stepCamera(s, dt)` (`src/systems/camera.ts`) | lerp toward player |
+| 18 | `stepCamera(s, dt, input.view)` (`src/systems/camera.ts`) | lerp toward player, then clamp to the map (`clampCam`, R-181) |
 
 ### 1.2 Phase `escape`
 
@@ -90,17 +90,18 @@ export function step(s: State, input: Input, dt: number): void {
   checkEnd(s)
   if (s.meta.screen !== 'playing') return
   tickFx(s, dt)
-  stepCamera(s, dt)
+  stepCamera(s, dt, input.view) // lerp + clamp to the map (R-181): s.cam stays clamped, so aim below matches the drawn view
 }
 ```
 
 Hitstop (perfect parry, 0.060 s = 4 steps) freezes the world but the run clock still counts (it is real playing time). Edges arriving during hitstop are lost except a click, which the swing buffer keeps (`player.swing.buffer`, [[architecture-systems-3]] §1).
 
-Notes (A29), the code in `src/systems/step.ts` differs from the skeleton above in three places; the rulings win:
+Notes (A29), the code in `src/systems/step.ts` differs from the skeleton above in four places; the rulings win:
 
 - `stepRoll`, the `eStart` snapshot, `stepMining`, `stepBeacon`, `stepMinerals` and `stepQuake` are not called yet. `step.ts` marks each spot with an index comment; B8, B1, B7 and B2 add the calls (X3, D5, D7/D8, D9, X11); see R-169 in [[architecture-rulings-3]] §8.
 - Hitstop runs `tickFx` and sets the click buffer before the decrement; see R-172 in [[architecture-rulings-3]] §8 (OWNER-confirmed 2026-10-22).
 - `step.ts` has no counting spy; call-order checks observe behaviour instead; see R-176 in [[architecture-rulings-3]] §8.
+- `step.ts` calls `stepCamera(s, dt)` (D18) without `view`, and `stepCamera` does not clamp yet. Task D8 changes `src/systems/camera.ts` (adds `view` and the pure `clampCam`, [[architecture-systems-4]] §5) and passes `input.view` at that call, so the camera is clamped before the next step computes `aimX`/`aimY` (R-181).
 
 ## 2. Screen state machine (`src/systems/screens.ts`, R-003)
 
@@ -177,8 +178,8 @@ Formulas:
 ax = (D||ArrowRight) - (A||ArrowLeft); ay = (S||ArrowDown) - (W||ArrowUp)    // keys held
 len = hypot(ax, ay); mx = len ? ax / len : 0; my = len ? ay / len : 0       // diagonal normalised
 zoom = viewZoomCss(view.h, view.dpr)   // src/core/view.ts, same zoom as render (R-131); >= 1, so checks with view {0,0,1} get 1
-aimX = cam.x + (mouse.x - view.w / 2) / zoom
-aimY = cam.y + (mouse.y - view.h / 2) / zoom
+aimX = cam.x + (mouse.x - view.w / 2) / zoom   // cam = s.cam of the previous step, already clamped to the map (R-181, clampCam in stepCamera),
+aimY = cam.y + (mouse.y - view.h / 2) / zoom   // so near map edges aim and the drawn view use the same camera (only the cosmetic shake differs)
 descent: if hypot(aimX - p.x, aimY - p.y) >= 4 then p.facing = atan2(aimY - p.y, aimX - p.x)  // else keep
 escape:  if moving then p.facing = atan2(my, mx)
 ```
@@ -259,3 +260,4 @@ Worked example (slide): walls at tile column `tx = 32` (x 1024–1056). Player `
 - [[architecture-scale-and-economy-2]]
 - [[architecture-rulings-3]]
 - [[architecture-ui-2]]
+- [[ADR-123-2-5d-view]]

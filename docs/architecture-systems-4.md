@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Gameplay Systems (4/4) – Explore, Rocks Slot, Escape, End, Score, FX, Camera, State Additions, Checks
 description: Last Ember gameplay systems part 4 – explore marking, the quake slot that calls planRockFall from the rocks architecture, escape sprint and exit marker, win and lose checks, score and result, fx emit/addShake/tickFx with event names, camera follow and shake, the complete list of State additions required, every architect DEFAULT, and the npm run check assertions for all systems.
 tags: [project, ai-jam-5, architecture, last-ember, systems]
-timestamp: 2026-10-17T21:30:00Z
+timestamp: 2026-10-22T22:30:00+02:00
 ---
 
 # Last Ember – Gameplay Systems (4/4)
@@ -94,14 +94,18 @@ Audio mapping (from [[architecture-assets-audio-2]]): `swing`→`sfx_swing`, `pa
 ## 5. Camera (`src/systems/camera.ts`)
 
 ```ts
-export function stepCamera(s: State, dt: number): void
+export function stepCamera(s: State, dt: number, view: { w: number; h: number; dpr: number }): void  // `input.view` (R-131)
+export function clampCam(x: number, y: number, worldW: number, worldH: number, view: { w: number; h: number; dpr: number }): { x: number; y: number }  // pure (R-181)
 export function shakeOffset(s: State): { x: number; y: number }   // render-only helper, pure
 ```
 
 ```
 k = 1 - exp(-T.cam.lerpPerS * dt)        // 0.1248 per step
 cam.x += (p.x - cam.x) * k; cam.y += (p.y - cam.y) * k
+({ x: cam.x, y: cam.y } = clampCam(cam.x, cam.y, world.w, world.h, view))   // stored camera is the clamped one
 ```
+
+**Clamp (R-181, OD-D8 decided: systems).** `clampCam` computes `cw = round(view.w * view.dpr)`, `ch = round(view.h * view.dpr)`, `z = deviceZoom(ch)` (`src/core/view.ts`), `hx = cw / 2 / z`, `hy = ch / 2 / z`, and returns `x = min(max(x, hx), max(hx, worldW * 32 - hx))`, `y = min(max(y, hy), max(hy, worldH * 32 + 48 - hy))` (the 48 px is the south overhang of the wall faces). Because `s.cam` is stored clamped, `resolveIntent` aim ([[architecture-systems]] §4) and `makeView` ([[architecture-render]] §4.2, which reads `s.cam` as is, with no second clamp) use the same camera. Determinism: the camera is derived state; the clamp is a pure function of `cam`, `world.w`, `world.h` and `view`, uses no RNG and writes only `s.cam`. With the check view `{ w: 0, h: 0, dpr: 1 }` `hx = hy = 0`, so the bounds are `[0, W * 32] x [0, H * 32 + 48]`.
 
 No look-ahead (ponytail: add `+ facing * 24 px` lead if the screen feels cramped). Shake is applied in render only, never stored: `amp = fx.shakeMag * min(1, fx.shake / T.cam.shakeDecayS)`, offset `= amp * (noise(meta.steps, 1) * 2 - 1, noise(meta.steps, 2) * 2 - 1)` with the stateless noise of [[architecture-determinism]] §3 (no cosmetic stream draw in render). Escape adds the constant `T.escape.quakeShakePx` (2 px) to `amp`. Worked: player jumps 40 px (roll) → after 1 step cam lags 35.0 px, after 6 steps 18.0 px, after 18 steps 3.6 px.
 
@@ -179,3 +183,4 @@ Fields not in [[architecture-state]] / [[architecture-state-2]] that these syste
 - [[architecture-scale-and-economy-2]]
 - [[architecture-scale-and-economy-3]]
 - [[architecture-rulings]]
+- [[ADR-123-2-5d-view]]

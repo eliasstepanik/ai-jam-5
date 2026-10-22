@@ -3,7 +3,7 @@ type: note
 title: Last Ember – Open Questions and Assumptions
 description: Checklist of all ASSUMPTION and OPEN items, unresolved conflicts and a short decision log for the Last Ember concept, with current default and who decides.
 tags: [project, ai-jam-5, last-ember, open-questions, assumptions, checklist]
-timestamp: 2026-10-22T21:00:00+02:00
+timestamp: 2026-10-22T22:30:00+02:00
 ---
 
 # Last Ember – Open Questions and Assumptions
@@ -33,7 +33,7 @@ Hub: [[index]]. Sources: [[last-ember-design]], [[last-ember-production-plan]]. 
 | 17 | [ ] | OD-D5: resin ore frames in the tileset | DEFAULT: unused | owner |
 | 18 | [ ] | OD-D6: trimmed characters JSON versus shipping the 485 KB source | DEFAULT: trim (`scripts/trim-characters.ts`, task D2) | owner |
 | 19 | [ ] | OD-D7: `mon_*_eyes` placeholders outside the light | DEFAULT: keep | owner |
-| 20 | [ ] | OD-D8: where the camera clamp lives | DEFAULT: in `makeView`, not in `systems/camera`; no `State` change (R-181) | owner |
+| 20 | [ ] | OD-D8: where the camera clamp lives | DECIDED: `src/systems/camera.ts` (owner default, quality-gate fix round 1). `stepCamera(s, dt, view)` stores the clamped camera in `s.cam` via the pure `clampCam`; `makeView` reads `s.cam` as is, no second clamp. Reason: aim (`aimX`/`aimY`) is derived from `s.cam`, so a clamp only in `makeView` would make aim and the drawn view disagree near map edges. The clamp is pure (no RNG, no `State` change). Task D8 touches `src/systems/camera.ts` and the `stepCamera` call in `src/systems/step.ts` (R-181) | decided (owner default) |
 | 21 | [ ] | Asset provenance and licence for `cave_tileset.png` and `characters.png`. Both are AI-generated per the owner. Tool, prompt and licence are not known to the planner. | The owner fills tool, prompt and licence into the README `AI process` section and credits later; the README gets a marked line (for example "user-supplied; provenance to confirm (owner)") until then. Task D14. | eliasstepanik (owner) |
 
 ## Unresolved conflicts

@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Per-File Assignment (Elias vs Kittingsl)"
 description: Per-file table for Last Ember (section 3 of the task plan) – every source, script, asset and check file with the slice in which it is first created, the owner (E = Elias, K = Kittingsl), the task id and an estimated line count.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-22T21:00:00+02:00
+timestamp: 2026-10-22T22:30:00+02:00
 ---
 
 # Last Ember – Per-File Assignment (Elias vs Kittingsl)
@@ -88,7 +88,7 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 | src/entities/monster.ts | A | K | A23; +A24 (devourerMul, #23) | 70 |
 | src/entities/steer.ts | A | K | A23 | 30 |
 | src/systems/fx.ts | A | E | A24 | 45 |
-| src/systems/camera.ts | A | E | A24 | 30 |
+| src/systems/camera.ts | A | E | A24; +D8 (planned; camera clamp, R-181) | 30 |
 | src/systems/depth.ts | A | E | A24 | 25 |
 | src/systems/light.ts | A | E | A24 | 60 |
 | src/systems/intent.ts | A | E | A25 | 50 |
@@ -118,7 +118,7 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 | File | Slice | Owner | Task | Lines |
 |---|---|---|---|---|
 | src/render/keys.ts | A | E | A14; +D4 | 50 |
-| src/render/view.ts | A | E | A14; +D8 | 90 |
+| src/render/view.ts | A | E | A14; +D8 (planned; view range ty1 + 2) | 90 |
 | src/render/tileset.ts (planned, D) | D | E | D3 | <=120 |
 | src/render/charatlas.ts (planned, D) | D | E | D5 | <=200 |
 | src/render/flame.ts | A | E | A14 | 25 |
@@ -175,7 +175,7 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 | src/assets/atlas-0.png (SUPERSEDED by D1/D2: no packed atlas; not created) | B | K | B16 | binary |
 | src/assets/cave_tileset.png (planned, D; byte-identical import, 1024x1024 max, <=100 KB) | D | K | D1 | binary |
 | src/assets/cave_tileset.json (planned, D; byte-identical import) | D | K | D1 | data |
-| src/assets/characters.png (planned, D; generated from the source by trim-characters, <=4096x4096, <=600 KB) | D | K | D2 | binary |
+| src/assets/characters.png (planned, D; copied as delivered, trim-characters rewrites the JSON only (OD-D6), <=4096x4096, <=600 KB) | D | K | D2 | binary |
 | src/assets/characters.json (planned, D; generated) | D | K | D2 | data |
 
 ### checks

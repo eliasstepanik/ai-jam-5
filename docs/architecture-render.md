@@ -3,12 +3,12 @@ type: architecture
 title: Last Ember – Render Architecture (1/3) – Modules, Frame Pipeline, Camera Transform
 description: Last Ember rendering part 1 – render module map, purity rules, the numbered per-frame draw order with exact canvas calls, the world-to-screen camera transform with integer device zoom, DPR handling, pixel snapping and screen shake.
 tags: [project, ai-jam-5, architecture, last-ember, render]
-timestamp: 2026-10-22T22:00:00+02:00
+timestamp: 2026-10-22T22:30:00+02:00
 ---
 
 # Last Ember – Render Architecture (1/3)
 
-> **2.5D view pivot (2026-10-22, [[ADR-123-2-5d-view]], R-178..R-186 in [[architecture-rulings-3]] §9).** The world is drawn in a fixed-south 3/4 look: the floor is a 24 px repeating pattern, walls are caps plus 48-unit faces that hang into the south cell, and walls and actors are depth-sorted per tile row (R-180). Pass 5 below is split into 5a/5b, the camera is clamped (R-181), and actors draw at scale 1.0 (R-184). Asset facts: [[ai-jam-5-asset-formats-25d]]. Where this file disagrees with those rulings, the rulings win.
+> **2.5D view pivot (2026-10-22, [[ADR-123-2-5d-view]], R-178..R-186 in [[architecture-rulings-3]] §9).** The world is drawn in a fixed-south 3/4 look: the floor is a 24 px repeating pattern, walls are caps plus 48-unit faces that hang into the south cell, and walls and actors are depth-sorted per tile row (R-180). Pass 5 below is split into 5a/5b, the camera is clamped to the map in `systems/camera.ts`, not in `makeView` (R-181), and actors draw at scale 1.0 (R-184). Asset facts: [[ai-jam-5-asset-formats-25d]]. Where this file disagrees with those rulings, the rulings win.
 
 Part 1 of 3. Next: [[architecture-render-2]] (tile pass, entities, particles, darkness layer), [[architecture-render-3]] (glow, Beacon mode, overlays, budget, quality ladder, `drawSprite`, raycast seam, debug overlay). Non-State resources: [[architecture-resources]], [[architecture-resources-2]]. HUD and menus: [[architecture-ui]], [[architecture-ui-2]]. Hub: [[architecture]]. Spec (governs): [[last-ember-design]]. State: [[architecture-state]], [[architecture-state-2]], [[architecture-state-3]]. Host contract: [[architecture-host-changes]], [[architecture-host-changes-2]]. Colours: [[architecture-assets-style]]. Sprites: [[architecture-assets-sprites]], [[architecture-assets-sprites-2]], [[architecture-assets-sprites-3]]. Loader: [[architecture-assets-pipeline]].
 
@@ -100,7 +100,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
     drawWallRow(ctx, s, v, ty)
     drawRowEntities(ctx, s, v, ty) // veins, pickups, landmarks, monsters, player sorted by foot y
   }
-  drawRocks(ctx, s, v)
+  drawRocks(ctx, s, v) // after the row loop: telegraph circles + falling boulders only; landed rocks are drawn in the row buckets
   drawParticles(ctx, s, v, 'normal') // after the row loop
   passMark('ents')
   drawDarkness(ctx, s, v, q)
@@ -162,12 +162,10 @@ export function makeView(ctx: CanvasRenderingContext2D, s: State, w: number, h: 
   const z = deviceZoom(ch) // src/core/view.ts; equals viewZoomCss(h, dpr) * dpr
   const { x: sx, y: sy } = shakeOffset(s) // src/systems/camera.ts (R-017)
   const k = s.settings.reducedFlash ? 0.4 : 1
-  // 2.5D (R-181): camera clamped to the map; the south edge has a 48 px overhang for the wall faces
-  const hx = cw / 2 / z, hy = ch / 2 / z
-  const cx = Math.min(Math.max(s.cam.x, hx), Math.max(hx, s.world.w * TILE - hx))
-  const cy = Math.min(Math.max(s.cam.y, hy), Math.max(hy, s.world.h * TILE + 48 - hy))
-  const ox = Math.round(cw / 2 - (cx + sx * k) * z)
-  const oy = Math.round(ch / 2 - (cy + sy * k) * z)
+  // 2.5D (R-181): s.cam is already clamped to the map (48 px south overhang) by stepCamera/clampCam in
+  // src/systems/camera.ts (task D8), so aim and this view agree; read it as is, NO second clamp here
+  const ox = Math.round(cw / 2 - (s.cam.x + sx * k) * z)
+  const oy = Math.round(ch / 2 - (s.cam.y + sy * k) * z)
   const x0 = -ox / z - TILE, y0 = -oy / z - TILE
   const x1 = (cw - ox) / z + TILE, y1 = (ch - oy) / z + TILE
   return { dpr, cw, ch, w, h, z, ox, oy, x0, y0, x1, y1,
