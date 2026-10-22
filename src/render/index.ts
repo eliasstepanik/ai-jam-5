@@ -1,0 +1,72 @@
+// L4 render: frame orchestrator (A17). Spec: docs/architecture-render.md §3 (passes 0-23, sketch), architecture-modules-render.md
+// (index.ts row, seam S1), R-094 (drawScreen in ui/menus.ts), R-095 (this module calls startPreload), R-096 (drawDebug is game.ts's).
+// Pure with respect to State: reads s only. Mutable data lives in getResources(); this module keeps no state and no module-level effects.
+// No Math.random, Date.now or performance.now here: clocks sit in quality.ts, cosmetic noise in the passes.
+import type { State } from '../core/types.ts'
+import { getResources } from '../assets/resources.ts'
+import { startPreload } from '../assets/images.ts'
+import { drawHud } from '../ui/hud.ts'
+import { drawScreen } from '../ui/menus.ts'
+import { drawMonsters, drawPlayer } from './entities.ts'
+import { drawEyes, drawGlow } from './glow.ts'
+import { drawDarkness } from './light.ts'
+import { memoryCanvas } from './memory.ts'
+import { drawLandmarks, drawPickups, drawVeins } from './props.ts'
+import { currentQuality, frameBegin, passMark, qualityTick } from './quality.ts'
+import { drawTiles } from './tiles.ts'
+import { makeView, screenXf, worldXf } from './view.ts'
+
+// Draws one frame in CSS-pixel size w x h (host contract: main.ts has set setTransform(dpr,...) and wrapped the call in save/restore).
+// Re-exported by game.ts (A30), which calls drawDebug after it returns (R-096).
+export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
+  const res = getResources()
+  if (!res.images.started) startPreload(res) // R-095: idempotent, begins loading sheets and screen art on the first frame
+  frameBegin() // pass 0
+  const sc = s.meta.screen
+  // Pass 1: title and help draw their own backdrop. An empty world (title, generation pending) has nothing for the world passes.
+  if (sc === 'title' || sc === 'help' || s.world.tiles === '') {
+    drawScreen(ctx, s, w, h)
+    return
+  }
+  // ponytail: pass 2 consumeEvents(s) and passes 13 and 18 drawParticles are B18 (render/particles.ts, not yet created).
+  const q = currentQuality(s)
+  const v = makeView(ctx, s, w, h) // pass 4; reads the dpr from the host transform, so it runs before the clear resets it
+  ctx.setTransform(1, 0, 0, 1, 0, 0) // pass 3
+  ctx.globalCompositeOperation = 'source-over'
+  ctx.globalAlpha = 1
+  ctx.fillStyle = '#000'
+  ctx.fillRect(0, 0, v.cw, v.ch)
+  passMark('clear')
+  worldXf(ctx, v)
+  ctx.imageSmoothingEnabled = false
+  passMark('view')
+  drawTiles(ctx, s, v, q) // pass 5. Pass 6 (decor, q.decor) has no owner yet: tiles.ts documents the GAP.
+  passMark('tiles')
+  drawVeins(ctx, s, v) // 7
+  drawPickups(ctx, s, v) // 8
+  drawLandmarks(ctx, s, v) // 9
+  drawMonsters(ctx, s, v) // 10
+  drawPlayer(ctx, s, v) // 11
+  // Pass 12 drawRocks (B17, props.ts extension) is skipped until it exists.
+  passMark('ents')
+  // Pass 14. memoryCanvas runs once per frame, before the darkness, and hands over the up-to-date explored-tile canvas (C4).
+  // drawDarkness leaves identity transform, source-over, alpha 1 and smoothing off on every path.
+  drawDarkness(ctx, s, v, q, memoryCanvas(s))
+  // Pass 15 drawBeaconMode (B17, render/overlay.ts) is skipped until it exists.
+  passMark('dark')
+  worldXf(ctx, v)
+  ctx.globalCompositeOperation = 'lighter' // 16-17: additive only, never reveals bodies the darkness hid
+  drawEyes(ctx, s, v)
+  drawGlow(ctx, s, v, q)
+  ctx.globalCompositeOperation = 'source-over'
+  ctx.globalAlpha = 1
+  passMark('glow')
+  // Pass 19 drawFlashes and drawVignettes (B17, render/overlay.ts) are skipped until they exist.
+  passMark('ovl')
+  // Pass 20/21: screen space in CSS px; composite and alpha are clean, so the HUD and panels start from defaults.
+  screenXf(ctx, v)
+  if (sc === 'playing') drawHud(ctx, s, w, h)
+  else drawScreen(ctx, s, w, h) // paused, dead, won: panel over the frozen world
+  passMark('hud')
+  qualityTick(s) // pass 23
+}
