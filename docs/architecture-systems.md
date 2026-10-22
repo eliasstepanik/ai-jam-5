@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Gameplay Systems (1/4) – Step Order, Screens, Runs, Intent, Movement
 description: Last Ember gameplay systems part 1 – the fixed-step update order for descent and escape, the step() skeleton with hitstop, screen state machine with transitions and resets, startRun and endRun contracts, intent resolution from Input (movement vector, aim via camera and view) and player movement with circle-vs-tile collision and sliding, with formulas and worked examples.
 tags: [project, ai-jam-5, architecture, last-ember, systems]
-timestamp: 2026-10-19T22:30:00Z
+timestamp: 2026-10-22T12:00:00Z
 ---
 
 # Last Ember – Gameplay Systems (1/4)
@@ -96,6 +96,12 @@ export function step(s: State, input: Input, dt: number): void {
 
 Hitstop (perfect parry, 0.060 s = 4 steps) freezes the world but the run clock still counts (it is real playing time). Edges arriving during hitstop are lost except a click, which the swing buffer keeps (`player.swing.buffer`, [[architecture-systems-3]] §1).
 
+Notes (A29), the code in `src/systems/step.ts` differs from the skeleton above in three places; the rulings win:
+
+- `stepRoll`, the `eStart` snapshot, `stepMining`, `stepBeacon`, `stepMinerals` and `stepQuake` are not called yet. `step.ts` marks each spot with an index comment; B8, B1, B7 and B2 add the calls (X3, D5, D7/D8, D9, X11); see R-169 in [[architecture-rulings-3]] §8.
+- Hitstop runs `tickFx` and sets the click buffer before the decrement; see R-172 in [[architecture-rulings-3]] §8 (owner to confirm).
+- `step.ts` has no counting spy; call-order checks observe behaviour instead; see R-176 in [[architecture-rulings-3]] §8.
+
 ## 2. Screen state machine (`src/systems/screens.ts`, R-003)
 
 Pure state machine. DOM effects (clipboard write, `?seed` read/write) run in `src/ui/platform.ts` `platformStep(s)`.
@@ -118,6 +124,15 @@ Pure state machine. DOM effects (clipboard write, `?seed` read/write) run in `sr
 
 Rules: only one transition per step (first matching row wins, top to bottom). `stepScreens` also ticks `ui.toasts[i].t` and `ui.copied` on every screen, loads settings/best once (`settings.loaded`, [[architecture-state-2]] §9), and returns `s.meta.screen === 'playing'`. `'Blur'` on any other screen is ignored. Game code never binds `KeyR` ([[architecture-host-changes-2]] §7).
 
+Notes (A29), stale rows of the table above; the code follows [[architecture-ui-2]] §4 and the rulings win:
+
+- `paused` + `Enter` does not resume: it activates the focused menu item (cursor starts on Resume, `playing` -> `paused` sets `ui.cursor = 0`); see R-175 in [[architecture-rulings-3]] §8.
+- `help` returns to `ui.helpFrom`, not always to `title`; see R-175.
+- `KeyC` only emits the `copyLink` fx event; `platformStep` writes `ui.copied`, `stepScreens` only counts it down (no `ui.copied = 2` here, no `ui.urlSeed`). `KeyC` acts on paused, dead and won, not on title and not on help; see R-171, R-175, R-077.
+- Mouse: `stepScreens` does not write `ui.hover` from `hit()`. A click activates the item under `ui.cursor` until A30/A11 set `ui.cursor` and `ui.hover` from `hit()` before `step`; see R-170 (open) and the extra navigation and lockout rules in R-174.
+- Settings and best load (`settings.loaded`) and `saveSettings` calls are not in `screens.ts` until B7 creates `core/storage.ts`; see R-168.
+- `stepScreens` also runs `genStep(s)` while `ui.genPending !== ''` (see section 3 note); see R-166.
+
 ## 3. `startRun` and `endRun` (`src/core/run.ts`)
 
 `startRun(s: State, seedText: string): void` follows [[architecture-state-2]] §10 steps 1–7 exactly. Additions made here:
@@ -129,6 +144,13 @@ Rules: only one transition per step (first matching row wins, top to bottom). `s
 - Calls `emit(s, 'relight', p.x, p.y)` so audio starts the flame loop.
 
 `endRun(s: State, won: boolean): void` follows [[architecture-scoring-and-save]] §5. Order: build `ScoreInput` from `stats.maxDepth`, `won`, `floor(meta.steps / 60)`, `stats.mineralsUsed`, `won ? player.hp : 0`; `parts = computeScore(input)`; fill `RunResult` with `endAt = meta.time`; `meta.screen = won ? 'won' : 'dead'`; `emit(s, won ? 'win' : 'death', p.x, p.y)`; `commitBest(s)`. The death animation (`player_body death`) plays on the `dead` screen from `meta.time - endAt`; the world is no longer stepped.
+
+Notes (A29), the code differs from the text above; the rulings in [[architecture-rulings-3]] §8 win:
+
+- File: `startRun`, `endRun`, `checkEnd`, `genStep` and `runSeedText` live in `src/systems/run.ts`, not `src/core/run.ts` (R-001, R-166). Signature: `startRun(s, seedText, cave?: CaveResult)`; the third parameter is additive. Without `cave` it generates synchronously via `generateCave`; the chunked path is `genStep(s)` (one attempt per update while `ui.genPending !== ''`, `fallbackCave` at `MAX_ATTEMPTS` 8, then `startRun(s, key, cave)`). `runSeedText(raw: string): string` (sanitised seed text, else a random seed) is an extra export; see R-166.
+- A fallback cave (`stats.fallback`) is logged once with `console.warn` in `startRun`; see R-167.
+- The UI reset covers `ui.cursor`, `hover`, `screenAt`, `confirmT`, `denyT`, `genPending`, `genAttempt`, `toasts`, `copied`, `copyMsg`. `ui.seedInput` is kept on purpose (deviation from state-2 §10); see R-173.
+- `endRun` does not call `commitBest` yet: B7 adds it with `core/storage.ts`. Until then `result.prevBest` is 0 (when `s.best` is null) and `result.isNewBest` is false; see R-168.
 
 ## 4. Intent resolution (`src/systems/intent.ts`)
 
@@ -235,3 +257,5 @@ Worked example (slide): walls at tile column `tx = 32` (x 1024–1056). Player `
 - [[architecture-host-changes]]
 - [[architecture-host-changes-2]]
 - [[architecture-scale-and-economy-2]]
+- [[architecture-rulings-3]]
+- [[architecture-ui-2]]

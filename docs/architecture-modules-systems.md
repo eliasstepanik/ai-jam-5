@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Module Tree – Entities and Systems
 description: Authoritative src/entities and src/systems file list for Last Ember (part 1 of 2) – layer rule as applied, per-file path, status, responsibility, exported signatures copied from the specs, allowed imports, spec section, update-order index, size, owner area and slice. Checks, conflicts and State additions are in part 2.
 tags: [project, ai-jam-5, architecture, last-ember, modules]
-timestamp: 2026-10-17T22:00:00Z
+timestamp: 2026-10-22T12:00:00Z
 ---
 
 # Last Ember – Module Tree: Entities and Systems (1/2)
@@ -66,11 +66,13 @@ Order indices come from [[architecture-systems]] §1.1 (descent, D#) and §1.2 (
 - `step(s: State, input: Input, dt: number): void`, with the body copied from [[architecture-systems]] §1.3 plus the hitstop click fix (MS-25).
 - Imports every step function in this section and `Input` as `import type` from `main.ts`.
 - Order: D0–D18 and X0–X18. About 45 lines. Owner: systems-flow. Slice A.
+- Note (A29): the B-slice calls (`stepRoll` X3, the `eStart` snapshot D5, `stepMining` and `stepBeacon` D7/D8, `stepMinerals` D9, `stepQuake` X11) are not part of A29. Comments in `step.ts` mark their spots; B8/B1/B7/B2 add them (see R-169 in [[architecture-rulings-3]]). Hitstop also runs `tickFx` (see R-172). No counting spy exists in `step.ts` (see R-176).
 
 **S2 `src/systems/screens.ts`** NEW (moved from `src/ui/screens.ts`, MS-2). Screen state machine ([[architecture-systems]] §2).
 - `stepScreens(s: State, input: Input): boolean`
 - Ticks `ui.toasts` and `ui.copied`. Loads settings and best once through the L0 save helpers. On `KeyC` it emits `copyLink` (PROPOSED FxEventKind); L4 performs the clipboard write. The URL seed comes from PROPOSED `ui.urlSeed`, written once by L4/L5.
 - Imports: run, fx. Order: D0/X0. About 110 lines. Owner: systems-flow. Slice A; help pages B.
+- Note (A29): the only export is `stepScreens`. It makes no storage calls until B7 creates `core/storage.ts` (see R-168 in [[architecture-rulings-3]]). It never sets `ui.copied` (it only counts it down) and uses no `ui.urlSeed`; it only emits `copyLink` (see R-077, R-171). It does no hit-test and sets no `ui.hover`; a click activates the item under `ui.cursor` until A30/A11 set the cursor (see R-170). While `ui.genPending !== ''` it calls `genStep` from run.ts (see R-166).
 
 **S3 `src/systems/run.ts`** NEW (moved from `src/core/run.ts`, MS-3). Run lifecycle, win and lose, result.
 - `startRun(s: State, seedText: string): void` ([[architecture-systems]] §3, steps 1–7 of [[architecture-state-2]] §10)
@@ -78,6 +80,7 @@ Order indices come from [[architecture-systems]] §1.1 (descent, D#) and §1.2 (
 - `checkEnd(s: State): void` ([[architecture-systems-4]] §3.1; lose beats win)
 - Imports: world generator (L1), core score/save helpers, light (explored seeding), fx, entities/player.
 - Order: D16/X16. About 120 lines. Owner: systems-flow. Slice A; the escape win is B.
+- Note (A29): the signature is `startRun(s: State, seedText: string, cave?: CaveResult): void`, an additive third parameter (see R-001, R-166 in [[architecture-rulings-3]]). Extra exports: `genStep(s: State)` (chunked generation) and `runSeedText(raw: string): string`; `checkEnd` lives in `src/systems/run.ts`. `startRun` logs one `console.warn` on `stats.fallback` (see R-167), resets the UI fields and keeps `ui.seedInput` (see R-173). `commitBest` is deferred to B7 (see R-168).
 
 **S4 `src/systems/intent.ts`** NEW. Converts `Input` into a per-step `Intent` ([[architecture-systems]] §4).
 - `type Intent` (fields exactly as in §4)
@@ -123,6 +126,7 @@ Order indices come from [[architecture-systems]] §1.1 (descent, D#) and §1.2 (
 - `stepBeacon(s: State, it: Intent, dt: number): void`
 - `lightBeacon(s: State): void` (§5 steps 1–7)
 - Imports: fx, monsters (`setDying`). Order: D8. About 70 lines. Owner: systems-escape. Slice B.
+- Note (A29): `stepBeacon` takes four arguments, `(s, it, dt, eStart)`, not three (see R-125, R-169 in [[architecture-rulings-3]]). The ruling wins over the signature above.
 
 **S13 `src/systems/combat.ts`** NEW. Swing, parry, bites, damage rules, player timers ([[architecture-systems-3]] §2–§5).
 - `stepSwing(s: State, it: Intent, dt: number): void`
@@ -197,3 +201,4 @@ Not in L3: the debug overlay is `drawDebug(ctx, s, w, h)` in `src/ui/debug.ts` (
 - [[architecture-state-2]]
 - [[architecture-rocks]]
 - [[architecture-scoring-and-save]]
+- [[architecture-rulings-3]]
