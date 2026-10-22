@@ -128,7 +128,7 @@ export function helpClick(l: HelpLayout, x: number, y: number): { kind: 'tab'; p
 }
 
 // --- paused ---
-export type PauseLayout = { u: number; panel: Rect; title: Pt; buttons: Button[]; hint: Pt }
+export type PauseLayout = { u: number; panel: Rect; title: Pt; buttons: Button[]; hint: Pt; copied: Pt }
 
 export function pauseLayout(w: number, h: number, _s: State): PauseLayout {
   const u = uiScale(w, h)
@@ -140,6 +140,7 @@ export function pauseLayout(w: number, h: number, _s: State): PauseLayout {
     title: pt(w, h, u, 0.5, 0.5, 640, 224),
     buttons: ids.map((id, i) => btn(id, c(520, 260 + i * 56, 240, 44))),
     hint: pt(w, h, u, 0.5, 0.5, 640, 544),
+    copied: pt(w, h, u, 0.5, 0.5, 640, 564), // copy message under the hint
   }
 }
 
@@ -153,6 +154,7 @@ export type EndLayout = {
   score: { label: Pt; value: Pt }
   breakdown: Pt; flavour: Pt
   seed: { label: Pt; value: Pt }
+  copied: Pt // copy message under the seed row
   buttons: Button[] // new, retry, title, copy (focus order)
   hint: Pt
 }
@@ -176,6 +178,7 @@ export function endLayout(w: number, h: number, s: State): EndLayout {
     breakdown: p(640, 410 + up),
     flavour: p(640, 436 + up),
     seed: { label: p(380, 476 + up), value: p(440, 476 + up) },
+    copied: p(640, 502 + up),
     buttons: [
       btn('new', c(364, 528, 168, 44)),
       btn('retry', c(556, 528, 168, 44)),

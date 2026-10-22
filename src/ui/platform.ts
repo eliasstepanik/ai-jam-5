@@ -38,7 +38,7 @@ const seedOf = (s: State): string => s.result?.seedText || s.meta.seedText
 // Starts the clipboard write. Result is reported through res.ui.copyResult only, never into State from a callback.
 function copy(s: State): void {
   const res = getResources(), seed = seedOf(s)
-  const text = SHARE_BASE ? SHARE_BASE + '?seed=' + encodeURIComponent(seed) : 'Last Ember seed ' + seed
+  const text = SHARE_BASE ? SHARE_BASE + '?seed=' + encodeURIComponent(seed) : STR.shareText + ' ' + seed
   const clip = typeof navigator === 'undefined' ? undefined : navigator.clipboard
   if (!clip) { res.ui.copyResult = 'failed'; return }
   try {
@@ -69,6 +69,6 @@ export function platformStep(s: State): void {
   if (asked) copy(s)
   if (res.ui.copyResult === 'none') return
   if (res.ui.copyResult === 'ok') { s.ui.copied = 1.5; s.ui.copyMsg = STR.copied }
-  else { s.ui.copied = 2; s.ui.copyMsg = 'Copy failed – seed ' + seedOf(s) }
+  else { s.ui.copied = 2; s.ui.copyMsg = STR.copyFailed + ' ' + seedOf(s) }
   res.ui.copyResult = 'none'
 }

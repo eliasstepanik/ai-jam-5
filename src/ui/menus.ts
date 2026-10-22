@@ -9,21 +9,11 @@ import { T } from '../core/tuning.ts'
 import type { State } from '../core/types.ts'
 import { MAX_ATTEMPTS } from '../world/generate.ts'
 import { COL, button, keycap, panel, text, textWidth } from './draw.ts'
-import { endLayout, helpLayout, pauseLayout, titleLayout } from './layout.ts'
+import { helpLayout, pauseLayout, titleLayout } from './layout.ts'
+import { drawEnd } from './menus-end.ts'
+import { TAU, fadeIn, fill, focus } from './menu-kit.ts'
+import type { Ctx } from './menu-kit.ts'
 import { HELP, STR, clock, pct } from './strings.ts'
-
-type Ctx = CanvasRenderingContext2D
-const TAU = Math.PI * 2
-const clamp01 = (v: number): number => Math.min(1, Math.max(0, v))
-const focus = (s: State, i: number): boolean => i === s.ui.cursor || i === s.ui.hover
-
-// Screen content fades in and slides up 12u (title/help/pause 0.25 s, end 0.4 s). Pair with ctx.restore().
-function fadeIn(ctx: Ctx, s: State, u: number, dur = 0.25): void {
-  const k = clamp01((s.meta.time - s.ui.screenAt) / dur)
-  ctx.save()
-  ctx.globalAlpha = k
-  ctx.translate(0, (1 - k) * 12 * u)
-}
 
 // Stroked arc, a0..a1 in turns from `from` (default 12 o'clock, clockwise). Callers wrap in save/restore: it leaves alpha and styles set.
 function arc(ctx: Ctx, cx: number, cy: number, r: number, a0: number, a1: number, color: string, lw: number, alpha = 1, from = -Math.PI / 2): void {
@@ -33,12 +23,6 @@ function arc(ctx: Ctx, cx: number, cy: number, r: number, a0: number, a1: number
   ctx.beginPath()
   ctx.arc(cx, cy, r, from + a0 * TAU, from + a1 * TAU)
   ctx.stroke()
-}
-
-// Filled rectangle in one call (also used for the full-screen dimmers).
-const fill = (ctx: Ctx, color: string | CanvasGradient, x: number, y: number, w: number, h: number): void => {
-  ctx.fillStyle = color
-  ctx.fillRect(x, y, w, h)
 }
 
 function glow(ctx: Ctx, x: number, y: number, r: number, a: number): void {
@@ -121,7 +105,7 @@ function drawTitle(ctx: Ctx, s: State, w: number, h: number): void {
   text(ctx, STR.seedHint, l.seedHint.x, l.seedHint.y, 12, u, COL.dim, { align: 'center' })
   // Best line: `Best 5483 · depth 40/40 · 6:57 · escaped`. DEFAULT: a best that did not escape carries no tag (the death tag is unspecified).
   const b = s.best
-  const best = b ? `${STR.best} ${b.score} · depth ${b.depth}/${DEPTH_MAX} · ${clock(b.seconds)}${b.won ? ' · ' + STR.bestEscaped : ''}` : STR.noBest
+  const best = b ? `${STR.best} ${b.score} · ${STR.depthWord} ${b.depth}/${DEPTH_MAX} · ${clock(b.seconds)}${b.won ? ' · ' + STR.bestEscaped : ''}` : STR.noBest
   text(ctx, best, l.best.x, l.best.y, 14, u, COL.dim)
   if (!s.ui.storageOk) text(ctx, STR.storageOff, l.storage.x, l.storage.y, 12, u, COL.accent)
   const muted = res.audio.state !== 'running' // browsers keep audio locked until the first click
@@ -135,11 +119,11 @@ function drawPause(ctx: Ctx, s: State, w: number, h: number): void {
   fill(ctx, 'rgba(0,0,0,0.55)', 0, 0, w, h)
   fadeIn(ctx, s, u)
   panel(ctx, l.panel, u)
-  text(ctx, STR.paused, l.title.x, l.title.y, 28, u, COL.text, { align: 'center', bold: true })
+  text(ctx, STR.paused, l.title.x, l.title.y, 40, u, COL.text, { align: 'center', bold: true })
   const labels = [STR.resume, STR.help, soundLabel(s), flashLabel(s), s.ui.confirmT > 0 ? STR.quitConfirm : STR.quit]
   labels.forEach((lb, i) => button(ctx, l.buttons[i], lb, { focused: focus(s, i), enabled: true }, u, s.meta.time, red))
-  text(ctx, `${STR.seedLabel} ${s.meta.seedText} · depth ${s.player.stats.maxDepth} · ${clock(s.meta.steps / 60)}`, l.hint.x, l.hint.y, 12, u, COL.dim, { align: 'center' })
-  if (s.ui.copied > 0) text(ctx, s.ui.copyMsg, l.hint.x, l.hint.y + 20 * u, 12, u, COL.gold, { align: 'center' })
+  text(ctx, `${STR.seedLabel} ${s.meta.seedText} · ${STR.depthWord} ${s.player.stats.maxDepth} · ${clock(s.meta.steps / 60)}`, l.hint.x, l.hint.y, 12, u, COL.dim, { align: 'center' })
+  if (s.ui.copied > 0) text(ctx, s.ui.copyMsg, l.copied.x, l.copied.y, 12, u, COL.gold, { align: 'center' })
   ctx.restore()
 }
 
@@ -242,49 +226,6 @@ function drawHelp(ctx: Ctx, s: State, w: number, h: number): void {
     })
     HELP[2].tips.forEach((tip, i) => text(ctx, '• ' + tip, l.tips.x, l.tips.y + 20 * u + i * 30 * u, 16, u, COL.text))
   }
-  ctx.restore()
-}
-
-// --- end (dead / won) ---
-function drawEnd(ctx: Ctx, s: State, w: number, h: number): void {
-  const r = s.result
-  if (!r) return
-  const l = endLayout(w, h, s), u = l.u, t = s.meta.time, red = s.settings.reducedFlash
-  fill(ctx, r.won ? 'rgba(40,24,8,0.55)' : 'rgba(0,0,0,0.6)', 0, 0, w, h)
-  fadeIn(ctx, s, u, 0.4)
-  panel(ctx, l.panel, u)
-  text(ctx, r.won ? STR.escaped : STR.died, l.title.x, l.title.y, 40, u, r.won ? COL.gold : COL.danger, { align: 'center', bold: true })
-  if (r.isNewBest) { // NEW BEST! pulses 1..1.08 at 1.5 Hz (steady when flashing is reduced)
-    ctx.save()
-    const k = red ? 1 : 1 + 0.08 * (0.5 + 0.5 * Math.sin(t * TAU * 1.5))
-    ctx.translate(l.banner.x, l.banner.y)
-    ctx.scale(k, k)
-    text(ctx, STR.newBest, 0, 0, 20, u, COL.gold, { align: 'center', bold: true })
-    ctx.restore()
-  } else {
-    const prev = s.best?.score ?? r.prevBest
-    if (prev > 0) text(ctx, `${STR.best} ${prev}`, l.banner.x, l.banner.y, 14, u, COL.dim, { align: 'center' })
-  }
-  const rows: [string, string][] = [[STR.rowDepth, `${r.depth} / ${DEPTH_MAX} · Zone ${r.zone}`], [STR.rowTime, clock(r.seconds)], [STR.rowMinerals, String(r.mineralsUsed)]]
-  if (r.won) rows.push([STR.rowHearts, String(r.hpLeft)]) // dead run omits the hearts row (endLayout shifts the rest up)
-  rows.forEach(([lb, v], i) => {
-    text(ctx, lb, l.rows[i].label.x, l.rows[i].label.y, 16, u, COL.dim)
-    text(ctx, v, l.rows[i].value.x, l.rows[i].value.y, 18, u, COL.text, { align: 'right', bold: true })
-  })
-  fill(ctx, COL.border, l.divider.x0, l.divider.y, l.divider.x1 - l.divider.x0, u)
-  const x = clamp01((t - r.endAt - 0.4) / 0.8) // score counts up after the fade, ease-out cubic
-  text(ctx, STR.score, l.score.label.x, l.score.label.y, 20, u, COL.text, { bold: true })
-  text(ctx, String(Math.round(r.parts.total * (1 - (1 - x) ** 3))), l.score.value.x, l.score.value.y, 28, u, COL.gold, { align: 'right', bold: true })
-  const p = r.parts
-  text(ctx, `depth ${p.depth} · escape ${p.win} · time ${p.time} · minerals ${p.minerals} · hearts ${p.hp}`, l.breakdown.x, l.breakdown.y, 12, u, COL.dim, { align: 'center' })
-  text(ctx, `Parries ${r.parries} (perfect ${r.perfectParries}) · Kills ${r.kills}`, l.flavour.x, l.flavour.y, 12, u, COL.dim, { align: 'center' })
-  text(ctx, STR.seedLabel, l.seed.label.x, l.seed.label.y, 16, u, COL.dim)
-  text(ctx, r.seedText, l.seed.value.x, l.seed.value.y, 18, u, COL.text, { bold: true })
-  if (s.ui.copied > 0) text(ctx, s.ui.copyMsg, l.hint.x, l.seed.label.y + 26 * u, 12, u, COL.gold, { align: 'center' })
-  const live = t - r.endAt >= 0.5 // input lockout: buttons look disabled until the screen accepts clicks
-  const labels = [STR.newRun, STR.retrySeed, STR.title, STR.copyLink]
-  labels.forEach((lb, i) => button(ctx, l.buttons[i], lb, { focused: focus(s, i), enabled: live }, u, t, red, i === 3 ? 14 : 18))
-  text(ctx, STR.endHint, l.hint.x, l.hint.y, 12, u, COL.dim, { align: 'center' })
   ctx.restore()
 }
 
