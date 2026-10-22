@@ -36,13 +36,15 @@ function quiet(cave: CaveResult): State {
   return s
 }
 
-// A quiet run switched to `screen` with every lock (0.25 s change, 0.5 s end) long expired and the cursor on `row`.
-function at(cave: CaveResult, screen: Screen, row = 0): State {
+// A quiet run switched to `screen` with every lock (0.25 s change, 0.5 s end) long expired and the cursor on `row`; `ui` adds ui fields.
+function at(cave: CaveResult, screen: Screen, row = 0, ui: Partial<State['ui']> = {}): State {
   const s = quiet(cave)
   Object.assign(s.meta, { screen, time: 10 })
-  Object.assign(s.ui, { cursor: row, screenAt: 0 })
+  Object.assign(s.ui, { cursor: row, screenAt: 0, ...ui })
   return s
 }
+
+const esc = (cave: CaveResult): State => { const s = quiet(cave); s.meta.phase = 'escape'; return s }
 
 const links = (s: State): number => s.fx.events.filter((e) => e.kind === 'copyLink').length
 
@@ -110,20 +112,20 @@ export function run(): void {
   // S22: Q on the paused screen quits to the title and that frame does not simulate (stepScreens false, no world step).
   {
     ok(!stepScreens(at(cave, 'paused'), inp(['KeyQ'])), 'stepScreens returns false on the quit frame')
-    const s = at(cave, 'paused')
-    const n = s.meta.steps, x = s.player.x, e = s.player.energy
+    const s = at(cave, 'paused'), n = s.meta.steps, x = s.player.x, e = s.player.energy
     step(s, inp(['KeyQ']), DT)
-    ok(s.meta.screen === 'title' && s.meta.steps === n && s.player.x === x && s.player.energy === e, 'quit frame leaves steps, player and flame untouched (steps ' + s.meta.steps + ')')
+    ok(s.meta.screen === 'title' && s.meta.steps === n && s.player.x === x && s.player.energy === e,
+      'quit frame leaves steps, player and flame untouched (steps ' + s.meta.steps + ')')
     const q = at(cave, 'paused', 4), k = q.fx.events.length
     stepScreens(q, inp(['Enter']))
-    ok(q.ui.confirmT > 0 && q.fx.events.length === k + 1 && q.fx.events[k].kind === 'uiConfirm', 'first Quit press arms the confirm and emits one uiConfirm, not uiMove (ui.md §5 rule 7)')
+    ok(q.ui.confirmT > 0 && q.fx.events.length === k + 1 && q.fx.events[k].kind === 'uiConfirm',
+      'first Quit press arms the confirm and emits one uiConfirm, not uiMove (ui.md §5 rule 7)')
   }
 
   // S23: the unpause frame simulates (stepScreens true, one world step).
   {
-    const s = at(cave, 'paused')
+    const s = at(cave, 'paused'), n = s.meta.steps
     ok(stepScreens(at(cave, 'paused'), inp(['Escape'])), 'stepScreens returns true on the unpause frame')
-    const n = s.meta.steps
     step(s, inp(['Escape']), DT)
     ok(s.meta.screen === 'playing' && s.meta.steps === n + 1, 'unpause frame is a world step (steps ' + n + ' -> ' + s.meta.steps + ')')
   }
@@ -145,8 +147,7 @@ export function run(): void {
 
   // S24: Escape inside the focused seed field clears it; with the focus elsewhere the text is kept.
   for (const [row, want] of [[4, ''], [0, 'abc']] as const) {
-    const s = at(cave, 'title', row)
-    s.ui.seedInput = 'abc'
+    const s = at(cave, 'title', row, { seedInput: 'abc' })
     stepScreens(s, inp(['Escape']))
     ok(s.ui.seedInput === want, 'Escape on row ' + row + ' leaves the seed text "' + want + '" (got ' + s.ui.seedInput + ')')
   }
@@ -197,33 +198,27 @@ export function run(): void {
 
   // P27/P30/P31 phase guards (step.ts guards by phase; stepExplore, resolveParries too). B8 sets phase 'escape' later, so by hand here.
   {
-    const s = quiet(cave)
-    s.meta.phase = 'escape'
+    const s = esc(cave)
     step(s, inp([], 1), DT)
-    const sw = s.player.swing
-    ok(!sw.active && sw.cooldown === 0 && sw.buffer === 0, 'escape: a click starts no swing and buffers none')
+    ok(!s.player.swing.active && s.player.swing.cooldown === 0 && s.player.swing.buffer === 0, 'escape: a click starts no swing and buffers none')
   }
   {
     const far = (t: State): void => { t.player.x = t.world.beacon.tx * 32 + 16; t.player.y = t.world.beacon.ty * 32 + 16 }
-    const d = quiet(cave)
-    const e0 = d.world.explored.join()
+    const d = quiet(cave), e0 = d.world.explored.join()
     far(d)
     step(d, inp(), DT)
     ok(d.world.explored.join() !== e0, 'descent control: a far tile reveals new tiles')
-    const s = quiet(cave)
-    s.meta.phase = 'escape'
+    const s = esc(cave)
     far(s)
     step(s, inp(), DT)
     ok(s.world.explored.join() === e0 && s.world.exploreKey === -1, 'escape: step() explores nothing and keeps exploreKey')
-    const t = quiet(cave)
-    t.meta.phase = 'escape'
+    const t = esc(cave)
     far(t)
     stepExplore(t)
     ok(t.world.explored.join() === e0 && t.world.exploreKey === -1, 'escape: stepExplore() reveals nothing and keeps exploreKey')
   }
   {
-    const s = quiet(cave)
-    s.meta.phase = 'escape'
+    const s = esc(cave)
     latched(s)
     Object.assign(s.player.swing, { active: true, t: 0.05, dir: 0 })
     resolveParries(s)
@@ -247,14 +242,14 @@ export function run(): void {
       stepScreens(s, inp(['Escape']))
       held.push(s.meta.screen === 'dead')
     }
-    ok(dead && held.join() === 'true,false' && s.meta.screen === 'title', 'end lock holds 0.3 s after endAt, expires by 0.6 s (held ' + held.join() + ')')
+    ok(dead && held.join() === 'true,false' && s.meta.screen === 'title', 'end lock holds at 0.3 s, expires by 0.6 s (held ' + held.join() + ')')
   }
   // N46/N47: toasts age and `copied` decays by exactly 1 s per 60 steps. N01-N03/N12: startRun then drops toasts, copy label, deny shake.
   {
-    const s = at(cave, 'title')
-    Object.assign(s.ui, { toasts: [{ text: 'a', t: 0.9 }, { text: 'b', t: 1.5 }], copied: 2 })
+    const s = at(cave, 'title', 0, { toasts: [{ text: 'a', t: 0.9 }, { text: 'b', t: 1.5 }], copied: 2 })
     for (let k = 0; k < 60; k++) stepScreens(s, inp())
-    ok(s.ui.toasts.length === 1 && Math.abs(s.ui.toasts[0].t - 0.5) < 1e-9 && Math.abs(s.ui.copied - 1) < 1e-9, 'toasts and copied age 1 s per 60 steps (copied ' + s.ui.copied + ')')
+    ok(s.ui.toasts.length === 1 && Math.abs(s.ui.toasts[0].t - 0.5) < 1e-9 && Math.abs(s.ui.copied - 1) < 1e-9,
+      'toasts and copied age 1 s per 60 steps (copied ' + s.ui.copied + ')')
     Object.assign(s.ui, { copied: 1, copyMsg: 'Copied!', denyT: 0.3 })
     startRun(s, '1', cave)
     ok(s.ui.toasts.length === 0 && s.ui.copied === 0 && s.ui.copyMsg === '' && s.ui.denyT === 0, 'startRun resets toasts, copied, copyMsg, denyT')
@@ -275,7 +270,7 @@ export function run(): void {
   {
     const s = at(cave, 'title', 4)
     for (const k of [['KeyZ', 'Numpad7', 'Minus'], ['Backspace'], ['KeyW', 'KeyH']]) stepScreens(s, inp(k))
-    ok(s.ui.seedInput === 'z7wh' && s.ui.cursor === 4 && s.meta.screen === 'title', 'seed field types z7-, Backspace, wh (got ' + s.ui.seedInput + ')')
+    ok(s.ui.seedInput === 'z7wh' && s.ui.cursor === 4 && s.meta.screen === 'title', 'seed field types z7-, Backspace, wh: ' + s.ui.seedInput)
   }
 
   // N37-N40: KeyD pages help, reopened help starts on page 0, KeyD/KeyA walk the end-screen buttons; N30: Blur pauses only a run.
