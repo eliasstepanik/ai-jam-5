@@ -2,7 +2,7 @@
 // Spec: docs/architecture-ui-2.md §1 (rows, §1.1 RUN! banner), architecture-modules-ui-assets.md §2. Reads State only, never writes it.
 // Slice A (HP, hotbar, flame, depth, prompt) plus toasts, parry text, pulses and shakes; the exit marker is B20 (needs world/route.ts).
 // ponytail: no module-level state; every animation is a pure function of meta.time / meta.steps / the State timers.
-import type { State, MineralId, Vein } from '../core/types.ts'
+import type { State, FlameKind, MineralId, Vein } from '../core/types.ts'
 import { MINERALS, TILE, TOAST_S } from '../core/state.ts'
 import { T } from '../core/tuning.ts'
 import { clamp } from '../core/math.ts'
@@ -11,7 +11,6 @@ import { DEPTH_MAX, depthOf, zoneOfDepth } from '../core/score.ts'
 import { getDepthField } from '../world/caches.ts'
 import { playerTile } from '../world/grid.ts'
 import { makeView, toScreen } from '../render/view.ts'
-import { FLAME_COL } from '../render/flame.ts'
 import { drawSprite, spriteReady } from '../assets/images.ts'
 import type { SpriteId } from '../assets/sprites.ts'
 import { hudLayout } from './layout.ts'
@@ -23,6 +22,14 @@ const PS = 2 // UI sprites are authored at 1x and shown at 2u
 const LOW_BPM = 70 // last-heart pulse; 1.17 Hz, under the 3 Hz flash limit
 const BEACON_TICK_TILES = 8 // the minStartE tick shows within this many tiles of the Beacon (systems-2 §5)
 const RUN_BANNER_S = 2
+const HP_LOST_STEPS = 18 // 0.3 s at 60 steps/s: how long the just-lost pip shows frame 2 and shakes
+// ponytail: HudLayout.exitBanner is the (640,200) anchor only; the baselines below sit under it (ui-2 §1.1, 40 bold + 16 under).
+// Upgrade: add runTitle/runSub points to hudLayout (layout.ts) and read them here.
+const RUN_TITLE_DY = 40
+const RUN_SUB_DY = 66
+// ponytail: flame colours come straight from T.minerals.table (same source as render/flame.ts FLAME_COL; ui may not import it, modules-ui-assets §0).
+// Upgrade: move FLAME_COL to src/core and import it from both layers.
+const flameCol = (k: FlameKind): { core: string; mantle: string } => T.minerals.table[k]
 
 // Sprite at 2u. Atlas art takes the scale argument; placeholders ignore it (drawSprite), so scale the context for them.
 function ui(ctx: CanvasRenderingContext2D, id: SpriteId, anim: string, frame: number, x: number, y: number, k: number, alpha = 1): void {
@@ -73,7 +80,10 @@ function toasts(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
 
 function pips(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
   const p = s.player, u = l.u, rf = s.settings.reducedFlash
-  const lost = p.hp < p.hpMax && p.hurtT > T.hurt.hpInvulnS - 0.3 ? p.hp : -1 // the pip just lost
+  // The pip just lost: only an 'hpHit' event (emitted by hurtPlayerHp, the one HP-loss path) marks real HP loss. hurtT alone is
+  // also set by a flame hit (no HP lost), so it must not drive the shake. Events live 30 steps in fx.events; the lost pip is index hp.
+  const hit = s.fx.events.some((e) => e.kind === 'hpHit' && s.meta.steps - e.step < HP_LOST_STEPS)
+  const lost = hit && p.hp < p.hpMax ? p.hp : -1
   const beat = rf || p.hp !== 1 ? 0 : 0.15 * (0.5 + 0.5 * Math.sin(2 * Math.PI * (LOW_BPM / 60) * s.meta.time))
   l.pips.forEach((c, i) => {
     let x = c.x, y = c.y
@@ -88,7 +98,7 @@ function pips(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
 
 function flameReadout(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
   const p = s.player, u = l.u, t = s.meta.time, rf = s.settings.reducedFlash
-  const col = FLAME_COL[p.activeMineral]
+  const col = flameCol(p.activeMineral)
   const out = p.energy <= 0
   panel(ctx, l.flame, u)
   ctx.fillStyle = col.mantle
@@ -147,7 +157,7 @@ function hotbar(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
     text(ctx, `×${n}`, x + 44 * u, r.y + 44 * u, 12, u, n > 0 ? COL.text : COL.dim, { align: 'right', bold: true })
     text(ctx, String(i + 1), x + r.w / 2, r.y - 6 * u, 12, u, COL.dim, { align: 'center' })
     if (p.activeMineral === m) {
-      ctx.fillStyle = FLAME_COL[m].mantle
+      ctx.fillStyle = flameCol(m).mantle
       ctx.fillRect(x, r.y + 52 * u, r.w, 4 * u)
     }
   })
@@ -190,7 +200,7 @@ function prompt(ctx: CanvasRenderingContext2D, s: State, w: number, h: number, l
   if (!t) return
   const [sx, sy] = toScreen(makeView(ctx, s, w, h), t.x, t.y)
   const half = textWidth(ctx, t.label, 12, u) / 2 + 8 * u
-  const cx = clamp(sx, half, w - half), cy = clamp(sy - 40 * u, 24 * u, h - 24 * u)
+  const cx = clamp(sx, half, w - half), cy = clamp(sy - 40 * u, 24 * u, h - 44 * u) // label baseline is cy + 36u: keep it on screen
   if (!t.full) ring(ctx, cx, cy, clamp(t.p, 0, 1), u) // full pouch: keycap only, no ring
   keycap(ctx, 'E', cx, cy, u)
   text(ctx, t.label, cx, cy + 36 * u, 12, u, t.full ? COL.dim : COL.text, { align: 'center' })
@@ -220,7 +230,7 @@ function runBanner(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void 
   const u = l.u
   ctx.save()
   ctx.globalAlpha = clamp((RUN_BANNER_S - t) / 0.5, 0, 1) // fades over the last 0.5 s
-  text(ctx, STR.run, l.exitBanner.x, l.exitBanner.y + 40 * u, 40, u, COL.gold, { align: 'center', bold: true })
-  text(ctx, STR.runSub, l.exitBanner.x, l.exitBanner.y + 66 * u, 16, u, COL.text, { align: 'center' })
+  text(ctx, STR.run, l.exitBanner.x, l.exitBanner.y + RUN_TITLE_DY * u, 40, u, COL.gold, { align: 'center', bold: true })
+  text(ctx, STR.runSub, l.exitBanner.x, l.exitBanner.y + RUN_SUB_DY * u, 16, u, COL.text, { align: 'center' })
   ctx.restore()
 }
