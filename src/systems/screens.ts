@@ -49,13 +49,22 @@ function begin(s: State, seedText: string): void {
   s.ui.genAttempt = 0
 }
 
-// One generation unit in the class of the pending seed. Invariant: s.best is the Best of the class of s.world (class 3 before any run), so a
-// cancelled generation leaves it intact. When a run starts in another class, s.best is reloaded for it before the first playing step (R-164).
+// Class of the Best now in s.best (Best carries no class and State gets no new field). Unset = 3, the legacy no-class load.
+// ponytail: per-State cache of the class the shown Best was loaded for; lost on dev hot-reload (WeakMap re-created, resets to class 3), so a stale Best of another class can show until the next class change or run start; production unaffected; upgrade: store the class on State.
+const bestClass = new WeakMap<State, number>()
+
+// Make s.best the Best of class `c`. Only reads storage when the class differs from the loaded one, so a same-class call keeps an in-memory Best (dead storage).
+function syncBest(s: State, c: number): void {
+  if ((bestClass.get(s) ?? 3) === c) return
+  loadBest(s, undefined, c)
+  bestClass.set(s, c)
+}
+
+// One generation unit in the class of the pending seed. A cancelled generation leaves s.best intact. When the run starts, s.best is reloaded
+// for the run's class before the first playing step (R-164), whatever class the title showed ('random' resolves per seed, so it can differ).
 function generate(s: State): void {
-  const was = s.world.depthClass ?? 3
   genStep(s, depthOf(s, s.ui.genPending))
-  const now = s.world.depthClass ?? 3
-  if (s.ui.genPending === '' && now !== was) loadBest(s, undefined, now)
+  if (s.ui.genPending === '') syncBest(s, s.world.depthClass ?? 3)
 }
 
 // Title depth row (focus 4): set the class, save it, and show that class's Best. Applies at the next run start only (R-164); a running cave never changes.
@@ -63,7 +72,7 @@ function generate(s: State): void {
 function setDepth(s: State, to: number, sound: FxEventKind): void {
   s.settings.depthClass = to
   saveSettings(s)
-  loadBest(s, undefined, to)
+  syncBest(s, to)
   ui(s, sound)
 }
 
@@ -108,12 +117,14 @@ function activate(s: State, item: number): void {
 
 export function stepScreens(s: State, input: Input): boolean {
   tick(s)
-  if (!s.settings.loaded) { loadSettings(s); loadBest(s) } // once per page session; loadSettings sets the flag even when storage fails
+  if (!s.settings.loaded) { loadSettings(s); loadBest(s, undefined, shownClass(s)); bestClass.set(s, shownClass(s)) } // once per page session; loadSettings sets the flag even when storage fails
   const u = s.ui, k = input.pressed, sc = s.meta.screen
   if (u.genPending !== '') {
     if (k.has('Escape')) { u.genPending = ''; u.genAttempt = 0; ui(s, 'uiBack') } else generate(s)
     return false // the world's first step is the next update, as after a synchronous startRun
   }
+  // The title shows the Best of shownClass. A ?depth= link (platformStep) changes settings.depthClass without a reload, so follow it here.
+  if (sc === 'title') syncBest(s, shownClass(s))
   const seedFocus = sc === 'title' && u.cursor === 5
   if (k.has('KeyM') && !seedFocus) { s.settings.muted = !s.settings.muted; saveSettings(s) } // every screen (ui.md §7); 'm' types in the seed box
   if (sc === 'playing') {

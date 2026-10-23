@@ -12,11 +12,9 @@ import { fill } from './migrate.ts'
 export type Store = Pick<Storage, 'getItem' | 'setItem'>
 
 // Depth classes (R-164): 1..4, default 3. The setting is 1..4 or 'random'.
-// types.ts is at its line cap, so Settings / SettingsRecord do not carry depthClass yet: the optional intersections below add it
-// narrowly and stay valid once types.ts declares the field (number | 'random'). Needs there: Settings.depthClass, SettingsRecord.depthClass,
-// and a default 3 in init()'s settings. Best.depthClass is not stored: the class is part of the storage key.
+// Settings.depthClass is declared in types.ts; SettingsRecord still lacks it, so RecordWithClass adds it for the saved JSON.
+// Best.depthClass is not stored: the class is part of the storage key.
 export type DepthSetting = number | 'random'
-type WithClass = Settings & { depthClass?: DepthSetting }
 type RecordWithClass = SettingsRecord & { depthClass: DepthSetting }
 
 const BEST_KEY = 'last-ember:best'
@@ -89,7 +87,7 @@ export function loadBest(s: State, store?: Store, depthClass?: number): void {
 
 // Sets settings.loaded even when nothing was stored or storage failed: the once-per-session guard of screens.ts.
 export function loadSettings(s: State, store?: Store): void {
-  const set: WithClass = s.settings
+  const set = s.settings
   s.settings.loaded = true
   const r = parse(read(s, SETTINGS_KEY, store), ['volume'])
   if (!r) return
@@ -104,7 +102,7 @@ export function loadSettings(s: State, store?: Store): void {
 }
 
 export function saveSettings(s: State, store?: Store): void {
-  const set: WithClass = s.settings
+  const set = s.settings
   const rec: RecordWithClass = {
     v: 1, volume: set.volume, muted: set.muted, lastSeed: set.lastSeed, reducedFlash: set.reducedFlash, quality: set.quality,
     depthClass: settingClass(set.depthClass),

@@ -38,6 +38,9 @@ import { run as rollCheck } from './roll.check.ts'
 import { run as economy } from './economy.check.ts'
 import { run as escapeCheck } from './escape.check.ts'
 import { run as aiDevourer } from './ai-devourer.check.ts'
+import { run as depthRun } from './depth-run.check.ts'
+import { run as rocksClass } from './rocks-class.check.ts'
+import { run as depthScreens } from './depth-screens.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -76,6 +79,9 @@ rollCheck()
 economy()
 escapeCheck()
 aiDevourer()
+depthRun()
+rocksClass()
+depthScreens()
 debug()
 
 console.log('checks ok')
