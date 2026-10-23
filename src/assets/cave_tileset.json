@@ -1,0 +1,2784 @@
+{
+  "frames": {
+    "floor_0": {
+      "frame": {
+        "x": 486,
+        "y": 138,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "floor",
+      "world_step": [
+        24,
+        24
+      ]
+    },
+    "floor_1": {
+      "frame": {
+        "x": 486,
+        "y": 166,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "floor",
+      "world_step": [
+        24,
+        24
+      ]
+    },
+    "floor_2": {
+      "frame": {
+        "x": 486,
+        "y": 194,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "floor",
+      "world_step": [
+        24,
+        24
+      ]
+    },
+    "floor_3": {
+      "frame": {
+        "x": 486,
+        "y": 222,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "floor",
+      "world_step": [
+        24,
+        24
+      ]
+    },
+    "floor_4": {
+      "frame": {
+        "x": 414,
+        "y": 170,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "floor",
+      "world_step": [
+        24,
+        24
+      ]
+    },
+    "floor_5": {
+      "frame": {
+        "x": 102,
+        "y": 102,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "floor",
+      "world_step": [
+        24,
+        24
+      ]
+    },
+    "floor_6": {
+      "frame": {
+        "x": 102,
+        "y": 130,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "floor",
+      "world_step": [
+        24,
+        24
+      ]
+    },
+    "floor_7": {
+      "frame": {
+        "x": 38,
+        "y": 482,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "floor",
+      "world_step": [
+        24,
+        24
+      ]
+    },
+    "floor_8": {
+      "frame": {
+        "x": 66,
+        "y": 482,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "floor",
+      "world_step": [
+        24,
+        24
+      ]
+    },
+    "floor_9": {
+      "frame": {
+        "x": 254,
+        "y": 330,
+        "w": 24,
+        "h": 24
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 24
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 24
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "floor",
+      "world_step": [
+        24,
+        24
+      ]
+    },
+    "cap_00": {
+      "frame": {
+        "x": 2,
+        "y": 238,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_01": {
+      "frame": {
+        "x": 110,
+        "y": 326,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_02": {
+      "frame": {
+        "x": 110,
+        "y": 362,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_03": {
+      "frame": {
+        "x": 110,
+        "y": 398,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_04": {
+      "frame": {
+        "x": 110,
+        "y": 434,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_05": {
+      "frame": {
+        "x": 110,
+        "y": 470,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_06": {
+      "frame": {
+        "x": 146,
+        "y": 222,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_07": {
+      "frame": {
+        "x": 182,
+        "y": 222,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_08": {
+      "frame": {
+        "x": 218,
+        "y": 222,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_09": {
+      "frame": {
+        "x": 254,
+        "y": 222,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_10": {
+      "frame": {
+        "x": 290,
+        "y": 222,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_11": {
+      "frame": {
+        "x": 326,
+        "y": 222,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_12": {
+      "frame": {
+        "x": 362,
+        "y": 238,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_13": {
+      "frame": {
+        "x": 146,
+        "y": 258,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_14": {
+      "frame": {
+        "x": 182,
+        "y": 258,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_15": {
+      "frame": {
+        "x": 218,
+        "y": 258,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_fill_1": {
+      "frame": {
+        "x": 254,
+        "y": 258,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_fill_2": {
+      "frame": {
+        "x": 290,
+        "y": 258,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "cap_fill_3": {
+      "frame": {
+        "x": 326,
+        "y": 258,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_cap",
+      "world_step": [
+        32,
+        32
+      ]
+    },
+    "face_fill_0": {
+      "frame": {
+        "x": 2,
+        "y": 410,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_face",
+      "draw_offset_from_cap": [
+        0,
+        32
+      ]
+    },
+    "face_fill_1": {
+      "frame": {
+        "x": 2,
+        "y": 462,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_face",
+      "draw_offset_from_cap": [
+        0,
+        32
+      ]
+    },
+    "face_fill_2": {
+      "frame": {
+        "x": 38,
+        "y": 170,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_face",
+      "draw_offset_from_cap": [
+        0,
+        32
+      ]
+    },
+    "face_fill_3": {
+      "frame": {
+        "x": 74,
+        "y": 170,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_face",
+      "draw_offset_from_cap": [
+        0,
+        32
+      ]
+    },
+    "face_left": {
+      "frame": {
+        "x": 110,
+        "y": 170,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_face",
+      "draw_offset_from_cap": [
+        0,
+        32
+      ]
+    },
+    "face_right": {
+      "frame": {
+        "x": 182,
+        "y": 170,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_face",
+      "draw_offset_from_cap": [
+        0,
+        32
+      ]
+    },
+    "face_pillar": {
+      "frame": {
+        "x": 146,
+        "y": 170,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_face",
+      "draw_offset_from_cap": [
+        0,
+        32
+      ]
+    },
+    "inner_cutout_0": {
+      "frame": {
+        "x": 398,
+        "y": 310,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "corner_cutout",
+      "operation": "erase_wall_alpha",
+      "corner": "NE"
+    },
+    "inner_rim_0": {
+      "frame": {
+        "x": 182,
+        "y": 382,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "corner_rim",
+      "operation": "source_over",
+      "corner": "NE"
+    },
+    "inner_cutout_1": {
+      "frame": {
+        "x": 434,
+        "y": 310,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "corner_cutout",
+      "operation": "erase_wall_alpha",
+      "corner": "SE"
+    },
+    "inner_rim_1": {
+      "frame": {
+        "x": 182,
+        "y": 418,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "corner_rim",
+      "operation": "source_over",
+      "corner": "SE"
+    },
+    "inner_cutout_2": {
+      "frame": {
+        "x": 470,
+        "y": 310,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "corner_cutout",
+      "operation": "erase_wall_alpha",
+      "corner": "SW"
+    },
+    "inner_rim_2": {
+      "frame": {
+        "x": 182,
+        "y": 454,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "corner_rim",
+      "operation": "source_over",
+      "corner": "SW"
+    },
+    "inner_cutout_3": {
+      "frame": {
+        "x": 182,
+        "y": 346,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "corner_cutout",
+      "operation": "erase_wall_alpha",
+      "corner": "NW"
+    },
+    "inner_rim_3": {
+      "frame": {
+        "x": 218,
+        "y": 330,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "corner_rim",
+      "operation": "source_over",
+      "corner": "NW"
+    },
+    "wall_full_0": {
+      "frame": {
+        "x": 234,
+        "y": 70,
+        "w": 32,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 80
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_composite",
+      "world_step": [
+        32,
+        32
+      ],
+      "face_draw_offset": [
+        0,
+        32
+      ]
+    },
+    "wall_full_1": {
+      "frame": {
+        "x": 270,
+        "y": 70,
+        "w": 32,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 80
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_composite",
+      "world_step": [
+        32,
+        32
+      ],
+      "face_draw_offset": [
+        0,
+        32
+      ]
+    },
+    "wall_full_2": {
+      "frame": {
+        "x": 306,
+        "y": 70,
+        "w": 32,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 80
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_composite",
+      "world_step": [
+        32,
+        32
+      ],
+      "face_draw_offset": [
+        0,
+        32
+      ]
+    },
+    "wall_full_3": {
+      "frame": {
+        "x": 342,
+        "y": 70,
+        "w": 32,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 80
+      },
+      "anchor": [
+        0,
+        0
+      ],
+      "category": "wall_composite",
+      "world_step": [
+        32,
+        32
+      ],
+      "face_draw_offset": [
+        0,
+        32
+      ]
+    },
+    "ground_pebbles_01": {
+      "frame": {
+        "x": 146,
+        "y": 382,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_pebbles_02": {
+      "frame": {
+        "x": 146,
+        "y": 418,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_pebbles_03": {
+      "frame": {
+        "x": 146,
+        "y": 454,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_rubble_01": {
+      "frame": {
+        "x": 254,
+        "y": 294,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_rubble_02": {
+      "frame": {
+        "x": 290,
+        "y": 294,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_rubble_03": {
+      "frame": {
+        "x": 326,
+        "y": 294,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_rock_01": {
+      "frame": {
+        "x": 182,
+        "y": 294,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_rock_02": {
+      "frame": {
+        "x": 218,
+        "y": 294,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_moss_01": {
+      "frame": {
+        "x": 146,
+        "y": 310,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_moss_02": {
+      "frame": {
+        "x": 146,
+        "y": 346,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_vine_01": {
+      "frame": {
+        "x": 362,
+        "y": 310,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        22
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_vine_02": {
+      "frame": {
+        "x": 446,
+        "y": 102,
+        "w": 64,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 32
+      },
+      "anchor": [
+        32,
+        22
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_vine_01": {
+      "frame": {
+        "x": 2,
+        "y": 274,
+        "w": 32,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 64
+      },
+      "anchor": [
+        16,
+        32
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_vine_02": {
+      "frame": {
+        "x": 2,
+        "y": 170,
+        "w": 32,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 64
+      },
+      "anchor": [
+        16,
+        32
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_vine_03": {
+      "frame": {
+        "x": 2,
+        "y": 342,
+        "w": 32,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 64
+      },
+      "anchor": [
+        16,
+        32
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_vine_04": {
+      "frame": {
+        "x": 378,
+        "y": 102,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": [
+        32,
+        32
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_roots_01": {
+      "frame": {
+        "x": 414,
+        "y": 206,
+        "w": 32,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 64
+      },
+      "anchor": [
+        16,
+        32
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_roots_02": {
+      "frame": {
+        "x": 450,
+        "y": 206,
+        "w": 32,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 64
+      },
+      "anchor": [
+        16,
+        32
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_moss_01": {
+      "frame": {
+        "x": 306,
+        "y": 154,
+        "w": 32,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 64
+      },
+      "anchor": [
+        16,
+        48
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_moss_02": {
+      "frame": {
+        "x": 342,
+        "y": 154,
+        "w": 32,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 64
+      },
+      "anchor": [
+        16,
+        48
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_moss_03": {
+      "frame": {
+        "x": 378,
+        "y": 170,
+        "w": 32,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 64
+      },
+      "anchor": [
+        16,
+        48
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_crack_01": {
+      "frame": {
+        "x": 446,
+        "y": 138,
+        "w": 32,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 64
+      },
+      "anchor": [
+        16,
+        48
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_crack_02": {
+      "frame": {
+        "x": 234,
+        "y": 154,
+        "w": 32,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 64
+      },
+      "anchor": [
+        16,
+        48
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "wall_crack_03": {
+      "frame": {
+        "x": 270,
+        "y": 154,
+        "w": 32,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 64
+      },
+      "anchor": [
+        16,
+        48
+      ],
+      "category": "overlay_wall",
+      "draw_layer": "wall dressing",
+      "rotation_rule": "Use authored variants; do not rotate projected rocks or wall vines"
+    },
+    "ground_crack_01": {
+      "frame": {
+        "x": 362,
+        "y": 274,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        16
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground cracks below props",
+      "rotation_rule": "Use authored variants at integer pixel positions; preserve nearest filtering."
+    },
+    "ground_crack_02": {
+      "frame": {
+        "x": 398,
+        "y": 274,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        16
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground cracks below props",
+      "rotation_rule": "Use authored variants at integer pixel positions; preserve nearest filtering."
+    },
+    "ground_crack_03": {
+      "frame": {
+        "x": 434,
+        "y": 274,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        16
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground cracks below props",
+      "rotation_rule": "Use authored variants at integer pixel positions; preserve nearest filtering."
+    },
+    "ground_crack_04": {
+      "frame": {
+        "x": 470,
+        "y": 274,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        16
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground cracks below props",
+      "rotation_rule": "Use authored variants at integer pixel positions; preserve nearest filtering."
+    },
+    "ground_crack_large_01": {
+      "frame": {
+        "x": 2,
+        "y": 102,
+        "w": 96,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 64
+      },
+      "anchor": [
+        48,
+        32
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground cracks below props",
+      "rotation_rule": "Authored orientation; use integer-pixel placement and nearest sampling."
+    },
+    "ground_crack_large_02": {
+      "frame": {
+        "x": 134,
+        "y": 2,
+        "w": 128,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 64
+      },
+      "anchor": [
+        64,
+        32
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground cracks below props",
+      "rotation_rule": "Authored orientation; use integer-pixel placement and nearest sampling."
+    },
+    "ground_crack_large_03": {
+      "frame": {
+        "x": 398,
+        "y": 2,
+        "w": 96,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 96
+      },
+      "anchor": [
+        48,
+        48
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground cracks below props",
+      "rotation_rule": "Authored orientation; use integer-pixel placement and nearest sampling."
+    },
+    "ground_crack_large_04": {
+      "frame": {
+        "x": 2,
+        "y": 2,
+        "w": 128,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 96
+      },
+      "anchor": [
+        64,
+        48
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground cracks below props",
+      "rotation_rule": "Authored orientation; use integer-pixel placement and nearest sampling."
+    },
+    "ground_crack_large_05": {
+      "frame": {
+        "x": 266,
+        "y": 2,
+        "w": 128,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 128,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 128,
+        "h": 64
+      },
+      "anchor": [
+        64,
+        32
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground cracks below props",
+      "rotation_rule": "Authored orientation; use integer-pixel placement and nearest sampling."
+    },
+    "ground_crack_large_06": {
+      "frame": {
+        "x": 134,
+        "y": 70,
+        "w": 96,
+        "h": 96
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 96
+      },
+      "sourceSize": {
+        "w": 96,
+        "h": 96
+      },
+      "anchor": [
+        48,
+        48
+      ],
+      "category": "overlay_ground",
+      "draw_layer": "ground cracks below props",
+      "rotation_rule": "Authored orientation; use integer-pixel placement and nearest sampling."
+    },
+    "wall_copper_01": {
+      "frame": {
+        "x": 38,
+        "y": 274,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "copper",
+      "variant": 1,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    },
+    "wall_copper_02": {
+      "frame": {
+        "x": 38,
+        "y": 222,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "copper",
+      "variant": 2,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    },
+    "wall_copper_03": {
+      "frame": {
+        "x": 38,
+        "y": 326,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "copper",
+      "variant": 3,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    },
+    "wall_sodium_01": {
+      "frame": {
+        "x": 74,
+        "y": 222,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "sodium",
+      "variant": 1,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    },
+    "wall_sodium_02": {
+      "frame": {
+        "x": 74,
+        "y": 326,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "sodium",
+      "variant": 2,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    },
+    "wall_sodium_03": {
+      "frame": {
+        "x": 74,
+        "y": 378,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "sodium",
+      "variant": 3,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    },
+    "wall_strontium_01": {
+      "frame": {
+        "x": 74,
+        "y": 430,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "strontium",
+      "variant": 1,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    },
+    "wall_strontium_02": {
+      "frame": {
+        "x": 110,
+        "y": 274,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "strontium",
+      "variant": 2,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    },
+    "wall_strontium_03": {
+      "frame": {
+        "x": 110,
+        "y": 222,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "strontium",
+      "variant": 3,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    },
+    "wall_resin_01": {
+      "frame": {
+        "x": 38,
+        "y": 378,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "resin",
+      "variant": 1,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    },
+    "wall_resin_02": {
+      "frame": {
+        "x": 38,
+        "y": 430,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "resin",
+      "variant": 2,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    },
+    "wall_resin_03": {
+      "frame": {
+        "x": 74,
+        "y": 274,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "resource": "resin",
+      "variant": 3,
+      "orientation": "South only",
+      "draw_layer": "south wall resources after walls and before actors",
+      "rotation_rule": "Do not rotate or mirror projected highlights. Use the three authored variants."
+    }
+  },
+  "meta": {
+    "image": "cave_tileset.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 512,
+      "h": 512
+    },
+    "scale": "1",
+    "filter": "nearest",
+    "padding": 2,
+    "extrude": 1,
+    "frame_count": 94,
+    "png_sha256": "4624a54a7de26fb7d60c2b2911e8d8ba4fab5df34ce6376f756aec50c3f06300"
+  },
+  "assembly": {
+    "floor_grid": [
+      24,
+      24
+    ],
+    "wall_grid": [
+      32,
+      32
+    ],
+    "wall_cap_size": [
+      32,
+      32
+    ],
+    "wall_face_size": [
+      32,
+      48
+    ],
+    "wall_composite_size": [
+      32,
+      80
+    ],
+    "character_source_cell": [
+      64,
+      64
+    ],
+    "character_runtime_scale": 1.0,
+    "character_pixels_match_world": true,
+    "cap_bits": {
+      "N": 1,
+      "E": 2,
+      "S": 4,
+      "W": 8
+    },
+    "cap_bit_means": "open/floor neighbour",
+    "cap_order": [
+      "cap_00",
+      "cap_01",
+      "cap_02",
+      "cap_03",
+      "cap_04",
+      "cap_05",
+      "cap_06",
+      "cap_07",
+      "cap_08",
+      "cap_09",
+      "cap_10",
+      "cap_11",
+      "cap_12",
+      "cap_13",
+      "cap_14",
+      "cap_15",
+      "cap_fill_1",
+      "cap_fill_2",
+      "cap_fill_3"
+    ],
+    "face_order": [
+      "face_fill_0",
+      "face_fill_1",
+      "face_fill_2",
+      "face_fill_3",
+      "face_left",
+      "face_right",
+      "face_pillar"
+    ],
+    "corner_order": [
+      "NE",
+      "SE",
+      "SW",
+      "NW"
+    ],
+    "draw_order": [
+      "floor",
+      "ground overlays",
+      "wall caps and faces",
+      "erase corner_cutout alpha on wall layer then source-over corner_rim",
+      "wall overlays and south-facing resources",
+      "actors"
+    ],
+    "anchor_rule": "Draw position = desired anchor position minus frame anchor. Read source rectangle from frames[name].frame.",
+    "corner_rule": "White inner_cutout sprites are masks: erase their alpha from the wall layer, then source-over the corresponding rim. Do not draw a white mask as a visible sprite.",
+    "wall_composite_rule": "wall_full_0..3 combine matching cap and face; use these OR separate cap/face frames, not both.",
+    "resource_types": [
+      "copper",
+      "sodium",
+      "strontium",
+      "resin"
+    ],
+    "resource_variants": 3,
+    "orientation": "Fixed South camera; no sprite rotation."
+  },
+  "validation": {
+    "source_frames_pixel_identical": true,
+    "packed_frames_do_not_overlap": true,
+    "native_pixels_preserved": true,
+    "frame_count": 94
+  }
+}

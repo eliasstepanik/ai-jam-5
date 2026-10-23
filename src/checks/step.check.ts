@@ -8,6 +8,7 @@ import { parseSeed, SEED_MAX_LEN } from '../core/seed.ts'
 import { depthOf, zoneOfDepth } from '../core/score.ts'
 import { T } from '../core/tuning.ts'
 import { spawnMonster } from '../entities/monster.ts'
+import { clampCam } from '../systems/camera.ts'
 import { startRun } from '../systems/run.ts'
 import { step } from '../systems/step.ts'
 import { getDepthField } from '../world/caches.ts'
@@ -122,6 +123,13 @@ export function run(): void {
     step(s, inp(), DT)
     ok(s.fx.shake === 0.3 - DT, 'shake ticked once by tickFx (got ' + s.fx.shake + ')')
     ok(Math.abs(s.cam.x - (s.player.x - 40 * Math.exp(-T.cam.lerpPerS * DT))) < 1e-9, 'camera lerps once toward the player')
+  }
+
+  // R-181 clampCam: view 640x360 dpr 1 -> z 1, half extents 320 x 180; south bound adds the 48 px overhang; degenerate view -> [0, W*32].
+  {
+    const v = { w: 640, h: 360, dpr: 1 }, c = clampCam(-5, 1e9, 320, 240, v), z = clampCam(1e9, -5, 320, 240, { w: 0, h: 0, dpr: 1 })
+    ok(c.x === 320 && c.y === 240 * 32 + 48 - 180, 'clampCam clamps to the map incl. the 48 px south overhang (got ' + c.x + ',' + c.y + ')')
+    ok(z.x === 320 * 32 && z.y === 0, 'clampCam with a 0x0 view stays finite and bounded (got ' + z.x + ',' + z.y + ')')
   }
 
   // D1 hitstop (MS-25/R-068): a click on the LAST hitstop step is buffered, then the swing starts on the next step.

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- D slice 2.5D view: fixed-south three-quarter view over the unchanged square grid. Wall caps get 48 px south faces, and walls, monsters, the player and props are depth-sorted row by row.
+- Cave tileset `src/assets/cave_tileset.png` and `src/assets/cave_tileset.json`, used for floor and walls. Ore veins are baked on south-facing walls.
+- Character atlas `src/assets/characters.png` and `src/assets/characters.json` for the player and the Lurker, Devourer and Stalker animations, including the torch flame palette swap. `scripts/trim-characters.ts` builds it from `art/characters-source.json`.
+- Camera clamp to the map with a 48 px south overhang.
+- Asset validation in `scripts/check-assets.ts` (tileset 94 frames, characters 1232 frames, size limits), wired into `npm run check`.
 - A30 playable slice-A game: `src/game.ts` is now a thin facade over the real game. The title, help, pause, dead and won screens, the HUD and the cave with fog memory now render, and the fixed-step simulation (`step`) and `platformStep` run every update. Mouse input works on the menus: hovering a button moves the focus to it, a click activates the button it hits, a click on empty space does nothing, a click on the seed field only focuses it, a help tab click selects its page, and a click outside the help panel goes back. In dev builds, Backquote toggles the debug flag and Shift+1..6 toggle reveal, god mode, debug overlay, frozen AI, path display and the render quality override. Audio and the debug overlay panel are not wired yet.
 - A29 run lifecycle, screens and fixed-step driver: `startRun`, `endRun` and `checkEnd` manage a run, with cave generation split into chunks through `genStep`; if no valid cave comes out, the fixed fallback cave is used and `startRun` logs it with `console.warn`. The screen state machine covers title, help, playing, paused, dead and won, with input lockouts, a quit confirmation, pause on the `'Blur'` pseudo-key, mute and volume keys, and the seed field. `step()` runs the existing systems in the documented order, with hitstop handling and a click buffer. Three checks are registered in `npm run check`: `run.check.ts` (run lifecycle, chunked cave generation equal to the synchronous one including the fallback cave, determinism), `step.check.ts` (step order and behaviour: hitstop click buffer, bites and parries, zone tracking, screen timers, quit confirm, volume, mute and the seed field cap) and `screens.check.ts` (screen controls: help return target and paging, menu cursor wrap, Space, click and Enter activation, seed field editing, end-screen navigation and copy link, `startRun` UI reset, phase guards). Saving best scores and settings arrives with the storage task. The B-slice systems (roll, quake, mining, beacon, minerals) are not wired into `step()` yet.
 - C3 cave generator wrapper: `generateCave(seed, opts)` runs up to 8 attempts, each carve, populate and `validateCave`, and the first valid cave wins (`forceFail` option for testing the fallback). `finalizeCave` sets `stats.mainLoop` once per accepted cave. `fallbackCave(seed)` builds a fixed-geometry ring cave with 0 RNG draws for the ring itself (populate still draws from a seed derived from `'cave:fallback'`); it returns a validated cave or throws, with `stats.attempts` of 9. `caveOf(seed)` in `src/checks/caves.ts` memoizes cave results for checks.
@@ -27,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- World, entities and props rendering rewritten for the 2.5D look at scale 1.0. The old top-down sprite sheets only remain for monster eyes and UI art.
+- Image loader preloads the tileset and the character sheets before the title screen is ready.
+- Resources version bumped to 2 (chunks use two canvases: floor and walls).
 - Enemy animation specification: all three shades use 64×64 body and eye frames with eight authored directions per action, selected by facing without sprite rotation. Updated naming, rendering, fallback, scaling and atlas totals (512 enemy frames; 1064 catalog frames).
 
 - Host input: only the primary mouse button counts as a click, and the right-click menu is suppressed on the canvas.
