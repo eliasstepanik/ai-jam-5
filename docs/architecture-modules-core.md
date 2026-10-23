@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Module Tree – Core
 description: Authoritative src/core file list for Last Ember (layer L0) – every core file with status, responsibility, exported signatures copied from the State, determinism, scoring/save and tuning specs, allowed imports, size, hot-swap class, owner and slice; the src/checks files covering core; conflicts and gaps between specs and the global layer rule; required State additions.
 tags: [project, ai-jam-5, architecture, last-ember, modules]
-timestamp: 2026-10-18T14:00:00Z
+timestamp: 2026-10-23T09:00:00+02:00
 ---
 
 # Last Ember – Module Tree: Core
@@ -36,6 +36,7 @@ Status: all core files are NEW (the repo has only `main.ts`, `merge.ts`, `check.
 | `src/core/migrate.ts` | NEW | deep default `fill`, `migrate`, entity `DEFAULT_*` templates | HS | A | 110 |
 | `src/core/score.ts` | NEW | depth metric, `computeScore`, `DEFAULT_BEST`, `DEFAULT_RESULT` (moved here, C1, C2) | HS | A | 70 |
 | `src/core/storage.ts` | NEW | `localStorage` mirrors for best and settings, try/catch, injectable store (moved here, C4) | HS | B | 90 |
+| `src/core/grid.ts` | PLANNED (D4, [[ADR-123-2-5d-view]]; contract in [[architecture-modules-render]] sibling table) | pure 2.5D helpers `floorVariant`, `faceKind`, `footRow`, `dirIndex` (moved out of L4 `src/render/keys.ts` so `src/checks/render.check.ts` can cover them under R-043) | HS | D | 40 |
 | `src/merge.ts` | UNCHANGED | host: `mergeState(mod, old)` calls `migrate` when exported | H | – | 16 |
 | `src/check.ts` | UNCHANGED | host check entry (`mergeState` asserts); check wiring is `src/checks/all.ts` (R-040) | CO | – | 35 |
 
@@ -223,3 +224,4 @@ None of these needs a `STATE_VERSION` bump (all additive, [[architecture-state-3
 - [[architecture-rulings]]
 - [[architecture-rulings-3]]
 - [[last-ember-review-world-vs-modules]]
+- [[ADR-123-2-5d-view]]

@@ -1,16 +1,20 @@
 ---
 type: architecture
 title: Last Ember – Asset Pipeline 2 (Packer, Validation, Budget, Hand-off, Licensing)
-description: Asset pipeline part 2 for Last Ember – the dependency-free Node atlas packer, the check-assets validation run by npm run check, bundle and pixel budgets, team hand-off checklist with folders and file names, asset PR flow under the ci job and the 300-line rule, and licensing/credit rules for AI-generated assets.
+description: Asset pipeline part 2 for Last Ember – the superseded Node atlas packer (history only after the 2.5D pivot), the check-assets validation of the two external atlases run by npm run check, bundle and atlas budgets (R-183), team hand-off checklist with folders and file names, asset PR flow under the ci job and the 300-line rule, and licensing/credit rules for AI-generated assets.
 tags: [project, ai-jam-5, architecture, last-ember, assets]
-timestamp: 2026-10-17T21:10:00Z
+timestamp: 2026-10-22T21:00:00+02:00
 ---
 
 # Last Ember – Asset Pipeline 2: Packer, Validation, Budget, Hand-off, Licensing
 
+> **2.5D pivot (2026-10-22, [[ADR-123-2-5d-view]], R-178..R-186 in [[architecture-rulings-3]] §9):** Section 1 (packer) is superseded and kept as history only: there is no `scripts/pack-atlas.ts`, no `npm run pack` and no `art/frames/`. Section 2 (check-assets) is rewritten for the two external atlases, Section 3 budgets follow R-183, Sections 4 and 6 are adjusted. Asset facts: [[ai-jam-5-asset-formats-25d]].
+
 Part 1 (layout, manifests, loading, fallbacks): [[architecture-assets-pipeline]]. Hub: [[architecture]]. Style and export rules: [[architecture-assets-style]] Sections 9–11. Catalogs: [[architecture-assets-sprites]], [[architecture-assets-sprites-2]], [[architecture-assets-sprites-3]], [[architecture-assets-audio]], [[architecture-assets-audio-2]]. Schedule: [[last-ember-production-plan]].
 
-## 1. Atlas packer `scripts/pack-atlas.ts` (Node built-ins only)
+## 1. Atlas packer `scripts/pack-atlas.ts` (Node built-ins only) — SUPERSEDED (history, do not implement)
+
+> Superseded by [[ADR-123-2-5d-view]] and R-183: the two atlases are delivered pre-packed and imported as they are. `scripts/pack-atlas.ts` and its 150-line plan are not built; B15 and B16 in [[tasks]] are superseded.
 
 **Recommendation:** a ~150-line Node script, no new dependency. External packers (TexturePacker, free-tex-packer) were rejected: they need every team member to install and run the same GUI with the same settings, and their JSON formats differ from ours. The script is deterministic and runs in CI.
 
@@ -36,17 +40,17 @@ Runs in Node without decoding images or audio. Each failure prints one line and 
 
 | # | Assert | Why |
 |---|---|---|
-| 1 | Every key in `atlas.json` `frames` parses to a known `SpriteId` + anim + index `< n` | stale or misnamed frames |
-| 2 | Every frame rect lies inside its sheet; sheets listed in JSON exist on disk | corrupt pack |
-| 3 | `atlas.json` `hash` equals the hash recomputed from `art/frames/` | someone added frames but forgot `npm run pack` |
-| 4 | Every PNG in `art/frames/` and every `src/assets/atlas-*.png` has the PNG signature and IHDR colour type 6, depth 8 (read the first 33 bytes); frame width/height equal the manifest `w×h`. Screens in `src/assets/art/` only need a valid PNG signature and IHDR size ≤ 960×540 (palette PNG allowed) | wrong export |
+| 1 | `atlas.json` has `version: 2`; every key in its `frames` (if any) parses to a known `SpriteId` + anim + index `< n`; every `external[]` entry names an `image` and `json` that exist in `src/assets/` | stale or misnamed frames, missing atlas file |
+| 2 | Every frame rect of `atlas.json` lies inside its sheet; sheets listed in JSON exist on disk | corrupt entry |
+| 3 | Tileset (`cave_tileset.json`): `frame_count` is 94 and the category counts are floor 10, wall_cap 19, wall_face 7, corner_cutout 4, corner_rim 4, wall_composite 4, overlay_ground 22, overlay_wall 24; every frame rect lies inside 512×512; `wall_cap_00` … `wall_cap_15` are all present | wrong or truncated tileset delivery |
+| 4 | Every `src/assets/*.png` atlas (tileset, characters) has the PNG signature and IHDR colour type 6, depth 8 (read the first 33 bytes) and IHDR size matching the JSON (512×512, 4096×2048). Screens in `src/assets/art/` only need a valid PNG signature and IHDR size ≤ 960×540 (palette PNG allowed) | wrong export |
 | 5 | Every `SOUNDS[id].file` and `layers[]` has BOTH `<name>.ogg` and `<name>.m4a` in `src/assets/audio/`, **or** the id is in the allow-list `PENDING_AUDIO` in `sounds.ts` (shrinks to empty by Day 11) | missing format = Safari silence |
-| 6 | Every file in `src/assets/audio/` is referenced by some `SOUNDS` entry; same for `art/frames/` vs `SPRITES` | orphan bloat |
+| 6 | Every file in `src/assets/audio/` is referenced by some `SOUNDS` entry; no check of unreferenced atlas frames (the atlases are delivered whole) | orphan bloat |
 | 7 | `.ogg` starts with `OggS`; `.m4a` has `ftyp` at byte 4 | wrong container |
 | 8 | Budgets (Section 3) by `fs.statSync` sizes | bundle creep |
 | 9 | Every `loop` has `0 ≤ start < end` | bad manifest |
 | 10 | All file names match `^[a-z0-9-]+(_[a-z0-9-]+)*\.(png|ogg|m4a)$` | naming rule (style Section 10) |
-| 11 | Player sets are 64×64, pivot (32,32), all eight direction keys per action; walk has 4 frames; torch-set tip-anchor count equals frame count and positions lie within the canvas | enforce R-154; missing source images may still use the documented fallback |
+| 11 | Characters (`characters.json`): `format === 'gamejam-character-atlas-v1'`; 1232 frames; every rect lies inside 4096×2048 and outside `palette_panel_rect`; every frame is 64×64 with pivot (32,32); every animation named in the game's animation mapping table (the player, lurker, stalker and devourer sets used by `src/render/charatlas.ts`) exists with all eight directions in the order n, ne, e, se, s, sw, w, nw | enforce R-184; a mapped animation missing from the atlas fails the check |
 
 Placeholder and synth coverage are **not** checked here: tsc enforces them (`Record<SpriteId, DrawFn>`, `Record<SoundId, …>`) in `npm run build`.
 
@@ -56,17 +60,17 @@ The script imports `src/assets/sprites.ts` and `sounds.ts`; they stay DOM-free (
 
 | Item | Limit | Target / estimate |
 |---|---|---|
-| Atlas sheets total | ≤ 1.2 MB | 1064 catalog frames (512 monster frames); full untrimmed target exceeds the existing 4-sheet ceiling. Measure delivered packing; full delivery needs a follow-up packing/budget decision (R-155) ([[architecture-assets-sprites-3]] Section 6) |
+| Atlas sheets total | characters ≤ 600 KB, tileset ≤ 100 KB (R-183) | characters.png 361 072 B, cave_tileset.png 23 940 B as delivered; no repack. Replaces the former 1.2 MB / 1064-frame ceiling |
 | Screens (`src/assets/art/`) | ≤ 0.6 MB, each ≤ 250 KB, max 960×540 | ≈ 0.24 MB |
-| **Art total (bundled)** | **≤ 2 MB** (plan target) | Previous estimate obsolete; measure the two player sets plus screens (R-154) |
+| **Art total (bundled)** | **≤ 2 MB** (plan target) | Two atlases (≈ 0.39 MB) plus screens (≈ 0.24 MB); the shipped trimmed `characters.json` counts toward JS, not art |
 | Audio, one format | **≤ 3.3 MB** (R-140; 3 MB left only 1.7 % VBR headroom) | ≈ 2.95 MB ([[architecture-assets-audio]] Section 3) |
 | Audio, both formats in `dist/` | ≤ 7 MB (2 × 3.3 MB + margin) | ≈ 6 MB |
 | Any single audio file | ≤ 900 KB | music loops ≈ 0.5–0.75 MB |
-| JS bundle (gzip) | ≤ 150 KB | code + atlas.json |
+| JS bundle (gzip) | ≤ 150 KB | code + atlas.json + the two atlas JSONs (trimmed `characters.json`, see OD-D6) |
 | **`dist/` total on disk** | **≤ 9 MB** | ≈ 6.8 MB |
 | Downloaded per player | ≤ 5.5 MB | ≈ 3.8 MB |
-| Single frame | Actors exactly 64×64; tiles exactly 32×32; other sprites per catalog (≤ 96×96) | — |
-| Atlas sheet | ≤ 1024×1024, max 4 sheets (R-154) | — |
+| Single frame | Actors exactly 64×64; tileset frames per ground truth (floor 24×24, caps 32×32, faces 32×48, composites 32×80); other sprites per catalog (≤ 96×96) | — |
+| Atlas sheet | characters: one sheet ≤ 4096×4096, ≤ 600 KB; tileset: one sheet ≤ 1024×1024, ≤ 100 KB (R-183; supersedes "≤ 1024×1024, max 4 sheets" of R-154) | 4096×2048 and 512×512 as delivered |
 
 itch.io HTML5 games may be up to several hundred MB per file, so these limits are about load time for voters, not hosting.
 
@@ -77,10 +81,10 @@ Who: TEAM produces assets (saile2204, undertaker7431, kittingsl); the AI orchest
 **For each delivery (one PR per asset family, e.g. "lurker set" or "zone 2 tiles"):**
 
 - [ ] Asset matches its catalog entry: size, frame count, pivot, palette, checklist in style Section 8.
-- [ ] Frames saved as `art/frames/<group>/<SpriteId>_<anim>_<nn>.png` (group folder = first name field: `player`, `mon`, `tile`, `spec`, `item`, `prop`, `ui`, `fx`).
+- [ ] Atlas deliveries replace `src/assets/cave_tileset.{png,json}` or `src/assets/characters.{png,json}` as whole files (the characters source JSON goes to `art/characters-source.json`, then `node scripts/trim-characters.ts`); loose frames under `art/frames/` no longer exist.
 - [ ] Screens saved as `src/assets/art/<name>.png` (`title-keyart`, `logo`, `help-parry`, `help-goal`); favicon as `public/favicon.png`.
 - [ ] Audio: WAV master kept off-repo; encoded `src/assets/audio/<id>.ogg` **and** `.m4a` (ffmpeg lines in [[architecture-assets-audio]] Section 2); loop points written into `sounds.ts` `loop`.
-- [ ] Ran `npm run pack`, then `npm run check && npm run build` locally — both exit 0.
+- [ ] Ran `npm run check && npm run build` locally — both exit 0 (there is no `npm run pack`).
 - [ ] Ran `npm run dev`, looked at the asset in game (or with `?ph=1` vs `?ph=0` to compare against the placeholder).
 - [ ] README `AI process` row added (style Section 11 template).
 - [ ] `CHANGELOG.md` `## [Unreleased]` entry under `Added`/`Changed` (AGENTS.md rule for user-visible changes).
@@ -88,9 +92,9 @@ Who: TEAM produces assets (saile2204, undertaker7431, kittingsl); the AI orchest
 
 **Versions:** no version suffixes in names. A redo overwrites the same file in a new PR; git history is the version record. Rejected alternatives stay on the shared drive.
 
-**PR flow:** feature branch → PR → `ci` job (`npm ci`, `npm run check`, `npm run build`, dist sanity) must pass → branch up to date with `master` → merge. Commits/merges go through the user's workflow (AGENTS.md "Git and docs"). Two PRs touching `atlas.json`/`atlas-*.png` conflict by design: rebase, rerun `npm run pack`, commit the regenerated files — never hand-merge them.
+**PR flow:** feature branch → PR → `ci` job (`npm ci`, `npm run check`, `npm run build`, dist sanity) must pass → branch up to date with `master` → merge. Commits/merges go through the user's workflow (AGENTS.md "Git and docs"). Two PRs replacing the same atlas file conflict by design: rebase and keep the newer delivered file; never hand-merge PNG or atlas JSON.
 
-**300-line rule:** `src/assets/atlas.json` is an auto-generated data blob — valid exception #1 (auto-generated) / #2 (inherently-one-blob data) of the file-size rule; ~1070 lines at 1064 frames (after R-155). `sprites.ts`, `sounds.ts`, placeholder and synth files are hand-written code and stay ≤ 300 lines (split plan in part 1 Sections 2–3).
+**300-line rule:** `src/assets/cave_tileset.json`, `characters.json` and `art/characters-source.json` are delivered/generated data blobs — valid exception #1 (auto-generated) / #2 (inherently-one-blob data) of the file-size rule. `sprites.ts`, `sounds.ts`, placeholder and synth files are hand-written code and stay ≤ 300 lines (split plan in part 1 Sections 2–3).
 
 ## 5. Licensing and credit rules
 
@@ -104,7 +108,7 @@ Who: TEAM produces assets (saile2204, undertaker7431, kittingsl); the AI orchest
 
 1. `sprites.ts`, `sounds.ts`, placeholder files, `images.ts` `drawSprite` with placeholders only — Day 3 (unblocks gameplay, zero art).
 2. `src/audio/*` (R-021: engine, mixer, sfx, synth, synth-2, trigger) + synth recipes for P0 SFX — Day 3–4.
-3. `scripts/pack-atlas.ts` + `check-assets.ts` + package scripts (`check` per [[architecture-rulings]] R-040) — Day 4–5, before the Day 5 art delivery.
+3. `check-assets.ts` + package scripts (`check` per [[architecture-rulings]] R-040); the 2.5D pivot adds `trim-characters.ts` and the rewritten check as tasks D2 and D12 in [[tasks]] (no packer).
 4. Screens, music, preload/title gate — Day 5–6.
 
 ## Related
@@ -123,3 +127,6 @@ Who: TEAM produces assets (saile2204, undertaker7431, kittingsl); the AI orchest
 - [[architecture-assets-audio-2]]
 - [[architecture-rulings]]
 - [[architecture-rulings-3]]
+- [[ADR-123-2-5d-view]]
+- [[ai-jam-5-asset-formats-25d]]
+- [[tasks]]

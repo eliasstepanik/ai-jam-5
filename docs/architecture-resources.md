@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Runtime Resources (1/3) – Registry, Lifecycle under Hot Reload, Memory, Preload
 description: Last Ember runtime resources part 1 – the src/assets/resources.ts registry design (Resources type, getResources creation on first use, survival in import.meta.hot.data, data-in-registry code-in-modules rule), what happens on game swap, main.ts re-run and registry edits, the full lifecycle table of every non-serialised resource, listener rules, memory budget, preload sequence and loading screen, and DOM independence of checks.
 tags: [project, ai-jam-5, architecture, last-ember, render]
-timestamp: 2026-10-17T22:00:00Z
+timestamp: 2026-10-22T22:00:00+02:00
 ---
 
 # Last Ember – Runtime Resources (1/3)
@@ -48,7 +48,7 @@ export type ImageStore = {
 export type TileCache = {
   key: string                            // tilesHash + ':' + images.gen
   zone: Uint8Array; mask: Uint8Array; inner: Uint8Array; variant: Uint8Array // w*h (76 800) each
-  chunks: Map<number, HTMLCanvasElement> // cx + cy * CHUNKS_W (CHUNKS_W = ceil(w / 8)), 256x256, LRU cap 40
+  chunks: Map<number, { floor: HTMLCanvasElement, walls: HTMLCanvasElement }> // cx + cy * CHUNKS_W (CHUNKS_W = ceil(w / 8)); floor 256x256 + walls 256x304, LRU cap 40 (R-181)
   lru: number[]
 }
 export type MemoryCache = { key: number; canvas: Canvas2D | null; img: ImageData | null; words: Int32Array }
@@ -93,7 +93,8 @@ export type Resources = {
   memory: MemoryCache
   light: LightCache
   dark: Canvas2D | null
-  scratch: Canvas2D | null               // tint / occlusion scratch, grown never shrunk
+  scratch: (Canvas2D & { rows: Int32Array }) | null // tint / occlusion scratch, grown never shrunk; `rows` = actor sort buffer (bucket heads + next list by foot row, R-180, [[architecture-modules-render]] entities.ts)
+  swapped: Map<string, HTMLCanvasElement> // flame palette-swap frame cache (R-185): 64x64 canvases, key `anim|dir|i|material`, LRU 256 (~4 MB); slot name is a DEFAULT (D7)
   particles: Particles
   perf: Perf
   audio: AudioRes
@@ -106,7 +107,7 @@ export type Resources = {
 ## 3. `getResources()` and survival
 
 ```ts
-export const RES_VERSION = 1 // bump only when a field's MEANING changes (not when one is added)
+export const RES_VERSION = 2 // 2 (R-178..R-186, ADR-123): chunk type, scratch.rows, tint cache; bump only when a field's MEANING changes (not when one is added)
 const holder: { res?: Resources } = import.meta.hot?.data ?? {}
 
 export function getResources(): Resources {
@@ -149,12 +150,12 @@ function fillRes(r: Resources): Resources { // additive fields after an edit of 
 | Resource | Owner module | Created when | Kept across game swap | Disposed when | Size |
 |---|---|---|---|---|---|
 | registry object | `assets/resources.ts` | first `getResources()` (first render frame) | yes | page unload; `RES_VERSION` bump (rebuilt) | < 1 KB |
-| atlas sheet `HTMLImageElement` ×1–2 | `assets/images.ts` | `startPreload()` on the first title frame | yes | never (page) | 1024² × 4 B = 4 MB decoded each |
+| atlas sheet `HTMLImageElement` ×1–2 | `assets/images.ts` | `startPreload()` on the first title frame | yes | never (page) | `characters.png` 4096×2048 ≈ 32 MB decoded + `cave_tileset.png` 512² ≈ 1 MB |
 | screen images ×4 | `assets/images.ts` | preload, after sheets | yes | never | keyart 960×540 = 2 MB, others ≤ 0.5 MB |
 | resolved rect map | `assets/images.ts` | each time a sheet settles (`gen` +1) | yes | rebuilt on `gen` change | ~300 entries |
 | tinted frame canvases | `assets/images.ts` | first tinted draw | yes | LRU beyond 64 | ≤ 64 × 4 KB |
 | tile maps (4 `Uint8Array`) | `render/tiles.ts` | first world frame of a run | yes | key change (new run) | 307 KB |
-| tile chunk canvases | `render/tiles.ts` | visible, ≤ 4 per frame | yes | LRU beyond 40; key change | 256 KB each, ≤ 10 MB |
+| tile chunk canvas pairs (`floor` + `walls`) | `render/tiles.ts` | visible, ≤ 4 per frame | yes | LRU beyond 40; key change | ~560 KB per chunk pair, LRU 40 ~22 MB |
 | memory map canvas + `ImageData` | `render/memory.ts` | first world frame | yes | never (repainted on new `tilesHash`) | 2 × 307 KB |
 | darkness canvas | `render/light.ts` | first world frame | yes | never; resized in place on size/quality change | ≤ 8.3 MB (1080p), 14.7 MB (1440p) |
 | light mask / glow / vignette sprites | `render/light.ts`, `overlay.ts` | first use of a key | yes | key prefix version change; vignette on size bucket change | ≈ 2–6 MB |
@@ -169,7 +170,7 @@ function fillRes(r: Resources): Resources { // additive fields after an edit of 
 | loop voices (flame, heartbeat, charge, rumble) | `audio/sfx.ts` | condition true in `audioStep` | yes | condition false (0.2 s fade) | ≤ 4 |
 | unlock + visibility listeners | `audio/engine.ts` | `getResources()` → `installAudioListeners()` once | yes | unlock listeners removed after unlock; visibility kept | 3 |
 
-**Memory budget (DEFAULT, architect):** images ≈ 8 MB, canvases ≤ 30 MB at 1440p, audio ≈ 98 MB decoded (85 MB music + 12.5 MB rest + 1 MB noise; music is stereo float32 PCM: 44 100 × 2 × 4 B = 353 KB/s). Total ≈ 140 MB, including ≈ 2.4 MB fixed world caches in `src/world/caches.ts`, `route.ts` (outside this registry) and 0.92 MB render maps at 320×240 (R-122) ([[architecture-scale-and-economy-4]] §1.2–§1.3). **Mitigation if it matters:** decode `mus_title` lazily and drop its buffer when a run starts (−17 MB); `ponytail:` not done by default.
+**Memory budget (DEFAULT, architect):** images ≈ 33 MB, canvases ≤ 30 MB at 1440p, audio ≈ 98 MB decoded (85 MB music + 12.5 MB rest + 1 MB noise; music is stereo float32 PCM: 44 100 × 2 × 4 B = 353 KB/s). Total ≈ 165 MB (33 + 30 + 98 + 3.3), including ≈ 2.4 MB fixed world caches in `src/world/caches.ts`, `route.ts` (outside this registry) and 0.92 MB render maps at 320×240 (R-122) ([[architecture-scale-and-economy-4]] §1.2–§1.3). **Mitigation if it matters:** decode `mus_title` lazily and drop its buffer when a run starts (−17 MB); `ponytail:` not done by default.
 
 ## 5. Listeners and timers
 
@@ -191,7 +192,7 @@ globalThis.__lastEmberAudio = onAudioEvent // reassigned on every evaluation of 
 | Step | When | What | Failure |
 |---|---|---|---|
 | 1 | first `render` call (title) | `startPreload(res)`: set `images.started`, `total = sheets + 4 screens` | – |
-| 2 | immediately | atlas sheets: `img.src = url; img.decode()` in parallel (1–2) | reject or 10 s timeout → `sheets[i] = null`, `sheetState 'failed'`, `console.warn('[assets] atlas-0 failed, using placeholders')` once |
+| 2 | immediately | atlas sheets: `img.src = url; img.decode()` in parallel (1–2) | reject or 10 s timeout → `sheets[i] = null`, `sheetState 'failed'`, `console.warn('[assets] <sheet file name> failed, using placeholders')` once per sheet (2.5D: `cave_tileset.png`, `characters.png`; was `atlas-0`) |
 | 3 | sheets settled | screens in order keyart, logo, helpParry, helpGoal, one at a time | → `null`, title draws the procedural backdrop ([[architecture-ui]] §4.1) |
 | 4 | each settle | `loaded += 1`, `gen += 1`, rebuild rect map | – |
 | 5 | unlock (first gesture) | audio decode queue: `mus_title`, `amb_cave`, `mus_descent`, `mus_descent-danger`, then SFX samples, then `mus_escape`, stingers; max 4 in flight | fetch/decode error → `buffers.set(name, null)`, warn once; SFX use synth, music silent |
@@ -228,4 +229,5 @@ Loading screen = the title screen itself ([[architecture-ui]] §4.1): until `loa
 - [[architecture-rulings]]
 - [[architecture-rulings-2]]
 - [[architecture-rulings-3]]
+- [[ADR-123-2-5d-view]]
 - [[index]]

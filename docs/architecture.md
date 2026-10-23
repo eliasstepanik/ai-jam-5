@@ -1,14 +1,14 @@
 ---
 type: architecture
 title: Last Ember – Architecture Hub (precedence, reading order, layer rule, slices, owner decisions)
-description: Entry point for the Last Ember architecture – lists every architecture file with title and purpose in groups, the precedence order, a reading order per task, the layer rule, the vertical slices A/B/C with first chunks, the pending owner decisions (OD-1 to OD-7) and the resolved design issues E-1, E-2.
+description: Entry point for the Last Ember architecture – lists every architecture file with title and purpose in groups, the precedence order, a reading order per task, the layer rule, the vertical slices A/B/C/D with first chunks (slice D = 2.5D view migration, ADR-123), the pending owner decisions (OD-1 to OD-7) and the resolved design issues E-1, E-2.
 tags: [project, ai-jam-5, architecture, last-ember]
-timestamp: 2026-10-21T01:00:00Z
+timestamp: 2026-10-23T10:00:00+02:00
 ---
 
 # Last Ember – Architecture Hub
 
-**Status (2026-10-18):** Architecture written 2026-10-17 by parallel authors; conflicts resolved in [[architecture-rulings]], [[architecture-rulings-2]] and [[architecture-rulings-3]]; map enlarged to 320×240 (scale and economy rulings, SAE1–SAE4). E-1 and E-2 are RESOLVED (section 6). **OD-1, OD-3 and OD-7 were approved on 2026-10-18; implementation is under way (see [[progress]]).** Cave generator chain (A22 rest, B4-B6) implementation started 2026-10-21 under R-156..R-165 ([[architecture-rulings-3]] §7); depth classes R-164 planned.
+**Status (2026-10-18):** Architecture written 2026-10-17 by parallel authors; conflicts resolved in [[architecture-rulings]], [[architecture-rulings-2]] and [[architecture-rulings-3]]; map enlarged to 320×240 (scale and economy rulings, SAE1–SAE4). E-1 and E-2 are RESOLVED (section 6). **OD-1, OD-3 and OD-7 were approved on 2026-10-18; implementation is under way (see [[progress]]).** Cave generator chain (A22 rest, B4-B6) implementation started 2026-10-21 under R-156..R-165 ([[architecture-rulings-3]] §7); depth classes R-164 planned. **2026-10-22:** the owner approved the 2.5D view (fixed-south 3/4 look over the unchanged square grid, [[ADR-123-2-5d-view]]); binding rulings R-178..R-186 in [[architecture-rulings-3]] §9, delivered asset formats in [[ai-jam-5-asset-formats-25d]], migration slice D planned in [[tasks]]; nothing implemented yet.
 
 Project hub: [[index]]. Jam facts: [[jam-brief]]. Implementation agents read this file first, then the files for their task (section 2).
 
@@ -17,7 +17,7 @@ Two review tasks (gameplay consistency, and render/world consistency) did not pr
 ## 1. Precedence
 
 1. [[last-ember-design]] – the product spec. Outranks everything.
-2. [[architecture-rulings]], [[architecture-rulings-2]] and [[architecture-rulings-3]] – binding conflict resolutions (R-001 to R-165), together with the binding scale and economy rulings SAE1–SAE4 ([[architecture-scale-and-economy]] … [[architecture-scale-and-economy-4]]).
+2. [[architecture-rulings]], [[architecture-rulings-2]] and [[architecture-rulings-3]] – binding conflict resolutions (R-001 to R-186; R-178..R-186 = 2.5D view, [[ADR-123-2-5d-view]]), together with the binding scale and economy rulings SAE1–SAE4 ([[architecture-scale-and-economy]] … [[architecture-scale-and-economy-4]]).
 3. `architecture-modules-*` – file ownership, layers, signatures.
 4. Topical specs (state, systems, tuning, monsters, world, render, resources, ui, assets).
 5. Older text.
@@ -26,7 +26,7 @@ Inside one rank the newer and more specific spec wins. A builder who touches an 
 
 ## 2. Reading order by task
 
-Always first: this hub, [[architecture-rulings]], [[architecture-rulings-2]], [[architecture-rulings-3]], [[last-ember-design]]. Cave generator also reads cave-generation-3, cave-generation-4 and scale-and-economy (1–4); tuning and balance read scale-and-economy-2/-3 and economy-simulator (economy-check is history only).
+Always first: this hub, [[architecture-rulings]], [[architecture-rulings-2]], [[architecture-rulings-3]] (incl. §9, 2.5D view), [[last-ember-design]]; render, sprite and asset work also reads [[ADR-123-2-5d-view]] and [[ai-jam-5-asset-formats-25d]]. Cave generator also reads cave-generation-3, cave-generation-4 and scale-and-economy (1–4); tuning and balance read scale-and-economy-2/-3 and economy-simulator (economy-check is history only).
 
 | Task | Read, in order |
 |---|---|
@@ -39,11 +39,11 @@ Always first: this hub, [[architecture-rulings]], [[architecture-rulings-2]], [[
 | Monsters, director | modules-systems, monsters-ai, monsters-ai-2, tuning-2, systems-4 |
 | Tuning values, live tuning | tuning, tuning-2, economy-check |
 | Score and save | scoring-and-save, state-3, modules-core |
-| Render | modules-render, modules-render-2, render, render-2, render-3, resources |
+| Render | modules-render, modules-render-2, render, render-2, render-3, resources; then rulings-3 §9 (R-178..R-186) and ADR-123 (2.5D view) |
 | Audio | modules-render-2, resources, resources-2, resources-3, assets-audio, assets-audio-2 |
 | UI | modules-ui-assets, ui, ui-2, render (HUD passes), host-changes |
 | Host (`main.ts`, `index.html`), HMR | modules-ui-assets-2, host-changes, host-changes-2, resources |
-| Assets: sprites, atlas, loader, packer | assets-style, assets-sprites (1–3), assets-pipeline, assets-pipeline-2, modules-ui-assets |
+| Assets: sprites, atlas, loader (packer SUPERSEDED by D1/D2) | assets-style, assets-sprites (1–3), assets-pipeline, assets-pipeline-2, modules-ui-assets; then rulings-3 §9 and ai-jam-5-asset-formats-25d (delivered tileset and character atlas formats) |
 | Assets: audio files | assets-audio, assets-audio-2, assets-pipeline, resources-2 |
 | Checks and CI wiring | modules-core (checks), modules-ui-assets-2 (wiring), the check section of each module tree |
 | Who builds what, task ids, PR process | [[tasks]], [[tasks-files]] (per-file owner and task) |
@@ -58,7 +58,7 @@ Always first: this hub, [[architecture-rulings]], [[architecture-rulings-2]], [[
 |---|---|---|
 | [[architecture-rulings]] | Last Ember – Architecture Rulings (binding conflict resolutions) | Part 1: precedence, layer rule, R-001 to R-065 (layering, core/state/save, checks, world, rocks) |
 | [[architecture-rulings-2]] | Last Ember – Architecture Rulings (binding conflict resolutions) | Part 2: systems and AI, render and audio, UI/assets/host rulings, scale rulings R-102–R-107, consolidated State additions, owner decisions, gaps |
-| [[architecture-rulings-3]] | Last Ember – Architecture Rulings (3/3) – Scale Follow-ups and Gap Closures | R-108–R-165: cave-generator GAP closures (incl. per-attempt seed derivation), scale follow-ups, accepted known weaknesses, Day-4 calibration assumptions; §7 R-156–R-165 cave generator chain rulings of 2026-10-21 (T3 window, rule 6/7, finalizeCave, fallback pockets, planned depth classes) |
+| [[architecture-rulings-3]] | Last Ember – Architecture Rulings (3/3) – Scale Follow-ups and Gap Closures | R-108–R-165: cave-generator GAP closures (incl. per-attempt seed derivation), scale follow-ups, accepted known weaknesses, Day-4 calibration assumptions; §7 R-156–R-165 cave generator chain rulings of 2026-10-21 (T3 window, rule 6/7, finalizeCave, fallback pockets, planned depth classes); §9 R-178–R-186 2.5D view rulings ([[ADR-123-2-5d-view]]) |
 
 ### Scale and economy rulings (BINDING, 320×240)
 
@@ -184,6 +184,10 @@ Mining and minerals, Beacon hold and phase change, escape (rocks, exit marker, e
 ### Slice C – polish
 
 Devourer, particle table, music layers and stingers, P1/P2 SFX, help pages, fades, auto quality ladder, debug overlay, final art. First chunk: **render** `particles`, `overlay` polish and `glow` extras ([[architecture-modules-render]]), `ai-devourer` ([[architecture-monsters-ai-2]]), P1/P2 audio ([[architecture-assets-audio-2]]). Cut order is guidance only ([[last-ember-production-plan]]).
+
+### Slice D – 2.5D view migration (planned 2026-10-22)
+
+Tasks D0..D15 in [[tasks]] (section 4, slice D), decision [[ADR-123-2-5d-view]]; nothing implemented yet.
 
 ## 6. Pending owner decisions
 

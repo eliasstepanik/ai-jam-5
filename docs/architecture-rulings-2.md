@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Architecture Rulings (binding conflict resolutions)
 description: Part 2 of 2 – binding rulings R-066 to R-107 for systems and monster AI, render and audio, UI/assets/host, and the 320x240 scale rulings; the consolidated State additions list; the owner decisions that need a product or approval answer; and the gaps that no spec covers, each with a proposed owner file and slice.
 tags: [project, ai-jam-5, architecture, last-ember, rulings]
-timestamp: 2026-10-20T23:00:00Z
+timestamp: 2026-10-22T21:00:00+02:00
 ---
 
 # Last Ember – Architecture Rulings (2/2)
@@ -38,7 +38,7 @@ Part 2 of 3. Part 1 (precedence, layer rule, how to apply, severity key, R-001�
 | ID | Sev | Topic | Conflicting statements | RULING | Exact edit | Applies |
 |---|---|---|---|---|---|---|
 | R-084 | M | zoom | [[architecture-host-changes]] §1 `zoom = h / 360` fractional; [[architecture-render]] §4.1 integer `max(1, round(ch / 480))` (render C1) | Integer device zoom (R-018 helpers). Aim maths uses `viewZoomCss(h)`. **Superseded by R-131:** `viewZoomCss(h, dpr)` = `deviceZoom(Math.round(h * dpr)) / dpr`. | host-changes §1 zoom formula → pointer to render §4.1 | first render PR |
-| R-085 | m | `drawTiles` args | render §2 3 args; §3 sketch 4 (C3) | `drawTiles(ctx, s, v, q)`. | render §2 row | render PR |
+| R-085 | m | `drawTiles` args | render §2 3 args; §3 sketch 4 (C3) | `drawTiles(ctx, s, v, q)`. **Superseded/renamed by [[ADR-123-2-5d-view]] (R-180):** `drawTiles` becomes `drawFloor(ctx, s, v, q)` + `drawWallRow(ctx, s, v, ty)`; the 4-arg `q` form carries over to `drawFloor`. | render §2 row | render PR |
 | R-086 | m | memory map | render §2 `drawMemory`; render-2 §5.3 `memoryCanvas(s)` (C4) | `memoryCanvas(s)`. | render §2 row | render PR |
 | R-087 | m | file split | render §2 eyes in entities, glow in light (C5) | `src/render/glow.ts` and `src/render/props.ts` per modules-render §3. | render §2 map | render PR |
 | R-088 | m | glow sprite id | render-2 §3.2 `'eye'`; render-3 §1 hex key (C6) | `drawGlowSprite(ctx, hex: string, x, y, r, alpha): void`. | render-2 §3.2 call | render PR |
@@ -117,7 +117,7 @@ Rejected: `ui.urlSeed` (R-077), `debug.frameMs` (R-101), kinds `telegraph`/`resi
 | G-02 | tuning group for placement quotas (world C17) | gen-local `const`s in `src/world/gen/populate.ts` (caves never regenerate on hot swap, so live tuning gains nothing); slice B |
 | G-03 | UI layout and draw-helper signatures, `STR`/`HELP` shapes (ui G1) | `src/ui/layout.ts`, `draw.ts`, `strings.ts`; slice A, written back to [[architecture-ui]] §2 |
 | G-04 | `findSpawn` return type, `parryLoss` param types | `{ x: number; y: number } \| null`; `(d: number, kind: MonsterKind, mineral: FlameKind)`; systems slice A |
-| G-05 | `atlas.json` must exist before any art (ui G3) | commit the empty seed file in the first assets PR; `pack-atlas` writes the same for zero frames |
+| G-05 | `atlas.json` must exist before any art (ui G3) | commit the empty seed file in the first assets PR; `pack-atlas` writes the same for zero frames. **Superseded by [[ADR-123-2-5d-view]] (R-183):** no packer; `atlas.json` is a hand-kept v2 index listing the two external atlases ([[architecture-assets-pipeline]]) |
 | G-06 | `FLAME` table (`radiusMul`, `flickerFreq`) imported by render from `src/systems/flame.ts`, never specified as an export | `src/systems/flame.ts` exports `FLAME: Record<FlameKind, { radiusMul: number; flickerFreq: number }>` from `T`; slice A |
 | G-07 | registry types `res.hud`, `res.ui.urlRead` (R-060, R-077) | `src/assets/resources.ts` `Resources` type; bump `RES_VERSION`; slice B |
 | G-08 | `escape.check.ts` thresholds beyond the listed ones | systems-escape owner; slice B |
@@ -169,3 +169,4 @@ Closed gaps (now ruled): escape-marker rendering (R-060), math module (R-016), `
 - [[architecture-ui]]
 - [[architecture-ui-2]]
 - [[architecture-scoring-and-save]]
+- [[ADR-123-2-5d-view]]

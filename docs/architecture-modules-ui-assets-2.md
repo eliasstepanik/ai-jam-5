@@ -1,9 +1,9 @@
 ---
 type: architecture
 title: Last Ember – Module Tree – UI, Assets, Host, Tooling (2/2)
-description: Authoritative file list part 2 for Last Ember – host and tooling table (main.ts, merge.ts, check.ts, index.html, vite.config.ts, tsconfig.json, package.json, ci.yml, pack-atlas and check-assets scripts) with exact changes and approval needs, the proposed package.json scripts block, glob-free check wiring for Node 22.18, the asset folder layout with generated files, and the conflicts and gaps table.
+description: Authoritative file list part 2 for Last Ember – host and tooling table (main.ts, merge.ts, check.ts, index.html, vite.config.ts, tsconfig.json, package.json, ci.yml, check-assets and trim-characters scripts; the pack-atlas packer is superseded by ADR-123) with exact changes and approval needs, the proposed package.json scripts block, glob-free check wiring for Node 22.18, the asset folder layout with generated files, and the conflicts and gaps table.
 tags: [project, ai-jam-5, architecture, last-ember, modules]
-timestamp: 2026-10-17T22:30:00Z
+timestamp: 2026-10-22T22:30:00+02:00
 ---
 
 # Last Ember – Module Tree: UI, Assets, Host, Tooling (2/2)
@@ -28,12 +28,13 @@ Part 1: [[architecture-modules-ui-assets]] (layer rule, `game.ts` facade, `src/u
 | `index.html` | EDIT (replace) | Whole file per [[architecture-host-changes-2]] §8: title `Last Ember`, description, `theme-color`, `color-scheme`, inline SVG favicon, `background: #000`, `user-select: none`, `outline: none`, `<noscript>`. PLUS the crosshair rule from [[architecture-ui]] §6 appended to the `canvas { … }` style (C1) | REQUIRED (title, black bg); cursor line REQUIRED (no canvas cursor exists) | low | **APPROVAL** ([[architecture-ui]] §6 says so) |
 | `vite.config.ts` | UNCHANGED | `defineConfig({ base: './' })` stays; default `assetsInlineLimit` fine ([[architecture-host-changes-2]] §9) | – | – | – |
 | `tsconfig.json` | UNCHANGED | `types: ["vite/client"]`, `include` src + `vite.config.ts`. `scripts/` stays outside `include` on purpose (no `@types/node`). `resolveJsonModule` is NOT needed: TS 5.9 `moduleResolution: "bundler"` implies it (verified with `tsc --showConfig`; R-137 downgrades R-045). Add it only for explicitness | OPTIONAL | low | – |
-| `package.json` | EDIT | `check` chain and `pack` script (§2). No dependency added | REQUIRED | low | – |
+| `package.json` | EDIT | `check` chain (§2); the `pack` script is superseded by ADR-123 (no packer). No dependency added | REQUIRED | low | – |
 | `.github/workflows/ci.yml` | UNCHANGED (default) | `npm run check` already runs `check-assets.ts` and `src/checks/all.ts`; job name `ci` stays. OPTIONAL: size-budget step after "Verify dist/index.html…" from [[architecture-host-changes-2]] §9, with the limit corrected to 9 MB (C13) | OPTIONAL | low (wrong limit = red CI on first art PR) | **APPROVAL** (CI change via the user's PR flow) |
-| `scripts/pack-atlas.ts` | NEW | Node built-ins only (`node:fs`, `node:path`, `node:zlib`, `node:crypto`): collect `art/frames/**/*.png` sorted, decode PNG-32 (5 filters), validate against `SPRITES`, shelf-pack 1024 wide with 1 px extrusion + 1 px gap, POT height ≤ 1024, overflow to `atlas-1.png`, encode (filter 0, `deflateSync` level 9, `zlib.crc32` else table), write sheets + `atlas.json`, skip when the source hash is unchanged, `--watch` with 300 ms debounce ([[architecture-assets-pipeline-2]] §1). Must write the empty seed `atlas.json` when there are no frames (G3) | REQUIRED by slice B | medium (PNG codec by hand) | – |
+| ~~`scripts/pack-atlas.ts`~~ | **SUPERSEDED, NOT CREATED** ([[ADR-123-2-5d-view]], R-183, R-184) | The 2.5D view ships two externally delivered atlases (`src/assets/cave_tileset.{png,json}`, `src/assets/characters.{png,json}`) imported as delivered: no packer, no `art/frames/`, no `npm run pack`, no `atlas-0.png`. `atlas.json` is a hand-kept v2 index ([[architecture-assets-pipeline]]). Old v1 packer spec (PNG codec, shelf-pack, `--watch`) is historical only | – | – | – |
+| `scripts/trim-characters.ts` | NEW | Node built-ins only: reads `art/characters-source.json`, rewrites the JSON only, writing the trimmed `src/assets/characters.json` (no PNG codec; `characters.png` is copied as delivered, OD-D6; [[architecture-assets-pipeline]], [[ai-jam-5-asset-formats-25d]]) | REQUIRED by D2 | low | – |
 | `scripts/check-assets.ts` | NEW | Asserts #1–#10 of [[architecture-assets-pipeline-2]] §2 (atlas keys, rects, source hash, PNG IHDR, ogg+m4a pairs or `PENDING_AUDIO`, orphans, containers, budgets §3, loop points, file-name regex). Reads files with `node:fs`; never decodes images or audio | REQUIRED by slice A (must pass on an empty art set) | low | – |
 
-Both scripts import `../src/assets/sprites.ts` and `sounds.ts` (DOM-free, `.ts` extension, erasable syntax only). They are not type-checked by `npm run build` (outside `include`) – accepted ceiling, G5.
+`check-assets.ts` validates both external atlases and the v2 `atlas.json` (not a packer source hash; R-183, [[architecture-assets-pipeline]]). It imports `../src/assets/sprites.ts` and `sounds.ts` (DOM-free, `.ts` extension, erasable syntax only). They are not type-checked by `npm run build` (outside `include`) – accepted ceiling, G5.
 
 ## 2. Proposed `package.json` scripts block
 
@@ -43,13 +44,12 @@ Both scripts import `../src/assets/sprites.ts` and `sounds.ts` (DOM-free, `.ts` 
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "check": "node src/check.ts && node src/checks/all.ts && node scripts/check-assets.ts && node scripts/check-guard.ts",
-    "pack": "node scripts/pack-atlas.ts",
     "zip": "npm run build && cd dist && zip -r ../game.zip ."
   },
 ```
 
 - **Binding: [[architecture-rulings]] R-040.** `scripts/check-guard.ts` holds the determinism grep guard (R-039: no `node:` imports under `src/`; [[architecture-determinism]] §7). The earlier three-step chain (C18) is superseded.
-- Watch mode: `npm run pack -- --watch`. No extra script.
+- No `pack` script and no watch mode (ADR-123, R-183): atlases are delivered pre-built. `scripts/trim-characters.ts` is run by hand (`node scripts/trim-characters.ts`), not wired into `check`.
 - `engines.node` stays `>=22.18`. CI uses Node 24 (`ci.yml:41`), where type stripping is on by default.
 
 ## 3. `src/check.ts` → `src/checks/all.ts` wiring (no globs)
@@ -71,24 +71,25 @@ console.log('checks ok')
 
 ## 4. Asset folder layout
 
-Copied from [[architecture-assets-pipeline]] §2. `GEN` = written by `npm run pack`, committed, never hand-edited or hand-merged.
+Follows [[architecture-assets-pipeline]] §2 as updated by [[ADR-123-2-5d-view]] (R-183, R-184). No generated files, no packer: the sheets are committed as delivered. The v1 layout (`art/frames/`, `atlas-0.png [atlas-1.png]` GEN, `npm run pack`) is superseded.
 
 ```
 art/                                         committed, NOT bundled
-  palettes/global.png zone1.png … zone4.png
-  frames/{player,mon,tile,spec,item,prop,ui,fx}/<SpriteId>_<anim>_<nn>.png   PNG-32 frames
+  palettes/global.png zone1.png … zone4.png   1-px-per-colour strips (unchanged, [[architecture-assets-pipeline]] §2)
+  characters-source.json                     untrimmed source for scripts/trim-characters.ts
 public/
   favicon.png                                only if delivered (C14)
 src/assets/
-  atlas-0.png [atlas-1.png]                  GEN
-  atlas.json                                 GEN – 300-line exception #1 (auto-generated) / #2 (one data blob), ~1070 lines at 1064 frames (R-155)
+  cave_tileset.png  cave_tileset.json        external tileset atlas, as delivered
+  characters.png    characters.json          external character atlas; json trimmed by scripts/trim-characters.ts
+  atlas.json                                 hand-kept v2 index (`external` list), small
   art/title-keyart.png logo.png help-parry.png help-goal.png   hand-delivered screens, ≤ 960×540, ≤ 250 KB each
   audio/<id>.ogg  audio/<id>.m4a             hand-delivered, both formats per sample
   resources.ts sprites.ts sounds.ts placeholders-{actors,world,ui}.ts images.ts   code, ≤ 300 lines each
 ```
 
 - Not committed: raw 1024 px generations, WAV masters, `.psd`/`.aseprite`/`.kra` (shared drive).
-- Two PRs touching `atlas.json`/`atlas-*.png` conflict by design: rebase, rerun `npm run pack`, commit the output ([[architecture-assets-pipeline-2]] §4).
+- Two PRs touching `atlas.json` or a delivered sheet: rebase and keep the newer delivered files; `atlas.json` is a small hand-kept v2 index, no regeneration step (ADR-123, R-183).
 - Budgets: art ≤ 2 MB, audio ≤ 3 MB per format, `dist/` ≤ 9 MB, JS gzip ≤ 150 KB ([[architecture-assets-pipeline-2]] §3).
 - Each asset PR adds a README `AI process` row and a `CHANGELOG.md` `[Unreleased]` entry (AGENTS.md).
 
@@ -121,7 +122,7 @@ src/assets/
 |---|---|---|
 | G1 | signatures of `*Layout`, `text`/`panel`/`button`/`keycap`/`ring`, `STR`/`HELP` shapes, `uiStep` return | implementer defines them in slice A and writes them back into [[architecture-ui]] §2 |
 | G2 | audio step name and signature (`audioStep` in [[architecture-resources]] §3.1/§5) | taken from [[architecture-resources-2]] via [[architecture-modules-render]]; facade calls it last in `update` |
-| G3 | `atlas.json` must exist for `tsc` and Vite before any art | commit `{"version":1,"hash":"<hash of empty set>","sheets":[],"frames":{}}`; `pack-atlas` writes exactly this for zero frames; check-assets #3 then passes |
+| G3 | `atlas.json` must exist for `tsc` and Vite before any art | **Superseded by ADR-123 (R-183).** Commit the hand-kept v2 seed `{"version":2,"hash":"…","sheets":[],"frames":{},"external":[{"image":"cave_tileset.png","json":"cave_tileset.json","kind":"tileset"},{"image":"characters.png","json":"characters.json","kind":"characters"}]}` ([[architecture-assets-pipeline]]); no packer writes it; check-assets validates it against both delivered atlases |
 | G4 | `resolveJsonModule` in `tsconfig.json` not verified (file not read) | verify; add the flag if missing |
 | G5 | `scripts/*.ts` not type-checked | accepted; upgrade path: `@types/node` + `tsconfig.scripts.json` |
 | G6 | `src/assets/art/` and `audio/` are empty at first | globs return `{}`; title draws its procedural backdrop ([[architecture-ui]] §7) |
@@ -152,3 +153,5 @@ src/assets/
 - [[architecture-determinism]]
 - [[architecture-rulings]]
 - [[architecture-rulings-3]]
+- [[ADR-123-2-5d-view]]
+- [[ai-jam-5-asset-formats-25d]]

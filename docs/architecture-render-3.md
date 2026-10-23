@@ -3,10 +3,12 @@ type: architecture
 title: Last Ember – Render Architecture (3/3) – Glow, Beacon Mode, Overlays, Budget, Quality, Sprites, Raycast Seam, Debug
 description: Last Ember rendering part 3 – additive flame glow with core and mantle sprites, Beacon-lit transition, damage and low-HP vignettes, per-pass frame-time budget at 1080p and 1440p, the auto-quality degradation ladder, the drawSprite helper with rotation decision, the wall-shadow raycasting seam and the dev debug overlay.
 tags: [project, ai-jam-5, architecture, last-ember, render]
-timestamp: 2026-10-17T22:00:00Z
+timestamp: 2026-10-22T21:00:00+02:00
 ---
 
 # Last Ember – Render Architecture (3/3)
+
+> **2.5D pivot ([[ADR-123-2-5d-view]], R-178..R-186 in [[architecture-rulings-3]] §9).** Sections 6 (actor facing, scale 1.0, atlas frames) and 7 (raycast stays a STRETCH seam, light is radial only, R-182) are updated. Glow, overlays, budget and quality are unchanged except that the tile pass now draws one floor layer plus one wall band per visible row ([[architecture-render]] §3).
 
 Part 3 of 3. Previous: [[architecture-render]] (frame order, camera), [[architecture-render-2]] (tiles, entities, particles, darkness). Resources: [[architecture-resources]], [[architecture-resources-2]]. UI: [[architecture-ui]], [[architecture-ui-2]]. Hub: [[architecture]]. Spec: [[last-ember-design]]. State: [[architecture-state]], [[architecture-state-2]], [[architecture-state-3]]. Colours: [[architecture-assets-style]] §4.3, §5.
 
@@ -132,13 +134,13 @@ export function drawSprite(
 
 ## 6. Actor facing: authored directions, no sprite rotation
 
-R-154/R-155 supersede the old 16-step actor rotation decision. Player and all monster body/eye frames are 64×64, with eight authored views per action. Select the direction suffix from facing and pass `rot = 0` to `drawSprite`. Do not rotate, mirror, or build a rotated cache for actor art. Monster body and eyes use the same direction and per-kind scale; hold death facing from the first frame. See [[architecture-assets-sprites]] Sections 2 and 5, and [[architecture-render-2]] Section 3.2.
+R-184 supersedes R-154/R-155 and the old 16-step actor rotation decision. Player and monster body frames come from the character atlas: 64×64, pivot (32,32), scale 1.0, eight authored views per animation, per-frame `duration_ms`. Select the direction index from facing (`dirIndex`, `src/core/grid.ts`) and draw the atlas frame with no rotation. Do not rotate, mirror, or build a rotated cache for actor art. Monster body and eye layer use the same direction; hold death facing from the first frame. See [[architecture-assets-sprites]] and [[architecture-render-2]] §3.2–3.3.
 
-Runtime transforms and `quantAngle` remain available for non-actor sprites such as veins and the exit arrow. Actor procedural placeholders generate the selected directional geometry at world scale 1 with rotation 0. Nearest sampling remains enabled for all pixel art.
+Runtime transforms and `quantAngle` remain available for non-actor sprites such as veins and the exit arrow. Actor procedural placeholders (art not loaded) draw the selected directional geometry at scale 1 with rotation 0. Nearest sampling remains enabled for all pixel art.
 
 ## 7. Wall-shadow raycasting seam (STRETCH, not in the core build)
 
-The only seam is the mask stamp in [[architecture-render-2]] §5.3:
+In the 2.5D view the light stays radial only (R-182); a visibility polygon would also have to account for wall height, so it remains an upgrade path. The only seam is the mask stamp in [[architecture-render-2]] §5.3:
 
 ```ts
 // src/render/light.ts
@@ -185,4 +187,7 @@ Raycast version `stampOccluded` (`src/render/occlusion.ts`): (1) `visibilityPoly
 - [[architecture-scale-and-economy-4]]
 - [[architecture-rulings-2]]
 - [[architecture-rulings-3]]
+- [[architecture-modules-render]]
+- [[ADR-123-2-5d-view]]
+- [[ai-jam-5-asset-formats-25d]]
 - [[index]]

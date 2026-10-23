@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Sprite Catalog 3 (Pickups, Props, UI, Key Art, Totals)
 description: Sprite catalog part 3 for Last Ember – resin, plant and mineral pickups, zone decor props, HUD and UI icons, title key art, logo, Help illustrations, itch.io cover, screenshots and favicon, followed by image totals, size estimates, atlas size and the per-priority production order tied to the jam schedule.
 tags: [project, ai-jam-5, architecture, last-ember, assets]
-timestamp: 2026-10-17T20:30:00Z
+timestamp: 2026-10-22T21:00:00+02:00
 ---
 
 # Last Ember – Sprite Catalog 3: Pickups, Props, UI, Key Art, Totals
@@ -22,7 +22,7 @@ Glow colour `#d9861c`. Small refuels less than large (values are gameplay tuning
 
 **Looks:** a lump of hardened tree resin / pitch, like a dark amber teardrop crusted with grit. Body `#8a4a0c` with translucent-looking lighter core `#d9861c` (drawn as flat lighter colour, no gradient), and one bright glint `#ffd27a` that travels across the lump over the 4 frames (shimmer). Large = a fist-sized cluster of 3 lumps on a scrap of bark `#3b2a1e`. Mood: precious, warm, "fuel".
 
-**Prompt:** `{MASTER}, a small lump of dark amber tree resin seen from above, teardrop shape, crusted edges, warm orange core, one tiny bright glint, 16x16 sprite`. Large: `three lumps of dark amber resin on a scrap of bark, 24x24`.
+**Prompt:** `{MASTER}, a small lump of dark amber tree resin in a fixed-south 3/4 front view, teardrop shape, crusted edges, warm orange core, one tiny bright glint, 16x16 sprite`. Large: `three lumps of dark amber resin on a scrap of bark, 24x24`.
 
 **Placeholder:** small = circle r=5 `#d9861c`, outline `#8a4a0c`, 1×1 `#ffd27a` dot at (−2,−2); large = 3 circles r=4 at (−3,0),(3,−2),(2,3). Glow as above.
 
@@ -33,9 +33,9 @@ Glow colour `#b6ff8a` (procedural pickup glow, [[architecture-render-3]] §1).
 
 Dropped (R-138, no State or producer): `item_plant_glow` (glow is procedural) and the `picked`/`wilted` anims (a picked plant leaves State; no decoy plants exist).
 
-**Looks:** a low cave herb seen from above: a rosette of 5–7 fleshy leaves `#2e6b3a`/`#4fa35a` spreading from the centre, with a small pale-green bulb flower in the middle `#b6ff8a` that glows faintly (bioluminescent; the only green light in the cave, so it reads as "heal"). `idle`: leaves sway 1 px, the bloom pulses.
+**Looks:** a low cave herb seen in the fixed-south 3/4 view: a rosette of 5–7 fleshy leaves `#2e6b3a`/`#4fa35a` spreading from the centre, with a small pale-green bulb flower in the middle `#b6ff8a` that glows faintly (bioluminescent; the only green light in the cave, so it reads as "heal"). `idle`: leaves sway 1 px, the bloom pulses.
 
-**Prompt:** `{MASTER}, a small cave herb seen from directly above, rosette of fleshy dark green leaves, a tiny pale glowing green bulb flower in the center, 24x24 sprite`.
+**Prompt:** `{MASTER}, a small cave herb in a fixed-south 3/4 front view, rosette of fleshy dark green leaves, a tiny pale glowing green bulb flower in the center, 24x24 sprite`.
 
 **Placeholder:** 6 ellipses rx=5 ry=2 `#4fa35a` rotated every 60° around the centre at distance 4; circle r=2.5 `#b6ff8a`.
 
@@ -48,7 +48,7 @@ Used three ways (one art, three uses): dropped chunk after mining, the chunk fly
 
 **Looks:** one fist-sized broken crystal chunk on a little host-rock base. Sodium: a blocky pale-yellow cube cluster `#c9a400`/`#ffe14a`, white glint. Copper: a turquoise needle spray on green malachite `#0e7f74`/`#1fd6b8`/`#2f5a3a`. Strontium: two deep red prisms crossed `#7a0a1a`/`#e0182d`, pale pink glint. Each must be identifiable by **shape as well as colour** (cube / spray / prisms) for colour-blind players.
 
-**Prompt:** `{MASTER}, a single <crystals> chunk seen from above, broken off, small rock base, 16x16 icon sprite`.
+**Prompt:** `{MASTER}, a single <crystals> chunk in a fixed-south 3/4 front view, broken off, small rock base, 16x16 icon sprite`.
 
 **Placeholder:** sodium = square 8×8 `#ffe14a`; copper = 3 lines from centre (length 6, at −30°, −90°, −150°) width 2 `#1fd6b8` on circle r=3 `#2f5a3a`; strontium = two 3×9 rectangles crossed at ±30° `#e0182d`. All with 1 px outline `#0a0809`.
 
@@ -58,13 +58,13 @@ Max **1 prop per 12 floor cells**, never in corridors 1 tile wide, never on the 
 
 | SpriteId | px | Frames | Pivot | Solid radius | Zones | Priority | Looks | Placeholder |
 |---|---|---|---|---|---|---|---|---|
-| `prop_stalagmite` | 32×32 | `v:4` (one per zone, frame = zone−1) | (16,16) | 10 (solid) | 1–4 | P2 | a rock spike seen from above: concentric rings narrowing to a pale tip, zone `wall`/`floor-light` colours | circle r=10 zone `wall`, inner r=4 `floor-light` |
+| `prop_stalagmite` | 32×32 | `v:4` (one per zone, frame = zone−1) | (16,16) | 10 (solid) | 1–4 | P2 | a rock spike in the fixed-south 3/4 view: a stone cone with a lit pale tip and a short south-facing shaded side, zone `wall`/`floor-light` colours | circle r=10 zone `wall`, inner r=4 `floor-light` |
 | `prop_bones` | 32×32 | `v:2` | (16,16) | — | 1–4 | P2 | v0 a scattered small animal skeleton `#8c8070`/`#b8ab94`; v1 a lone human-ish skull and long bones (no gore) | 3 lines width 2 `#8c8070` |
 | `prop_roots` | 32×32 | `v:2` | (0,0) | — | 3 | P2 | thick gnarled roots crawling across the floor from a wall `#3b2a1e`/`#5a4030` | 2 curves width 3 `#3b2a1e` |
 | `prop_mushroom` | 16×16 | `v:3` | (8,8) | — | 3–4 | P2 | clusters of small grey-violet mushroom caps `#463a55`/`#6a5a88`, NOT glowing (glow is reserved for pickups/eyes) | 3 circles r=2 `#6a5a88` |
 | `prop_puddle` | 32×32 | `v:2` | (0,0) | — | 2–3 | P2 | a shallow irregular dark water puddle `#13161b` with a `#454e59` rim; the engine adds a faint additive flame reflection when lit | ellipse rx=12 ry=7 `#13161b` |
 
-**Prompt pattern:** `{MASTER}, <looks>, seen from directly above, on transparent background, <px> sprite`.
+**Prompt pattern:** `{MASTER}, <looks>, in a fixed-south 3/4 front view, on transparent background, <px> sprite`.
 
 ## 3. HUD and UI
 
@@ -81,7 +81,7 @@ Multi-state icons below store their states as anim `v` frames in the listed orde
 | `ui_exit-arrow` | 24×24 | 1 (rotated by engine, 16 steps) | (12,12) | P1 | a chunky arrow of daylight `#cfe3ff` with `#0a0809` outline pointing +x, drawn at the screen edge toward the exit during `escape` | triangle (12,0),(−8,−8),(−8,8) `#cfe3ff` |
 | `ui_keycap` | 16×16 | 1 | (8,8) | P1 | a blank worn stone key cap `#3a2e24` with `#5c4a38` top; engine prints the key letter (`E`) on it; the **hold ring** around it is procedural (arc r=12, width 3, `#ff8a1e`, sweep = progress) for mining and Beacon | rect 14×14 `#3a2e24` + text |
 
-**Prompt (UI):** `{MASTER}, game UI icon, <looks>, 16x16 (or size), flat front view icon`. UI icons are the one place a flat front view is allowed (they are not world objects); remove "top-down" from the master block for UI.
+**Prompt (UI):** `{MASTER}, game UI icon, <looks>, 16x16 (or size), flat front view icon`. UI icons are the one place a flat front view is allowed (they are not world objects); remove "fixed-south 3/4 view" from the master block for UI.
 
 ## 4. Screens and promotional art (not in the atlas)
 
@@ -96,7 +96,7 @@ Multi-state icons below store their states as anim `v` frames in the listed orde
 | screenshots | in-game capture | 1920×1080 ×4 | PNG, not bundled | P2 (Day 12–13) | itch.io page: descent in darkness, perfect-parry flare, mineral flame colours, Beacon escape with falling rocks |
 | `favicon` | 32×32 | 32×32 | PNG, ≈1 KB | P2 | browser tab; an ember drop `#ff8a1e` with `#fff4d6` core on transparent |
 
-**Title key art — looks:** illustration variant of the master prompt (style Section 6). A high top-down view into a black cave. In the centre a tiny hooded figure holds up a torch; its orange flame (`#fff4d6` core, `#ff8a1e` mantle) lights a small circle of brown rock floor. At the edge of the light, many pairs of pale violet eyes (`#cbb8ff`) in the dark, one larger set of four eyes at the bottom. In the far top corner, faint coloured crystal glints (yellow, turquoise, red). Bottom third deliberately empty and dark for the menu text; top-centre space for the logo. Mood: lonely, tense, beautiful. **Prompt:** `dark painterly pixel art illustration, high-angle top-down view of a cave, a tiny hooded explorer in the center holding a torch with an orange flame lighting a small circle of rough rock floor, many pairs of pale violet glowing eyes watching from the darkness around the light, faint yellow turquoise and red crystal glints far away, mostly black, empty dark space at the top and bottom, moody, 16:9` + negative prompt minus "glow on background", `--ar 16:9`.
+**Title key art — looks:** illustration variant of the master prompt (style Section 6). A 3/4 view of the cave mouth looking into a black cave. In the centre a tiny hooded figure holds up a torch; its orange flame (`#fff4d6` core, `#ff8a1e` mantle) lights a small circle of brown rock floor. At the edge of the light, many pairs of pale violet eyes (`#cbb8ff`) in the dark, one larger set of four eyes at the bottom. In the far top corner, faint coloured crystal glints (yellow, turquoise, red). Bottom third deliberately empty and dark for the menu text; top-centre space for the logo. Mood: lonely, tense, beautiful. **Prompt:** `dark painterly pixel art illustration, 3/4 view of the cave mouth looking into a dark cave, a tiny hooded explorer in the center holding a torch with an orange flame lighting a small circle of rough rock floor, many pairs of pale violet glowing eyes watching from the darkness around the light, faint yellow turquoise and red crystal glints far away, mostly black, empty dark space at the top and bottom, moody, 16:9` + negative prompt minus "glow on background", `--ar 16:9`.
 
 **Logo — looks:** the words "LAST EMBER" in chunky hand-cut pixel capitals, warm bone `#e8dcc8` with an ember gradient done in 3 flat steps (`#fff4d6`, `#ff8a1e`, `#c2410c`) on the lower half of each letter; the "A" of EMBER replaced by a small flame drop. **Tooling:** FLUX renders text reliably (`the words "LAST EMBER" in chunky pixel letters, ...`). Midjourney often misspells; if so, generate only the flame emblem and hand-letter with a pixel font licensed OFL (credit in README).
 
@@ -126,6 +126,8 @@ For the player, the minimum fallback delivery is `idle-<direction>_00` for each 
 | Non-bundled (itch cover, 4 screenshots) | 5 | |
 
 **Atlas estimate (R-154/R-155):** the full target is now **1064 frames**, including **512 monster frames** and 384 player frames. The 896 actor cells alone need `896 × 68 × 68 = 4 143 104 px²` with the conservative 4 px total padding/extrusion allowance per dimension. This leaves only 51 200 px² in four 1024² sheets before packing waste and the remaining 168 non-actor frames; the full untrimmed catalog therefore exceeds the existing four-sheet ceiling. Pack delivered frames and measure. The current four-sheet and compressed-byte budgets remain limits; full delivery requires an explicit follow-up packing/budget decision. Do not silently omit directions or treat the old size estimate as proof the full catalog fits.
+
+**2.5D update ([[ADR-123-2-5d-view]], R-183, [[ai-jam-5-asset-formats-25d]]):** the four-sheet estimate above is superseded for externally produced art. The terrain row is the zone-agnostic tileset, 94 frames on one sheet ≤1024×1024 and ≤100 KB (the per-zone 96-frame count describes the placeholder/loose-frame spec only). The characters (player, lurker, stalker, devourer) come from one delivered atlas of 1232 frames at 64×64, pivot (32,32), scale 1.0 (R-184), one sheet ≤4096×4096 and ≤600 KB. Both are imported as delivered, with no repack. The placeholder ids (`spec_*`, `item_*`, `ui_*`, `mon_*_eyes`) stay in the project atlas.
 
 ## 7. Production order (per priority, tied to [[last-ember-production-plan]])
 
@@ -158,3 +160,5 @@ For the player, the minimum fallback delivery is `idle-<direction>_00` for each 
 - [[architecture-ui]]
 - [[architecture-rulings-2]]
 - [[architecture-rulings-3]]
+- [[ADR-123-2-5d-view]]
+- [[ai-jam-5-asset-formats-25d]]
