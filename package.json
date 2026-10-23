@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "check": "node src/check.ts && node src/checks/all.ts && node scripts/check-guard.ts",
+    "check": "node src/check.ts && node src/checks/all.ts && node scripts/check-assets.ts && node scripts/check-guard.ts",
     "zip": "npm run build && cd dist && zip -r ../game.zip ."
   },
   "engines": {
