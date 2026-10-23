@@ -123,7 +123,7 @@ export function endRun(s: State, won: boolean): void {
   s.ui.hover = -1
   s.ui.screenAt = s.meta.time
   emit(s, won ? 'win' : 'death', p.x, p.y)
-  commitBest(s) // after result and score exist: sets isNewBest/prevBest, s.best and the stored record
+  commitBest(s, undefined, s.world.depthClass ?? 3) // after result and score exist: sets isNewBest/prevBest, s.best and the stored record (per depth class, R-164)
 }
 
 // architecture-systems-4.md §3.1: lose beats win; the win needs phase 'escape' (B8 makes it reachable).
