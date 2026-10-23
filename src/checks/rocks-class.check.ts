@@ -36,12 +36,12 @@ function plans(cls: number | undefined, escapeT: number, n: number): { sig: stri
 }
 
 // quakeT that stepQuake arms on its first planning step, and the 0.75..1.25 jitter draw behind it (quakeT = u / rate).
-function armed(cls: number | undefined): { quakeT: number; u: (rate: number) => number } {
-  const s = room(cls, 40 - DT)
+function armed(cls: number | undefined, escapeT: number): { quakeT: number; u: (rate: number) => number } {
+  const s = room(cls, escapeT - DT)
   s.director.quakeT = 0
   stepQuake(s, DT)
   ok(s.rocks.length === 1, 'stepQuake committed one rock in the open room (class ' + cls + ')')
-  ok(near(s.director.escapeT, 40), 'escape clock advanced by dt')
+  ok(near(s.director.escapeT, escapeT), 'escape clock advanced by dt')
   return { quakeT: s.director.quakeT, u: (rate) => s.director.quakeT * rate }
 }
 
@@ -77,14 +77,22 @@ export function run(): void {
   ok(plans(4, 40, N).sig === plans(3, 40 * 80 / 105, N).sig, 'class 4 at 40 plans like class 3 at 40 * 80 / 105 (same ramp fraction)')
   ok(p2Start < p2End && c3.big > c0.big, 'class 3 at 40 builds more 2x2 than at escapeT 0 (p2 ramps with escapeT)')
 
-  // (c) quake.ts rate: same seed, same world, same escapeT 40; stepQuake arms quakeT = u / rate with the same jitter u.
-  const a = armed(1), b = armed(3), u = armed(undefined)
-  const rate1 = rateEnd, rate3 = rateStart + (rateEnd - rateStart) * 0.5
-  ok(near(a.u(rate1), b.u(rate3)), 'class 1 and class 3 draw the same jitter, so quakeT * rate matches (rate 1.6 vs 1.1)')
-  const jitter = a.u(rate1)
-  ok(jitter >= 0.75 && jitter <= 1.25, 'jitter in 0.75..1.25: ' + jitter)
-  ok(a.quakeT >= T.rocks.minIntervalS && b.quakeT >= T.rocks.minIntervalS, 'interval above the minimum clamp')
-  ok(near(a.quakeT, jitter / rate1) && near(b.quakeT, jitter / rate3), 'quakeT is jitter / rate per class')
-  ok(a.quakeT < b.quakeT, 'class 1 rocks fall faster than class 3 at escapeT 40 (M2: quake rate ignoring depthClass)')
-  ok(near(u.quakeT, b.quakeT), 'undefined class arms the same interval as class 3')
+  // (c) quake.ts rate: same seed, same world; stepQuake arms quakeT = u / rate with the same jitter u for every class, so
+  // quakeT * rate(class) must be one constant. Run at escapeT 40 and 20: inside the ramp of classes 2..4 at both, class 1 saturates
+  // at 40 (rate 1.6) and sits mid-ramp at 20, so all four classes have distinct rates at both times.
+  const rateOf = (c: number | undefined, t: number): number => rateStart + (rateEnd - rateStart) * rampOf(t, c)
+  for (const t of [40, 20]) {
+    const at = (c: number | undefined) => ({ c, a: armed(c, t), rate: rateOf(c, t) })
+    const [q1, q2, q3, q4, qu] = [at(1), at(2), at(3), at(4), at(undefined)]
+    const jitter = q3.a.u(q3.rate)
+    ok(jitter >= 0.75 && jitter <= 1.25, 'jitter in 0.75..1.25: ' + jitter + ' at escapeT ' + t)
+    for (const q of [q1, q2, q3, q4]) {
+      ok(near(q.a.u(q.rate), jitter), 'class ' + q.c + ' at escapeT ' + t + ': quakeT * rate equals the shared jitter (rate ' + q.rate + ')')
+      ok(q.a.quakeT >= T.rocks.minIntervalS, 'interval above the minimum clamp, class ' + q.c + ' at escapeT ' + t)
+    }
+    ok(q1.rate > q2.rate && q2.rate > q3.rate && q3.rate > q4.rate, 'fixture: class rates strictly fall 1 > 2 > 3 > 4 at escapeT ' + t)
+    ok(q1.a.quakeT < q2.a.quakeT && q2.a.quakeT < q3.a.quakeT && q3.a.quakeT < q4.a.quakeT,
+      'rocks fall faster in shallower classes at escapeT ' + t + ' (M2: quake rate ignoring or collapsing depthClass)')
+    ok(near(qu.a.quakeT, q3.a.quakeT), 'undefined class arms the same interval as class 3 at escapeT ' + t)
+  }
 }

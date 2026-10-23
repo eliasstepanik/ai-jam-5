@@ -218,7 +218,7 @@ function hotSwap(mem: Map<string, string>): void {
   stepScreens(b, inp(['Enter']))
   finish(b, 'class 3 after swap')
   ok((b.world.depthClass ?? 3) === 3 && shown(b) === 300, `class 3 run after a swap starts with Best 300, got class ${String(b.world.depthClass ?? 3)} Best ${shown(b)}`)
-  b.meta.steps = 550 * 60 // 600 - 550 seconds = 50 points, nothing else: below 300, above the stale 10
+  b.player.stats.mineralsUsed = 2 // a lost run scores no time points: 2 * 25 = 50 points, nothing else: below 300, above the stale 10
   endRun(b, false)
   ok(b.result?.parts.total === 50 && b.result.isNewBest === false, `class 3 run scores 50 and is no new Best, got ${String(b.result?.parts.total)} isNewBest ${String(b.result?.isNewBest)}`)
   const stored = JSON.parse(mem.get(keyOf(3)) ?? 'null') as { score: number } | null

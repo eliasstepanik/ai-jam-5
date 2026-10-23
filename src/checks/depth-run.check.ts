@@ -1,6 +1,6 @@
 // Chunked runs keep the depth class (R-164): the real game starts every run through genStep (begin -> stepScreens -> genStep -> startRun), never
 // through a direct startRun. A genStep that drops the class when it calls startRun makes every chunked run a class-3 world; this check fails then.
-// Per class 1..4: the finished world carries the class (absent key = 3) and its tiles equal the directly generated cave of the same seed and class.
+// Per class 1..4: the finished world carries the class (key absent for 3, never written as 3) and its tiles equal the directly generated cave of the same seed and class.
 // Exports run(); no side effect on import; DOM-free; all state is local to each scenario.
 import type { Input } from '../main.ts'
 import type { State } from '../core/types.ts'
@@ -35,8 +35,9 @@ function verify(s: State, c: number, calls: number, how: string): void {
   const tag = how + ' class ' + c
   ok(calls > 0 && calls < MAX_CALLS && s.ui.genPending === '', tag + ': generation finished in ' + calls + ' calls')
   ok(s.meta.screen === 'playing' && s.meta.seedText === SEED, tag + ': run started')
-  ok(c === 3 ? s.world.depthClass === undefined || s.world.depthClass === 3 : s.world.depthClass === c,
-    tag + ': world.depthClass is ' + String(s.world.depthClass))
+  // class 3 keeps the key absent (startRun ponytail: class-3 worlds stay byte-identical), so a written 3 is a failure too
+  if (c === 3) ok(!('depthClass' in s.world), tag + ': class-3 world has no depthClass key (found ' + String(s.world.depthClass) + ')')
+  else ok(s.world.depthClass === c, tag + ': world.depthClass is ' + String(s.world.depthClass))
   const want = caveOf(parseSeed(SEED), c)
   ok(s.world.tilesHash === fnv1a(want.tiles), tag + ': tilesHash equals the direct cave')
   ok(s.world.tiles === want.tiles, tag + ': tiles equal the direct cave')
