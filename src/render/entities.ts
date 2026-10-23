@@ -80,10 +80,10 @@ export function monsterFrame(s: State, m: Monster): [string, number] {
   }
 }
 
-const lit = (s: State, m: Monster): boolean => s.meta.phase === 'escape' || s.debug.noFog || s.debug.reveal || m.seen // body shown: cave lit, or m.seen (stored inLight)
+export const monsterLit = (s: State, m: Monster): boolean => s.meta.phase === 'escape' || s.debug.noFog || s.debug.reveal || m.seen // body shown: cave lit, or m.seen (stored inLight)
 
 function drawMonster(ctx: CanvasRenderingContext2D, s: State, v: View, m: Monster): void {
-  if (!lit(s, m) || !entityInView(v, m.x, m.y)) return
+  if (!monsterLit(s, m) || !entityInView(v, m.x, m.y)) return
   const [anim, frame] = monsterFrame(s, m)
   drawAtlas(ctx, charFrame(m.kind, anim, dirIndex(monsterDirection(s, m)), frame), snap(m.x, v.z) - PIVOT, snap(m.y - MON_FOOT[m.kind], v.z) - PIVOT)
 }
@@ -117,7 +117,7 @@ export function eyeAlpha(_s: State, m: Monster): number {
 // Pass 16 predicate (monsters-ai-2 §6): only unseen shades. Windup/lunge need only tile LOS (a telegraph is never invisible),
 // everything else (idle, dying fade) needs LOS and d <= R + eyeRangeExtraPx. Remembered tiles add nothing: no LOS or range = hidden.
 export function eyeVisible(s: State, m: Monster): boolean {
-  if (lit(s, m)) return false
+  if (monsterLit(s, m)) return false
   const p = s.player
   if (m.ai !== 'windup' && m.ai !== 'lunge' && Math.hypot(m.x - p.x, m.y - p.y) > lightRadius(s) + T.ai.eyeRangeExtraPx) return false
   return lineOfSightPx(s, p.x, p.y, m.x, m.y)

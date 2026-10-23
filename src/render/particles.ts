@@ -9,6 +9,7 @@ import { drawSprite } from '../assets/images.ts'
 import { MINERALS } from '../core/state.ts'
 import { hash2 } from '../core/noise.ts'
 import { currentQuality } from './quality.ts'
+import { drawMist } from './mist.ts'
 import type { View } from './view.ts'
 import { inView } from './view.ts'
 import { WISP_LEAD_MIN_PX, wispAt } from '../systems/escape-wisp.ts'
@@ -122,6 +123,7 @@ function drawWisp(ctx: CanvasRenderingContext2D, s: State, v: View): void {
 // every particle is a pure function of (spawn data, meta.time). One fillStyle per palette bucket.
 export function drawParticles(ctx: CanvasRenderingContext2D, s: State, v: View, pass: 'normal' | 'add'): void {
   if (pass === 'add') drawWisp(ctx, s, v)
+  else drawMist(ctx, s, v) // #83: shadow mist of the monsters, first so sparks and dust lie on top of it
   const p = getResources().particles, want = pass === 'add' ? 1 : 0, now = s.meta.time
   for (let c = 0; c < PAL.length; c++) {
     const col = PAL[c]
