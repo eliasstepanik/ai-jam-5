@@ -5,15 +5,15 @@ import type { Input } from './main.ts'
 import type { State } from './core/types.ts'
 import { getResources } from './assets/resources.ts'
 import { step } from './systems/step.ts'
-import { endLayout, helpClick, helpLayout, hit, pauseLayout, titleLayout } from './ui/layout.ts'
+import { endLayout, helpClick, helpLayout, hit, pauseLayout, titleLayout, titleReady } from './ui/layout.ts'
 import type { Button } from './ui/layout.ts'
 import { platformStep } from './ui/platform.ts'
 
 export type { State } from './core/types.ts'
 export { init } from './core/state.ts'
 export { migrate } from './core/migrate.ts' // idempotent deep default fill (never transforms valid values)
-// ponytail: render is the frame orchestrator as is. R-096 adds drawDebug after it behind res.debug.on; src/ui/debug.ts does not exist yet (slice C), add the call here when it lands.
-export { render } from './render/index.ts'
+import { render as renderFrame } from './render/index.ts'
+import { drawDebug } from './ui/debug.ts'
 
 const QUALITY = ['auto', 'q0', 'q1', 'q2', 'q3'] as const
 
@@ -39,8 +39,7 @@ function devKeys(s: State, input: Input): Input {
 function buttons(s: State, w: number, h: number): Button[] | null {
   switch (s.meta.screen) {
     case 'title': {
-      const im = getResources().images // same `ready` as drawScreen (ui/menus.ts), so a disabled Play cannot be clicked
-      return titleLayout(w, h, s, im.started && im.loaded >= im.total).buttons
+      return titleLayout(w, h, s, titleReady(s, getResources().images)).buttons // same `ready` as drawScreen (ui/menus.ts)
     }
     case 'paused': return pauseLayout(w, h, s).buttons
     case 'dead':
@@ -79,6 +78,12 @@ function pointer(s: State, input: Input): Input {
     return i >= 0 && !(s.meta.screen === 'title' && i === 4)
   })
   return clicks.length === input.clicks.length ? input : { ...input, clicks }
+}
+
+// R-096: renderFrame, then the dev AI overlay LAST. The DEV guard lives here so production builds drop the overlay (ui/debug.ts never reads import.meta.env).
+export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
+  renderFrame(ctx, s, w, h)
+  if (import.meta.env.DEV && getResources().debug.on) drawDebug(ctx, s, w, h)
 }
 
 // R-096: (1) dev toggles, (2) step (runs stepScreens first, world systems only while playing), (3) platformStep.

@@ -8,8 +8,9 @@ import { MINERALS } from '../core/state.ts'
 import { T } from '../core/tuning.ts'
 import type { State } from '../core/types.ts'
 import { MAX_ATTEMPTS } from '../world/generate.ts'
+import { logoGlow } from './anim.ts'
 import { COL, button, keycap, panel, text, textWidth } from './draw.ts'
-import { helpLayout, pauseLayout, titleLayout } from './layout.ts'
+import { helpLayout, pauseLayout, titleLayout, titleReady } from './layout.ts'
 import { drawEnd } from './menus-end.ts'
 import { TAU, fadeIn, fill, focus } from './menu-kit.ts'
 import type { Ctx } from './menu-kit.ts'
@@ -60,8 +61,8 @@ const flashLabel = (s: State): string => (s.settings.reducedFlash ? STR.flashRed
 // --- title ---
 function drawTitle(ctx: Ctx, s: State, w: number, h: number): void {
   const res = getResources(), im = res.images
-  // ready = image preload finished. Gameplay (A30) must pass the same value to titleLayout so the Play click test matches this drawing.
-  const ready = im.started && im.loaded >= im.total
+  // ready = preload finished or 5 s elapsed (titleReady). game.ts hit-tests with the same value so the Play click matches this drawing.
+  const ready = titleReady(s, im)
   const l = titleLayout(w, h, s, ready), u = l.u, t = s.meta.time, red = s.settings.reducedFlash
   backdrop(ctx, s, w, h, u, 1)
   if (s.ui.genPending !== '') { // chunked cave generation: the screen stays 'title' until the run starts
@@ -75,7 +76,7 @@ function drawTitle(ctx: Ctx, s: State, w: number, h: number): void {
   }
   fadeIn(ctx, s, u)
   const lg = l.logo, logo = im.screens.logo
-  glow(ctx, lg.x + lg.w / 2, lg.y + lg.h / 2, 200 * u, red ? 0.25 : 0.2 + 0.1 * Math.sin(t * 1.2))
+  glow(ctx, lg.x + lg.w / 2, lg.y + lg.h / 2, 200 * u, logoGlow(t, red))
   if (logo) {
     ctx.imageSmoothingEnabled = false // inside fadeIn's save/restore
     ctx.drawImage(logo, lg.x, lg.y, lg.w, lg.h)

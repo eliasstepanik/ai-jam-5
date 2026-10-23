@@ -1,7 +1,7 @@
 // L4 render: additive glow pass (pass 17, composite 'lighter', world transform). Spec: docs/architecture-render-3.md §1
 // (layer table) and §4 (flare), architecture-render-2.md §3.3 (swing arc), §5.6 (flame-out ember), R-088 (drawGlowSprite
 // signature). Glow sprites are coloured radial gradients cached in the registry (res.light, key glowKey); this module keeps no
-// state and never writes State. Eyes (drawEyes, pass 16) use the entities.ts helpers; rock glow (B17) is not here.
+// state and never writes State. Eyes (drawEyes, pass 16) use the entities.ts helpers. Rocks have no glow layer (render-3 §1 table); their telegraph is in props.ts.
 import type { MonsterKind, State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
 import { TILE } from '../core/state.ts'
