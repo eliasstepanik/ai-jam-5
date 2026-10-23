@@ -11,9 +11,28 @@ import { fill } from './migrate.ts'
 
 export type Store = Pick<Storage, 'getItem' | 'setItem'>
 
+// Depth classes (R-164): 1..4, default 3. The setting is 1..4 or 'random'.
+// types.ts is at its line cap, so Settings / SettingsRecord do not carry depthClass yet: the optional intersections below add it
+// narrowly and stay valid once types.ts declares the field (number | 'random'). Needs there: Settings.depthClass, SettingsRecord.depthClass,
+// and a default 3 in init()'s settings. Best.depthClass is not stored: the class is part of the storage key.
+export type DepthSetting = number | 'random'
+type WithClass = Settings & { depthClass?: DepthSetting }
+type RecordWithClass = SettingsRecord & { depthClass: DepthSetting }
+
 const BEST_KEY = 'last-ember:best'
 const SETTINGS_KEY = 'last-ember:settings'
+// Best per class: class 3 keeps the pre-class key and format (an old saved Best loads as class 3), the others get a ':<class>' suffix.
+const bestKey = (c: number): string => (c === 3 ? BEST_KEY : BEST_KEY + ':' + c)
 const QUALITY: readonly Settings['quality'][] = ['auto', 'q0', 'q1', 'q2', 'q3']
+
+// Same rule as paramsOf (world/gen/params.ts): round, clamp to 1..4, anything not finite is 3. Local copy: core (L0) must not import world (L1).
+function clampClass(c: unknown): number {
+  if (typeof c !== 'number' || !Number.isFinite(c)) return 3
+  return Math.min(4, Math.max(1, Math.round(c)))
+}
+
+// 'random' stays 'random'; everything else is clamped to 1..4.
+const settingClass = (c: unknown): DepthSetting => (c === 'random' ? c : clampClass(c))
 
 // First failure only: later failures are silent (rule 1 of scoring-and-save §6).
 function fail(s: State): void {
@@ -59,14 +78,18 @@ function parse(raw: string | null, nums: readonly string[]): Record<string, unkn
   return r
 }
 
-export function loadBest(s: State, store?: Store): void {
-  const r = parse(read(s, BEST_KEY, store), ['score', 'depth', 'seconds', 'mineralsUsed', 'hpLeft'])
+// No depthClass argument: legacy behaviour, class 3, s.best is only replaced when a valid record exists. With an explicit class,
+// s.best becomes that class's Best, or null when it has none (s.best is a one-class mirror, so a stale Best must not survive a class switch).
+export function loadBest(s: State, store?: Store, depthClass?: number): void {
+  const c = clampClass(depthClass)
+  const r = parse(read(s, bestKey(c), store), ['score', 'depth', 'seconds', 'mineralsUsed', 'hpLeft'])
   if (r) s.best = fill(DEFAULT_BEST, r) as Best
+  else if (depthClass !== undefined) s.best = null
 }
 
 // Sets settings.loaded even when nothing was stored or storage failed: the once-per-session guard of screens.ts.
 export function loadSettings(s: State, store?: Store): void {
-  const set = s.settings
+  const set: WithClass = s.settings
   s.settings.loaded = true
   const r = parse(read(s, SETTINGS_KEY, store), ['volume'])
   if (!r) return
@@ -77,17 +100,22 @@ export function loadSettings(s: State, store?: Store): void {
   set.lastSeed = f.lastSeed
   set.reducedFlash = f.reducedFlash
   set.quality = QUALITY.includes(f.quality) ? f.quality : 'auto'
+  set.depthClass = settingClass(r.depthClass) // outside fill(): fill would reject the string 'random' against a numeric default; missing -> 3
 }
 
 export function saveSettings(s: State, store?: Store): void {
-  const set = s.settings
-  const rec: SettingsRecord = { v: 1, volume: set.volume, muted: set.muted, lastSeed: set.lastSeed, reducedFlash: set.reducedFlash, quality: set.quality }
+  const set: WithClass = s.settings
+  const rec: RecordWithClass = {
+    v: 1, volume: set.volume, muted: set.muted, lastSeed: set.lastSeed, reducedFlash: set.reducedFlash, quality: set.quality,
+    depthClass: settingClass(set.depthClass),
+  }
   write(s, SETTINGS_KEY, rec, store)
 }
 
 // scoring-and-save §6 rule 4: better = higher score, or equal score in fewer seconds. Always fills result.prevBest/isNewBest;
 // the in-memory best updates even when the write fails.
-export function commitBest(s: State, store?: Store): void {
+// depthClass (default 3, clamped) picks the storage key; s.best must be that class's Best (see loadBest).
+export function commitBest(s: State, store?: Store, depthClass = 3): void {
   const r = s.result
   if (!r) return
   const prev = s.best
@@ -100,5 +128,5 @@ export function commitBest(s: State, store?: Store): void {
     seedText: r.seedText, at: new Date().toISOString(),
   }
   s.best = best
-  write(s, BEST_KEY, best, store)
+  write(s, bestKey(clampClass(depthClass)), best, store)
 }
