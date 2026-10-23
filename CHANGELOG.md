@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - During the escape run a small glowing ember wisp with a sparkle trail floats ahead of you along the real walkable route to the exit and re-routes around fallen rocks. It is drawn calmer with reduced flashes and thinner on low quality.
 - Developer panel (DEV -> Navigate): depth class buttons (Shallow, Short, Standard, Deep). During a run they restart the same seed in the chosen class, keeping debug settings; on the title they set the class for the next run.
+- WebAudio audio engine in `src/audio/`: mixer with music, ambience, sfx and ui groups and ducking, music state machine with a danger layer, SFX triggers for all fx events, voice limits and stealing.
+- Procedural synth recipes for all 43 sound ids, used as fallback while samples are missing.
+- ComfyUI sample generator `npm run gen-audio` (`scripts/gen-audio.ts`, `tools/audio-manifest.json`, `tools/comfy/lastember_post.json`): 4 seed candidates per sound with ACE-Step 1.5 turbo.
 - Depth classes: Shallow, Short, Standard and Deep, picked on the title screen with the new Depth row (Enter or Space cycles, Left and Right step). Shallow caves are smaller and Deep caves larger, and the choice is remembered. Standard is unchanged: the same seeds give the same caves as before.
 - Each depth class keeps its own best score, and the end screen shows the class you played.
 - The share link carries `&depth=N` when the class is not Standard, and opening such a link selects that class. In the escape, rocks fall faster in Shallow caves and ramp up more slowly in Deep ones (ramp of 40, 55, 80 and 105 s from Shallow to Deep).
@@ -64,6 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Audio sample pair is Ogg Opus + MP3 (the plan said Ogg + m4a). Audio assets live in `src/assets/audio`, and `scripts/check-assets.ts` validates the new pair.
+- `game.ts` calls `audioStep` after `platformStep`.
 - Title screen: the layout moved to make room for the Depth row.
 - Title screen: Play is enabled once the images are loaded or 5 s have passed, whichever comes first (the label, the progress bar and the click test follow the same rule).
 - World, entities and props are drawn for the 2.5D look at scale 1.0. The old top-down sprite sheets only remain for monster eyes and UI art. The image loader preloads the tileset and the character sheets before the title screen is ready.
