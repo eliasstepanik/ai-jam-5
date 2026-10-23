@@ -11,6 +11,8 @@ import { actorRows, drawRowEntities } from './entities.ts'
 import { drawEyes, drawGlow } from './glow.ts'
 import { drawDarkness } from './light.ts'
 import { memoryCanvas } from './memory.ts'
+import { drawBeaconMode, drawFlashes, drawVignettes } from './overlay.ts'
+import { consumeEvents, drawParticles } from './particles.ts'
 import { drawRocks } from './props.ts'
 import { currentQuality, frameBegin, passMark, qualityTick } from './quality.ts'
 import { drawFloor, drawWallRow } from './tiles.ts'
@@ -28,7 +30,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
     drawScreen(ctx, s, w, h)
     return
   }
-  // ponytail: pass 2 consumeEvents(s) and passes 13 and 18 drawParticles are B18 (render/particles.ts, not yet created).
+  consumeEvents(s) // pass 2: spawn cosmetic particles from new fx events (cursor lives in the render registry)
   const q = currentQuality(s)
   const v = makeView(ctx, s, w, h) // pass 4; reads the dpr from the host transform, so it runs before the clear resets it
   ctx.setTransform(1, 0, 0, 1, 0, 0) // pass 3
@@ -48,20 +50,23 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
     drawRowEntities(ctx, s, v, ty)
   }
   drawRocks(ctx, s, v) // pass 12: telegraph shadows and falling boulders above every row; landed rocks sit in the buckets
+  drawParticles(ctx, s, v, 'normal') // pass 13: dust and grit under the darkness
   passMark('ents')
   // Pass 14. memoryCanvas runs once per frame, before the darkness, and hands over the up-to-date explored-tile canvas (C4).
   // drawDarkness leaves identity transform, source-over, alpha 1 and smoothing off on every path.
   drawDarkness(ctx, s, v, q, memoryCanvas(s))
-  // Pass 15 drawBeaconMode (B17, render/overlay.ts) is skipped until it exists.
+  drawBeaconMode(ctx, s, v) // pass 15: warm multiply once the Beacon is lit; sets its own identity transform and resets composite and alpha
   passMark('dark')
   worldXf(ctx, v)
   ctx.globalCompositeOperation = 'lighter' // 16-17: additive only, never reveals bodies the darkness hid
   drawEyes(ctx, s, v)
   drawGlow(ctx, s, v, q)
+  drawParticles(ctx, s, v, 'add') // pass 18: sparks above the darkness
   ctx.globalCompositeOperation = 'source-over'
   ctx.globalAlpha = 1
   passMark('glow')
-  // Pass 19 drawFlashes and drawVignettes (B17, render/overlay.ts) are skipped until they exist.
+  drawFlashes(ctx, s, v, q) // pass 19: white-out, damage flash, flare wash, then the vignettes (device px, identity transform)
+  drawVignettes(ctx, s, v, q)
   passMark('ovl')
   // Pass 20/21: screen space in CSS px; composite and alpha are clean, so the HUD and panels start from defaults.
   screenXf(ctx, v)

@@ -53,6 +53,12 @@ export type TitleLayout = {
   soundHint: Pt // bottom-right baseline, right-aligned
 }
 
+// Play is enabled once the preload finished or 5 s of State time passed, whichever is first (architecture-resources §6).
+// `meta.time` (State) is the clock so render stays pure; `im` is the ImageStore, typed structurally to keep layout free of asset imports.
+export const TITLE_READY_S = 5
+export const titleReady = (s: State, im: { started: boolean; loaded: number; total: number }): boolean =>
+  (im.started && im.loaded >= im.total) || s.meta.time > TITLE_READY_S
+
 // ready = false while assets load: Play is disabled and shows the progress bar (assets live outside State).
 export function titleLayout(w: number, h: number, _s: State, ready = true): TitleLayout {
   const u = uiScale(w, h)

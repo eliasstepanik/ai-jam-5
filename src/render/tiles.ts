@@ -13,6 +13,7 @@ import type { Quality } from './quality.ts'
 import type { View } from './view.ts'
 import { ctx2d, newCanvas } from './light.ts'
 import { CHUNK_TILES, chunkKey, tileKey } from './keys.ts'
+import { tilesetOf } from './tileset.ts'
 import type { Tileset } from './tileset.ts'
 import { CHUNK_PX, FACE_H, HASH, WALLS_H, faceVariant, paintFloor, paintWalls } from './tiles-paint.ts'
 
@@ -86,13 +87,6 @@ export function tileCache(s: State): TileCache | null {
     t.key = key
   }
   return t
-}
-
-// DEFAULT: the tileset sheet is the first external sheet (`res.images.sheets[0]`, cave_tileset.png; charatlas.ts uses index 1). Until it
-// has decoded (or when images.ts does not load it yet) the paint helpers draw flat per-zone fills; `images.gen` rebuilds chunks later.
-function tilesetOf(): Tileset | null {
-  const im = getResources().images, img = im.sheets[0]
-  return img && im.sheetState[0] === 'ok' ? { image: img } : null
 }
 
 // Zone tint (OD-D1): the chunk's majority zone colour at alpha 0.25 over what is already painted. ponytail: 'source-atop' (a plain blend

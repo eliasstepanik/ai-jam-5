@@ -3,6 +3,7 @@
 // The loaded atlas image is NOT loaded here: the caller (images.ts / tiles.ts) owns the decoded sheet and passes it in as `Tileset.image`.
 import tilesetJson from '../assets/cave_tileset.json'
 import { faceKind } from '../core/grid.ts'
+import { getResources } from '../assets/resources.ts'
 
 type FrameRec = { readonly frame: { readonly x: number; readonly y: number; readonly w: number; readonly h: number }; readonly anchor: readonly number[] }
 
@@ -22,6 +23,13 @@ const pad2 = (n: number): string => (n < 10 ? '0' : '') + n
 // Frame rect and anchor `[x, y, w, h, ax, ay]` in sheet pixels. The returned tuple is shared: do not mutate it.
 export function tileFrame(name: string): [number, number, number, number, number, number] {
   return FRAMES.get(name) ?? NO_FRAME
+}
+
+// DEFAULT: the tileset sheet is the first external sheet (`res.images.sheets[0]`, cave_tileset.png; charatlas.ts uses index 1). Until it
+// has decoded (or when images.ts does not load it yet) callers draw flat fills (tiles.ts) or the spec_boulder sprite (props.ts).
+export function tilesetOf(): Tileset | null {
+  const im = getResources().images, img = im.sheets[0]
+  return img && im.sheetState[0] === 'ok' ? { image: img } : null
 }
 
 // Wall cap for the open-neighbour mask N1 E2 S4 W8: `cap_00` .. `cap_15` (`capName(0b0101) === 'cap_05'`).
