@@ -3,7 +3,7 @@ import { DEPTH_MAX } from '../core/score.ts'
 import type { State } from '../core/types.ts'
 import { COL, button, panel, text } from './draw.ts'
 import { endLayout } from './layout.ts'
-import { STR, clock } from './strings.ts'
+import { STR, clock, depthName } from './strings.ts'
 import { countUp, pulse } from './anim.ts'
 import { fadeIn, fill, focus } from './menu-kit.ts'
 import type { Ctx } from './menu-kit.ts'
@@ -30,9 +30,14 @@ export function drawEnd(ctx: Ctx, s: State, w: number, h: number): void {
   }
   const rows: [string, string][] = [[STR.rowDepth, `${r.depth} / ${DEPTH_MAX} · ${STR.zoneWord} ${r.zone}`], [STR.rowTime, clock(r.seconds)], [STR.rowMinerals, String(r.mineralsUsed)]]
   if (r.won) rows.push([STR.rowHearts, String(r.hpLeft)]) // dead run omits the hearts row (endLayout shifts the rest up)
+  rows.push([STR.depthRow, depthName(s.world.depthClass)]) // depth class of the run (R-164); undefined reads as Standard
+  // endLayout sizes l.rows for 3/4 rows and sits the divider just under them. The extra row would hit the divider at the
+  // 30 ref-px pitch, so rows start 12 higher and use a 24 pitch: won 224..320 (divider 344), dead 224..296 (divider 314).
+  const r0 = l.rows[0]
   rows.forEach(([lb, v], i) => {
-    text(ctx, lb, l.rows[i].label.x, l.rows[i].label.y, 16, u, COL.dim)
-    text(ctx, v, l.rows[i].value.x, l.rows[i].value.y, 18, u, COL.text, { align: 'right', bold: true })
+    const y = r0.label.y + Math.round((i * 24 - 12) * u)
+    text(ctx, lb, r0.label.x, y, 16, u, COL.dim)
+    text(ctx, v, r0.value.x, y, 18, u, COL.text, { align: 'right', bold: true })
   })
   fill(ctx, COL.border, l.divider.x0, l.divider.y, l.divider.x1 - l.divider.x0, u)
   text(ctx, STR.score, l.score.label.x, l.score.label.y, 20, u, COL.text, { bold: true })

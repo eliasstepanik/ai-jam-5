@@ -119,6 +119,7 @@ export type World = {
   pendingSig: number // int, +1 on every rock commit, landing, shrink and cancel
   beaconLitAt: number // meta.time when the Beacon was lit; 0 = not yet
   veinGen: number // int, +1 each time a vein is mined away; part of the walls chunk cache key (render/keys.ts tileKey)
+  depthClass?: number // 1..4 (R-164), undefined means 3
 }
 
 export type MonsterAi = 'ring' | 'stalk' | 'windup' | 'lunge' | 'recover' | 'stunned' | 'dying'
@@ -226,6 +227,7 @@ export type Settings = {
   loaded: boolean // loadSettings() ran this page session
   reducedFlash: boolean
   quality: 'auto' | 'q0' | 'q1' | 'q2' | 'q3' // render override (R-142)
+  depthClass?: number | 'random' // 1..4 or 'random' (R-164), undefined means 3
 }
 export type Debug = {
   reveal: boolean; god: boolean; showPaths: boolean; freezeAi: boolean; overlay: boolean

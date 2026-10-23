@@ -4,14 +4,26 @@
 import { getResources } from '../assets/resources.ts'
 import { SEED_MAX_LEN } from '../core/seed.ts'
 import type { State } from '../core/types.ts'
+import { paramsOf } from '../world/gen/params.ts'
 import { STR } from './strings.ts'
 
 // DEFAULT (OD-5b, public share URL not decided): empty = build the link from the page's own origin + pathname.
 // Set the game's public URL (e.g. the itch.io page) here to pin it, because an itch iframe has a different origin than the page.
 const SHARE_BASE = ''
 
-// <origin+pathname>?seed=<encoded seedText> (architecture-determinism §5, architecture-ui-2 §3). Pure, so it is checkable.
-export const shareUrl = (origin: string, path: string, seedText: string): string => origin + path + '?seed=' + encodeURIComponent(seedText)
+// <origin+pathname>?seed=<encoded seedText>[&depth=N] (architecture-determinism §5, architecture-ui-2 §3, R-164). Pure, so it is checkable.
+// The depth parameter is added only for a class other than 3, so class-3 links stay exactly as they were.
+export const shareUrl = (origin: string, path: string, seedText: string, depthClass?: number): string => {
+  const d = paramsOf(depthClass).depthClass
+  return origin + path + '?seed=' + encodeURIComponent(seedText) + (d === 3 ? '' : '&depth=' + d)
+}
+
+// A ?depth= value as a class 1..4 (rounded, clamped by paramsOf), or null when absent or not a number. Pure.
+export function parseDepth(v: string | null): number | null {
+  if (v === null || v.trim() === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? paramsOf(n).depthClass : null
+}
 
 // Seeds in the URL are lower-case [a-z0-9-], at most SEED_MAX_LEN characters (R-029).
 const norm = (v: string): string => v.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, SEED_MAX_LEN)
@@ -41,15 +53,15 @@ const seedOf = (s: State): string => s.result?.seedText || s.meta.seedText
 
 // The text that goes on the clipboard. Plain 'Last Ember seed <seed>' when there is no usable http(s) location (Node, file://, workers).
 // ponytail: an itch iframe may not forward ?seed= from the page URL; the end screen shows the seed and the title screen has a seed field.
-function shareText(seed: string): string {
-  if (SHARE_BASE) return shareUrl(SHARE_BASE, '', seed)
-  if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol)) return shareUrl(location.origin, location.pathname, seed)
+function shareText(seed: string, depthClass?: number): string {
+  if (SHARE_BASE) return shareUrl(SHARE_BASE, '', seed, depthClass)
+  if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol)) return shareUrl(location.origin, location.pathname, seed, depthClass)
   return STR.shareText + ' ' + seed
 }
 
 // Starts the clipboard write. Result is reported through res.ui.copyResult only, never into State from a callback.
 function copy(s: State): void {
-  const res = getResources(), text = shareText(seedOf(s))
+  const res = getResources(), text = shareText(seedOf(s), s.world.depthClass ?? 3)
   const clip = typeof navigator === 'undefined' ? undefined : navigator.clipboard
   if (!clip) { res.ui.copyResult = 'failed'; return }
   try {
@@ -66,6 +78,9 @@ export function platformStep(s: State): void {
     res.ui.urlRead = true
     const v = readSeed()
     if (v !== null) s.ui.seedInput = v
+    // ?depth= sets the class for the next run start (screens.ts resolves it via depthOf). Runs after step, so loadSettings has already run.
+    const d = typeof location === 'undefined' ? null : parseDepth(new URLSearchParams(location.search).get('depth'))
+    if (d !== null) s.settings.depthClass = d
   }
   // R-030: the address bar follows the current run. Stateless: write only when it differs, so a run start costs one replaceState.
   // ponytail: reads location every step (cheap). Upgrade: remember the last runId in the registry if profiling ever shows it.

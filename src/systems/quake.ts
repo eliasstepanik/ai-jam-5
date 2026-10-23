@@ -4,10 +4,11 @@
 import type { State } from '../core/types.ts'
 import { randRange } from '../core/rng.ts'
 import { T } from '../core/tuning.ts'
+import { paramsOf } from '../world/gen/params.ts'
 import { commitRock, cosmeticRockLand, landRock, planRockFall } from './rocks.ts'
 
-// rocks §2: rocks per second, linear from rateStart to rateEnd over rampS, then flat.
-const rate = (e: number): number => T.rocks.rateStart + (T.rocks.rateEnd - T.rocks.rateStart) * Math.min(1, e / T.rocks.rampS)
+// rocks §2: rocks per second, linear from rateStart to rateEnd over rampS (per depth class, R-164; class 3 = T.rocks.rampS), then flat.
+const rate = (s: State): number => T.rocks.rateStart + (T.rocks.rateEnd - T.rocks.rateStart) * Math.min(1, s.director.escapeT / paramsOf(s.world.depthClass).rampS)
 
 export function stepQuake(s: State, dt: number): void {
   const d = s.director
@@ -23,7 +24,7 @@ export function stepQuake(s: State, dt: number): void {
   if (bfs > 0) { d.quakeT = dt; return } // amortise: never plan in a step that ran a landing BFS
   const plan = planRockFall(s)
   if (plan) {
-    d.quakeT = Math.max(T.rocks.minIntervalS, randRange(s, 'gameplay', 0.75, 1.25) / rate(d.escapeT))
+    d.quakeT = Math.max(T.rocks.minIntervalS, randRange(s, 'gameplay', 0.75, 1.25) / rate(s))
     commitRock(s, plan)
     return
   }

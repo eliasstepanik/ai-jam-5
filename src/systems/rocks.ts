@@ -6,6 +6,7 @@ import { rand } from '../core/rng.ts'
 import { T } from '../core/tuning.ts'
 import { getExitDist, getPendingMask, getSolid, isBeaconRoom } from '../world/caches.ts'
 import { circleRectOverlap } from '../world/collide.ts'
+import { paramsOf } from '../world/gen/params.ts'
 import { idx, inMap, TILE } from '../world/grid.ts'
 import { downhill, playerSources, routeDist } from '../world/route.ts'
 import { hurtPlayerHp } from './combat.ts'
@@ -37,8 +38,9 @@ function rectOf(s: State, r: Rock): [number, number, number, number] {
   return [x0, y0, x0 + r.size * TILE, y0 + r.size * TILE]
 }
 
-function p2(e: number): number {
-  return T.rocks.p2Start + (T.rocks.p2End - T.rocks.p2Start) * Math.min(1, e / T.rocks.rampS)
+// P2 ramp length is per depth class (R-164; class 3 = T.rocks.rampS = 80).
+function p2(s: State): number {
+  return T.rocks.p2Start + (T.rocks.p2End - T.rocks.p2Start) * Math.min(1, s.director.escapeT / paramsOf(s.world.depthClass).rampS)
 }
 
 // Cheap filters of rocks §3.3 for a candidate footprint.
@@ -85,7 +87,7 @@ export function planRockFall(s: State): RockPlan | null {
   if (p0 < 0) return null // no sources, or every source stands in a shadow: rocks pause (rocks-2 §4)
   const route = downhill(s, E, p0, T.rocks.lookahead), L = route.length
   const routeSet = new Set(route), fullRoute = new Set(downhill(s, E, p0, Infinity))
-  const px = p0 % w, py = Math.floor(p0 / w), e = s.director.escapeT
+  const px = p0 % w, py = Math.floor(p0 / w)
   const cands: Cand[] = []
   for (let c = 0; c < CANDIDATES; c++) {
     const u0 = rand(s, 'gameplay'), u1 = rand(s, 'gameplay'), u2 = rand(s, 'gameplay'), u3 = rand(s, 'gameplay'), u4 = rand(s, 'gameplay')
@@ -105,7 +107,7 @@ export function planRockFall(s: State): RockPlan | null {
       tx = px + Math.round(r * Math.cos(a))
       ty = py + Math.round(r * Math.sin(a))
     }
-    const size: 1 | 2 = u3 < p2(e) ? 2 : 1
+    const size: 1 | 2 = u3 < p2(s) ? 2 : 1
     const tiles = footprint(s, tx, ty, size)
     if (!tiles || !placeable(s, tx, ty, size, tiles)) continue
     const onRoute = tiles.some((i) => routeSet.has(i)) ? 1 : 0

@@ -7,9 +7,11 @@
 import type { Input } from '../main.ts'
 import type { FxEventKind, Screen, State } from '../core/types.ts'
 import { HELP_PAGES, toast } from '../core/state.ts'
-import { SEED_MAX_LEN } from '../core/seed.ts'
+import { hashSeed } from '../core/rng.ts'
+import { parseSeed, SEED_MAX_LEN } from '../core/seed.ts'
 import { loadBest, loadSettings, saveSettings } from '../core/storage.ts'
 import { emit } from './fx.ts'
+import { paramsOf } from '../world/gen/params.ts'
 import { genStep, runSeedText } from './run.ts'
 
 // ponytail: DT mirrors the fixed step in main.ts (stepScreens has no dt parameter, S2 signature); if the host step changes, import it from a shared tuning constant
@@ -19,7 +21,7 @@ const END_LOCK_S = 0.5 // scoring-and-save §7
 const CONFIRM_S = 2 // ui-2 §2 quit confirm time (s)
 const POUCH_FULL = 'Pouch full' // R-134
 const BEACON_DENIED = 'The Beacon needs more light' // systems-2 §5
-const ITEMS: Record<Screen, number> = { title: 5, help: 0, playing: 0, paused: 5, dead: 4, won: 4 }
+const ITEMS: Record<Screen, number> = { title: 6, help: 0, playing: 0, paused: 5, dead: 4, won: 4 }
 
 const ui = (s: State, kind: FxEventKind): void => emit(s, kind, s.cam.x, s.cam.y)
 
@@ -32,12 +34,40 @@ function go(s: State, to: Screen): void {
   s.ui.screenAt = s.meta.time
 }
 
+// Depth class of the run for `seedText` (R-164): settings.depthClass 1..4 (paramsOf: round, clamp, default 3), or 'random' = 1 + hashSeed(seed, 'cave:depth') % 4,
+// so the seed still decides the run. Pure in (settings, seed text): begin, genStep and HMR mid-generation all resolve the same class, so no State field.
+// ponytail: the % 4 mapping is the architect-default reading of R-164 (it gives no class mapping); change it here only.
+const depthOf = (s: State, seedText: string): number => {
+  const d = s.settings.depthClass
+  return paramsOf(d === 'random' ? (hashSeed(parseSeed(seedText), 'cave:depth') % 4) + 1 : d).depthClass
+}
+
 // Chunked generation (SAE1 §4): the title stays up, genStep runs one attempt per update.
 function begin(s: State, seedText: string): void {
   go(s, 'title')
   s.ui.genPending = runSeedText(seedText)
   s.ui.genAttempt = 0
 }
+
+// One generation unit in the class of the pending seed. Invariant: s.best is the Best of the class of s.world (class 3 before any run), so a
+// cancelled generation leaves it intact. When a run starts in another class, s.best is reloaded for it before the first playing step (R-164).
+function generate(s: State): void {
+  const was = s.world.depthClass ?? 3
+  genStep(s, depthOf(s, s.ui.genPending))
+  const now = s.world.depthClass ?? 3
+  if (s.ui.genPending === '' && now !== was) loadBest(s, undefined, now)
+}
+
+// Title depth row (focus 4): set the class, save it, and show that class's Best. Applies at the next run start only (R-164); a running cave never changes.
+// ponytail: 'random' is a stored setting only (from an old save or a link); the row shows and cycles classes 1..4, 'random' counts as 3 until the first change.
+function setDepth(s: State, to: number, sound: FxEventKind): void {
+  s.settings.depthClass = to
+  saveSettings(s)
+  loadBest(s, undefined, to)
+  ui(s, sound)
+}
+
+const shownClass = (s: State): number => paramsOf(typeof s.settings.depthClass === 'number' ? s.settings.depthClass : undefined).depthClass
 
 function seedKey(code: string): string {
   if (/^Key[A-Z]$/.test(code)) return code.slice(3).toLowerCase()
@@ -60,7 +90,8 @@ function activate(s: State, item: number): void {
     if (item === 3) { set.reducedFlash = !set.reducedFlash; saveSettings(s); ui(s, 'uiConfirm'); return }
     if (item === 1) { ui(s, 'uiConfirm'); go(s, 'help'); return }
   }
-  if (sc === 'title') { ui(s, 'uiConfirm'); begin(s, s.ui.seedInput); return } // Play (0) and Seed field (4)
+  if (sc === 'title' && item === 4) { setDepth(s, (shownClass(s) % 4) + 1, 'uiConfirm'); return } // Depth row: 1 -> 2 -> 3 -> 4 -> 1
+  if (sc === 'title') { ui(s, 'uiConfirm'); begin(s, s.ui.seedInput); return } // Play (0) and Seed field (5)
   if (sc === 'paused') {
     if (item === 0) { ui(s, 'uiConfirm'); go(s, 'playing'); return }
     if (s.ui.confirmT > 0) { ui(s, 'uiBack'); go(s, 'title'); return } // Quit, second press: run abandoned
@@ -80,10 +111,10 @@ export function stepScreens(s: State, input: Input): boolean {
   if (!s.settings.loaded) { loadSettings(s); loadBest(s) } // once per page session; loadSettings sets the flag even when storage fails
   const u = s.ui, k = input.pressed, sc = s.meta.screen
   if (u.genPending !== '') {
-    if (k.has('Escape')) { u.genPending = ''; u.genAttempt = 0; ui(s, 'uiBack') } else genStep(s)
+    if (k.has('Escape')) { u.genPending = ''; u.genAttempt = 0; ui(s, 'uiBack') } else generate(s)
     return false // the world's first step is the next update, as after a synchronous startRun
   }
-  const seedFocus = sc === 'title' && u.cursor === 4
+  const seedFocus = sc === 'title' && u.cursor === 5
   if (k.has('KeyM') && !seedFocus) { s.settings.muted = !s.settings.muted; saveSettings(s) } // every screen (ui.md §7); 'm' types in the seed box
   if (sc === 'playing') {
     // systems-2 §4: mining emits mineDone a=-1 (pouch full); this machine owns the toast (R-003). An event of the last step has step === meta.steps here.
@@ -117,6 +148,11 @@ export function stepScreens(s: State, input: Input): boolean {
   if (u.cursor === 2 && (sc === 'title' || sc === 'paused')) { // Sound row: volume in 0.1 steps (resources-3 §3)
     const dv = (k.has('ArrowRight') || k.has('Equal') ? 1 : 0) - (k.has('ArrowLeft') || k.has('Minus') ? 1 : 0)
     if (dv !== 0) { s.settings.volume = Math.min(1, Math.max(0, Math.round(s.settings.volume * 10 + dv) / 10)); saveSettings(s); ui(s, 'uiMove') }
+  }
+  if (sc === 'title' && u.cursor === 4) { // Depth row: ArrowLeft/Right (Minus/Equal) step -1/+1, clamped to 1..4, no wrap
+    const dv = (k.has('ArrowRight') || k.has('Equal') ? 1 : 0) - (k.has('ArrowLeft') || k.has('Minus') ? 1 : 0)
+    const to = Math.min(4, Math.max(1, shownClass(s) + dv))
+    if (dv !== 0 && to !== shownClass(s)) setDepth(s, to, 'uiMove')
   }
   if (sc === 'title' && !seedFocus && k.has('KeyH')) { ui(s, 'uiConfirm'); go(s, 'help'); return false }
   if (sc === 'paused') {

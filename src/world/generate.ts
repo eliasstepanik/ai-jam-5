@@ -1,7 +1,9 @@
 import type { CaveCore, CaveResult, GenOpts } from '../core/types.ts'
 import { MAP_W, MAP_H } from '../core/state.ts'
 import { hashSeed, makeRnd } from '../core/rng.ts'
-import { buildMacro, carveSpine, macroCellOf, MW, MH, CELL_FLOOR_MIN, BEACON_DIST_BAND } from './gen/macro.ts'
+import { buildMacro, carveSpine, macroCellOf, cellActive, MW, MH, CELL, CELL_FLOOR_MIN } from './gen/macro.ts'
+import { PARAMS, paramsOf } from './gen/params.ts'
+import type { CaveParams } from './gen/params.ts'
 import { noiseFill, smooth, widen, fixDiagonals } from './gen/ca.ts'
 import { largestRegion } from './gen/region.ts'
 import { placeEntrance, placeBeacon } from './gen/places.ts'
@@ -13,20 +15,23 @@ import { validateCave } from './validate.ts'
 export type { CaveCore, CaveResult, CaveStats, GenOpts, SpawnHint } from '../core/types.ts'
 export const MAX_ATTEMPTS = 8
 
+// GenOpts lives in core/types.ts (at its line cap), so the depth class rides on this intersection; paramsOf rounds, clamps and defaults to 3.
+export type CaveOpts = GenOpts & { depthClass?: number }
+
 export const caveSeed = (seed: number, a: number): number =>
   a === 0 ? seed >>> 0 : hashSeed(seed >>> 0, 'cave:' + a)
 
 // One terrain attempt (passes 0-9); populate, validateCave and fallbackCave complete it in generateCave below.
-export function carveCore(cs: number): CaveCore | null {
+export function carveCore(cs: number, p: CaveParams = PARAMS[3]): CaveCore | null {
   const w = MAP_W, h = MAP_H, stream = (tag: string) => makeRnd(hashSeed(cs, 'cave:' + tag))
-  const layout = buildMacro(stream('macro'), w, h), raw = new Uint8Array(w * h)
+  const layout = buildMacro(stream('macro'), w, h, p), raw = new Uint8Array(w * h)
   noiseFill(raw, w, h, stream('fill'), layout.M)
   const g = smooth(raw, w, h)
   carveSpine(g, w, h, layout, stream('spine'))
   widen(g, w, h)
   fixDiagonals(g, w, h)
   const region = largestRegion(g, w, h)
-  if (region.keep < 16000) return null
+  if (region.keep < Math.round(16000 * p.cols * p.rows / 48)) return null // 16000 at 8x6; 16000 per 48 cells otherwise
 
   const cells = new Int32Array(MW * MH)
   let minX = w, maxX = -1, minY = h, maxY = -1, hasEntrance = false
@@ -37,15 +42,16 @@ export function carveCore(cs: number): CaveCore | null {
     cells[c]++
     if (y < 18 && c === layout.root) hasEntrance = true
   }
-  if (maxX - minX + 1 < 0.9 * w || maxY - minY + 1 < 0.9 * h || !hasEntrance) return null
-  if (cells.some((n) => n < CELL_FLOOR_MIN)) return null
+  // bbox is 90 % of the active area (w = 8 cells, h = 6 cells for class 3); the cell floor skips masked cells, which stay wall.
+  if (maxX - minX + 1 < 0.9 * (p.cols * CELL) || maxY - minY + 1 < 0.9 * (p.rows * CELL) || !hasEntrance) return null
+  if (cells.some((n, c) => cellActive(c, p) && n < CELL_FLOOR_MIN)) return null
 
   const entrance = placeEntrance(g, w, h, layout.root, stream('entrance'))
   if (entrance < 0) return null
-  const loops = pickLoopPairs(g, w, h, entrance, layout, stream('tunnels'))
+  const loops = pickLoopPairs(g, w, h, entrance, layout, stream('tunnels'), p)
   if (loops.loops < 2) return null
   const B = placeBeacon(g, w, h, entrance)
-  if (!B || B.beaconDist < BEACON_DIST_BAND[0] || B.beaconDist > BEACON_DIST_BAND[1]) return null
+  if (!B || B.beaconDist < p.bdLo || B.beaconDist > p.bdHi) return null
 
   // The work grid is 1=wall; CaveCore.t uses the core contract 0='#', 1='.', 2=','.
   const t = new Uint8Array(g.length), beaconMask = new Uint8Array(g.length)
@@ -74,11 +80,12 @@ export function finalizeCave(res: CaveResult): CaveResult {
 }
 
 // CG2 §6: up to MAX_ATTEMPTS attempts, each pure in (seed, a); the first valid one wins, else the fixed ring (fallbackCave validates it).
-export function generateCave(seed: number, opts: GenOpts = {}): CaveResult {
+export function generateCave(seed: number, opts: CaveOpts = {}): CaveResult {
+  const p = paramsOf(opts.depthClass)
   for (let a = 0; a < MAX_ATTEMPTS && !opts.forceFail; a++) {
-    const cs = caveSeed(seed, a), core = carveCore(cs)
+    const cs = caveSeed(seed, a), core = carveCore(cs, p)
     const res = core && populate(core, cs, a, opts)
-    if (res && validateCave(res).ok) return finalizeCave(res)
+    if (res && validateCave(res, p).ok) return finalizeCave(res)
   }
-  return finalizeCave(fallbackCave(seed))
+  return finalizeCave(fallbackCave(seed, p))
 }
