@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Depth classes: Shallow, Short, Standard and Deep, picked on the title screen with the new Depth row (Enter or Space cycles, Left and Right step). Shallow caves are smaller and Deep caves larger, and the choice is remembered. Standard is unchanged: the same seeds give the same caves as before.
+- Each depth class keeps its own best score, and the end screen shows the class you played.
+- The share link carries `&depth=N` when the class is not Standard, and opening such a link selects that class. In the escape, rocks fall faster in Shallow caves and ramp up more slowly in Deep ones (ramp of 40, 55, 80 and 105 s from Shallow to Deep).
 - The win path. Mine ore veins: hold E within 40 px of a vein for 2 s (3 energy per second) to take its pieces, up to 3 of each mineral in the pouch. Moving, rolling or running out of energy cancels, and a full pouch shows "Pouch full". The mined ore disappears from the wall at once.
 - The Beacon: hold E within 36 px for 5 s (4 energy per second) to light it and start the escape. It needs at least 40 energy (below that it shows "The Beacon needs more light" and costs nothing). Moving, releasing E or losing the flame cancels the hold. Lighting it floods the cave with light and kills all monsters without kill credit.
 - Minerals and resin: 1-3 select a mineral, F tosses it into the flame, G shakes it off, and small and large resin can be tossed too.
@@ -35,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Title screen: the layout moved to make room for the Depth row.
 - Title screen: Play is enabled once the images are loaded or 5 s have passed, whichever comes first (the label, the progress bar and the click test follow the same rule).
 - World, entities and props are drawn for the 2.5D look at scale 1.0. The old top-down sprite sheets only remain for monster eyes and UI art. The image loader preloads the tileset and the character sheets before the title screen is ready.
 - Only the primary mouse button counts as a click, and the right-click menu is suppressed on the canvas.
