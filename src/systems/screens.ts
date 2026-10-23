@@ -18,6 +18,7 @@ const CHANGE_LOCK_S = 0.25 // ui.md §5 rule 6
 const END_LOCK_S = 0.5 // scoring-and-save §7
 const CONFIRM_S = 2 // ui-2 §2 quit confirm time (s)
 const POUCH_FULL = 'Pouch full' // R-134
+const BEACON_DENIED = 'The Beacon needs more light' // systems-2 §5
 const ITEMS: Record<Screen, number> = { title: 5, help: 0, playing: 0, paused: 5, dead: 4, won: 4 }
 
 const ui = (s: State, kind: FxEventKind): void => emit(s, kind, s.cam.x, s.cam.y)
@@ -88,6 +89,7 @@ export function stepScreens(s: State, input: Input): boolean {
     // systems-2 §4: mining emits mineDone a=-1 (pouch full); this machine owns the toast (R-003). An event of the last step has step === meta.steps here.
     // ponytail: scanned once per call; a pause/resume right after the event can repeat the toast. The text dedupe on this line hides the repeat inside TOAST_S.
     if (s.fx.events.some((e) => e.kind === 'mineDone' && e.a === -1 && e.step === s.meta.steps) && !u.toasts.some((t) => t.text === POUCH_FULL)) toast(s, POUCH_FULL)
+    if (s.fx.events.some((e) => e.kind === 'denied' && e.step === s.meta.steps) && !u.toasts.some((t) => t.text === BEACON_DENIED)) toast(s, BEACON_DENIED)
     if (k.has('Blur') || ((k.has('Escape') || k.has('KeyP')) && s.meta.time - u.screenAt >= CHANGE_LOCK_S)) go(s, 'paused')
     return s.meta.screen === 'playing'
   }

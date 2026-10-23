@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Tossing minerals (1-3 select, F toss, G shake off) and small/large resin.
 - Mining: hold E within 40 px of an ore vein for 2 s (3 energy per second) to take its pieces, up to 3 of each mineral in the pouch. Moving, rolling or running out of energy cancels. A full pouch shows "Pouch full". The mined ore disappears from the wall at once (`world.veinGen` is part of the wall chunk key).
+- The Beacon: hold E within 36 px for 5 s (4 energy per second) to light it and start the escape. It needs at least 40 energy to start (below that it shows "The Beacon needs more light" and costs nothing). Moving, releasing E or losing the flame cancels the hold. Lighting it floods the cave with light and kills all monsters without kill credit.
 - Best score and settings (volume, mute, reduced flash, last seed) persist in localStorage (`src/core/storage.ts`). A blocked or full store shows "Saving disabled in this browser" once and the game carries on.
 - D slice 2.5D view: fixed-south three-quarter view over the unchanged square grid. Wall caps get 48 px south faces, and walls, monsters, the player and props are depth-sorted row by row.
 - Cave tileset `src/assets/cave_tileset.png` and `src/assets/cave_tileset.json`, used for floor and walls. Ore veins are baked on south-facing walls.
