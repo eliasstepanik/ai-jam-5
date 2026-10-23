@@ -1,5 +1,5 @@
 // L4 render: tile passes 5a/5b (2.5D, ADR-123). Derived per-run maps (zone, wall mask, inner corners, face variant) and the 8x8-tile
-// chunk cache of TWO canvases per chunk: `floor` 256x256 and `walls` 256x304 (48 px south overhang), R-179/R-180/R-181.
+// chunk cache of TWO canvases per chunk: `floor` 256x256 and `walls` 256x640 (eight independent complete wall rows).
 // Spec: docs/architecture-render-2.md §2.1-2.2, architecture-modules-render.md (tiles.ts row). Paint helpers: tiles-paint.ts.
 // Maps and chunk canvases live in res.tiles (resources.ts); this module keeps no state and never writes State. No rng, no random calls.
 // The caller (render/index.ts) sets worldXf. Pass 5 is `drawFloor` + `drawWallRow` per row (the plan's `drawTileRow`).
@@ -15,9 +15,9 @@ import { ctx2d, newCanvas } from './light.ts'
 import { CHUNK_TILES, chunkKey, tileKey } from './keys.ts'
 import { tilesetOf } from './tileset.ts'
 import type { Tileset } from './tileset.ts'
-import { CHUNK_PX, FACE_H, HASH, WALLS_H, faceVariant, paintFloor, paintWalls } from './tiles-paint.ts'
+import { CHUNK_PX, FACE_H, HASH, WALL_ROW_H, WALLS_H, faceVariant, paintFloor, paintWalls } from './tiles-paint.ts'
 
-const LRU_CAP = 40 // render-2 §2.2: 40 x (256 + 304) x 256 x 4 B = 22 MB
+const LRU_CAP = 24 // 24 x (256 + 640) x 256 x 4 B = 22 MB; complete row strips preserve the cache budget
 const BUILD_QUOTA = 4 // chunks built per frame; the rest are painted straight into the main context
 const TINT: readonly (string | null)[] = [null, null, '#b8c4d6', '#b4d0b0', '#c4b0d8'] // OD-D1 DEFAULT on: zone 1 none; index = zone
 const TINT_ALPHA = 0.25
@@ -119,10 +119,9 @@ function reset(cv: HTMLCanvasElement, w: number, h: number): CanvasRenderingCont
   return g
 }
 
-// Builds chunk (cx, cy); a full cache recycles the evicted pair (no canvas allocation in steady state). The walls canvas paints the tile
-// rows of the chunk plus the two rows above it: a face hangs 48 px = rows r+1 and 16 px of r+2, so those faces reach into this chunk's
-// first rows and every band of `walls` is complete on its own (DEFAULT; render-2 §2.2 repaints only the chunk's own first-row faces).
-// The bottom 48 px overhang holds the faces of the last rows as specified; drawWallRow samples it for the last map row only.
+// Builds independent cap+face strips for each tile row. A flattened wall canvas cannot be interleaved with actors:
+// a foreground cap must hide the actor behind it, while a background face must stay behind the actor in front.
+// A full cache recycles the evicted pair; chunk canvases remain bounded by LRU_CAP.
 function buildChunk(s: State, t: TileCache, ts: Tileset | null, cx: number, cy: number, k: number): Chunk {
   let ch: Chunk | undefined
   if (t.lru.length >= LRU_CAP) {
@@ -134,7 +133,10 @@ function buildChunk(s: State, t: TileCache, ts: Tileset | null, cx: number, cy: 
   const floor = ch?.floor ?? newCanvas(CHUNK_PX, CHUNK_PX), walls = ch?.walls ?? newCanvas(CHUNK_PX, WALLS_H)
   const gf = reset(floor, CHUNK_PX, CHUNK_PX), gw = reset(walls, CHUNK_PX, WALLS_H)
   paintFloor(gf, s, t, ts, cx, cy, ox, oy)
-  paintWalls(gw, s, t, ts, cx * CHUNK_TILES, (cx + 1) * CHUNK_TILES, cy * CHUNK_TILES - 2, (cy + 1) * CHUNK_TILES, ox, oy, true)
+  for (let row = 0; row < CHUNK_TILES; row++) {
+    const ty = cy * CHUNK_TILES + row
+    paintWalls(gw, s, t, ts, cx * CHUNK_TILES, (cx + 1) * CHUNK_TILES, ty, ty + 1, ox, ty * 32 - FACE_H - row * WALL_ROW_H, true)
+  }
   tint(gf, s, t, cx, cy)
   tint(gw, s, t, cx, cy)
   const made = { floor, walls }
@@ -169,28 +171,20 @@ export function drawFloor(ctx: CanvasRenderingContext2D, s: State, v: View, _q: 
   }
 }
 
-// Pass 5b, once per visible tile row `ty`: the band [ty * 32, ty * 32 + 32) of every visible chunk's walls canvas (caps, faces, ores),
-// so the actors of that row interleave with it (R-180). A chunk without canvases is painted directly, clipped to the band, without the
-// inner-corner cutouts (destination-out would erase the floor beneath).
-// ponytail: those corners look square until the chunk is built (at most a few frames). Upgrade: build into a scratch canvas.
-// The last map row also draws the 48 px south overhang (R-181): the faces of the row(s) above spill below it and no later row repaints
-// them. Other rows must not (the next row's band draws that area). In the walls canvas the overhang is band `sy + 32` for 48 px (<= 304).
+// Pass 5b: draw the complete wall of ground row ty before that row's actors. Raising the wall by FACE_H aligns
+// its south base with collision; drawing its full height here lets the next ground row's caps occlude actors to the north.
+// ponytail: uncached rows skip corner cutouts because destination-out would erase the main canvas floor. Upgrade: a row scratch canvas.
 export function drawWallRow(ctx: CanvasRenderingContext2D, s: State, v: View, ty: number): void {
   const t = tileCache(s)
   if (!t || ty < 0 || ty >= s.world.h) return
-  const ts = tilesetOf(), cy = ty >> 3, sy = (ty & 7) * 32, bh = ty === s.world.h - 1 ? 32 + FACE_H : 32
+  const ts = tilesetOf(), cy = ty >> 3, sy = (ty & 7) * WALL_ROW_H
   ctx.imageSmoothingEnabled = false
   for (let cx = v.tx0 >> 3; cx <= v.tx1 >> 3; cx++) {
     const ch = t.chunks.get(chunkKey(cx, cy))
     if (ch) {
-      ctx.drawImage(ch.walls, 0, sy, CHUNK_PX, bh, cx * CHUNK_PX, ty * 32, CHUNK_PX, bh)
-      continue
+      ctx.drawImage(ch.walls, 0, sy, CHUNK_PX, WALL_ROW_H, cx * CHUNK_PX, ty * 32 - FACE_H, CHUNK_PX, WALL_ROW_H)
+    } else {
+      paintWalls(ctx, s, t, ts, cx * CHUNK_TILES, (cx + 1) * CHUNK_TILES, ty, ty + 1, 0, 0, false)
     }
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(cx * CHUNK_PX, ty * 32, CHUNK_PX, bh)
-    ctx.clip()
-    paintWalls(ctx, s, t, ts, cx * CHUNK_TILES, (cx + 1) * CHUNK_TILES, ty - 2, ty + 1, 0, 0, false)
-    ctx.restore()
   }
 }

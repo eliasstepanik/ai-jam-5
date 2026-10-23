@@ -12,7 +12,7 @@ import { animLen, animLoop, charFrame, drawAtlas, flameAnchor, swappedFrame } fr
 import type { AtlasFrame, FlameMaterial } from './charatlas.ts'
 import { ctx2d, newCanvas } from './light.ts'
 
-export const PLAYER_FOOT = 24 // R-180: px below the pivot
+export const PLAYER_FOOT = 24 // authored sole offset below the atlas pivot; State position is the ground contact
 const PIVOT = 32 // source px of the 64x64 frame pivot (R-184)
 const FRAME_PX = 64
 const WALK_MIN_SPEED = 10 // render-2 §3.3: walk anim above this speed (px/s)
@@ -68,7 +68,7 @@ const SETS: Record<'escape' | 'lit' | 'unlit', TorchSet> = {
 // Animation, frame index and atlas direction of the player body. Priority death > roll > hurt > swing > mining > walk > idle.
 // DEFAULT: swing and mining have art for the lit torch only; in the escape or with an unlit torch they fall through to walk/idle.
 // DEFAULT: death uses the retained facing (State keeps no start-of-death velocity), so the direction holds from the first frame.
-function playerPose(s: State): { anim: string; frame: number; dir: number } {
+export function playerPose(s: State): { anim: string; frame: number; dir: number } {
   const p = s.player, esc = s.meta.phase === 'escape', ms = s.meta.time * 1000, speed = Math.hypot(p.vx, p.vy)
   const set = SETS[esc ? 'escape' : p.energy > 0 ? 'lit' : 'unlit']
   const dir = dirIndex(directionOf(esc && speed > WALK_MIN_SPEED ? Math.atan2(p.vy, p.vx) : p.facing))
@@ -119,7 +119,7 @@ function flashCanvas(res: Resources, f: AtlasFrame, mat: FlameMaterial): HTMLCan
 // Pass 11 body. Lit torch frames with a flame are drawn palette-swapped (R-185). Hit flash: a second draw of the same frame,
 // white-tinted, alpha hitFlash / flashS (render-2 §3.3).
 export function drawPlayerBody(ctx: CanvasRenderingContext2D, s: State, z: number): void {
-  const p = s.player, f = playerFrame(s), x = snap(p.x, z) - PIVOT, y = snap(p.y, z) - PIVOT
+  const p = s.player, f = playerFrame(s), x = snap(p.x, z) - PIVOT, y = snap(p.y - PLAYER_FOOT, z) - PIVOT
   const res = getResources(), mat = f.flame ? flameMaterial(s) : 'base'
   if (mat === 'base') drawAtlas(ctx, f, x, y)
   else ctx.drawImage(swappedFrame(res, f, mat), x, y)
@@ -130,11 +130,11 @@ export function drawPlayerBody(ctx: CanvasRenderingContext2D, s: State, z: numbe
   }
 }
 
-// World position of the torch tip: player + (flame anchor of the displayed frame - [32, 32]); frames without a baked anchor use
+// World torch tip: ground position minus the sole offset, plus the atlas flame anchor relative to its pivot. Frames without an anchor use
 // charatlas' (-12, -11) fallback. The escape has no torch: the player centre is returned and drawGlow skips the effect there.
 export function torchTip(s: State): { x: number; y: number } {
   const p = s.player
   if (s.meta.phase === 'escape') return { x: p.x, y: p.y }
   const a = flameAnchor(playerFrame(s))
-  return { x: p.x + a[0] - PIVOT, y: p.y + a[1] - PIVOT }
+  return { x: p.x + a[0] - PIVOT, y: p.y - PLAYER_FOOT + a[1] - PIVOT }
 }

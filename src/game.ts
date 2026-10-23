@@ -8,20 +8,19 @@ import { step } from './systems/step.ts'
 import { endLayout, helpClick, helpLayout, hit, pauseLayout, titleLayout, titleReady } from './ui/layout.ts'
 import type { Button } from './ui/layout.ts'
 import { platformStep } from './ui/platform.ts'
+import { render as renderFrame } from './render/index.ts'
+import { beginDebugUpdate, debugAvailable, debugInput, drawDebug, endDebugUpdate } from './ui/debug.ts'
 
 export type { State } from './core/types.ts'
 export { init } from './core/state.ts'
 export { migrate } from './core/migrate.ts' // idempotent deep default fill (never transforms valid values)
-import { render as renderFrame } from './render/index.ts'
-import { drawDebug } from './ui/debug.ts'
 
 const QUALITY = ['auto', 'q0', 'q1', 'q2', 'q3'] as const
 
-// Dev only (R-133): Backquote toggles the debug panel flag, Shift+Digit1..6 the debug flags and the quality override (R-132).
+// Legacy Shift+Digit1..6 shortcuts (R-132/R-133), enabled in a developer session. Panel keys live in debugInput.
 // Returns the Input step() sees: a copy without the Digit1..6 edges when a Shift chord fired, so they do not also select a mineral or type into the seed field.
 function devKeys(s: State, input: Input): Input {
   const p = input.pressed
-  if (p.has('Backquote')) getResources().debug.on = !getResources().debug.on
   if (!input.keys.has('ShiftLeft') && !input.keys.has('ShiftRight')) return input
   const g = s.debug
   if (p.has('Digit1')) g.reveal = !g.reveal
@@ -80,15 +79,19 @@ function pointer(s: State, input: Input): Input {
   return clicks.length === input.clicks.length ? input : { ...input, clicks }
 }
 
-// R-096: renderFrame, then the dev AI overlay LAST. The DEV guard lives here so production builds drop the overlay (ui/debug.ts never reads import.meta.env).
+// Render the game, then developer overlays. Access is development-only unless the exported build opts in with ?debug=1.
 export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
   renderFrame(ctx, s, w, h)
-  if (import.meta.env.DEV && getResources().debug.on) drawDebug(ctx, s, w, h)
+  if (debugAvailable()) drawDebug(ctx, s, w, h)
 }
 
 // R-096: (1) dev toggles, (2) step (runs stepScreens first, world systems only while playing), (3) platformStep.
 // ponytail: step 4 (audioStep) is absent because src/audio does not exist yet (slice B); add `try { audioStep(s, input) } catch (e) { warnOnce(e) }` after platformStep then.
 export function update(s: State, input: Input, dt: number): void {
-  step(s, pointer(s, import.meta.env.DEV ? devKeys(s, input) : input), dt)
+  const dev = debugAvailable()
+  const next = dev ? debugInput(s, devKeys(s, input)) : input
+  if (dev) beginDebugUpdate(s)
+  step(s, pointer(s, next), dt)
   platformStep(s)
+  if (dev) endDebugUpdate(s)
 }

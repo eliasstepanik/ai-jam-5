@@ -22,7 +22,7 @@ export function stepBeacon(s: State, it: Intent, dt: number, eStart: number): vo
     return
   }
   p.beaconHold += dt
-  p.energy = Math.max(T.beacon.minEnergyE, p.energy - T.beacon.costPerS * dt) // never below the floor once started
+  if (!s.debug.freezeTorch) p.energy = Math.max(T.beacon.minEnergyE, p.energy - T.beacon.costPerS * dt) // never below the floor once started
   if (p.beaconHold + 1e-9 >= T.beacon.holdS) lightBeacon(s) // R-127: 300 steps of 1/60 reach 5 s
 }
 

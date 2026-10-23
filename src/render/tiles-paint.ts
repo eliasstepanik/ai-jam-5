@@ -12,8 +12,9 @@ import type { Tileset } from './tileset.ts'
 
 export const HASH = 35 // '#'
 export const CHUNK_PX = CHUNK_TILES * TILE // 256
-export const FACE_H = 48 // a wall face hangs 48 world px below its cap (R-178)
-export const WALLS_H = CHUNK_PX + FACE_H // 304: walls canvas height, the south overhang of the last tile row (R-181)
+export const FACE_H = 48 // wall height above the collision ground plane
+export const WALL_ROW_H = TILE + FACE_H // complete cap + face; never split a wall around an actor
+export const WALLS_H = CHUNK_TILES * WALL_ROW_H // 640: eight independent 80 px wall-row strips
 const CELL = 24 // floor pattern cell (R-179)
 const FACE_SALT = 0x9e37 // DEFAULT: salt for the face variant
 
@@ -41,7 +42,7 @@ export function paintFloor(c: CanvasRenderingContext2D, s: State, t: TileCache, 
   }
 }
 
-// Wall layer for the tiles [tx0, tx1) x [ty0, ty1) (clamped to the map), tile (tx, ty) at (tx * 32 - ox, ty * 32 - oy). Order per tile:
+// Wall layer for [tx0, tx1) x [ty0, ty1), raised FACE_H above its collision footprint. The face ends at the tile's south ground edge. Order per tile:
 // cap, face (bit S set: floor to the south) into the south cell, then per inner bit k `inner_cutout_k` (destination-out) and `inner_rim_k`;
 // south-facing ores last (R-186). `cut` false (direct fallback into the main context) skips the cutouts and rims: destination-out would
 // erase the floor underneath. ponytail: inner corners look square for the few frames a chunk is over the build quota; a scratch canvas fixes it.
@@ -53,7 +54,7 @@ export function paintWalls(c: CanvasRenderingContext2D, s: State, t: TileCache, 
     for (let tx = xa; tx < xb; tx++) {
       const i = ty * w + tx
       if (tiles.charCodeAt(i) !== HASH) continue
-      const x = tx * TILE - ox, y = ty * TILE - oy, m = t.mask[i]
+      const x = tx * TILE - ox, y = ty * TILE - oy - FACE_H, m = t.mask[i]
       if (!ts) {
         const z = (t.zone[i] || 1) as Zone
         c.fillStyle = CAP_FILL[z]
@@ -78,7 +79,7 @@ export function paintWalls(c: CanvasRenderingContext2D, s: State, t: TileCache, 
   for (const v of s.veins) {
     const tx = v.tile % w, ty = (v.tile - tx) / w
     if (tx < xa || tx >= xb || ty < ya || ty >= yb || v.stand !== v.tile + w || !(t.mask[v.tile] & 4)) continue
-    const x = tx * TILE - ox, y = ty * TILE - oy + TILE
+    const x = tx * TILE - ox, y = ty * TILE - oy - FACE_H + TILE
     if (ts) { blit(c, ts, oreName(v.mineral, v.id), x + TILE / 2, y + FACE_H / 2); continue }
     c.fillStyle = ORE_FILL[v.mineral]
     c.fillRect(x + 10, y + 14, 12, 20)

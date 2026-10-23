@@ -9,9 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Developer animation labels now include the player's actual displayed clip and frame, with the toggle also accessible from the Player tab.
+- Aligned character feet and raised wall art with the collision ground plane. South wall faces now end at the collision boundary, and complete foreground walls hide actors standing to their north.
+
 - Removed stray wall-edge strips inside solid cave walls by using the seamless interior cap instead of fill variants containing a south-edge lip. Cached terrain refreshes on hot reload.
 
 ### Added
+
+- Developer enemy control: force the nearest enemy in clear sight to leap at the player immediately, bypassing windup/cooldown and resuming frozen AI. Uses the real attack collision, parry and damage behavior.
+- Developer navigation: safe teleports to the cave entrance and Beacon, a white-floor/black-wall minimap beside health, and a player-orbiting direct-bearing arrow with selectable Beacon/exit targets.
+- Clickable developer tools (F2/backquote or DEV): fast noclip and speed slider, frozen torch drain and remaining-duration slider, extinguish/refill, per-type enemy spawns, infinite HP, kill player, visual fog toggle, performance statistics, collision/hurt volumes, and enemy AI/animation labels. Available in development or with `?debug=1` in exported builds.
 
 - The win path. Mine ore veins: hold E within 40 px of a vein for 2 s (3 energy per second) to take its pieces, up to 3 of each mineral in the pouch. Moving, rolling or running out of energy cancels, and a full pouch shows "Pouch full". The mined ore disappears from the wall at once.
 - The Beacon: hold E within 36 px for 5 s (4 energy per second) to light it and start the escape. It needs at least 40 energy (below that it shows "The Beacon needs more light" and costs nothing). Moving, releasing E or losing the flame cancels the hold. Lighting it floods the cave with light and kills all monsters without kill credit.

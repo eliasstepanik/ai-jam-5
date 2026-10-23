@@ -33,7 +33,7 @@ export function stepMinerals(s: State, it: Intent): void {
 export function stepFlame(s: State, dt: number): void {
   const p = s.player
   s.ui.denyT = Math.max(0, s.ui.denyT - dt)
-  if (s.meta.phase === 'escape' || s.debug.god) return
+  if (s.meta.phase === 'escape' || s.debug.god || s.debug.freezeTorch) return
   if (p.energy <= 0) return // out: nothing burns
   const burn = zt(T.flame.burnPerS, s.meta.zone) * T.minerals.table[p.activeMineral].burnMul
   const floor = p.beaconHold > 0 ? T.beacon.minEnergyE : 0 // floor coupling: a hold must not snuff the flame
