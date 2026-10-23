@@ -29,6 +29,7 @@ import { run as route } from './route.check.ts'
 import { run as mining } from './mining.check.ts'
 import { run as beacon } from './beacon.check.ts'
 import { run as rocksUnit } from './rocks-unit.check.ts'
+import { run as quake } from './quake.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -59,4 +60,5 @@ route()
 mining()
 beacon()
 rocksUnit()
+quake()
 console.log('checks ok')

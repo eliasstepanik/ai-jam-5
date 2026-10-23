@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Rocks now fall during the escape: the first about 1.5 s after the Beacon lights, then faster as the escape goes on. Each rock is telegraphed by a shadow for 1 s before it lands, and a rock never cuts the way out.
 - Tossing minerals (1-3 select, F toss, G shake off) and small/large resin.
 - Mining: hold E within 40 px of an ore vein for 2 s (3 energy per second) to take its pieces, up to 3 of each mineral in the pouch. Moving, rolling or running out of energy cancels. A full pouch shows "Pouch full". The mined ore disappears from the wall at once (`world.veinGen` is part of the wall chunk key).
 - The Beacon: hold E within 36 px for 5 s (4 energy per second) to light it and start the escape. It needs at least 40 energy to start (below that it shows "The Beacon needs more light" and costs nothing). Moving, releasing E or losing the flame cancels the hold. Lighting it floods the cave with light and kills all monsters without kill credit.

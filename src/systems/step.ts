@@ -18,6 +18,7 @@ import { stepMonsters } from './monsters.ts'
 import { stepMining } from './mining.ts'
 import { stepMovement } from './movement.ts'
 import { stepPickups } from './pickups.ts'
+import { stepQuake } from './quake.ts'
 import { checkEnd } from './run.ts'
 import { stepScreens } from './screens.ts'
 
@@ -46,7 +47,7 @@ export function step(s: State, input: Input, dt: number): void {
     stepMinerals(s, it) // D9
     stepSwing(s, it, dt) // D10
   }
-  // X11: B2 adds `if (s.meta.phase === 'escape') stepQuake(s, dt)` here, before stepDirector
+  if (s.meta.phase === 'escape') stepQuake(s, dt) // X11 (R-169): before checkEnd, so lose wins a same-step tie
   stepDirector(s, dt) // D11
   stepMonsters(s, dt) // D12
   if (s.meta.phase === 'descent') resolveParries(s) // D13, before D14: a parry on the bite step wins
