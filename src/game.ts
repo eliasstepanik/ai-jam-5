@@ -75,7 +75,7 @@ function pointer(s: State, input: Input): Input {
   const clicks = input.clicks.filter((c) => {
     const i = hit(bs, c.x, c.y)
     if (i >= 0) u.cursor = i
-    return i >= 0 && !(s.meta.screen === 'title' && i === 4)
+    return i >= 0 && !(s.meta.screen === 'title' && i === 5)
   })
   return clicks.length === input.clicks.length ? input : { ...input, clicks }
 }
