@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Render Architecture (2/3) – Tiles, Entities, Particles, Darkness and Memory
 description: Last Ember rendering part 2 – chunked tile cache with zone map, floor variant hash and wall bitmask auto-tiling, entity passes with the shared inLight predicate, the analytic particle pool fed by the fx event queue, and the darkness layer with pre-rendered light mask sprites, flicker, memory map and flame-out look.
 tags: [project, ai-jam-5, architecture, last-ember, render]
-timestamp: 2026-10-22T22:30:00+02:00
+timestamp: 2026-10-23T09:00:00+02:00
 ---
 
 # Last Ember – Render Architecture (2/3)
@@ -34,7 +34,7 @@ export function vnoise(t: number, salt: number): number {
 export const quantAngle = (a: number): number => Math.round(a / (Math.PI / 8)) * (Math.PI / 8) // 16 steps
 ```
 
-Check (`src/checks/render.check.ts`, covers only `src/core/noise.ts` and `src/core/view.ts`, R-043): `hash2` in `[0,1)`, same input same output, `quantAngle(0.2) === Math.PI / 8`, `vnoise` within `[-1, 1]`.
+Check (`src/checks/render.check.ts`, covers only the L0 files `src/core/noise.ts`, `src/core/view.ts` and `src/core/grid.ts` (D4), R-043): `hash2` in `[0,1)`, same input same output, `quantAngle(0.2) === Math.PI / 8`, `vnoise` within `[-1, 1]`. The grid helpers `floorVariant`, `faceKind`, `footRow`, `dirIndex` live in `src/core/grid.ts` (L0), not in `src/render/keys.ts` (L4, never imported by a check).
 
 ## 2. Tile pass (`src/render/tiles.ts`)
 
@@ -47,7 +47,7 @@ Built once per run on first draw, held in `res.tiles` ([[architecture-resources]
 | `zone` | `Uint8Array(w*h)` (76 800) | floor: `zoneOfDepth(depthOf(dist, beaconDist))`; wall and unreachable floor: zone of the nearest reachable floor tile (multi-source BFS from all reachable floor tiles, 4-neighbour). Never 0. |
 | `mask` | `Uint8Array(w*h)` | wall cells: bitmask N=1 E=2 S=4 W=8, bit set = neighbour is floor (`.` or `,`); off-map counts as wall ([[architecture-assets-sprites-2]] §2.1) |
 | `inner` | `Uint8Array(w*h)` | bits 0..3 = inner-corner overlays NE, SE, SW, NW: set when both orthogonals are wall and the diagonal is floor |
-| `variant` | `Uint8Array(w*h)` | wall cells: face variant `floor(hash2(tx, ty, seed ^ 0x9e37) * 4)` (`face_fill_<variant>`). Floor variants are NOT stored: they are computed per 24 px cell at paint time, `floorVariant(fx, fy, seed) = floor(hash2(fx, fy, seed) * 10)` (R-179, `keys.ts`) |
+| `variant` | `Uint8Array(w*h)` | wall cells: face variant `floor(hash2(tx, ty, seed ^ 0x9e37) * 4)` (`face_fill_<variant>`). Floor variants are NOT stored: they are computed per 24 px cell at paint time, `floorVariant(fx, fy, seed) = floor(hash2(fx, fy, seed) * 10)` (R-179, `src/core/grid.ts`) |
 
 Cost: one pass over 76 800 tiles (320×240) plus BFS, about 4–8 ms once per run, on the first world frame (one long frame, accepted; [[architecture-scale-and-economy-4]] §1.3). Landed rocks are NOT baked (they are entities, pass 12).
 

@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Module Tree – Render and Audio (2/2) – Audio Files, Checks, State Additions, Conflicts
 description: Part 2 of the authoritative src/ file list for Last Ember render and audio – the src/audio files with exported signatures, allowed imports, slice tags and the game.ts call site, the checks that cover render- and audio-adjacent pure logic, the State additions those checks and modules imply, and the full list of conflicts and gaps between the source specs with the winning side and the exact edit.
 tags: [project, ai-jam-5, architecture, last-ember, modules]
-timestamp: 2026-10-22T21:00:00+02:00
+timestamp: 2026-10-23T09:00:00+02:00
 ---
 
 # Last Ember – Module Tree: Render and Audio (2/2)
@@ -39,11 +39,11 @@ Audio import graph (no cycles): `engine → trigger, mixer, music, sfx, synth`; 
 
 ## 2. Checks covering render/audio-adjacent pure logic
 
-Checks run under Node via `npm run check` and import only L0–L3 ([[architecture-rulings]] R-043 supersedes the original table below: `render.check.ts` covers only `src/core/noise.ts` and `src/core/view.ts`; `audio.check.ts` is NOT created). The runner wiring (`run()` exports, `src/checks/all.ts`) is R-040, owned by [[architecture-modules-core]].
+Checks run under Node via `npm run check` and import only L0–L3 ([[architecture-rulings]] R-043 supersedes the original table below: `render.check.ts` covers only L0 modules, `src/core/noise.ts` and `src/core/view.ts`, plus `src/core/grid.ts` since D4 (the four pure 2.5D helpers moved there out of L4 `src/render/keys.ts`, so no check imports an L4 file); `audio.check.ts` is NOT created). The runner wiring (`run()` exports, `src/checks/all.ts`) is R-040, owned by [[architecture-modules-core]].
 
 | Check file | Imports | Assertions |
 |---|---|---|
-| `src/checks/render.check.ts` | `src/core/noise.ts`, `src/core/view.ts` | `hash2` in `[0, 1)` and deterministic; `vnoise` within `[-1, 1]`; `quantAngle(0.2) === Math.PI / 8`; **quantisation:** `deviceZoom(720) === 2`, `deviceZoom(1080) === 2`, `deviceZoom(1440) === 3`, `deviceZoom(2160) === 5`, always an integer ≥ 1; `viewZoomCss(720, 2) === 1.5`, `viewZoomCss(h, dpr) * dpr === deviceZoom(Math.round(h * dpr))` (R-131) |
+| `src/checks/render.check.ts` | `src/core/noise.ts`, `src/core/view.ts`, `src/core/grid.ts` (D4; `floorVariant`, `faceKind`, `footRow`, `dirIndex`: `footRow(63.9) === 1`, `dirIndex('n') === 0`, `dirIndex('nw') === 7`, `faceKind` returns `'pillar'` when both sides are open, `floorVariant` is deterministic and an integer in 0..9) | `hash2` in `[0, 1)` and deterministic; `vnoise` within `[-1, 1]`; `quantAngle(0.2) === Math.PI / 8`; **quantisation:** `deviceZoom(720) === 2`, `deviceZoom(1080) === 2`, `deviceZoom(1440) === 3`, `deviceZoom(2160) === 5`, always an integer ≥ 1; `viewZoomCss(720, 2) === 1.5`, `viewZoomCss(h, dpr) * dpr === deviceZoom(Math.round(h * dpr))` (R-131) |
 | ~~`src/checks/audio.check.ts`~~ | not created (R-043) | `TRIGGERS`/`SYNTH` completeness is tsc-enforced (`Record<FxEventKind, …>`, `Record<SoundId, …>`); the `SOUNDS` id format (43 ids after R-138) is checked by `scripts/check-assets.ts`; `danger()`, `musicFor`, `duckFor`, `keys.ts` formulas stay browser-verified |
 
 Not checked (DOM-bound, verified in the browser): `drawSprite`, darkness compositing, mixer graph, recipes. `SYNTH` completeness is tsc-enforced by `Record<SoundId, Recipe | null>`.
@@ -92,9 +92,9 @@ Fields read but assumed to exist in [[architecture-state]] (verify in [[architec
 | C20 | [[architecture-render]] §2 `drawScreen` in `src/ui/menus.ts` | [[architecture-resources-2]] §8 and [[architecture-resources-3]] §3 `src/ui/screens.ts` | A (R-094) | closed: `src/ui/menus.ts`; no `src/ui/screens.ts` exists (R-003) |
 | G2 | [[architecture-resources]] §6 `startPreload(res)` on first render | not in render-1 §3 pass list | render-1 | `render/index.ts` calls `startPreload` when `!res.images.started`; registry mutation only, State untouched |
 | G3 | `inView`, `beaconBlend` used in render-2 §3.2 and §5.3 | no module named | this tree | both in `src/render/view.ts` |
-| G4 | quantisation and key formulas inline in DOM modules | checks may only import DOM-free modules | this tree | new `src/render/keys.ts` |
+| G4 | quantisation and key formulas inline in DOM modules | checks may only import DOM-free modules | this tree | new `src/render/keys.ts` for the key formulas (browser-verified); the checkable pure 2.5D helpers (`floorVariant`, `faceKind`, `footRow`, `dirIndex`) live in the L0 file `src/core/grid.ts` (D4) so `render.check.ts` can cover them under R-043 |
 | G5 | `src/render/flame.ts` in render-3 §1 | missing in render-1 §2 map | render-3 | add row to render-1 §2 |
-| G6 | `drawLandmarks` in render-1 §3 sketch | missing in render-1 §2 map | sketch | export from `props.ts` |
+| G6 | `drawLandmarks` in render-1 §3 sketch | missing in render-1 §2 map | sketch | closed by the 2.5D spec: landmarks go through `propActors`/`drawProp` in `props.ts`; `drawLandmarks` is not exported |
 | G7 | brief slice B "escape marker" | no draw spec in the 8 files read | open | owner of escape marker (systems or ui tree) specifies it; render gets a `props.ts`/`overlay.ts` call only after that; no file invented here |
 | G8 | `qualityTick(s)` in render-1 §3 sketch | missing in render-1 §2 map | sketch | export from `quality.ts` |
 | G9 | `res.particles.runId` clears the pool | State run id field not named in the files read | core tree | verify field in [[architecture-state]] |

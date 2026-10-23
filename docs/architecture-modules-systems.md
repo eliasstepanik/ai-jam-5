@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Module Tree – Entities and Systems
 description: Authoritative src/entities and src/systems file list for Last Ember (part 1 of 2) – layer rule as applied, per-file path, status, responsibility, exported signatures copied from the specs, allowed imports, spec section, update-order index, size, owner area and slice. Checks, conflicts and State additions are in part 2.
 tags: [project, ai-jam-5, architecture, last-ember, modules]
-timestamp: 2026-10-22T12:00:00Z
+timestamp: 2026-10-23T09:00:00+02:00
 ---
 
 # Last Ember – Module Tree: Entities and Systems (1/2)
@@ -174,9 +174,10 @@ Order indices come from [[architecture-systems]] §1.1 (descent, D#) and §1.2 (
 - Imports: core only. Order: D17/X17. About 45 lines. Owner: systems-flow. Slice A.
 
 **S22 `src/systems/camera.ts`** NEW. Camera follow and the render-only shake helper (§5).
-- `stepCamera(s: State, dt: number): void`
+- `stepCamera(s: State, dt: number, view: Input['view']): void` (lerp toward the player, then clamp; `step.ts` passes `input.view`; D8, R-181, [[architecture-systems-4]] §5)
+- `clampCam(x: number, y: number, worldW: number, worldH: number, view: Input['view']): { x: number; y: number }` (pure, exported for checks; clamps to the map with the 48 px south overhang; `Input['view']` is `{ w: number; h: number; dpr: number }`; D8, R-181, OD-D8 decided: systems)
 - `shakeOffset(s: State): { x: number; y: number }` (pure, uses the core stateless noise)
-- Order: D18/X18. About 30 lines. Owner: systems-flow. Slice A.
+- Order: D18/X18. About 30 lines (about 45 after D8). Owner: systems-flow. Slice A; the `view` parameter and `clampCam` are planned task D8 ([[ADR-123-2-5d-view]]).
 
 Not in L3: the debug overlay is `drawDebug(ctx, s, w, h)` in `src/ui/debug.ts` (L4, [[architecture-monsters-ai-2]] §9). It reads `lungeHazard`, `devourerMul` and `lightRadius`. Score maths (`computeScore`) is in core. Totals: 3 entity files and 22 system files, all NEW. The largest is about 220 lines.
 
@@ -202,3 +203,4 @@ Not in L3: the debug overlay is `drawDebug(ctx, s, w, h)` in `src/ui/debug.ts` (
 - [[architecture-rocks]]
 - [[architecture-scoring-and-save]]
 - [[architecture-rulings-3]]
+- [[ADR-123-2-5d-view]]

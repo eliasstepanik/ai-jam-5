@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Render Architecture (1/3) – Modules, Frame Pipeline, Camera Transform
 description: Last Ember rendering part 1 – render module map, purity rules, the numbered per-frame draw order with exact canvas calls, the world-to-screen camera transform with integer device zoom, DPR handling, pixel snapping and screen shake.
 tags: [project, ai-jam-5, architecture, last-ember, render]
-timestamp: 2026-10-22T22:30:00+02:00
+timestamp: 2026-10-23T09:00:00+02:00
 ---
 
 # Last Ember – Render Architecture (1/3)
@@ -31,7 +31,7 @@ Part 1 of 3. Next: [[architecture-render-2]] (tile pass, entities, particles, da
 | `src/render/view.ts` | `type View`, `makeView(ctx, s, w, h): View`, `worldXf(ctx, v)`, `screenXf(ctx, v)`, `toScreen(v, x, y)` | ~80 |
 | `src/render/tiles.ts` | `drawFloor(ctx, s, v, q)`, `drawWallRow(ctx, s, v, ty)`, chunk cache keyed by `tilesHash` (2.5D, [[architecture-modules-render]]) | ~180 |
 | `src/render/entities.ts` | `actorRows(s, v)`, `drawRowEntities(ctx, s, v, ty)`, `drawMonsters`, `drawPlayer`; `drawEyes` lives in `glow.ts` (C5) | ~200 |
-| `src/render/props.ts` | `drawVeins`, `drawPickups`, `drawLandmarks`, `drawRocks`; pickups, landmarks and landed rocks go into the actor row buckets (R-180), telegraph and falling rocks are drawn after the row loop ([[architecture-modules-render]] §3) | ~130 |
+| `src/render/props.ts` | `propActors`, `drawProp`, `drawRocks`; `propActors` puts pickups, landmarks, landed rocks and non-south-facing veins into the actor row buckets (R-180), south-facing ores are baked into the walls canvas (R-186), telegraph and falling rocks are drawn after the row loop ([[architecture-modules-render]] §3) | ~130 |
 | `src/render/particles.ts` | `consumeEvents(s)`, `drawParticles(ctx, s, v, pass)` | ~200 |
 | `src/render/light.ts` | light sprite cache, `drawDarkness(ctx, s, v, q)`, `drawGlow(ctx, s, v, q)` | ~220 |
 | `src/render/memory.ts` | memory canvas cache (`w × h` px, 1 px per tile), dirty-rect upload ([[architecture-render-2]] §5.2), `drawMemory(dctx, s, v, q)` | ~110 |

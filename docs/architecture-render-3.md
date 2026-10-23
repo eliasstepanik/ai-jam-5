@@ -134,7 +134,7 @@ export function drawSprite(
 
 ## 6. Actor facing: authored directions, no sprite rotation
 
-R-184 supersedes R-154/R-155 and the old 16-step actor rotation decision. Player and monster body frames come from the character atlas: 64×64, pivot (32,32), scale 1.0, eight authored views per animation, per-frame `duration_ms`. Select the direction index from facing (`dirIndex`, `keys.ts`) and draw the atlas frame with no rotation. Do not rotate, mirror, or build a rotated cache for actor art. Monster body and eye layer use the same direction; hold death facing from the first frame. See [[architecture-assets-sprites]] and [[architecture-render-2]] §3.2–3.3.
+R-184 supersedes R-154/R-155 and the old 16-step actor rotation decision. Player and monster body frames come from the character atlas: 64×64, pivot (32,32), scale 1.0, eight authored views per animation, per-frame `duration_ms`. Select the direction index from facing (`dirIndex`, `src/core/grid.ts`) and draw the atlas frame with no rotation. Do not rotate, mirror, or build a rotated cache for actor art. Monster body and eye layer use the same direction; hold death facing from the first frame. See [[architecture-assets-sprites]] and [[architecture-render-2]] §3.2–3.3.
 
 Runtime transforms and `quantAngle` remain available for non-actor sprites such as veins and the exit arrow. Actor procedural placeholders (art not loaded) draw the selected directional geometry at scale 1 with rotation 0. Nearest sampling remains enabled for all pixel art.
 

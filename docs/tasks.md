@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)"
 description: Task plan for Last Ember – who owns which code (Elias and Kittingsl), assignment principles, ownership summary, task index for slices A, B, C and D (2.5D migration) with hours and dependencies, per-person totals, risks, working process and open questions for the owner.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-22T22:30:00+02:00
+timestamp: 2026-10-23T09:00:00+02:00
 ---
 
 # Last Ember – Task Overview and Code Ownership (Elias vs Kittingsl)
@@ -161,11 +161,11 @@ Owner-approved pivot to a fixed-south 3/4 view ([[ADR-123-2-5d-view]], rulings R
 | D1 | K | `src/assets/cave_tileset.png`, `src/assets/cave_tileset.json` (byte-identical import) | 0.5 | none; high |
 | D2 | K | `art/characters-source.json`, `scripts/trim-characters.ts` (rewrites the JSON only, OD-D6), `src/assets/characters.png` (copied as delivered), `src/assets/characters.json` (generated) | 2 | none; high |
 | D3 | E | `src/render/tileset.ts` (new, <= 120 lines): tileFrame, capName, faceName, oreName, floorName; pure, no DOM | 1.5 | D1; high |
-| D4 | E | `src/render/keys.ts` (floorVariant, faceKind, footRow, dirIndex), `src/checks/render.check.ts` | 1.5 | none; high |
+| D4 | E | `src/core/grid.ts` (new L0, <= 40 lines: floorVariant, faceKind, footRow, dirIndex; `keys.ts` does not declare them), `src/render/keys.ts` (only if the 2.5D key formulas need it), `src/checks/render.check.ts` (covers `grid.ts`, R-043) | 1.5 | none; high |
 | D5 | E | `src/render/charatlas.ts` (new, <= 200 lines): charFrame, animLen, animLoop, swappedFrame, flameAnchor | 3 | D2; high |
 | D6 | E | `src/render/tiles.ts` rewrite: floor pattern and wall layer chunks (split into `tiles.ts` + `tiles-paint.ts` if over 300, both E) | 5 | D3, D4; high |
 | D7 | E | `src/assets/resources.ts`: chunk type, `scratch.rows` Int32Array, tint cache slot, `RES_VERSION` 2. File is K's; DEFAULT E (render-only types) | 1 | none; high |
-| D8 | E | `src/render/view.ts`: view range ty1 + 2; `src/systems/camera.ts`: camera clamp (R-181; `makeView` reads the stored `s.cam` as is) | 1 | none; high |
+| D8 | E | `src/render/view.ts`: view range ty1 + 2; `src/systems/camera.ts`: `stepCamera(s, dt, view)` + pure `clampCam` (R-181; `makeView` reads the stored `s.cam` as is); `src/systems/step.ts`: one-line `stepCamera` call passing `input.view` | 1 | none; high |
 | D9 | E | `src/render/index.ts`: row-interleaved world pass | 2 | D6, D8, D10; high |
 | D10 | E | `src/render/entities.ts` (split to `entities-player.ts` if over 300): atlas animation, scale 1.0, footY buckets, torch tip | 4 | D5, D7; high |
 | D11 | E | `src/render/props.ts`: props, veins, landmarks in row buckets; south-facing ores | 1.5 | D3, D7; high |

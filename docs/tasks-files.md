@@ -3,7 +3,7 @@ type: reference
 title: "Last Ember – Per-File Assignment (Elias vs Kittingsl)"
 description: Per-file table for Last Ember (section 3 of the task plan) – every source, script, asset and check file with the slice in which it is first created, the owner (E = Elias, K = Kittingsl), the task id and an estimated line count.
 tags: [project, ai-jam-5, tasks, last-ember]
-timestamp: 2026-10-22T22:30:00+02:00
+timestamp: 2026-10-23T09:00:00+02:00
 ---
 
 # Last Ember – Per-File Assignment (Elias vs Kittingsl)
@@ -55,6 +55,7 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 | src/core/storage.ts | B | E | B7 | 90 |
 | src/core/noise.ts | A | E | A4 | 40 |
 | src/core/view.ts | A | E | A4 | 25 |
+| src/core/grid.ts (planned, D; new L0: floorVariant, faceKind, footRow, dirIndex; covered by render.check.ts, R-043) | D | E | D4 (planned) | ~40 |
 
 ### world
 
@@ -102,7 +103,7 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 | src/systems/director.ts | A | E | A28; +B8 | 100 |
 | src/systems/run.ts | A | E | A29; +B8 | 130 |
 | src/systems/screens.ts | A | E | A29 | 126 |
-| src/systems/step.ts | A | E | A29 | 54 |
+| src/systems/step.ts | A | E | A29; +D8 (planned; passes input.view to stepCamera) | 54 |
 | src/systems/mining.ts | B | E | B1 | 70 |
 | src/systems/beacon.ts | B | E | B1 | 70 |
 | src/systems/quake.ts | B | E | B2 | 60 |
@@ -117,7 +118,7 @@ Note on `package.json`: only Elias edits it. A6 wires `npm run check` as `node s
 
 | File | Slice | Owner | Task | Lines |
 |---|---|---|---|---|
-| src/render/keys.ts | A | E | A14; +D4 | 50 |
+| src/render/keys.ts | A | E | A14; +D4 (only if the 2.5D key formulas need it; the four grid helpers are in src/core/grid.ts) | 50 |
 | src/render/view.ts | A | E | A14; +D8 (planned; view range ty1 + 2) | 90 |
 | src/render/tileset.ts (planned, D) | D | E | D3 | <=120 |
 | src/render/charatlas.ts (planned, D) | D | E | D5 | <=200 |
