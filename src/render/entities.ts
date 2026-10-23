@@ -1,5 +1,5 @@
 // L4 render: monsters FULL (pass 10) from the character atlas, the foot-row actor buckets (R-180), and the angle/frame/eye helpers
-// glow.ts needs for pass 16. The player body lives in entities-player.ts (re-exported here: drawPlayer, torchTip).
+// glow.ts needs for pass 16. The player body lives in entities-player.ts (torchTip re-exported here).
 // Spec: docs/architecture-render-2.md §3.2, architecture-modules-render.md row `src/render/entities.ts`, R-180, R-184.
 // Atlas art is never rotated or mirrored: the direction index picks one of eight authored views, scale 1.0, pivot (32, 32).
 // Reads State and the image registry only; writes registry caches (scratch rows, swapped, tints). No rng.
@@ -17,6 +17,7 @@ import { SPRITES } from '../assets/sprites.ts'
 import type { ActorId, Anim } from '../assets/sprites.ts'
 import type { View } from './view.ts'
 import { charFrame, animLen, drawAtlas } from './charatlas.ts'
+import { propActors, drawProp } from './props.ts'
 import { ctx2d, newCanvas } from './light.ts'
 import { PLAYER_FOOT, directionOf, drawPlayerBody, fitFrame, frameAt, snap } from './entities-player.ts'
 
@@ -125,7 +126,7 @@ export function eyeVisible(s: State, m: Monster): boolean {
 // --- actor row buckets (R-180) ---
 // res.scratch.rows layout (Int32Array, grown never shrunk): [ty0, nRows, count] header, then nRows bucket heads (entry index or -1),
 // then 4 ints per entry: next, tag, i, footY * 16. Each bucket list is kept ascending by footY (insertion on push, ties keep push order).
-// Tags: 0 monster (i = index in s.monsters), 1 player (i = 0). Tags >= 2 are reserved for props.ts (propActors/drawProp, task D11).
+// Tags: 0 monster (i = index in s.monsters), 1 player (i = 0). Tags >= 2 belong to props.ts (propActors pushes, drawProp draws).
 export const TAG_MONSTER = 0
 export const TAG_PLAYER = 1
 export type PushFn = (footY: number, tag: number, i: number) => void
@@ -142,8 +143,8 @@ function ensureRows(res: Resources, need: number): Int32Array {
   return sc.rows
 }
 
-// Fills the buckets for this frame: the visible monsters and the player, keyed by clamp(footRow(footY), ty0, ty1).
-// ponytail: props.ts is not wired yet; D11 adds `propActors(s, v, push)` at the end of this function and `drawProp` to drawRowEntities.
+// Fills the buckets for this frame: the visible monsters, the player and the props (propActors), keyed by clamp(footRow(footY), ty0, ty1).
+// push regrows the buffer per entry (ensureRows), so any number of visible props fits.
 export function actorRows(s: State, v: View): void {
   const res = getResources(), nRows = Math.max(1, v.ty1 - v.ty0 + 1), E = HEAD + nRows
   let rows = ensureRows(res, E)
@@ -166,6 +167,7 @@ export function actorRows(s: State, v: View): void {
     if (entityInView(v, m.x, m.y)) push(m.y + MON_FOOT[m.kind], TAG_MONSTER, i)
   }
   if (entityInView(v, s.player.x, s.player.y)) push(s.player.y + PLAYER_FOOT, TAG_PLAYER, 0)
+  propActors(s, v, push)
 }
 
 // Walks the bucket of tile row `ty` (ascending footY) and calls `fn(tag, i)`; nothing when actorRows has not run or ty is outside it.
@@ -191,13 +193,6 @@ export function drawRowEntities(ctx: CanvasRenderingContext2D, s: State, v: View
   eachInRow(ty, (_f, tag, i) => {
     if (tag === TAG_MONSTER) { if (s.monsters[i]) drawMonster(ctx, s, v, s.monsters[i]) }
     else if (tag === TAG_PLAYER) drawPlayerBody(ctx, s, v.z)
+    else drawProp(ctx, s, v, tag, i)
   })
-}
-
-// Flat (non-row) passes kept for index.ts until the row loop (D9) calls actorRows + drawRowEntities instead.
-export function drawMonsters(ctx: CanvasRenderingContext2D, s: State, v: View): void {
-  for (const m of s.monsters) drawMonster(ctx, s, v, m)
-}
-export function drawPlayer(ctx: CanvasRenderingContext2D, s: State, v: View): void {
-  if (entityInView(v, s.player.x, s.player.y)) drawPlayerBody(ctx, s, v.z)
 }

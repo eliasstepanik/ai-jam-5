@@ -2,7 +2,7 @@
 // chunk cache of TWO canvases per chunk: `floor` 256x256 and `walls` 256x304 (48 px south overhang), R-179/R-180/R-181.
 // Spec: docs/architecture-render-2.md §2.1-2.2, architecture-modules-render.md (tiles.ts row). Paint helpers: tiles-paint.ts.
 // Maps and chunk canvases live in res.tiles (resources.ts); this module keeps no state and never writes State. No rng, no random calls.
-// The caller (render/index.ts) sets worldXf. `drawTiles` is superseded by `drawFloor` + `drawWallRow` (the plan's `drawTileRow`).
+// The caller (render/index.ts) sets worldXf. Pass 5 is `drawFloor` + `drawWallRow` per row (the plan's `drawTileRow`).
 // Ground and wall decor overlays are NOT drawn (GAP, as before: no task or file owns decor; `_q.decor` is reserved for that gate).
 import type { State, Zone } from '../core/types.ts'
 import { depthOf, zoneOfDepth } from '../core/score.ts'
@@ -173,13 +173,6 @@ export function drawFloor(ctx: CanvasRenderingContext2D, s: State, v: View, _q: 
       else paintFloor(ctx, s, t, ts, cx, cy, 0, 0)
     }
   }
-}
-
-// Compatibility shim for the current render/index.ts (pass 5, all tiles before all actors). ponytail: no row interleaving, so actors
-// stand in front of every wall face. Ceiling: wrong depth order behind walls. Upgrade: D9 calls drawFloor + drawWallRow per row; delete this.
-export function drawTiles(ctx: CanvasRenderingContext2D, s: State, v: View, q: Quality): void {
-  drawFloor(ctx, s, v, q)
-  for (let ty = v.ty0; ty <= v.ty1; ty++) drawWallRow(ctx, s, v, ty)
 }
 
 // Pass 5b, once per visible tile row `ty`: the band [ty * 32, ty * 32 + 32) of every visible chunk's walls canvas (caps, faces, ores),

@@ -7,13 +7,13 @@ import { getResources } from '../assets/resources.ts'
 import { startPreload } from '../assets/images.ts'
 import { drawHud } from '../ui/hud.ts'
 import { drawScreen } from '../ui/menus.ts'
-import { drawMonsters, drawPlayer } from './entities.ts'
+import { actorRows, drawRowEntities } from './entities.ts'
 import { drawEyes, drawGlow } from './glow.ts'
 import { drawDarkness } from './light.ts'
 import { memoryCanvas } from './memory.ts'
-import { drawLandmarks, drawPickups, drawVeins } from './props.ts'
+import { drawRocks } from './props.ts'
 import { currentQuality, frameBegin, passMark, qualityTick } from './quality.ts'
-import { drawTiles } from './tiles.ts'
+import { drawFloor, drawWallRow } from './tiles.ts'
 import { makeView, screenXf, worldXf } from './view.ts'
 
 // Draws one frame in CSS-pixel size w x h (host contract: main.ts has set setTransform(dpr,...) and wrapped the call in save/restore).
@@ -40,14 +40,14 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   worldXf(ctx, v)
   ctx.imageSmoothingEnabled = false
   passMark('view')
-  drawTiles(ctx, s, v, q) // pass 5. Pass 6 (decor, q.decor) has no owner yet: tiles.ts documents the GAP.
+  drawFloor(ctx, s, v, q) // pass 5a. Pass 6 (decor) is closed: ground overlays are part of the floor chunks (G6).
   passMark('tiles')
-  drawVeins(ctx, s, v) // 7
-  drawPickups(ctx, s, v) // 8
-  drawLandmarks(ctx, s, v) // 9
-  drawMonsters(ctx, s, v) // 10
-  drawPlayer(ctx, s, v) // 11
-  // Pass 12 drawRocks (B17, props.ts extension) is skipped until it exists.
+  actorRows(s, v) // buckets monsters, player, pickups, landmarks, landed rocks and non-south veins by foot row (R-180)
+  for (let ty = v.ty0; ty <= v.ty1; ty++) { // pass 5b with 7-11: one wall row, then the actors whose foot row is ty
+    drawWallRow(ctx, s, v, ty)
+    drawRowEntities(ctx, s, v, ty)
+  }
+  drawRocks(ctx, s, v) // pass 12: telegraph shadows and falling boulders above every row; landed rocks sit in the buckets
   passMark('ents')
   // Pass 14. memoryCanvas runs once per frame, before the darkness, and hands over the up-to-date explored-tile canvas (C4).
   // drawDarkness leaves identity transform, source-over, alpha 1 and smoothing off on every path.

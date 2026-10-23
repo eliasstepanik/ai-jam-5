@@ -19,6 +19,11 @@ type Rect = readonly number[] // [sheet, x, y, w, h]
 const ATLAS = atlas as AtlasFile
 // Missing files are not errors: an empty glob just means placeholders (pipeline §5).
 const SHEET_URLS = import.meta.glob('./atlas-*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
+// Pipeline §5: the two delivered sheets. Slot order is a contract: 0 = cave_tileset.png (render/tiles.ts), 1 = characters.png (render/charatlas.ts).
+const EXTERNAL = ['cave_tileset.png', 'characters.png'] as const
+const SHEETS = import.meta.glob(['./cave_tileset.png', './characters.png'], { eager: true, query: '?url', import: 'default' }) as Record<string, string>
+// Hand-packed legacy sheets (atlas.json `sheets`, empty at the pivot) follow the external slots so they never collide with 0/1. ponytail: D13 removes this path.
+const LEGACY_BASE = EXTERNAL.length
 const SCREEN_URLS = import.meta.glob('./art/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
 const SCREEN_KEYS = Object.keys(SCREENS) as (keyof typeof SCREENS)[]
 const LOAD_TIMEOUT_MS = 10000
@@ -34,12 +39,14 @@ function forcePlaceholders(): boolean {
 const pad2 = (i: number): string => (i < 10 ? '0' : '') + i
 const isActor = (id: SpriteId): boolean => id.startsWith('player_') || id.startsWith('mon_')
 
-// Pipeline §6. Rebuilt whenever an atlas sheet settles. A rect is only usable when its sheet decoded; a failed sheet leaves null (placeholder).
+// Pipeline §6. Rebuilt whenever a legacy atlas sheet settles. A rect is only usable when its sheet decoded; a failed sheet leaves null (placeholder).
+// Rects returned by `get` carry the shifted slot (LEGACY_BASE + atlas sheet index).
 function rebuildRects(res: Resources): void {
   const im = res.images, frames = ATLAS.frames
   const get = (id: string, a: string, i: number): Rect | undefined => {
     const r = frames[id + '_' + a + '_' + pad2(i)]
-    return r && im.sheetState[r[0]] === 'ok' && im.sheets[r[0]] ? r : undefined
+    const slot = r ? LEGACY_BASE + r[0] : -1
+    return r && im.sheetState[slot] === 'ok' && im.sheets[slot] ? [slot, r[1], r[2], r[3], r[4]] : undefined
   }
   for (const c of im.tints.values()) c.width = c.height = 0
   im.tints.clear(); im.rects.clear()
@@ -157,23 +164,29 @@ function loadImage(url: string | undefined): Promise<HTMLImageElement | null> {
 }
 
 // Pipeline §8: sheets in parallel, then the four screens one at a time. Idempotent; call from the render host once.
+// Slots 0/1 are the external sheets (tileset, characters), legacy atlas sheets follow. A failure sets 'failed' + one warning, never throws.
 export function startPreload(res: Resources): void {
   const im = res.images
   if (im.started) return
   im.started = true
-  im.total = ATLAS.sheets.length + SCREEN_KEYS.length
+  const slots = LEGACY_BASE + ATLAS.sheets.length
+  im.total = slots + SCREEN_KEYS.length
   im.loaded = 0
-  im.sheets = ATLAS.sheets.map(() => null)
-  im.sheetState = ATLAS.sheets.map(() => 'loading')
+  im.sheets = Array.from({ length: slots }, () => null)
+  im.sheetState = Array.from({ length: slots }, () => 'loading')
   const settle = (): void => { im.loaded += 1; im.gen += 1 }
-  const sheetJobs = ATLAS.sheets.map(async (s, i) => {
-    const img = await loadImage(SHEET_URLS['./' + s.image])
-    im.sheets[i] = img
-    im.sheetState[i] = img ? 'ok' : 'failed'
-    if (!img) console.warn('[assets] ' + s.image.replace(/\.png$/, '') + ' failed, using placeholders')
-    rebuildRects(res)
+  const sheetJob = async (slot: number, file: string, url: string | undefined, legacy: boolean): Promise<void> => {
+    const img = await loadImage(url)
+    im.sheets[slot] = img
+    im.sheetState[slot] = img ? 'ok' : 'failed'
+    if (!img) console.warn('[assets] ' + file + ' failed, using placeholders')
+    if (legacy) rebuildRects(res)
     settle()
-  })
+  }
+  const sheetJobs = [
+    ...EXTERNAL.map((f, i) => sheetJob(i, f, SHEETS['./' + f], false)),
+    ...ATLAS.sheets.map((s, i) => sheetJob(LEGACY_BASE + i, s.image.replace(/\.png$/, ''), SHEET_URLS['./' + s.image], true)),
+  ]
   void (async () => {
     await Promise.all(sheetJobs)
     for (const k of SCREEN_KEYS) {
