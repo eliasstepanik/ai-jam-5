@@ -6,6 +6,7 @@
 import { init, MAP_H, MAP_W } from '../core/state.ts'
 import { migrate, DEFAULT_MONSTER, DEFAULT_PICKUP, DEFAULT_VEIN, DEFAULT_ROCK, DEFAULT_FX_EVENT, DEFAULT_TOAST } from '../core/migrate.ts'
 import { DEFAULT_BEST, DEFAULT_RESULT } from '../core/score.ts'
+import { T } from '../core/tuning.ts'
 import type { Best, FxEvent, Monster, Pickup, Rock, RunResult, State, Toast, Vein } from '../core/types.ts'
 
 function ok(cond: boolean, msg: string): void {
@@ -148,7 +149,24 @@ export function run(): void {
     ok(migrate(noStunned).monsters[0].stunned === DEFAULT_MONSTER.stunned, 'migrate fills a missing monster.stunned with its default')
     ok(migrate(noStunned).monsters[0].x === monster.x, 'migrate keeps the other monster fields')
     for (const bad of [{ version: 0 }, null, 5]) ok(deepEq(migrate(bad), init()), `migrate(${JSON.stringify(bad)}) is init()`)
+
+    // B2s: an old save without the rock/escape fields gets the defaults; set values survive
+    const old = structuredClone(mid) as unknown as { world: Record<string, unknown>; director: Record<string, unknown>; rocks: Record<string, unknown>[] }
+    delete old.world.pendingSig; delete old.director.escapeT; delete old.rocks[0].shrunk
+    const up = migrate(old)
+    ok(up.world.pendingSig === 0 && up.director.escapeT === 0 && up.rocks[0].shrunk === DEFAULT_ROCK.shrunk, 'migrate fills pendingSig, escapeT and rock.shrunk defaults')
+    ok(up.rocks[0].t === rock.t && up.rocks[0].hit === rock.hit, 'migrate keeps the other rock fields')
+    ok(deepEq(migrate(up), up), 'migrate is idempotent (rock/escape fields deleted)')
+    ok(DEFAULT_ROCK.shrunk === false && init().world.pendingSig === 0 && init().director.escapeT === 0, 'B2s defaults: shrunk false, pendingSig 0, escapeT 0')
   })
+
+  // B2s: T.rocks table (architecture-rocks.md §1-§4, tuning-2 §6)
+  const r = T.rocks
+  ok(r.rateStart === 0.6 && r.rateEnd === 1.6 && r.rampS === 80 && r.minIntervalS === 0.4 && r.retryS === 0.25, 'T.rocks cadence values')
+  ok(r.pendingMax === 4 && r.p2Start === 0.15 && r.p2End === 0.4 && r.routeModeP === 0.75 && r.lateralTiles === 2, 'T.rocks selection values')
+  ok(r.lookahead === 28 && r.exitClearTiles === 5 && r.beaconClearTiles === 6 && r.playerGapPx === 16 && r.damageHp === 1, 'T.rocks clear-zone values')
+  ok(r.detourMaxTiles === 12 && r.detourMaxFrac === 0.5 && r.bfsTestsMax === 3, 'T.rocks detour and BFS values')
+  ok(!('rockIntervalS' in T.escape), 'T.escape.rockIntervalS is deleted (R-056)')
 
   // #4 migrate does not change valid values
   ok(deepEq(migrate(mid), mid), 'migrate(midRun) deep-equals midRun')

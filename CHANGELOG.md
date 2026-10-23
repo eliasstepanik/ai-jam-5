@@ -9,10 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Escape roll: Space rolls 126 px in 0.3 s (in the move direction, or the facing) with 0.3 s of bite immunity, then 1.5 s cooldown from the roll start. A dodged bite shows a dodge; falling rocks still hit. Reaching the exit (within 1 tile) wins the escape, and a lethal hit on the same step still loses.
+- Escape monsters: one spawns every 1.2 s (up to 8 alive) 220-340 px from the player on tiles that still connect to the exit, and despawns beyond 700 px when unseen. The descent spawner is unchanged.
+- Rocks now fall during the escape: the first about 1.5 s after the Beacon lights, then faster as the escape goes on. Each rock is telegraphed by a shadow for 1 s before it lands, and a rock never cuts the way out.
 - Tossing minerals (1-3 select, F toss, G shake off) and small/large resin.
 - Mining: hold E within 40 px of an ore vein for 2 s (3 energy per second) to take its pieces, up to 3 of each mineral in the pouch. Moving, rolling or running out of energy cancels. A full pouch shows "Pouch full". The mined ore disappears from the wall at once (`world.veinGen` is part of the wall chunk key).
 - The Beacon: hold E within 36 px for 5 s (4 energy per second) to light it and start the escape. It needs at least 40 energy to start (below that it shows "The Beacon needs more light" and costs nothing). Moving, releasing E or losing the flame cancels the hold. Lighting it floods the cave with light and kills all monsters without kill credit.
 - Best score and settings (volume, mute, reduced flash, last seed) persist in localStorage (`src/core/storage.ts`). A blocked or full store shows "Saving disabled in this browser" once and the game carries on.
+- Stalker flanking: stalkers circle to the spot behind the player and attack after 0.25 s there; turning to face them resets it. In the escape, every monster hunts the player with an intercept chase and constant, aim-led lunges.
 - D slice 2.5D view: fixed-south three-quarter view over the unchanged square grid. Wall caps get 48 px south faces, and walls, monsters, the player and props are depth-sorted row by row.
 - Cave tileset `src/assets/cave_tileset.png` and `src/assets/cave_tileset.json`, used for floor and walls. Ore veins are baked on south-facing walls.
 - Character atlas `src/assets/characters.png` and `src/assets/characters.json` for the player and the Lurker, Devourer and Stalker animations, including the torch flame palette swap. `scripts/trim-characters.ts` builds it from `art/characters-source.json`.

@@ -1,7 +1,7 @@
 // L3 systems: fixed-step driver. The only writer of meta.time and meta.steps (R-002).
 // Spec: docs/architecture-systems.md 1.1-1.3 (order D0-D18 / X0-X18), R-067 (hitstop), R-068/MS-25 (click buffer in hitstop),
-// R-125 (eStart snapshot for the Beacon gate). Slice B calls (roll, quake) are not on master yet; mining (D7), Beacon (D8) and minerals (D9) are wired;
-// each owning task adds its call at the index marked inline. No stub bodies stand in for them.
+// R-125 (eStart snapshot for the Beacon gate). Slice B calls are wired at their index (roll X3, mining D7, Beacon D8, minerals D9, quake X11);
+// each owning task adds its call at the index marked inline.
 import type { Input } from '../main.ts'
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
@@ -16,8 +16,9 @@ import { tickFx } from './fx.ts'
 import { resolveIntent } from './intent.ts'
 import { stepMonsters } from './monsters.ts'
 import { stepMining } from './mining.ts'
-import { stepMovement } from './movement.ts'
+import { stepMovement, stepRoll } from './movement.ts'
 import { stepPickups } from './pickups.ts'
+import { stepQuake } from './quake.ts'
 import { checkEnd } from './run.ts'
 import { stepScreens } from './screens.ts'
 
@@ -33,7 +34,7 @@ export function step(s: State, input: Input, dt: number): void {
   }
   const it = resolveIntent(s, input) // D2
   const esc = s.meta.phase === 'escape'
-  // X3: B8 adds `if (esc) stepRoll(s, it, dt)` here, before stepMovement
+  if (esc) stepRoll(s, it, dt) // X3 (R-169): before stepMovement, which skips its velocity block while roll.t > 0
   stepMovement(s, it, dt) // D3
   trackDepth(s) // D4
   if (!esc) stepExplore(s) // D4
@@ -46,7 +47,7 @@ export function step(s: State, input: Input, dt: number): void {
     stepMinerals(s, it) // D9
     stepSwing(s, it, dt) // D10
   }
-  // X11: B2 adds `if (s.meta.phase === 'escape') stepQuake(s, dt)` here, before stepDirector
+  if (s.meta.phase === 'escape') stepQuake(s, dt) // X11 (R-169): before checkEnd, so lose wins a same-step tie
   stepDirector(s, dt) // D11
   stepMonsters(s, dt) // D12
   if (s.meta.phase === 'descent') resolveParries(s) // D13, before D14: a parry on the bite step wins
