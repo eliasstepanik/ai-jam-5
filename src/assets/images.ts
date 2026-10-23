@@ -22,7 +22,7 @@ const SHEET_URLS = import.meta.glob('./atlas-*.png', { eager: true, query: '?url
 // Pipeline §5: the two delivered sheets. Slot order is a contract: 0 = cave_tileset.png (render/tiles.ts), 1 = characters.png (render/charatlas.ts).
 const EXTERNAL = ['cave_tileset.png', 'characters.png'] as const
 const SHEETS = import.meta.glob(['./cave_tileset.png', './characters.png'], { eager: true, query: '?url', import: 'default' }) as Record<string, string>
-// Hand-packed legacy sheets (atlas.json `sheets`, empty at the pivot) follow the external slots so they never collide with 0/1. ponytail: D13 removes this path.
+// Hand-packed legacy sheets (atlas.json `sheets`, empty at the pivot) follow the external slots so they never collide with 0/1. ponytail: the legacy atlas.json path stays for the old actor eye sheets (mon_*_eyes) and UI art; remove it once those sheets are replaced.
 const LEGACY_BASE = EXTERNAL.length
 const SCREEN_URLS = import.meta.glob('./art/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
 const SCREEN_KEYS = Object.keys(SCREENS) as (keyof typeof SCREENS)[]

@@ -1,7 +1,7 @@
 // Asset gate: the two external atlases, atlas.json, screens, audio and budgets. Spec: docs/architecture-assets-pipeline-2.md §2-§3 (checks #1-#11), architecture-assets-pipeline §4, ai-jam-5-asset-formats-25d, R-183, R-184.
 // Run from the repo root: `node scripts/check-assets.ts`. Node built-ins only; no image or audio decoding (PNG header bytes, sizes and one sha256).
 // Every failure prints one `check failed: ...` line; any failure exits 1. Missing folders (src/assets/art, src/assets/audio) are skipped.
-// Wired into `npm run check` by the package.json hunk of D12 (E-only edit).
+// Wired into `npm run check` (the `check` script in package.json runs this file).
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { SPRITES } from '../src/assets/sprites.ts'
@@ -53,7 +53,7 @@ const screenFiles = existsSync(SCREENS_DIR) ? readdirSync(SCREENS_DIR).filter(f 
 for (const p of [...topPngs, ...screenFiles, ...audioFiles]) if (!NAME.test(base(p))) fail(p + ' name must match ' + NAME)
 
 // ---- atlas.json (#1, #2): legacy hand-packed frames (none exist at the pivot) plus the `external` list ----
-// ponytail: version 1 is still accepted because images.ts (D13) and the committed seed predate version 2; tighten to `=== 2` once D13 lands.
+// ponytail: atlas.json version 1 or 2 is accepted while the legacy actor eye sheets and UI art still use atlas.json (OD-D7); tighten to `=== 2` once those sheets are replaced.
 type Atlas = { version: number; sheets: { image: string; w: number; h: number }[]; frames: Record<string, number[]>; external?: { image: string; json: string; kind: string }[] }
 const IDS = (Object.keys(SPRITES) as SpriteId[]).sort((a, b) => b.length - a.length)
 // Frame key '<SpriteId>_<anim>_<nn>': longest known SpriteId prefix (ids contain '-', anims may contain '_').

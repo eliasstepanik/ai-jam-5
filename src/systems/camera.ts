@@ -11,7 +11,7 @@ const SHAKE_SALT = 0x5a // architecture-render.md §4.4
 const SOUTH_OVERHANG = 48 // px: wall faces hang into the south cell (R-181)
 
 // Keeps the view inside the map: the visible half-extent hx/hy (world px) comes from the backing-store size and device zoom.
-// A map smaller than the view centres on the map (max(hx, ...)). Pure: no RNG, no State access (R-181).
+// A map smaller than the view is not centred: max(hx, ...) pins the camera centre at hx/hy, so the map sits at the left/top edge. Pure: no RNG, no State access (R-181).
 export function clampCam(x: number, y: number, worldW: number, worldH: number, view: Input['view']): { x: number; y: number } {
   const cw = Math.round(view.w * view.dpr), ch = Math.round(view.h * view.dpr)
   const z = deviceZoom(ch)

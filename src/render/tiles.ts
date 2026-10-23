@@ -14,7 +14,7 @@ import type { View } from './view.ts'
 import { ctx2d, newCanvas } from './light.ts'
 import { CHUNK_TILES, chunkKey, tileKey } from './keys.ts'
 import type { Tileset } from './tileset.ts'
-import { CHUNK_PX, HASH, WALLS_H, faceVariant, paintFloor, paintWalls } from './tiles-paint.ts'
+import { CHUNK_PX, FACE_H, HASH, WALLS_H, faceVariant, paintFloor, paintWalls } from './tiles-paint.ts'
 
 const LRU_CAP = 40 // render-2 §2.2: 40 x (256 + 304) x 256 x 4 B = 22 MB
 const BUILD_QUOTA = 4 // chunks built per frame; the rest are painted straight into the main context
@@ -128,7 +128,7 @@ function reset(cv: HTMLCanvasElement, w: number, h: number): CanvasRenderingCont
 // Builds chunk (cx, cy); a full cache recycles the evicted pair (no canvas allocation in steady state). The walls canvas paints the tile
 // rows of the chunk plus the two rows above it: a face hangs 48 px = rows r+1 and 16 px of r+2, so those faces reach into this chunk's
 // first rows and every band of `walls` is complete on its own (DEFAULT; render-2 §2.2 repaints only the chunk's own first-row faces).
-// The bottom 48 px overhang holds the faces of the last rows as specified; drawWallRow never samples it.
+// The bottom 48 px overhang holds the faces of the last rows as specified; drawWallRow samples it for the last map row only.
 function buildChunk(s: State, t: TileCache, ts: Tileset | null, cx: number, cy: number, k: number): Chunk {
   let ch: Chunk | undefined
   if (t.lru.length >= LRU_CAP) {
@@ -179,20 +179,22 @@ export function drawFloor(ctx: CanvasRenderingContext2D, s: State, v: View, _q: 
 // so the actors of that row interleave with it (R-180). A chunk without canvases is painted directly, clipped to the band, without the
 // inner-corner cutouts (destination-out would erase the floor beneath).
 // ponytail: those corners look square until the chunk is built (at most a few frames). Upgrade: build into a scratch canvas.
+// The last map row also draws the 48 px south overhang (R-181): the faces of the row(s) above spill below it and no later row repaints
+// them. Other rows must not (the next row's band draws that area). In the walls canvas the overhang is band `sy + 32` for 48 px (<= 304).
 export function drawWallRow(ctx: CanvasRenderingContext2D, s: State, v: View, ty: number): void {
   const t = tileCache(s)
   if (!t || ty < 0 || ty >= s.world.h) return
-  const ts = tilesetOf(), cy = ty >> 3, sy = (ty & 7) * 32
+  const ts = tilesetOf(), cy = ty >> 3, sy = (ty & 7) * 32, bh = ty === s.world.h - 1 ? 32 + FACE_H : 32
   ctx.imageSmoothingEnabled = false
   for (let cx = v.tx0 >> 3; cx <= v.tx1 >> 3; cx++) {
     const ch = t.chunks.get(chunkKey(cx, cy))
     if (ch) {
-      ctx.drawImage(ch.walls, 0, sy, CHUNK_PX, 32, cx * CHUNK_PX, ty * 32, CHUNK_PX, 32)
+      ctx.drawImage(ch.walls, 0, sy, CHUNK_PX, bh, cx * CHUNK_PX, ty * 32, CHUNK_PX, bh)
       continue
     }
     ctx.save()
     ctx.beginPath()
-    ctx.rect(cx * CHUNK_PX, ty * 32, CHUNK_PX, 32)
+    ctx.rect(cx * CHUNK_PX, ty * 32, CHUNK_PX, bh)
     ctx.clip()
     paintWalls(ctx, s, t, ts, cx * CHUNK_TILES, (cx + 1) * CHUNK_TILES, ty - 2, ty + 1, 0, 0, false)
     ctx.restore()

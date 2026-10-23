@@ -157,7 +157,6 @@ This repo was scaffolded with Claude Code and opencode agents. The jam rewards s
 - What AI got wrong and how you corrected it.
 
 - A8 asset foundations were implemented with Codex from the catalog and Kittingsl's sheet layout: one actor animation per sheet, 64×64 cells, direction rows N/NE/E/SE/S/SW/W/NW, with frame counts derived from width. This adds metadata and resource handling; artwork, palettes and torch-colour sheets are not integrated yet.
-- Two AI-generated, user-supplied art packs are bundled for the 2.5D view. They are used as delivered; only the character frame list is post-processed.
+- Two AI-generated, user-supplied art packs are bundled for the 2.5D view. The PNGs are used as delivered; only the character frame list is post-processed. The packs were created by the repo owner with AI tools; the specific generator and prompts are not recorded in this repository.
   - Cave tileset: `src/assets/cave_tileset.png` and `src/assets/cave_tileset.json` (512×512, 94 frames).
   - Character atlas: `src/assets/characters.png` (4096×2048, 1232 frames). `scripts/trim-characters.ts` rewrites `art/characters-source.json` into `src/assets/characters.json`. The PNG is not modified.
-- Credits: generator, prompts and licence of both packs: to be filled in by the repo owner (Elias).

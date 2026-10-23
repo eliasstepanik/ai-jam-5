@@ -19,8 +19,9 @@ import type { SpriteId } from '../assets/sprites.ts'
 import { inView } from './view.ts'
 import type { View } from './view.ts'
 import { blit } from './tileset.ts'
-import { tileCache } from './tiles.ts'
 import type { Tileset } from './tileset.ts'
+
+const HASH = 35 // '#', wall char of World.tiles (same value as tiles-paint.ts)
 
 export const TAG_PICKUP = 2
 export const TAG_LANDMARK = 3
@@ -51,9 +52,17 @@ function tilesetOf(): Tileset | null {
 
 const centre = (tile: number, w: number): [number, number] => [(tile % w) * TILE + TILE / 2, Math.floor(tile / w) * TILE + TILE / 2]
 
+// True when the wall layer bakes the south ore frame for this vein: `tile` is a wall cell and its south neighbour is in the map and not
+// wall, i.e. bit S (4) of the cap mask. ponytail: mirrors the S bit of buildMaps in tiles.ts (wall cells only, off-map = wall) so props.ts
+// needs no tiles.ts import (module tree); keep in sync with it. Callers guarantee tiles.length === w * h and w > 0.
+function southBaked(s: State, tile: number): boolean {
+  const { w, h, tiles } = s.world, y = Math.floor(tile / w)
+  return tiles.charCodeAt(tile) === HASH && y + 1 < h && tiles.charCodeAt(tile + w) !== HASH
+}
+
 // Pushes every visible prop into the actor row buckets. Foot y = pivot y (footOffset 0, R-180).
 export function propActors(s: State, v: View, push: (footY: number, tag: number, i: number) => void): void {
-  const w = s.world.w, { entrance, beacon } = s.world, tc = tileCache(s)
+  const { w, h, tiles, entrance, beacon } = s.world, mapped = w > 0 && tiles.length === w * h // false: no wall bake runs, veins are props
   for (let i = 0; i < s.pickups.length; i++) {
     const p = s.pickups[i]
     if (inView(v, p.x, p.y)) push(p.y, TAG_PICKUP, i)
@@ -68,9 +77,10 @@ export function propActors(s: State, v: View, push: (footY: number, tag: number,
   }
   for (let i = 0; i < s.veins.length; i++) {
     const vn = s.veins[i]
-    // South ore: paintWalls (tiles-paint.ts) bakes it into the walls canvas only when the cap mask has bit S (4). Skip exactly then; a south stand
-    // without bit S, or no tile cache (empty world, no bake runs), is drawn here as a prop so it never vanishes (R-186).
-    if (vn.stand === vn.tile + w && tc && (tc.mask[vn.tile] & 4)) continue
+    // South ore: paintWalls (tiles-paint.ts) bakes it into the walls canvas only when the stand is directly south and the cap mask has bit S (4).
+    // Skip exactly then (the complement of its `stand !== tile + w || !(mask & 4)` skip); a south stand without bit S, or an empty/mismatched
+    // world (no bake runs), is drawn here as a prop so it never vanishes (R-186).
+    if (mapped && vn.stand === vn.tile + w && southBaked(s, vn.tile)) continue
     const [x, y] = centre(vn.tile, w)
     if (inView(v, x, y)) push(y, TAG_VEIN, i)
   }
