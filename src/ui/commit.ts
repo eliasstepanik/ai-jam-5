@@ -4,14 +4,14 @@ import type { State } from '../core/types.ts'
 import { commitTick, normalizeCommit } from '../core/commit.ts'
 import { FONT } from './draw.ts'
 
-// Called from update() with the fixed dt. A fetch error is silent and keeps the last value.
+// Called from update() with the fixed dt. A fetch error keeps the last value (a failed first fetch shows 'unknown').
 // ponytail: a swap during the few ms of an in-flight fetch drops that answer (it writes the old State object); the next poll in 30 s fixes it.
 export function pollCommit(s: State, dt: number): void {
   if (!import.meta.env.DEV || !commitTick(s.debug, dt)) return
   fetch('./__commit', { cache: 'no-store', signal: AbortSignal.timeout(5000) })
     .then((r) => (r.ok ? r.text() : Promise.reject(new Error('commit ' + r.status))))
     .then((t) => { s.debug.commit = normalizeCommit(t) })
-    .catch(() => { /* silent: keep the last value */ })
+    .catch(() => { if (s.debug.commit === '') s.debug.commit = 'unknown' }) // keep the last value; only a failed FIRST fetch shows 'unknown'
 }
 
 // Top-centre, small, low alpha, dark outline for contrast on light and dark art; clear of the HUD rows, title buttons and the DEV button.

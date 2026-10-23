@@ -19,10 +19,12 @@ function devCommit(): Plugin {
   const read = (): Promise<string> => {
     if (cached === null || Date.now() - cached.at > 2000) {
       const sha = new Promise<string>((resolve) => {
-        node.getBuiltinModule('node:child_process').execFile('git', ['rev-parse', '--short=7', 'HEAD'], { cwd: root, timeout: 5000 }, (err, out) => {
-          const v = String(out).trim()
-          resolve(err === null && /^[0-9a-f]{7}$/.test(v) ? v : 'unknown')
-        })
+        try { // a synchronous throw (spawn failure, missing builtin) must also answer 'unknown', never reject
+          node.getBuiltinModule('node:child_process').execFile('git', ['rev-parse', '--short=7', 'HEAD'], { cwd: root, timeout: 5000 }, (err, out) => {
+            const v = String(out).trim()
+            resolve(err === null && /^[0-9a-f]{7}$/.test(v) ? v : 'unknown')
+          })
+        } catch { resolve('unknown') }
       })
       cached = { at: Date.now(), sha }
     }
