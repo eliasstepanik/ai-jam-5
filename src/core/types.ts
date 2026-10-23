@@ -227,6 +227,7 @@ export type Settings = {
   loaded: boolean // loadSettings() ran this page session
   reducedFlash: boolean
   quality: 'auto' | 'q0' | 'q1' | 'q2' | 'q3' // render override (R-142)
+  depthClass?: number | 'random' // 1..4 or 'random' (R-164), undefined means 3
 }
 export type Debug = { reveal: boolean; god: boolean; showPaths: boolean; freezeAi: boolean; overlay: boolean }
 
