@@ -1,5 +1,6 @@
 // Runs every pure-logic check (R-040). Add one import + one call per new *.check.ts file; the list is kept in sync by hand.
 import { run as state } from './state.check.ts'
+import { run as reportedBugs } from './reported-bugs.check.ts'
 import { run as debug } from './debug.check.ts'
 import { run as runCheck } from './run.check.ts'
 import { run as stepCheck } from './step.check.ts'
@@ -78,4 +79,5 @@ escapeCheck()
 aiDevourer()
 debug()
 
+reportedBugs()
 console.log('checks ok')

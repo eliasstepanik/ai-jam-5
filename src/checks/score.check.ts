@@ -16,15 +16,15 @@ function ok(cond: boolean, msg: string): void {
 
 // scoring-and-save §4 rows A-I: [depth, won, seconds, minerals used, hp left, depth pts, win, time, minerals, hp, score]. Literals from the spec table.
 const ROWS: readonly (readonly [string, number, boolean, number, number, number, number, number, number, number, number, number])[] = [
-  ['A', 15, false, 115, 1, 0, 1500, 0, 485, 25, 0, 2010],
-  ['B', 25, false, 193, 3, 0, 2500, 0, 407, 75, 0, 2982],
-  ['C', 35, false, 270, 5, 0, 3500, 0, 330, 125, 0, 3955],
-  ['D', 40, false, 380, 6, 0, 4000, 0, 220, 150, 0, 4370],
+  ['A', 15, false, 115, 1, 0, 1500, 0, 0, 25, 0, 1525],
+  ['B', 25, false, 193, 3, 0, 2500, 0, 0, 75, 0, 2575],
+  ['C', 35, false, 270, 5, 0, 3500, 0, 0, 125, 0, 3625],
+  ['D', 40, false, 380, 6, 0, 4000, 0, 0, 150, 0, 4150],
   ['E', 40, true, 480, 6, 2, 4000, 1000, 120, 150, 100, 5370],
   ['F', 40, true, 417, 6, 3, 4000, 1000, 183, 150, 150, 5483],
   ['G', 40, true, 360, 8, 3, 4000, 1000, 240, 200, 150, 5590],
   ['H', 40, true, 307, 12, 5, 4000, 1000, 293, 300, 250, 5843],
-  ['I', 0, false, 25, 0, 0, 0, 0, 575, 0, 0, 575],
+  ['I', 0, false, 25, 0, 0, 0, 0, 0, 0, 0, 0],
 ]
 
 function formula(): void {
@@ -79,7 +79,7 @@ function endRunChecks(): void {
   ok(won.result !== null && won.result.parts.total === 5488 && won.result.seconds === 412 && won.meta.screen === 'won', 'endRun(win) scores the 5488 worked win')
   const dead = mk()
   endRun(dead, false)
-  ok(dead.result !== null && dead.result.hpLeft === 0 && dead.result.parts.total === 4000 + 188 + 150 && dead.meta.screen === 'dead', 'endRun(death) drops the win bonus and the HP term')
+  ok(dead.result !== null && dead.result.hpLeft === 0 && dead.result.parts.total === 4000 + 150 && dead.meta.screen === 'dead', 'endRun(death) drops the win, time and HP bonuses')
 }
 
 // fake-store helper: a Map-backed Store; `throws` makes setItem throw like a full or blocked store.

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Normal descent movement selects walking rather than running; moving with an extinguished torch uses flame-free walking frames and no floating ember glow.
+- Death no longer awards the time bonus; wins retain it. Removed the obsolete light-return help tip.
+- Plants and resin hidden by foreground wall art move to reachable visible floor when a run starts, preserving pickup counts, types and restoration values.
+- Wall collision preserves motion parallel to the wall across tile seams; rock impacts require a final physical player-to-exit route before becoming solid.
+
 - Developer animation labels now include the player's actual displayed clip and frame, with the toggle also accessible from the Player tab.
 - Aligned character feet and raised wall art with the collision ground plane. South wall faces now end at the collision boundary, and complete foreground walls hide actors standing to their north.
 

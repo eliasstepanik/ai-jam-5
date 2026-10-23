@@ -1,0 +1,95 @@
+DISCOVERED BUGS
+Reported: 2026-10-23
+Status workflow: OPEN = not fixed; IN PROGRESS = fix implemented and tested, awaiting user confirmation.
+Only mark SOLVED after the user confirms the fix in this text file.
+
+BUG-001 - Walking uses the run animation
+Status: SOLVED - confirmed by user on 2026-10-23.
+Triage: Defect: the 60 px/s animation threshold was below normal 120 px/s walking speed.
+Fix (2026-10-23): Normal descent movement now uses the walk clip; sprint/fast noclip still uses run. Browser-verified at full walk speed.
+User confirmation (2026-10-23): SOLVED; confirmed in chat and recorded here.
+Observed: The wrong animation is applied while walking: the run animation plays.
+Expected: Walking should use the walk animation.
+Image: None supplied.
+
+BUG-002 - Final score includes time on death
+Status: SOLVED - confirmed by user on 2026-10-23.
+Triage: Requested behavior change: the existing documented score formula awarded time on death.
+Fix (2026-10-23): Time bonus is now win-only; elapsed run time still displays. Death/win score regression cases pass. Knowledge-base snapshot was not edited.
+User confirmation (2026-10-23): SOLVED; confirmed in chat and recorded here.
+Observed: The final score counts time when the player dies.
+Expected: When the player dies, the final score should not count time.
+Image: None supplied.
+
+BUG-003 - Extinguished torch leaves idle animation and particles
+Status: SOLVED - confirmed by user on 2026-10-23.
+Triage: Documented missing-art fallback (OD-D3), plus a persistent ember glow at the fallback torch anchor.
+Fix (2026-10-23): Unlit movement now uses the authored walk with only reserved flame pixels removed. Extinguishing removes the floating ember glow. Verified all 32 walk cells: 706 flame pixels removed, 17138 body/torch pixels retained unchanged.
+User confirmation (2026-10-23): SOLVED; confirmed in chat and recorded here.
+Observed: When the torch is extinguished, the player stays in the idle animation
+and torch particles remain visible.
+Expected: The player should transition to the appropriate animation, and the
+extinguished torch's particles should disappear.
+Image: image-02-extinguished-torch.png (original report, picture 2).
+
+BUG-004 - Heal plant generates inside a wall
+Status: SOLVED - confirmed by user on 2026-10-23.
+Triage: Plant centres were logical floor positions hidden by raised foreground wall caps.
+Fix (2026-10-23): At run start, hidden pickups move to nearby reachable visible floor in the same zone. Plant type, count, value and RNG are preserved. Tested multiple cave seeds; no pickup collider overlaps walls.
+User confirmation (2026-10-23): SOLVED; confirmed in chat and recorded here.
+Observed: A heal plant was generated inside the wall.
+Expected: Heal plants should spawn in valid, accessible space outside walls.
+Image: image-01-heal-plant-inside-wall.png (original report, picture 1).
+
+BUG-005 - Missing inner corner texture
+Status: OPEN - user confirms issue remains; further fixing deferred by user request.
+Triage: Uncached wall rows deliberately omitted inner cutouts/rims, unlike cached rows.
+Attempted fix (2026-10-23): Uncached rows now use an isolated scratch strip so cutouts erase wall alpha without erasing the floor. Pixel comparisons pass for all four orientations on both sides of a chunk boundary. Original screenshot has no seed; please confirm its exact location too.
+User confirmation (2026-10-23): UNSOLVED. Do not investigate or fix further until the user requests it.
+Observed: The texture for an inner corner is missing.
+Expected: Inner corners should display the correct texture.
+Image: image-03-missing-inner-corner-texture.png (follow-up report).
+
+BUG-006 - Resin spawns inside a wall
+Status: SOLVED - confirmed by user on 2026-10-23.
+Triage: Same foreground-wall occlusion issue as BUG-004; resin was on logical floor.
+Fix (2026-10-23): Run-start placement also moves hidden resin to clear visible ground, preserving size/restoration value and counts. Placement is deterministic and idempotent; Beacon chamber exclusion is retained.
+User confirmation (2026-10-23): SOLVED; confirmed in chat and recorded here.
+Observed: Resin spawns inside a wall.
+Expected: Resin should spawn in valid, accessible space outside walls.
+Image: image-04-resin-inside-wall.png (follow-up report, 2026-10-23).
+
+BUG-007 - Remove the light return tip
+Status: SOLVED - confirmed by user on 2026-10-23.
+Triage: Explicit text-removal request; no future feature dependency.
+Fix (2026-10-23): Removed the quoted light-return tip from the help text.
+User confirmation (2026-10-23): SOLVED; confirmed in chat and recorded here.
+Observed: The instructions display "Keep half your light for the way back."
+Requested change: Remove this line of text, circled in red in the screenshot.
+Image: image-05-remove-light-return-tip.png (follow-up report, 2026-10-23).
+
+BUG-008 - Falling stones can block all routes to the cave exit
+Status: SOLVED - confirmed by user on 2026-10-23.
+Triage: Existing planning/landing route checks are already implemented, so this is safety hardening rather than a missing rocks feature.
+Fix (2026-10-23): Every successful impact now performs a final physical exit proof from the player's containing tile with the proposed footprint blocked. Unsafe rocks become dust instead of solid rubble; route work defers additional planning that step. Escape-neck, pocket-race, shrink, moving-player and seeded rock suites pass. Original screenshot has no seed; please confirm the reported escape too.
+User confirmation (2026-10-23): SOLVED; confirmed in chat and recorded here.
+Observed: After the beacon is lit, falling stones can block the player from
+leaving the cave.
+Intended behavior: Lighting the beacon causes stones to fall and obstruct paths.
+Expected: There must always be at least one traversable path from the player's
+position to the cave exit, even after stones fall. Stones must never seal off
+all escape routes or trap the player in the cave.
+Image: image-06-falling-stones-block-cave-exit.png (follow-up report, 2026-10-23).
+
+BUG-009 - Diagonal movement slows at wall collision transitions and corners
+Status: SOLVED - confirmed by user on 2026-10-23.
+Triage: Radial collision pushes at tile corners changed both axes, stealing wall-parallel motion at seams.
+Fix (2026-10-23): Resolve each movement axis independently, preserving tangential displacement. Regression checks cross 200 vertical seams in both directions and 200 horizontal steps; existing collision fuzz and no-tunnelling checks pass.
+User confirmation (2026-10-23): SOLVED; confirmed in chat and recorded here.
+Observed: When the player walks diagonally toward a wall, movement slows at every
+collision transition. The effect is worse at corners, where walking against a
+corner causes significant resistance.
+Expected: Movement along walls should remain smooth across collision transitions.
+Corners should not cause excessive resistance when a direction of movement
+remains unobstructed.
+Image: image-07-diagonal-wall-collision-slowdown.png (follow-up report, 2026-10-23).

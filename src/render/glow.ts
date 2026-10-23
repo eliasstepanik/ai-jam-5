@@ -22,7 +22,7 @@ export type TipFn = (s: State) => { x: number; y: number }
 
 const RESIN = '#d9861c', PLANT = '#b6ff8a' // pickup glow colours (render-3 §1)
 const CRYSTAL = { sodium: '#ffe14a', copper: '#1fd6b8', strontium: '#e0182d' } as const // style §4.4 "Crystal light"
-const BEACON_COL = '#ffb347', BEACON_CORE = '#fff4d6', SHAFT_COL = '#cfe3ff', EMBER_COL = '#c2410c', FLARE_COL = '#fff4d6'
+const BEACON_COL = '#ffb347', BEACON_CORE = '#fff4d6', SHAFT_COL = '#cfe3ff', FLARE_COL = '#fff4d6'
 const REDUCED_FLASH = 0.3 // settings.reducedFlash scales every flash layer (ui-2 §6, render-3 §4)
 const VEIN_R = 10 // vein glint radius
 const SHAFT_R = 48 // entrance shaft radius (its dust motes stay within 40 px of the centre)
@@ -73,7 +73,6 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
   const p = s.player
   const t = s.meta.time
   const escape = s.meta.phase === 'escape'
-  const out = p.energy <= 0
   const e = clamp(p.energy / p.energyMax, 0, 1)
   const R = flameRadius(s)
   const rf = s.settings.reducedFlash ? REDUCED_FLASH : 1
@@ -119,12 +118,10 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
   const flashR = 64 + 96 * bf
   if (bf > 0 && glowInView(v, bx, by, flashR)) drawGlowSprite(ctx, BEACON_CORE, bx, by, flashR, 0.8 * bf * rf)
 
-  if (!escape) {
+  if (!escape && p.energy > 0) {
     const tip = tipOf(s)
     const tx = tip.x + 0.8 * vnoise(t * 7, 11), ty = tip.y + 0.8 * vnoise(t * 7, 13)
-    if (out) {
-      drawGlowSprite(ctx, EMBER_COL, tx, ty, 6, 0.5 + 0.2 * vnoise(t * 3, 5)) // flame out: only the ember glows
-    } else {
+    {
       const col = FLAME_COL[p.activeMineral]
       const f = 0.8 + 0.4 * e
       if (q.glow) drawGlowSprite(ctx, col.mantle, p.x, p.y, 0.9 * R, 0.1 + 0.08 * e)
