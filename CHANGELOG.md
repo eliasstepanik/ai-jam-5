@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Tossing minerals (1-3 select, F toss, G shake off) and small/large resin.
+- Best score and settings (volume, mute, reduced flash, last seed) persist in localStorage (`src/core/storage.ts`). A blocked or full store shows "Saving disabled in this browser" once and the game carries on.
 - D slice 2.5D view: fixed-south three-quarter view over the unchanged square grid. Wall caps get 48 px south faces, and walls, monsters, the player and props are depth-sorted row by row.
 - Cave tileset `src/assets/cave_tileset.png` and `src/assets/cave_tileset.json`, used for floor and walls. Ore veins are baked on south-facing walls.
 - Character atlas `src/assets/characters.png` and `src/assets/characters.json` for the player and the Lurker, Devourer and Stalker animations, including the torch flame palette swap. `scripts/trim-characters.ts` builds it from `art/characters-source.json`.

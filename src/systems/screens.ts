@@ -1,13 +1,14 @@
 // L3 systems: pure screen state machine, called first by step() (R-003). Returns true while the world simulates.
 // Spec: docs/architecture-modules-systems.md S2, architecture-systems.md §2, architecture-ui.md §5/§7, architecture-ui-2.md §2-§4,
-// R-077 (no ui.urlSeed: platformStep writes ui.seedInput and consumes copyLink), R-078 (settings/best load: B7 storage, not on
-// master yet; B7 adds the once-guarded loadSettings/loadBest call and saveSettings after the Sound/Flashing toggles).
+// R-077 (no ui.urlSeed: platformStep writes ui.seedInput and consumes copyLink), R-078 (settings/best load once per session via
+// the settings.loaded guard; saveSettings after every Sound/Flashing/volume change, R-168).
 // Clicks activate the focused item: hit-testing needs src/ui/layout.ts (L4), which an L3 file must not import.
-// ponytail: Sound-row volume (ArrowLeft/Right, Minus/Equal, 0.1 steps) and mute are changed here; B7 adds saveSettings after them.
+// ponytail: Sound-row volume (ArrowLeft/Right, Minus/Equal, 0.1 steps) and mute are changed here; each change saves at once (rare events, no debounce).
 import type { Input } from '../main.ts'
 import type { FxEventKind, Screen, State } from '../core/types.ts'
 import { HELP_PAGES } from '../core/state.ts'
 import { SEED_MAX_LEN } from '../core/seed.ts'
+import { loadBest, loadSettings, saveSettings } from '../core/storage.ts'
 import { emit } from './fx.ts'
 import { genStep, runSeedText } from './run.ts'
 
@@ -53,8 +54,8 @@ function tick(s: State): void {
 function activate(s: State, item: number): void {
   const sc = s.meta.screen, set = s.settings
   if (sc === 'title' || sc === 'paused') {
-    if (item === 2) { set.muted = !set.muted; ui(s, 'uiConfirm'); return }
-    if (item === 3) { set.reducedFlash = !set.reducedFlash; ui(s, 'uiConfirm'); return }
+    if (item === 2) { set.muted = !set.muted; saveSettings(s); ui(s, 'uiConfirm'); return }
+    if (item === 3) { set.reducedFlash = !set.reducedFlash; saveSettings(s); ui(s, 'uiConfirm'); return }
     if (item === 1) { ui(s, 'uiConfirm'); go(s, 'help'); return }
   }
   if (sc === 'title') { ui(s, 'uiConfirm'); begin(s, s.ui.seedInput); return } // Play (0) and Seed field (4)
@@ -74,13 +75,14 @@ function activate(s: State, item: number): void {
 
 export function stepScreens(s: State, input: Input): boolean {
   tick(s)
+  if (!s.settings.loaded) { loadSettings(s); loadBest(s) } // once per page session; loadSettings sets the flag even when storage fails
   const u = s.ui, k = input.pressed, sc = s.meta.screen
   if (u.genPending !== '') {
     if (k.has('Escape')) { u.genPending = ''; u.genAttempt = 0; ui(s, 'uiBack') } else genStep(s)
     return false // the world's first step is the next update, as after a synchronous startRun
   }
   const seedFocus = sc === 'title' && u.cursor === 4
-  if (k.has('KeyM') && !seedFocus) s.settings.muted = !s.settings.muted // every screen (ui.md §7); 'm' types in the seed box
+  if (k.has('KeyM') && !seedFocus) { s.settings.muted = !s.settings.muted; saveSettings(s) } // every screen (ui.md §7); 'm' types in the seed box
   if (sc === 'playing') {
     if (k.has('Blur') || ((k.has('Escape') || k.has('KeyP')) && s.meta.time - u.screenAt >= CHANGE_LOCK_S)) go(s, 'paused')
     return s.meta.screen === 'playing'
@@ -108,7 +110,7 @@ export function stepScreens(s: State, input: Input): boolean {
   if (up !== down) { u.cursor = (u.cursor + (down ? 1 : n - 1)) % n; ui(s, 'uiMove') }
   if (u.cursor === 2 && (sc === 'title' || sc === 'paused')) { // Sound row: volume in 0.1 steps (resources-3 §3)
     const dv = (k.has('ArrowRight') || k.has('Equal') ? 1 : 0) - (k.has('ArrowLeft') || k.has('Minus') ? 1 : 0)
-    if (dv !== 0) { s.settings.volume = Math.min(1, Math.max(0, Math.round(s.settings.volume * 10 + dv) / 10)); ui(s, 'uiMove') }
+    if (dv !== 0) { s.settings.volume = Math.min(1, Math.max(0, Math.round(s.settings.volume * 10 + dv) / 10)); saveSettings(s); ui(s, 'uiMove') }
   }
   if (sc === 'title' && !seedFocus && k.has('KeyH')) { ui(s, 'uiConfirm'); go(s, 'help'); return false }
   if (sc === 'paused') {
