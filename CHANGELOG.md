@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The player's walk and run animation now plays at the pace of the actual movement speed, so the feet no longer slide: slower when moving slowly or along walls, faster when sprinting or flying with noclip.
 - Normal descent movement selects walking rather than running; moving with an extinguished torch uses flame-free walking frames and no floating ember glow.
 - Death no longer awards the time bonus; wins retain it. Removed the obsolete light-return help tip.
 - Plants and resin hidden by foreground wall art move to reachable visible floor when a run starts, preserving pickup counts, types and restoration values.

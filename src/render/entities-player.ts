@@ -4,6 +4,7 @@
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
 import { clamp } from '../core/math.ts'
+import { WALK_MIN_SPEED, gaitFrame, gaitRuns, gaitSetOf } from '../core/gait.ts'
 import { dirIndex } from '../core/grid.ts'
 import type { Dir8 } from '../core/grid.ts'
 import { getResources } from '../assets/resources.ts'
@@ -15,9 +16,6 @@ import { ctx2d, newCanvas } from './light.ts'
 export const PLAYER_FOOT = 24 // authored sole offset below the atlas pivot; State position is the ground contact
 const PIVOT = 32 // source px of the 64x64 frame pivot (R-184)
 const FRAME_PX = 64
-const WALK_MIN_SPEED = 10 // render-2 §3.3: walk anim above this speed (px/s)
-const RUN_MIN_SPEED = T.player.walkPxS + 1 // ordinary descent walking must not select the sprint animation
-const WALK_ESCAPE_MUL = 1.6 // render-2 §3.3: walk playback multiplier in the escape
 const TINT_CAP = 64 // render-3 §5: res.images.tints is capped at 64 entries
 const HIT_TINT = '#ffffff'
 // DEFAULT: the characters sheet index of charatlas.ts (SHEET, private there); the flash only builds once that sheet is decoded.
@@ -65,12 +63,16 @@ const SETS: Record<'escape' | 'lit' | 'unlit', TorchSet> = {
     swing: null, mine: null },
 }
 
+// Frame of a walk / run clip at the integrated gait phase (core/gait.ts), laid over the clip's own frame durations.
+const gaitClipFrame = (anim: string, phase: number): number =>
+  gaitFrame(phase, Array.from({ length: animLen('player', anim) }, (_, i) => charFrame('player', anim, 0, i).dur))
+
 // Animation, frame index and atlas direction of the player body. Priority death > roll > hurt > swing > mining > walk > idle.
 // DEFAULT: swing and mining have art for the lit torch only; in the escape or with an unlit torch they fall through to walk/idle.
 // DEFAULT: death uses the retained facing (State keeps no start-of-death velocity), so the direction holds from the first frame.
 export function playerPose(s: State): { anim: string; frame: number; dir: number } {
   const p = s.player, esc = s.meta.phase === 'escape', ms = s.meta.time * 1000, speed = Math.hypot(p.vx, p.vy)
-  const set = SETS[esc ? 'escape' : p.energy > 0 ? 'lit' : 'unlit']
+  const set = SETS[gaitSetOf(esc, p.energy)]
   const dir = dirIndex(directionOf(esc && speed > WALK_MIN_SPEED ? Math.atan2(p.vy, p.vx) : p.facing))
   const pose = (anim: string, frame: number) => ({ anim, frame, dir })
   if (s.meta.screen === 'dead') {
@@ -81,8 +83,8 @@ export function playerPose(s: State): { anim: string; frame: number; dir: number
   if (p.swing.active && set.swing) return pose(set.swing, fitFrame('player', set.swing, p.swing.t / T.swing.activeS))
   if (p.mining.targetTile >= 0 && set.mine) return pose(set.mine, fitFrame('player', set.mine, p.mining.progress / T.mining.holdS))
   if (speed > WALK_MIN_SPEED) {
-    const anim = speed > RUN_MIN_SPEED ? set.run : set.walk
-    return pose(anim, frameAt('player', anim, ms * (esc ? WALK_ESCAPE_MUL : 1)))
+    const anim = gaitRuns(speed) ? set.run : set.walk
+    return pose(anim, gaitClipFrame(anim, p.gaitPhase))
   }
   return pose(set.idle, frameAt('player', set.idle, ms))
 }
