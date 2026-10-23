@@ -17,7 +17,7 @@ Repo: https://github.com/eliasstepanik/ai-jam-5
 
 ## Last Ember: how to play
 
-Theme: TORCH. You carry the last flame of a dying torch down a seeded cave. The flame is your light, your shield and your clock. Go deep, light the Beacon at the bottom, then run back up to the entrance before the cave collapses. Deeper is worth more, and dying still scores.
+Theme: TORCH. You carry the last flame of a dying torch down a seeded cave. The flame is your light, your shield and your clock. Go deep, light the Beacon at the bottom, then run back up to the entrance before the cave collapses. Deeper is worth more, and dying still scores. During the escape a glowing ember wisp floats ahead of you and shows the way to the exit.
 
 | Input | Action |
 |---|---|

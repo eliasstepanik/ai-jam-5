@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- During the escape run a small glowing ember wisp with a sparkle trail floats ahead of you along the real walkable route to the exit and re-routes around fallen rocks. It is drawn calmer with reduced flashes and thinner on low quality.
 - Developer panel (DEV -> Navigate): depth class buttons (Shallow, Short, Standard, Deep). During a run they restart the same seed in the chosen class, keeping debug settings; on the title they set the class for the next run.
 - Depth classes: Shallow, Short, Standard and Deep, picked on the title screen with the new Depth row (Enter or Space cycles, Left and Right step). Shallow caves are smaller and Deep caves larger, and the choice is remembered. Standard is unchanged: the same seeds give the same caves as before.
 - Each depth class keeps its own best score, and the end screen shows the class you played.
