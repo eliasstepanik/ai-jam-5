@@ -68,14 +68,14 @@ function buildMaps(s: State, key: string): TileCache {
   return { key, zone: zoneMap(s), mask, inner, variant, chunks: new Map(), lru: [] }
 }
 
-// Valid cache for the current world: maps rebuilt when tilesHash changed, chunks dropped when only the image generation changed.
+// Valid cache for the current world: maps rebuilt when tilesHash changed, chunks dropped when only the image generation or the vein generation (a vein was mined) changed.
 // ponytail: null for a title/empty world. memory.ts reads the zone map through this too. Same tilesHash on a new run reuses the maps
 // (same tiles give the same entrance and path field). Ceiling: the face variant uses the seed of the run that built the maps; a new
 // seed with identical tiles keeps the old variants. Upgrade: put the seed in the key.
 export function tileCache(s: State): TileCache | null {
   const { w, h, tiles, tilesHash } = s.world
   if (tiles.length !== w * h || w === 0) return null
-  const res = getResources(), key = tileKey(tilesHash, res.images.gen)
+  const res = getResources(), key = tileKey(tilesHash, res.images.gen, s.world.veinGen)
   let t = res.tiles
   if (!t || !t.key.startsWith(tilesHash + ':')) {
     t = buildMaps(s, key)

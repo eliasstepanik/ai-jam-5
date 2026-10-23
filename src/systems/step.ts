@@ -1,6 +1,6 @@
 // L3 systems: fixed-step driver. The only writer of meta.time and meta.steps (R-002).
 // Spec: docs/architecture-systems.md 1.1-1.3 (order D0-D18 / X0-X18), R-067 (hitstop), R-068/MS-25 (click buffer in hitstop),
-// R-125 (eStart snapshot for the Beacon gate). Slice B calls (roll, quake, mining, beacon) are not on master yet; minerals (D9) are wired;
+// R-125 (eStart snapshot for the Beacon gate). Slice B calls (roll, quake, beacon) are not on master yet; mining (D7) and minerals (D9) are wired;
 // each owning task adds its call at the index marked inline. No stub bodies stand in for them.
 import type { Input } from '../main.ts'
 import type { State } from '../core/types.ts'
@@ -14,6 +14,7 @@ import { stepFlame, stepMinerals } from './flame.ts'
 import { tickFx } from './fx.ts'
 import { resolveIntent } from './intent.ts'
 import { stepMonsters } from './monsters.ts'
+import { stepMining } from './mining.ts'
 import { stepMovement } from './movement.ts'
 import { stepPickups } from './pickups.ts'
 import { checkEnd } from './run.ts'
@@ -38,7 +39,8 @@ export function step(s: State, input: Input, dt: number): void {
   // D5: B1 adds `const eStart = s.player.energy` here, before stepFlame (R-125)
   stepFlame(s, dt) // D5
   stepPickups(s) // D6
-  // D7/D8: B1 adds `if (!esc) { stepMining(s, it, dt); stepBeacon(s, it, dt, eStart) }` here (stepBeacon takes 4 args, R-125)
+  if (!esc) stepMining(s, it, dt) // D7
+  // D8: B1b adds `stepBeacon(s, it, dt, eStart)` after the line above, inside the same `if (!esc)` (4 args, R-125)
   if (!esc && s.meta.phase === 'descent') { // phase can flip inside stepBeacon
     stepMinerals(s, it) // D9
     stepSwing(s, it, dt) // D10

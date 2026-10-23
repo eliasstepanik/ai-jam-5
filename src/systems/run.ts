@@ -33,7 +33,7 @@ export function startRun(s: State, seedText: string, cave?: CaveResult): void {
     w: MAP_W, h: MAP_H, tiles: c.tiles, tilesHash: fnv1a(c.tiles),
     entrance: { ...c.entrance }, exit: { ...c.exit }, beacon: { ...c.beacon },
     beaconDist: Math.max(1, c.beaconDist), beaconLit: false, explored: new Array<number>(Math.ceil(n / 32)).fill(0),
-    solidSig: 0, exploreKey: -1, pendingSig: 0, beaconLitAt: 0,
+    solidSig: 0, exploreKey: -1, pendingSig: 0, beaconLitAt: 0, veinGen: 0,
   }
   // Ids in array order, veins then pickups (systems §3, determinism §4). Copies: the CaveResult may be shared (checks memo).
   s.veins = c.veins.map((v) => ({ ...v, id: s.meta.nextId++ }))

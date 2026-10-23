@@ -6,7 +6,7 @@
 // ponytail: Sound-row volume (ArrowLeft/Right, Minus/Equal, 0.1 steps) and mute are changed here; each change saves at once (rare events, no debounce).
 import type { Input } from '../main.ts'
 import type { FxEventKind, Screen, State } from '../core/types.ts'
-import { HELP_PAGES } from '../core/state.ts'
+import { HELP_PAGES, toast } from '../core/state.ts'
 import { SEED_MAX_LEN } from '../core/seed.ts'
 import { loadBest, loadSettings, saveSettings } from '../core/storage.ts'
 import { emit } from './fx.ts'
@@ -17,6 +17,7 @@ const DT = 1 / 60
 const CHANGE_LOCK_S = 0.25 // ui.md §5 rule 6
 const END_LOCK_S = 0.5 // scoring-and-save §7
 const CONFIRM_S = 2 // ui-2 §2 quit confirm time (s)
+const POUCH_FULL = 'Pouch full' // R-134
 const ITEMS: Record<Screen, number> = { title: 5, help: 0, playing: 0, paused: 5, dead: 4, won: 4 }
 
 const ui = (s: State, kind: FxEventKind): void => emit(s, kind, s.cam.x, s.cam.y)
@@ -84,6 +85,9 @@ export function stepScreens(s: State, input: Input): boolean {
   const seedFocus = sc === 'title' && u.cursor === 4
   if (k.has('KeyM') && !seedFocus) { s.settings.muted = !s.settings.muted; saveSettings(s) } // every screen (ui.md §7); 'm' types in the seed box
   if (sc === 'playing') {
+    // systems-2 §4: mining emits mineDone a=-1 (pouch full); this machine owns the toast (R-003). An event of the last step has step === meta.steps here.
+    // ponytail: scanned once per call; a pause/resume right after the event can repeat the toast. The text dedupe on this line hides the repeat inside TOAST_S.
+    if (s.fx.events.some((e) => e.kind === 'mineDone' && e.a === -1 && e.step === s.meta.steps) && !u.toasts.some((t) => t.text === POUCH_FULL)) toast(s, POUCH_FULL)
     if (k.has('Blur') || ((k.has('Escape') || k.has('KeyP')) && s.meta.time - u.screenAt >= CHANGE_LOCK_S)) go(s, 'paused')
     return s.meta.screen === 'playing'
   }

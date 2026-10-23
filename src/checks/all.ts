@@ -26,6 +26,7 @@ import { run as determinism } from './determinism.check.ts'
 import { run as score } from './score.check.ts'
 import { run as minerals } from './minerals.check.ts'
 import { run as route } from './route.check.ts'
+import { run as mining } from './mining.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -53,4 +54,5 @@ determinism()
 score()
 minerals()
 route()
+mining()
 console.log('checks ok')
