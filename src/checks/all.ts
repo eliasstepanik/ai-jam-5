@@ -24,6 +24,10 @@ import { run as damage } from './damage.check.ts'
 import { run as movement } from './movement.check.ts'
 import { run as determinism } from './determinism.check.ts'
 import { run as score } from './score.check.ts'
+import { run as minerals } from './minerals.check.ts'
+import { run as route } from './route.check.ts'
+import { run as mining } from './mining.check.ts'
+import { run as beacon } from './beacon.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -49,4 +53,8 @@ damage()
 movement()
 determinism()
 score()
+minerals()
+route()
+mining()
+beacon()
 console.log('checks ok')

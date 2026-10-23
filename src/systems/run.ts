@@ -2,13 +2,14 @@
 // architecture-systems.md §3, architecture-state-2.md §10 steps 1-7, architecture-systems-4.md §3.1, architecture-scoring-and-save.md §5,
 // chunked generation architecture-scale-and-economy.md §4 (SAE1) / architecture-cave-generation-3.md §7, fallback warning
 // architecture-cave-generation-2.md §6 step 6, R-001, R-035, R-037, R-111, R-160, R-165.
-// Storage is not on master yet: B7 (src/core/storage.ts) adds `commitBest(s)` as the last line of endRun.
+// Storage: endRun ends with commitBest(s), genStep saves the settings (lastSeed) right after startRun (R-168).
 import type { CaveResult, State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
 import { initPlayer, MAP_H, MAP_W, TILE } from '../core/state.ts'
 import { fnv1a, hashSeed } from '../core/rng.ts'
 import { parseSeed, randomSeed, sanitizeSeedText } from '../core/seed.ts'
 import { computeScore } from '../core/score.ts'
+import { commitBest, saveSettings } from '../core/storage.ts'
 import { carveCore, caveSeed, finalizeCave, generateCave, MAX_ATTEMPTS } from '../world/generate.ts'
 import { populate } from '../world/gen/populate.ts'
 import { fallbackCave } from '../world/gen/fallback.ts'
@@ -32,7 +33,7 @@ export function startRun(s: State, seedText: string, cave?: CaveResult): void {
     w: MAP_W, h: MAP_H, tiles: c.tiles, tilesHash: fnv1a(c.tiles),
     entrance: { ...c.entrance }, exit: { ...c.exit }, beacon: { ...c.beacon },
     beaconDist: Math.max(1, c.beaconDist), beaconLit: false, explored: new Array<number>(Math.ceil(n / 32)).fill(0),
-    solidSig: 0, exploreKey: -1, pendingSig: 0, beaconLitAt: 0,
+    solidSig: 0, exploreKey: -1, pendingSig: 0, beaconLitAt: 0, veinGen: 0,
   }
   // Ids in array order, veins then pickups (systems §3, determinism §4). Copies: the CaveResult may be shared (checks memo).
   s.veins = c.veins.map((v) => ({ ...v, id: s.meta.nextId++ }))
@@ -93,10 +94,13 @@ export function genStep(s: State): void {
     if (res && validateCave(res).ok) cave = res
     else s.ui.genAttempt = a + 1
   }
-  if (cave) startRun(s, key, finalizeCave(cave)) // R-160: finalizeCave once per accepted cave
+  if (cave) {
+    startRun(s, key, finalizeCave(cave)) // R-160: finalizeCave once per accepted cave
+    saveSettings(s) // lastSeed changed (scoring-and-save §6 rule 5); checks that call startRun directly never write
+  }
 }
 
-// architecture-systems.md §3 endRun order; scoring-and-save §5. isNewBest/prevBest are finalised by commitBest (B7).
+// architecture-systems.md §3 endRun order; scoring-and-save §5. isNewBest/prevBest are finalised by commitBest.
 export function endRun(s: State, won: boolean): void {
   const p = s.player, st = p.stats
   const seconds = Math.floor(s.meta.steps / 60)
@@ -113,6 +117,7 @@ export function endRun(s: State, won: boolean): void {
   s.ui.hover = -1
   s.ui.screenAt = s.meta.time
   emit(s, won ? 'win' : 'death', p.x, p.y)
+  commitBest(s) // after result and score exist: sets isNewBest/prevBest, s.best and the stored record
 }
 
 // architecture-systems-4.md §3.1: lose beats win; the win needs phase 'escape' (B8 makes it reachable).

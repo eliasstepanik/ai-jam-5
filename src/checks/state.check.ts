@@ -85,6 +85,7 @@ function midRunState(): State {
   s.world.solidSig = 3
   s.world.exploreKey = 42
   s.world.pendingSig = 5
+  s.world.veinGen = 2
   s.player.x = 1200; s.player.y = 900; s.player.hp = 3; s.player.energy = 42.5
   s.player.activeMineral = 'copper'; s.player.minerals.copper = 2
   s.player.parry.lastGrade = 'good'; s.player.parry.lastAt = 598

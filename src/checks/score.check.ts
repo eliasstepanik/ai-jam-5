@@ -1,12 +1,13 @@
 // A7 score checks. Spec: docs/architecture-scoring-and-save.md §2/§4/§7, architecture-tuning-2.md §7 (T.score pinned to the approved
 // literals), R-080 (one score.check.ts, also asserts the 5488 worked win), R-040 (run(), no side effect on import, DOM-free, no node:).
-// ponytail: the spec's "Best round trip through a fake store with a throwing setItem" is NOT here: src/core/storage.ts (B7) is not on
-// master, so there is nothing to call. B7 adds that block to this file together with commitBest.
+// B7a (R-168): storageChecks is the spec's Best round trip through a fake store, incl. the throwing setItem.
 import type { State } from '../core/types.ts'
 import { init } from '../core/state.ts'
 import { DEPTH_MAX, computeScore, depthOf, zoneOfDepth } from '../core/score.ts'
 import { T } from '../core/tuning.ts'
 import { endRun } from '../systems/run.ts'
+import { commitBest, loadBest, loadSettings, saveSettings } from '../core/storage.ts'
+import type { Store } from '../core/storage.ts'
 
 function ok(cond: boolean, msg: string): void {
   if (!cond) throw new Error('check failed: score: ' + msg)
@@ -80,9 +81,97 @@ function endRunChecks(): void {
   ok(dead.result !== null && dead.result.hpLeft === 0 && dead.result.parts.total === 4000 + 188 + 150 && dead.meta.screen === 'dead', 'endRun(death) drops the win bonus and the HP term')
 }
 
+// fake-store helper: a Map-backed Store; `throws` makes setItem throw like a full or blocked store.
+function fake(throws = false): Store & { m: Map<string, string> } {
+  const m = new Map<string, string>()
+  return {
+    m,
+    getItem: (k) => m.get(k) ?? null,
+    setItem: (k, v) => { if (throws) throw new Error('QuotaExceededError'); m.set(k, v) },
+  }
+}
+
+function ended(score: number, seconds: number): State {
+  const s = init()
+  s.result = {
+    won: true, depth: 40, zone: 4, seconds, mineralsUsed: 6, hpLeft: 3, seed: 1, seedText: 'x', kills: 0, parries: 0, perfectParries: 0,
+    parts: { depth: 0, win: 0, time: 0, minerals: 0, hp: 0, total: score }, isNewBest: false, prevBest: 0, endAt: 0,
+  }
+  return s
+}
+
+function storageChecks(): void {
+  const st = fake()
+  const a = ended(5488, 412)
+  commitBest(a, st)
+  ok(a.result !== null && a.result.isNewBest && a.result.prevBest === 0 && a.best !== null && a.best.score === 5488, 'first commit is a new best with prevBest 0')
+  ok(a.best !== null && a.best.v === 1 && /^\d{4}-\d\d-\d\dT/.test(a.best.at) && a.best.seconds === 412 && a.best.seedText === 'x', 'Best fields and ISO timestamp')
+  const b = init()
+  loadBest(b, st)
+  ok(JSON.stringify(b.best) === JSON.stringify(a.best), 'commit then loadBest in a new State equals the committed Best')
+  const lower = ended(5000, 300)
+  lower.best = b.best
+  commitBest(lower, st)
+  ok(lower.result !== null && !lower.result.isNewBest && lower.result.prevBest === 5488 && lower.best !== null && lower.best.score === 5488, 'lower score keeps the best, prevBest 5488')
+  const tie = ended(5488, 400)
+  tie.best = b.best
+  commitBest(tie, st)
+  ok(tie.result !== null && tie.result.isNewBest && tie.best !== null && tie.best.seconds === 400, 'equal score in fewer seconds is a new best')
+  const slow = ended(5488, 413)
+  slow.best = tie.best
+  commitBest(slow, st)
+  ok(slow.result !== null && !slow.result.isNewBest && slow.best !== null && slow.best.seconds === 400, 'equal score in more seconds is not')
+  const same = ended(5488, 400)
+  same.best = tie.best
+  commitBest(same, st)
+  ok(same.result !== null && !same.result.isNewBest, 'equal score and equal seconds is not')
+
+  const bad = fake(true)
+  const f = ended(100, 10)
+  commitBest(f, bad)
+  commitBest(f, bad)
+  saveSettings(f, bad)
+  ok(!f.ui.storageOk && f.best !== null && f.best.score === 100, 'throwing setItem: storageOk false, in-memory best kept, no throw')
+  ok(f.ui.toasts.filter((t) => t.text === 'Saving disabled in this browser').length === 1, 'failure toasts exactly once')
+  const none = init()
+  loadSettings(none, { getItem: () => { throw new Error('SecurityError') }, setItem: () => undefined })
+  ok(!none.ui.storageOk && none.settings.loaded && none.ui.toasts.length === 1, 'throwing getItem: storageOk false, loaded set, one toast')
+  const nog = init()
+  loadBest(nog)
+  saveSettings(nog)
+  ok(nog.best === null && (nog.ui.storageOk || nog.ui.toasts.length === 1), 'default store never throws')
+
+  for (const raw of ['{not json', '{"v":2,"score":9999,"depth":1,"seconds":1,"mineralsUsed":0,"hpLeft":0}', '{"v":1,"score":"9","depth":1,"seconds":1,"mineralsUsed":0,"hpLeft":0}', 'null', '[1]', '7']) {
+    const c = fake()
+    c.m.set('last-ember:best', raw)
+    const s = init()
+    loadBest(s, c)
+    ok(s.best === null && s.ui.storageOk && c.m.get('last-ember:best') === raw, `unreadable best ignored and kept: ${raw}`)
+  }
+  const sv = fake()
+  const s1 = init()
+  s1.settings.volume = 0.3
+  s1.settings.muted = true
+  s1.settings.lastSeed = '42'
+  s1.settings.reducedFlash = true
+  saveSettings(s1, sv)
+  const s2 = init()
+  loadSettings(s2, sv)
+  ok(s2.settings.volume === 0.3 && s2.settings.muted && s2.settings.lastSeed === '42' && s2.settings.reducedFlash && s2.settings.loaded, 'settings round trip')
+  sv.m.set('last-ember:settings', '{"v":2,"volume":0.1}')
+  const s3 = init()
+  loadSettings(s3, sv)
+  ok(s3.settings.volume === 0.7 && s3.settings.loaded, 'settings v:2 ignored, defaults kept, loaded still set')
+  sv.m.set('last-ember:settings', '{"v":1,"volume":0.2,"quality":"bogus"}')
+  const s4 = init()
+  loadSettings(s4, sv)
+  ok(s4.settings.volume === 0.2 && s4.settings.quality === 'auto' && !s4.settings.muted, 'partial settings fill defaults, bad quality becomes auto')
+}
+
 export function run(): void {
   formula()
   depthChecks()
   zoneChecks()
   endRunChecks()
+  storageChecks()
 }

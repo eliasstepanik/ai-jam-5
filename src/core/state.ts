@@ -59,7 +59,7 @@ export function init(): State {
       w: MAP_W, h: MAP_H, tiles: '', tilesHash: 0,
       entrance: { tx: 0, ty: 0 }, exit: { tx: 0, ty: 0 }, beacon: { tx: 0, ty: 0 },
       beaconDist: 1, beaconLit: false, explored: [], solidSig: 0,
-      exploreKey: -1, pendingSig: 0, beaconLitAt: 0,
+      exploreKey: -1, pendingSig: 0, beaconLitAt: 0, veinGen: 0,
     },
     monsters: [], pickups: [], veins: [], rocks: [],
     director: {

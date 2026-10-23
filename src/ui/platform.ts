@@ -6,8 +6,12 @@ import { SEED_MAX_LEN } from '../core/seed.ts'
 import type { State } from '../core/types.ts'
 import { STR } from './strings.ts'
 
-// DEFAULT (OD-5b, share URL not decided): empty = copy the plain text 'Last Ember seed <seed>'. Set the game's public URL here to copy a link.
+// DEFAULT (OD-5b, public share URL not decided): empty = build the link from the page's own origin + pathname.
+// Set the game's public URL (e.g. the itch.io page) here to pin it, because an itch iframe has a different origin than the page.
 const SHARE_BASE = ''
+
+// <origin+pathname>?seed=<encoded seedText> (architecture-determinism §5, architecture-ui-2 §3). Pure, so it is checkable.
+export const shareUrl = (origin: string, path: string, seedText: string): string => origin + path + '?seed=' + encodeURIComponent(seedText)
 
 // Seeds in the URL are lower-case [a-z0-9-], at most SEED_MAX_LEN characters (R-029).
 const norm = (v: string): string => v.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, SEED_MAX_LEN)
@@ -35,10 +39,17 @@ export function writeSeed(seed: string): void {
 
 const seedOf = (s: State): string => s.result?.seedText || s.meta.seedText
 
+// The text that goes on the clipboard. Plain 'Last Ember seed <seed>' when there is no usable http(s) location (Node, file://, workers).
+// ponytail: an itch iframe may not forward ?seed= from the page URL; the end screen shows the seed and the title screen has a seed field.
+function shareText(seed: string): string {
+  if (SHARE_BASE) return shareUrl(SHARE_BASE, '', seed)
+  if (typeof location !== 'undefined' && /^https?:$/.test(location.protocol)) return shareUrl(location.origin, location.pathname, seed)
+  return STR.shareText + ' ' + seed
+}
+
 // Starts the clipboard write. Result is reported through res.ui.copyResult only, never into State from a callback.
 function copy(s: State): void {
-  const res = getResources(), seed = seedOf(s)
-  const text = SHARE_BASE ? SHARE_BASE + '?seed=' + encodeURIComponent(seed) : STR.shareText + ' ' + seed
+  const res = getResources(), text = shareText(seedOf(s))
   const clip = typeof navigator === 'undefined' ? undefined : navigator.clipboard
   if (!clip) { res.ui.copyResult = 'failed'; return }
   try {

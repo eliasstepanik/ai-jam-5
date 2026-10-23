@@ -1,8 +1,7 @@
 // A31 order check: the system order inside step() that changes outcomes, observed through behaviour (R-079, R-176: no counting spy).
 // Spec: docs/architecture-modules-systems-2.md §1 (order.check row, (a)-(d)), architecture-systems.md 1.1-1.3 (D1, D13/D14, D16), MS-25.
 // R-039/R-040: local ok(), `export function run(): void`, no import-time work, no DOM, no node: imports, no L4 imports (R-043).
-// ponytail: (b) "a resin under the player with e = 0 relights before the mining cost (#6 before #7)" needs stepMining (B1), which is
-// not on master. step.check.ts pins D5 stepFlame before D6 stepPickups; add (b) here when B1 lands. (e) is dropped by R-079.
+// (b) "a resin under the player with e = 0 relights before the mining cost (#6 before #7)" is pinned below since B1a. (e) is dropped by R-079.
 import type { Input } from '../main.ts'
 import { init } from '../core/state.ts'
 import { parseSeed } from '../core/seed.ts'
@@ -60,6 +59,20 @@ export function run(): void {
     ok(s.player.stats.parries === 1 && s.player.parry.lastGrade !== 'none', 'swing + bite on one step: parry (got parries ' + s.player.stats.parries + ')')
     ok(m.ai === 'dying' && s.player.hurtT === 0 && s.player.hitFlash === 0, 'swing + bite on one step: no bite (hurtT ' + s.player.hurtT + ')')
     ok(s.player.energy > s.player.energyMax - T.monsters.lurker.energyHitE, 'swing + bite on one step: parry cost stays below energyHitE')
+  }
+
+  // (b) D6 stepPickups before D7 stepMining: e = 0 on a vein with a resin under the player. Resin first: energy back, mining runs on the same step.
+  // Mining first would see energy <= 0, cancel (progress 0) and only then relight.
+  {
+    const s = quiet()
+    const v = s.veins[0]
+    s.player.x = (v.stand % s.world.w) * 32 + 16
+    s.player.y = Math.floor(v.stand / s.world.w) * 32 + 16
+    s.player.energy = 0
+    s.pickups = [{ id: s.meta.nextId++, kind: 'resin', x: s.player.x, y: s.player.y, bob: 0, size: 'small' }]
+    step(s, inp([], 0, ['KeyE']), DT)
+    ok(s.pickups.length === 0 && s.player.energy > 0, 'resin under the player relights (energy ' + s.player.energy + ')')
+    ok(s.player.mining.progress > 0, 'relit on D6, so D7 mining runs on the same step (progress ' + s.player.mining.progress + ')')
   }
 
   // (c) D16 checkEnd: hp 0 on the exit tile in the escape phase gives dead, not won (lose beats win)
