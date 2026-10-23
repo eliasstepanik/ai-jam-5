@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Render Architecture (2/3) – Tiles, Entities, Particles, Darkness and Memory
 description: Last Ember rendering part 2 – chunked tile cache with zone map, floor variant hash and wall bitmask auto-tiling, entity passes with the shared inLight predicate, the analytic particle pool fed by the fx event queue, and the darkness layer with pre-rendered light mask sprites, flicker, memory map and flame-out look.
 tags: [project, ai-jam-5, architecture, last-ember, render]
-timestamp: 2026-10-23T09:00:00+02:00
+timestamp: 2026-10-23T10:00:00+02:00
 ---
 
 # Last Ember – Render Architecture (2/3)
@@ -83,7 +83,7 @@ function paintFloor(c: CanvasRenderingContext2D, s: State, ts: Tileset, cx: numb
 // and south-facing ores wall_<mineral>_<1+vein.id%3> at (tx * 32, ty * 32 + 32)
 ```
 
-Frame names and anchors come from `cave_tileset.json` through `src/render/tileset.ts` (`tileFrame`, `capName`, `faceName`, `oreName`, `floorName`; [[architecture-modules-render]]). The pure hash and face-kind helpers live in `src/render/keys.ts`. Placeholder tiles (art not loaded) use flat per-zone fills in the same geometry ([[architecture-assets-sprites-2]] §2.3–2.4).
+Frame names and anchors come from `cave_tileset.json` through `src/render/tileset.ts` (`tileFrame`, `capName`, `faceName`, `oreName`, `floorName`; [[architecture-modules-render]]). `hash2` lives in `src/core/noise.ts`; `floorVariant` and `faceKind` live in `src/core/grid.ts` (L0, task D4). Placeholder tiles (art not loaded) use flat per-zone fills in the same geometry ([[architecture-assets-sprites-2]] §2.3–2.4).
 
 ### 2.3 Culling
 
@@ -118,7 +118,7 @@ for (const m of s.monsters) {
 
 - Monster bodies are atlas frames at scale 1.0 (R-184). The old `MON_SCALE` table is removed. The eye layer (`mon_*_eyes` placeholders) is drawn only outside the light (pass 16) until the atlas has eye-only frames (OD-D7, DEFAULT keep).
 - `monsterFrame` maps gameplay states to atlas animations: `ring`/`stalk` → `walk_forward`; `recover`/`stunned` → `idle`; `windup` → `idle` (lurker, stalker) or `attack` frames 0–1 (devourer); `lunge` → `sprint` (lurker), `leap` (stalker) or `attack` frames 2–3 (devourer); `dying` → `death`; hurt → `hit` (stalker), `hurt` (devourer), `idle` (lurker). Frame timing comes from the per-frame `duration_ms`, clamped to the gameplay duration of the state; loop animations start at `floor(meta.time * 1000 + m.id * 370)` ms offset.
-- `monsterAngle`: `windup` and `lunge` → `lungeDir`; `dying` → frozen `lungeDir` (no State field needed); else `atan2(vy, vx)` when speed > 5 px/s, else angle to the player. This is only an input to direction selection, never a sprite rotation. `monsterDirection` selects the nearest of the 8 directions (`dirIndex` in `keys.ts`) with clockwise halfway ties. Hold the selected death direction from its first frame; switching other actions’ facing retains the action timer/frame.
+- `monsterAngle`: `windup` and `lunge` → `lungeDir`; `dying` → frozen `lungeDir` (no State field needed); else `atan2(vy, vx)` when speed > 5 px/s, else angle to the player. This is only an input to direction selection, never a sprite rotation. `monsterDirection` selects the nearest of the 8 directions (`dirIndex` in `src/core/grid.ts`) with clockwise halfway ties. Hold the selected death direction from its first frame; switching other actions’ facing retains the action timer/frame.
 - Foot offsets for the row sort (R-180): lurker 25, stalker 30, devourer 24 px below the pivot.
 - Eye blink (idle): blink when `hash2(floor(meta.time / 3), m.id, 7) < 0.25` and `meta.time % 3 < 0.25` (stateless). `eyeFrame` selects the 3-frame blink sequence when blinking, otherwise frame 0. Eye halo offsets `ex, ey` come from per-kind, per-direction authored eye centres relative to pivot (32,32) at scale 1.0; do not rotate east eye positions to approximate another view.
 

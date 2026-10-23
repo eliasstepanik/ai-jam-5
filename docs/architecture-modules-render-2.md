@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Module Tree – Render and Audio (2/2) – Audio Files, Checks, State Additions, Conflicts
 description: Part 2 of the authoritative src/ file list for Last Ember render and audio – the src/audio files with exported signatures, allowed imports, slice tags and the game.ts call site, the checks that cover render- and audio-adjacent pure logic, the State additions those checks and modules imply, and the full list of conflicts and gaps between the source specs with the winning side and the exact edit.
 tags: [project, ai-jam-5, architecture, last-ember, modules]
-timestamp: 2026-10-23T09:00:00+02:00
+timestamp: 2026-10-23T10:00:00+02:00
 ---
 
 # Last Ember – Module Tree: Render and Audio (2/2)
@@ -43,7 +43,7 @@ Checks run under Node via `npm run check` and import only L0–L3 ([[architectur
 
 | Check file | Imports | Assertions |
 |---|---|---|
-| `src/checks/render.check.ts` | `src/core/noise.ts`, `src/core/view.ts`, `src/core/grid.ts` (D4; `floorVariant`, `faceKind`, `footRow`, `dirIndex`: `footRow(63.9) === 1`, `dirIndex('n') === 0`, `dirIndex('nw') === 7`, `faceKind` returns `'pillar'` when both sides are open, `floorVariant` is deterministic and an integer in 0..9) | `hash2` in `[0, 1)` and deterministic; `vnoise` within `[-1, 1]`; `quantAngle(0.2) === Math.PI / 8`; **quantisation:** `deviceZoom(720) === 2`, `deviceZoom(1080) === 2`, `deviceZoom(1440) === 3`, `deviceZoom(2160) === 5`, always an integer ≥ 1; `viewZoomCss(720, 2) === 1.5`, `viewZoomCss(h, dpr) * dpr === deviceZoom(Math.round(h * dpr))` (R-131) |
+| `src/checks/render.check.ts` | `src/core/noise.ts`, `src/core/view.ts`, `src/core/grid.ts` (D4; `floorVariant`, `faceKind`, `footRow`, `dirIndex`, type `Dir8`: `footRow(63.9) === 1`, `dirIndex('n') === 0`, `dirIndex('nw') === 7`, `faceKind` returns `'pillar'` when both sides are open, `floorVariant` is deterministic and an integer in 0..9) | `hash2` in `[0, 1)` and deterministic; `vnoise` within `[-1, 1]`; `quantAngle(0.2) === Math.PI / 8`; **quantisation:** `deviceZoom(720) === 2`, `deviceZoom(1080) === 2`, `deviceZoom(1440) === 3`, `deviceZoom(2160) === 5`, always an integer ≥ 1; `viewZoomCss(720, 2) === 1.5`, `viewZoomCss(h, dpr) * dpr === deviceZoom(Math.round(h * dpr))` (R-131) |
 | ~~`src/checks/audio.check.ts`~~ | not created (R-043) | `TRIGGERS`/`SYNTH` completeness is tsc-enforced (`Record<FxEventKind, …>`, `Record<SoundId, …>`); the `SOUNDS` id format (43 ids after R-138) is checked by `scripts/check-assets.ts`; `danger()`, `musicFor`, `duckFor`, `keys.ts` formulas stay browser-verified |
 
 Not checked (DOM-bound, verified in the browser): `drawSprite`, darkness compositing, mixer graph, recipes. `SYNTH` completeness is tsc-enforced by `Record<SoundId, Recipe | null>`.

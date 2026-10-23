@@ -3,7 +3,7 @@ type: architecture
 title: Last Ember – Architecture Hub (precedence, reading order, layer rule, slices, owner decisions)
 description: Entry point for the Last Ember architecture – lists every architecture file with title and purpose in groups, the precedence order, a reading order per task, the layer rule, the vertical slices A/B/C/D with first chunks (slice D = 2.5D view migration, ADR-123), the pending owner decisions (OD-1 to OD-7) and the resolved design issues E-1, E-2.
 tags: [project, ai-jam-5, architecture, last-ember]
-timestamp: 2026-10-22T21:00:00+02:00
+timestamp: 2026-10-23T10:00:00+02:00
 ---
 
 # Last Ember – Architecture Hub
@@ -58,7 +58,7 @@ Always first: this hub, [[architecture-rulings]], [[architecture-rulings-2]], [[
 |---|---|---|
 | [[architecture-rulings]] | Last Ember – Architecture Rulings (binding conflict resolutions) | Part 1: precedence, layer rule, R-001 to R-065 (layering, core/state/save, checks, world, rocks) |
 | [[architecture-rulings-2]] | Last Ember – Architecture Rulings (binding conflict resolutions) | Part 2: systems and AI, render and audio, UI/assets/host rulings, scale rulings R-102–R-107, consolidated State additions, owner decisions, gaps |
-| [[architecture-rulings-3]] | Last Ember – Architecture Rulings (3/3) – Scale Follow-ups and Gap Closures | R-108–R-165: cave-generator GAP closures (incl. per-attempt seed derivation), scale follow-ups, accepted known weaknesses, Day-4 calibration assumptions; §7 R-156–R-165 cave generator chain rulings of 2026-10-21 (T3 window, rule 6/7, finalizeCave, fallback pockets, planned depth classes) |
+| [[architecture-rulings-3]] | Last Ember – Architecture Rulings (3/3) – Scale Follow-ups and Gap Closures | R-108–R-165: cave-generator GAP closures (incl. per-attempt seed derivation), scale follow-ups, accepted known weaknesses, Day-4 calibration assumptions; §7 R-156–R-165 cave generator chain rulings of 2026-10-21 (T3 window, rule 6/7, finalizeCave, fallback pockets, planned depth classes); §9 R-178–R-186 2.5D view rulings ([[ADR-123-2-5d-view]]) |
 
 ### Scale and economy rulings (BINDING, 320×240)
 
@@ -184,6 +184,10 @@ Mining and minerals, Beacon hold and phase change, escape (rocks, exit marker, e
 ### Slice C – polish
 
 Devourer, particle table, music layers and stingers, P1/P2 SFX, help pages, fades, auto quality ladder, debug overlay, final art. First chunk: **render** `particles`, `overlay` polish and `glow` extras ([[architecture-modules-render]]), `ai-devourer` ([[architecture-monsters-ai-2]]), P1/P2 audio ([[architecture-assets-audio-2]]). Cut order is guidance only ([[last-ember-production-plan]]).
+
+### Slice D – 2.5D view migration (planned 2026-10-22)
+
+Tasks D0..D15 in [[tasks]] (section 4, slice D), decision [[ADR-123-2-5d-view]]; nothing implemented yet.
 
 ## 6. Pending owner decisions
 
