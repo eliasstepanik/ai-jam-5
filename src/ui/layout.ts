@@ -1,7 +1,7 @@
 // UI rectangles for every screen (architecture-ui §2-3). Pure maths, no DOM, no module state.
 // Reference frame is 1280x720; every rect is anchored (ax, ay in 0..1) and scaled by uiScale. Update and render call the
 // same *Layout(w, h, s); hit() then maps a click on input.view.w/h to a button index. Button array order == focus order
-// in systems/screens.ts (title 0..4, paused 0..4, end 0..3), so ui.cursor/ui.hover indices line up (R-170).
+// in systems/screens.ts (title 0..5, paused 0..4, end 0..3), so ui.cursor/ui.hover indices line up (R-170).
 import type { State } from '../core/types.ts'
 import { HELP_PAGES } from '../core/state.ts'
 
@@ -45,7 +45,7 @@ const btn = (id: string, r: Rect, enabled = true): Button => ({ id, enabled, ...
 // --- title ---
 export type TitleLayout = {
   u: number
-  buttons: Button[] // play, help, sound, flashing, seed
+  buttons: Button[] // play, help, sound, flashing, depth, seed
   bar: Rect // loading progress track
   logo: Rect
   tagline: Pt; seedLabel: Pt; seedHint: Pt
@@ -66,13 +66,14 @@ export function titleLayout(w: number, h: number, _s: State, ready = true): Titl
   return {
     u,
     buttons: [
-      btn('play', c(520, 372, 240, 44), ready),
-      btn('help', c(520, 428, 240, 44)),
-      btn('sound', c(520, 484, 240, 44)),
-      btn('flashing', c(520, 540, 240, 44)),
+      btn('play', c(520, 316, 240, 44), ready),
+      btn('help', c(520, 372, 240, 44)),
+      btn('sound', c(520, 428, 240, 44)),
+      btn('flashing', c(520, 484, 240, 44)),
+      btn('depth', c(520, 540, 240, 44)), // depth class selector (R-164); label drawn by menus.ts
       btn('seed', c(520, 612, 240, 40)),
     ],
-    bar: c(540, 420, 200, 2),
+    bar: c(540, 364, 200, 2),
     logo: place(w, h, u, 0.5, 0, 400, 96, 480, 120),
     tagline: pt(w, h, u, 0.5, 0, 640, 244),
     seedLabel: pt(w, h, u, 0.5, 0.5, 520, 604),
