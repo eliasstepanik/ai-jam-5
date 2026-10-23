@@ -13,13 +13,11 @@ import type { Rock, State } from '../core/types.ts'
 import { TILE } from '../core/state.ts'
 import { T } from '../core/tuning.ts'
 import { clamp } from '../core/math.ts'
-import { getResources } from '../assets/resources.ts'
 import { drawSprite, frameAt } from '../assets/images.ts'
 import type { SpriteId } from '../assets/sprites.ts'
 import { inView } from './view.ts'
 import type { View } from './view.ts'
-import { blit } from './tileset.ts'
-import type { Tileset } from './tileset.ts'
+import { blit, tilesetOf } from './tileset.ts'
 
 const HASH = 35 // '#', wall char of World.tiles (same value as tiles-paint.ts)
 
@@ -42,12 +40,6 @@ const FALL_FADE = 0.6 // falling boulder alpha 1 - 0.6 * (r.t / FALL_S)
 export function veinRotation(tile: number, stand: number, w: number): number {
   const d = stand - tile
   return d === w ? 0 : d === -w ? Math.PI : d === 1 ? -Math.PI / 2 : d === -1 ? Math.PI / 2 : 0
-}
-
-// DEFAULT: the tileset sheet is slot 0 of the image registry (same rule as tiles.ts); null until it has decoded, then spec_boulder is used.
-function tilesetOf(): Tileset | null {
-  const im = getResources().images, img = im.sheets[0]
-  return img && im.sheetState[0] === 'ok' ? { image: img } : null
 }
 
 const centre = (tile: number, w: number): [number, number] => [(tile % w) * TILE + TILE / 2, Math.floor(tile / w) * TILE + TILE / 2]

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Exit marker in the HUD during the escape: the arrow turns smoothly toward the way out along the real route. When the exit is on screen it shows a pulsing ring with a bobbing arrow above it, otherwise an arrow at the screen edge with `EXIT 42 m` (refreshed every 0.1 s).
+- Overlays (`src/render/overlay.ts`): once the Beacon is lit the cave gets a warm tint that fades in over 1.5 s, followed by the white-out flash, a red damage flash, a perfect-parry flare wash, and hit, low-health (heartbeat) and flame-out vignettes. With reduced flash, the flashes are 70 percent weaker and the heartbeat pulse is off.
+- Particles: mining throws dust, sparks and embers, falling rocks puff dust where they warn and land, rolling and dodging kick up dust, and lighting the Beacon bursts into sparks and embers. Lower render quality settings show fewer particles.
 - Escape roll: Space rolls 126 px in 0.3 s (in the move direction, or the facing) with 0.3 s of bite immunity, then 1.5 s cooldown from the roll start. A dodged bite shows a dodge; falling rocks still hit. Reaching the exit (within 1 tile) wins the escape, and a lethal hit on the same step still loses.
 - Escape monsters: one spawns every 1.2 s (up to 8 alive) 220-340 px from the player on tiles that still connect to the exit, and despawns beyond 700 px when unseen. The descent spawner is unchanged.
 - Rocks now fall during the escape: the first about 1.5 s after the Beacon lights, then faster as the escape goes on. Each rock is telegraphed by a shadow for 1 s before it lands, and a rock never cuts the way out.
@@ -41,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Title screen: Play is enabled once the images are loaded or 5 s have passed, whichever comes first (the label and the progress bar follow the same rule, and so does the click test).
 - World, entities and props rendering rewritten for the 2.5D look at scale 1.0. The old top-down sprite sheets only remain for monster eyes and UI art.
 - Image loader preloads the tileset and the character sheets before the title screen is ready.
 - Resources version bumped to 2 (chunks use two canvases: floor and walls).

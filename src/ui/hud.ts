@@ -1,17 +1,20 @@
 // L4 ui: in-game HUD, drawn in screen space (CSS px, transform setTransform(dpr,0,0,dpr,0,0)) after the world passes.
 // Spec: docs/architecture-ui-2.md §1 (rows, §1.1 RUN! banner), architecture-modules-ui-assets.md §2. Reads State only, never writes it.
-// Slice A (HP, hotbar, flame, depth, prompt) plus toasts, parry text, pulses and shakes; the exit marker is B20 (needs world/route.ts).
-// ponytail: no module-level state; every animation is a pure function of meta.time / meta.steps / the State timers.
+// HP, hotbar, flame, depth, prompt, toasts, parry text, pulses and shakes, plus the escape-phase exit marker (ui-2 §1.1, rocks-2 §6).
+// ponytail: no module-level state; every animation is a pure function of meta.time / meta.steps / the State timers. The only
+// state is the exit-arrow smoothing in getResources().hud (render-side registry, not State).
 import type { State, FlameKind, MineralId, Vein } from '../core/types.ts'
 import { MINERALS, TILE, TOAST_S } from '../core/state.ts'
 import { T } from '../core/tuning.ts'
-import { clamp } from '../core/math.ts'
+import { clamp, wrapPi } from '../core/math.ts'
 import { hash2 } from '../core/noise.ts'
 import { DEPTH_MAX, depthOf, zoneOfDepth } from '../core/score.ts'
 import { getDepthField } from '../world/caches.ts'
-import { playerTile } from '../world/grid.ts'
+import { exitHeading } from '../world/route.ts'
+import { playerTile, tileToWorld } from '../world/grid.ts'
 import { makeView, toScreen } from '../render/view.ts'
 import { drawSprite, spriteReady } from '../assets/images.ts'
+import { getResources } from '../assets/resources.ts'
 import type { SpriteId } from '../assets/sprites.ts'
 import { hudLayout } from './layout.ts'
 import type { HudLayout } from './layout.ts'
@@ -22,6 +25,12 @@ const PS = 2 // UI sprites are authored at 1x and shown at 2u
 const LOW_BPM = 70 // last-heart pulse; 1.17 Hz, under the 3 Hz flash limit
 const BEACON_TICK_TILES = 8 // the minStartE tick shows within this many tiles of the Beacon (systems-2 §5)
 const RUN_BANNER_S = 2
+const EXIT_SMOOTH = 12 // exit-arrow angle smoothing rate (1/s), ui-2 §1.1
+const EXIT_SNAP = 2.5 // rad: a bigger turn snaps instead of sweeping
+const EXIT_TEXT_S = 0.1 // the distance text refreshes at most this often
+const EXIT_INSET = 64 // u: off-screen arrow ellipse inset from the screen edge
+const EXIT_MARGIN = 24 // px: the exit counts as on screen inside this margin
+const EXIT_COL = '#cfe3ff'
 const HP_LOST_STEPS = 18 // 0.3 s at 60 steps/s: how long the just-lost pip shows frame 2 and shakes
 // ponytail: HudLayout.exitBanner is the (640,200) anchor only; the baselines below sit under it (ui-2 §1.1, 40 bold + 16 under).
 // Upgrade: add runTitle/runSub points to hudLayout (layout.ts) and read them here.
@@ -32,15 +41,15 @@ const RUN_SUB_DY = 66
 const flameCol = (k: FlameKind): { core: string; mantle: string } => T.minerals.table[k]
 
 // Sprite at 2u. Atlas art takes the scale argument; placeholders ignore it (drawSprite), so scale the context for them.
-function ui(ctx: CanvasRenderingContext2D, id: SpriteId, anim: string, frame: number, x: number, y: number, k: number, alpha = 1): void {
+function ui(ctx: CanvasRenderingContext2D, id: SpriteId, anim: string, frame: number, x: number, y: number, k: number, alpha = 1, rot = 0): void {
   if (spriteReady(id)) {
-    drawSprite(ctx, id, anim, frame, x, y, 0, k, alpha)
+    drawSprite(ctx, id, anim, frame, x, y, rot, k, alpha)
     return
   }
   ctx.save()
   ctx.translate(x, y)
   ctx.scale(k, k)
-  drawSprite(ctx, id, anim, frame, 0, 0, 0, 1, alpha)
+  drawSprite(ctx, id, anim, frame, 0, 0, rot, 1, alpha)
   ctx.restore()
 }
 
@@ -57,6 +66,7 @@ export function drawHud(ctx: CanvasRenderingContext2D, s: State, w: number, h: n
   }
   depthBlock(ctx, s, l)
   prompt(ctx, s, w, h, l)
+  exitMarker(ctx, s, w, h, l)
   parryText(ctx, s, l)
   runBanner(ctx, s, l)
   ctx.restore()
@@ -232,5 +242,43 @@ function runBanner(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void 
   ctx.globalAlpha = clamp((RUN_BANNER_S - t) / 0.5, 0, 1) // fades over the last 0.5 s
   text(ctx, STR.run, l.exitBanner.x, l.exitBanner.y + RUN_TITLE_DY * u, 40, u, COL.gold, { align: 'center', bold: true })
   text(ctx, STR.runSub, l.exitBanner.x, l.exitBanner.y + RUN_SUB_DY * u, 16, u, COL.text, { align: 'center' })
+  ctx.restore()
+}
+
+// Escape-phase exit marker. The heading is smoothed in getResources().hud (reset per run); exit on screen = pulsing ring + bobbing
+// arrow above it, off screen = arrow on an inset ellipse pointing along the heading, with `EXIT 42 m`.
+function exitMarker(ctx: CanvasRenderingContext2D, s: State, w: number, h: number, l: HudLayout): void {
+  if (s.meta.phase !== 'escape') return
+  const res = getResources(), now = s.meta.time, u = l.u
+  let hs = res.hud
+  if (!hs || hs.runId !== s.meta.runId) hs = res.hud = { exitA: 0, lastT: now, runId: s.meta.runId, dist: -1, distT: -1 }
+  const hd = exitHeading(s, hs.exitA)
+  const fdt = clamp(now - hs.lastT, 0, 0.1)
+  hs.lastT = now
+  if (hd) {
+    const d = wrapPi(hd.angle - hs.exitA)
+    hs.exitA = hs.dist < 0 || Math.abs(d) > EXIT_SNAP ? hd.angle : hs.exitA + d * (1 - Math.exp(-EXIT_SMOOTH * fdt))
+    if (hs.dist < 0 || now - hs.distT >= EXIT_TEXT_S || now < hs.distT) { hs.dist = hd.dist; hs.distT = now }
+  }
+  if (hs.dist < 0) return // no route info yet: nothing to show
+  const v = makeView(ctx, s, w, h), a = hs.exitA
+  const [ex, ey] = toScreen(v, tileToWorld(s.world.exit.tx), tileToWorld(s.world.exit.ty))
+  ctx.save()
+  if (ex >= EXIT_MARGIN && ex <= w - EXIT_MARGIN && ey >= EXIT_MARGIN && ey <= h - EXIT_MARGIN) {
+    const tile = TILE * v.z / v.dpr, pulse = 0.5 + 0.5 * Math.sin(now * Math.PI * 3) // 1.5 Hz, under the 3 Hz flash limit
+    ctx.globalAlpha = 0.5 + 0.5 * pulse
+    ctx.strokeStyle = EXIT_COL
+    ctx.lineWidth = 2 * u
+    ctx.beginPath()
+    ctx.arc(ex, ey, tile * (0.55 + 0.15 * pulse), 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.globalAlpha = 1
+    ui(ctx, 'ui_exit-arrow', 'idle', 0, ex, ey - tile * 0.9 - 4 * u * (1 + Math.sin(now * Math.PI * 4)), PS, 1, Math.PI / 2) // bobs 8u at 2 Hz, points down
+  } else {
+    const ax = w / 2 + Math.cos(a) * (w / 2 - EXIT_INSET * u), ay = h / 2 + Math.sin(a) * (h / 2 - EXIT_INSET * u)
+    ui(ctx, 'ui_exit-arrow', 'idle', 0, ax, ay, PS, 0.85 + 0.15 * Math.sin(now * Math.PI * 2), a)
+    const label = `${STR.exit} ${hs.dist} m`, half = textWidth(ctx, label, 14, u) / 2 + 8 * u
+    text(ctx, label, clamp(ax - Math.cos(a) * (half + 12 * u), half, w - half), ay - Math.sin(a) * 24 * u + 5 * u, 14, u, EXIT_COL, { align: 'center', bold: true })
+  }
   ctx.restore()
 }

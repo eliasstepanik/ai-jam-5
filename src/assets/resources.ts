@@ -54,7 +54,7 @@ export type Resources = {
   version: number
   images: ImageStore; tiles: TileCache | null; memory: MemoryCache; light: LightCache
   dark: Canvas2D | null; scratch: Scratch | null
-  swapped: Map<string, HTMLCanvasElement> // flame palette-swap frames (R-185): 64x64, key 'anim|dir|i|material', LRU 256; slot name is a DEFAULT (D7)
+  swapped: Map<string, HTMLCanvasElement> // flame palette-swap frames (R-185): 64x64, key 'x|y|material' (sheet rect of the frame + material, see render/charatlas.ts swappedFrame), LRU 256; slot name is a DEFAULT (D7)
   particles: Particles; perf: Perf; audio: AudioRes
   debug: { on: boolean }
   ui: { copyResult: 'none' | 'ok' | 'failed'; urlRead: boolean }

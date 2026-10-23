@@ -5,7 +5,7 @@ import type { Input } from './main.ts'
 import type { State } from './core/types.ts'
 import { getResources } from './assets/resources.ts'
 import { step } from './systems/step.ts'
-import { endLayout, helpClick, helpLayout, hit, pauseLayout, titleLayout } from './ui/layout.ts'
+import { endLayout, helpClick, helpLayout, hit, pauseLayout, titleLayout, titleReady } from './ui/layout.ts'
 import type { Button } from './ui/layout.ts'
 import { platformStep } from './ui/platform.ts'
 
@@ -39,8 +39,7 @@ function devKeys(s: State, input: Input): Input {
 function buttons(s: State, w: number, h: number): Button[] | null {
   switch (s.meta.screen) {
     case 'title': {
-      const im = getResources().images // same `ready` as drawScreen (ui/menus.ts), so a disabled Play cannot be clicked
-      return titleLayout(w, h, s, im.started && im.loaded >= im.total).buttons
+      return titleLayout(w, h, s, titleReady(s, getResources().images)).buttons // same `ready` as drawScreen (ui/menus.ts)
     }
     case 'paused': return pauseLayout(w, h, s).buttons
     case 'dead':
