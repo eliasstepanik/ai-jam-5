@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Image loader preloads the tileset and the character sheets before the title screen is ready.
 - Resources version bumped to 2 (chunks use two canvases: floor and walls).
 - Enemy animation specification: all three shades use 64×64 body and eye frames with eight authored directions per action, selected by facing without sprite rotation. Updated naming, rendering, fallback, scaling and atlas totals (512 enemy frames; 1064 catalog frames).
+- Copy link on the end screen now copies a shareable `?seed=` URL built from the page address.
 
 - Host input: only the primary mouse button counts as a click, and the right-click menu is suppressed on the canvas.
 - `index.html`: page title, description, favicon, black background and crosshair cursor for Last Ember.
