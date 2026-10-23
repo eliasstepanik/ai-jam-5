@@ -9,6 +9,8 @@ export { VIEW_H_DEV, deviceZoom } from '../core/view.ts'
 
 // Bump when a light mask stop table changes: it is part of the mask key, so stale sprites are ignored (resources §3.1).
 export const LIGHT_VERSION = 1
+// Bump when tile painting changes so HMR discards previously painted chunk canvases.
+const TILE_VERSION = 3
 
 export type MaskKind = FlameKind | 'beacon' | 'shaft' | 'ember'
 
@@ -33,7 +35,7 @@ export const glowKey = (hex: string, b: number): string => 'g:' + hex + ':' + b
 export const vigKey = (hex: string, w: number, h: number): string => 'v:' + hex + ':' + w + 'x' + h
 // veinGen: the baked south-facing ore lives in the walls chunks, so mining a vein must change the key (B1a). ponytail: two runs with equal
 // tiles AND equal veinGen but different veins would share chunks; the seed is not in the key (see tileCache in tiles.ts).
-export const tileKey = (tilesHash: number, gen: number, veinGen = 0): string => tilesHash + ':' + gen + ':' + veinGen
+export const tileKey = (tilesHash: number, gen: number, veinGen = 0): string => tilesHash + ':' + gen + ':' + veinGen + ':' + TILE_VERSION
 export const chunkKey = (cx: number, cy: number): number => cx + cy * CHUNKS_W
 
 // h = 16-way floor hash, floor(hash2(tx, ty, seed) * 16) in 0..15. 0-9 -> 0, 10-12 -> 1, 13-14 -> 2, 15 -> 3 (render-2 §2.1).

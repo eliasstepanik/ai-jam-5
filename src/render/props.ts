@@ -18,6 +18,7 @@ import type { SpriteId } from '../assets/sprites.ts'
 import { inView } from './view.ts'
 import type { View } from './view.ts'
 import { blit, tilesetOf } from './tileset.ts'
+import { FACE_H } from './tiles-paint.ts'
 
 const HASH = 35 // '#', wall char of World.tiles (same value as tiles-paint.ts)
 
@@ -121,7 +122,7 @@ export function drawProp(ctx: CanvasRenderingContext2D, s: State, v: View, tag: 
     const vn = s.veins[i]
     if (!vn) return
     const w = s.world.w, [x, y] = centre(vn.tile, w), id = VEIN_ID[vn.mineral], anim = s.player.mining.targetTile === vn.tile ? 'mining' : 'full'
-    drawSprite(ctx, id, anim, frameAt(id, anim, t), x, y, veinRotation(vn.tile, vn.stand, w))
+    drawSprite(ctx, id, anim, frameAt(id, anim, t), x, y - FACE_H, veinRotation(vn.tile, vn.stand, w))
   }
 }
 

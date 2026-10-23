@@ -72,7 +72,7 @@ function walk(s: State, m: Monster, dt: number): boolean { // true if a wall was
   return res.hitX || res.hitY
 }
 
-function startLunge(s: State, m: Monster): void {
+export function startLunge(s: State, m: Monster): void {
   const K = T.monsters[m.kind]
   const [ax, ay] = s.meta.phase === 'escape' ? escapeAim(s, m) : [s.player.x, s.player.y] // escape: lead the moving player
   m.lungeDir = Math.atan2(ay - m.y, ax - m.x) // locked now

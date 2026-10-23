@@ -227,7 +227,12 @@ export type Settings = {
   reducedFlash: boolean
   quality: 'auto' | 'q0' | 'q1' | 'q2' | 'q3' // render override (R-142)
 }
-export type Debug = { reveal: boolean; god: boolean; showPaths: boolean; freezeAi: boolean; overlay: boolean }
+export type Debug = {
+  reveal: boolean; god: boolean; showPaths: boolean; freezeAi: boolean; overlay: boolean
+  noclip: boolean; speedMul: number; freezeTorch: boolean; infiniteHp: boolean; noFog: boolean
+  hurtboxes: boolean; animations: boolean; stats: boolean
+  minimap: boolean; arrow: boolean; arrowTarget: 'beacon' | 'exit'
+}
 
 // --- score and save (scoring-and-save §2, §5, §6; SettingsRecord per R-025/R-142) ---
 export type ScoreInput = { depth: number; won: boolean; seconds: number; mineralsUsed: number; hpLeft: number }

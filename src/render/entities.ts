@@ -19,13 +19,13 @@ import type { View } from './view.ts'
 import { charFrame, animLen, drawAtlas } from './charatlas.ts'
 import { propActors, drawProp } from './props.ts'
 import { ctx2d, newCanvas } from './light.ts'
-import { PLAYER_FOOT, directionOf, drawPlayerBody, fitFrame, frameAt, snap } from './entities-player.ts'
+import { directionOf, drawPlayerBody, fitFrame, frameAt, snap } from './entities-player.ts'
 
 export { torchTip } from './entities-player.ts'
 
 export const EYES_ID: Record<MonsterKind, ActorId> = { lurker: 'mon_lurker_eyes', stalker: 'mon_stalker_eyes', devourer: 'mon_devourer_eyes' }
 export const MON_SCALE: Record<MonsterKind, number> = { lurker: 0.5, stalker: 0.75, devourer: 1.5 } // eyes layer only (OD-D7, DEFAULT: unchanged)
-const MON_FOOT: Record<MonsterKind, number> = { lurker: 25, stalker: 30, devourer: 24 } // R-180: px below the pivot
+export const MON_FOOT: Record<MonsterKind, number> = { lurker: 25, stalker: 30, devourer: 24 } // R-180: px below the pivot
 const PIVOT = 32 // source px of the 64x64 actor frame pivot
 const CULL_MARGIN = 48 // render-2 §2.3: half the devourer canvas, added to the View rect (which already holds one tile)
 const MON_MOVE_SPEED = 5 // render-2 §3.2: faces its velocity above this speed (px/s), else the player
@@ -80,12 +80,12 @@ export function monsterFrame(s: State, m: Monster): [string, number] {
   }
 }
 
-const lit = (s: State, m: Monster): boolean => s.meta.phase === 'escape' || m.seen // body shown: cave lit, or m.seen (stored inLight)
+const lit = (s: State, m: Monster): boolean => s.meta.phase === 'escape' || s.debug.noFog || s.debug.reveal || m.seen // body shown: cave lit, or m.seen (stored inLight)
 
 function drawMonster(ctx: CanvasRenderingContext2D, s: State, v: View, m: Monster): void {
   if (!lit(s, m) || !entityInView(v, m.x, m.y)) return
   const [anim, frame] = monsterFrame(s, m)
-  drawAtlas(ctx, charFrame(m.kind, anim, dirIndex(monsterDirection(s, m)), frame), snap(m.x, v.z) - PIVOT, snap(m.y, v.z) - PIVOT)
+  drawAtlas(ctx, charFrame(m.kind, anim, dirIndex(monsterDirection(s, m)), frame), snap(m.x, v.z) - PIVOT, snap(m.y - MON_FOOT[m.kind], v.z) - PIVOT)
 }
 
 // --- eyes helpers for pass 16 ---
@@ -143,7 +143,7 @@ function ensureRows(res: Resources, need: number): Int32Array {
   return sc.rows
 }
 
-// Fills the buckets for this frame: the visible monsters, the player and the props (propActors), keyed by clamp(footRow(footY), ty0, ty1).
+// State x/y is the collision ground contact for actors and props; atlas sole offsets affect drawing only, never depth sorting.
 // push regrows the buffer per entry (ensureRows), so any number of visible props fits.
 export function actorRows(s: State, v: View): void {
   const res = getResources(), nRows = Math.max(1, v.ty1 - v.ty0 + 1), E = HEAD + nRows
@@ -162,12 +162,12 @@ export function actorRows(s: State, v: View): void {
     if (prev < 0) rows[b] = e
     else rows[E + ENTRY * prev] = e
   }
+  propActors(s, v, push) // ground props first on equal depth, so the entrance does not cover the player spawned on it
   for (let i = 0; i < s.monsters.length; i++) {
     const m = s.monsters[i]
-    if (entityInView(v, m.x, m.y)) push(m.y + MON_FOOT[m.kind], TAG_MONSTER, i)
+    if (entityInView(v, m.x, m.y)) push(m.y, TAG_MONSTER, i)
   }
-  if (entityInView(v, s.player.x, s.player.y)) push(s.player.y + PLAYER_FOOT, TAG_PLAYER, 0)
-  propActors(s, v, push)
+  if (entityInView(v, s.player.x, s.player.y)) push(s.player.y, TAG_PLAYER, 0)
 }
 
 // Walks the bucket of tile row `ty` (ascending footY) and calls `fn(tag, i)`; nothing when actorRows has not run or ty is outside it.

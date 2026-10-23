@@ -29,7 +29,7 @@ export function parryLoss(d: number, kind: MonsterKind, mineral: FlameKind): { g
 // The one HP-loss path for bites and rocks (R-148). Roll i-frames never apply here. Returns true if HP was lost.
 export function hurtPlayerHp(s: State, src: 'bite' | 'rock'): boolean {
   const p = s.player
-  if (s.debug.god || p.hurtT > EPS) return false // R-127: hurtT counts down from 0.4 / 0.8 and keeps ~1e-16 residue
+  if (s.debug.god || s.debug.infiniteHp || p.hurtT > EPS) return false // R-127: hurtT counts down from 0.4 / 0.8 and keeps ~1e-16 residue
   p.hp -= src === 'rock' ? T.rocks.damageHp : 1 // ponytail: bites are always 1 pip; add a T key if bites ever scale
   p.hurtT = T.hurt.hpInvulnS
   p.hitFlash = T.hurt.flashS
@@ -84,7 +84,7 @@ export function resolveParries(s: State): void {
     const delta = (m.aiT - sw.t) - K.contactS // lunge time at swing start minus the perfect moment (R-129: never an equality test)
     if (delta + EPS < -T.parry.earlyMaxS) continue // R-127: exactly -earlyMaxS stays inside; swing far too early whiffs this shade
     const { grade, loss } = parryLoss(delta, m.kind, p.activeMineral)
-    const applied = Math.min(p.energy, loss)
+    const applied = s.debug.freezeTorch ? 0 : Math.min(p.energy, loss)
     p.energy -= applied
     if (p.energy <= 0) {
       p.energy = 0
@@ -135,7 +135,7 @@ export function damagePlayer(s: State, m: Monster): void {
     return
   }
   if (descent && p.energy > 0) { // 4
-    const applied = Math.min(p.energy, T.monsters[m.kind].energyHitE)
+    const applied = s.debug.freezeTorch ? 0 : Math.min(p.energy, T.monsters[m.kind].energyHitE)
     p.energy -= applied
     p.hurtT = T.flame.flameHitInvulnS
     p.hitFlash = T.hurt.flashS

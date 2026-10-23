@@ -76,6 +76,8 @@ export function init(): State {
     },
     settings: { volume: 0.7, muted: false, lastSeed: '', loaded: false, reducedFlash: false, quality: 'auto' },
     best: null, result: null,
-    debug: { reveal: false, god: false, showPaths: false, freezeAi: false, overlay: false },
+    debug: { reveal: false, god: false, showPaths: false, freezeAi: false, overlay: false,
+      noclip: false, speedMul: 4, freezeTorch: false, infiniteHp: false, noFog: false,
+      hurtboxes: false, animations: false, stats: false, minimap: false, arrow: false, arrowTarget: 'beacon' },
   }
 }

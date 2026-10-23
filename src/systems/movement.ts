@@ -3,11 +3,20 @@
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
 import { moveCircle } from '../world/collide.ts'
+import { clamp } from '../core/math.ts'
+import { TILE } from '../core/state.ts'
 import { emit } from './fx.ts'
 import type { Intent } from './intent.ts'
 
 export function stepMovement(s: State, it: Intent, dt: number): void {
   const p = s.player
+  if (s.debug.noclip) {
+    const speed = T.player.walkPxS * s.debug.speedMul
+    p.vx = it.mx * speed; p.vy = it.my * speed
+    p.x = clamp(p.x + p.vx * dt, T.player.radiusPx, s.world.w * TILE - T.player.radiusPx)
+    p.y = clamp(p.y + p.vy * dt, T.player.radiusPx, s.world.h * TILE - T.player.radiusPx)
+    return
+  }
   if (p.roll.t <= 0) { // while rolling, stepRoll owns the velocity
     const esc = s.meta.phase === 'escape'
     const maxV = esc ? T.player.walkPxS * T.escape.sprintMul : T.player.walkPxS // 120 or 240

@@ -30,7 +30,7 @@ export function makeView(ctx: CanvasRenderingContext2D, s: State, w: number, h: 
   const x1 = (cw - ox) / z + TILE, y1 = (ch - oy) / z + TILE
   return { dpr, cw, ch, w, h, z, ox, oy, x0, y0, x1, y1,
     tx0: Math.max(0, Math.floor(x0 / TILE)), ty0: Math.max(0, Math.floor(y0 / TILE)),
-    tx1: Math.min(s.world.w - 1, Math.floor(x1 / TILE)), ty1: Math.min(s.world.h - 1, Math.floor(y1 / TILE) + 2) } // +2 rows: a wall face hangs 48 px into the south cell (R-181)
+    tx1: Math.min(s.world.w - 1, Math.floor(x1 / TILE)), ty1: Math.min(s.world.h - 1, Math.floor(y1 / TILE) + 2) } // +2 rows: raised wall tops can occlude actors up to 48 px north of their ground row
 }
 
 // World space: one world px = z device px, origin at the snapped camera offset.

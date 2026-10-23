@@ -12,9 +12,11 @@ import { getResources } from '../assets/resources.ts'
 import type { Quality } from './quality.ts'
 import type { View } from './view.ts'
 import { FLAME_COL } from './flame.ts'
+import { FACE_H } from './tiles-paint.ts'
+import { PLAYER_FOOT } from './entities-player.ts'
 import { GLOW_BUCKETS, bucketOf, glowKey } from './keys.ts'
 import { ctx2d, newCanvas } from './light.ts'
-import { EYES_ID, MON_SCALE, drawFrame, entityInView, eyeAlpha, eyeAnim, eyeFrame, eyeVisible, monsterDirection, torchTip } from './entities.ts'
+import { EYES_ID, MON_SCALE, MON_FOOT, drawFrame, entityInView, eyeAlpha, eyeAnim, eyeFrame, eyeVisible, monsterDirection, torchTip } from './entities.ts'
 
 export type TipFn = (s: State) => { x: number; y: number }
 
@@ -85,7 +87,8 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
     if (!escape) {
       for (const vein of s.veins) {
         const [x, y] = tileCenter(vein.tile, s.world.w)
-        if (Math.hypot(x - p.x, y - p.y) <= R + VEIN_PAD && glowInView(v, x, y, VEIN_R)) drawGlowSprite(ctx, CRYSTAL[vein.mineral], x, y, VEIN_R, 0.3)
+        const drawY = y - (vein.stand === vein.tile + s.world.w ? 8 : FACE_H)
+        if (Math.hypot(x - p.x, y - p.y) <= R + VEIN_PAD && glowInView(v, x, drawY, VEIN_R)) drawGlowSprite(ctx, CRYSTAL[vein.mineral], x, drawY, VEIN_R, 0.3)
       }
     }
   }
@@ -134,7 +137,7 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
     if (sw.active) {
       const half = T.swing.arcDeg * Math.PI / 360
       ctx.beginPath()
-      ctx.arc(p.x, p.y, SPARK_ARC_R, sw.dir - half, sw.dir + half)
+      ctx.arc(p.x, p.y - PLAYER_FOOT, SPARK_ARC_R, sw.dir - half, sw.dir + half)
       ctx.lineWidth = SPARK_ARC_W
       ctx.strokeStyle = FLAME_COL[p.activeMineral].mantle
       ctx.globalAlpha = clamp(1 - sw.t / T.swing.activeS, 0, 1)
@@ -158,9 +161,9 @@ export function drawEyes(ctx: CanvasRenderingContext2D, s: State, v: View): void
     if (!entityInView(v, m.x, m.y) || !eyeVisible(s, m)) continue
     const a = eyeAlpha(s, m)
     if (a <= 0) continue // dying eyes are fully faded
-    const [act, f] = eyeFrame(s, m)
-    drawGlowSprite(ctx, eyeAnim(m) === 'telegraph' ? EYE_TELEGRAPH : EYE_IDLE, m.x, m.y, EYE_HALO_R[m.kind], a)
-    drawFrame(ctx, EYES_ID[m.kind], act + '-' + monsterDirection(s, m), f, m.x, m.y, MON_SCALE[m.kind], a)
+    const [act, f] = eyeFrame(s, m), y = m.y - MON_FOOT[m.kind]
+    drawGlowSprite(ctx, eyeAnim(m) === 'telegraph' ? EYE_TELEGRAPH : EYE_IDLE, m.x, y, EYE_HALO_R[m.kind], a)
+    drawFrame(ctx, EYES_ID[m.kind], act + '-' + monsterDirection(s, m), f, m.x, y, MON_SCALE[m.kind], a)
   }
   ctx.globalAlpha = 1
 }
