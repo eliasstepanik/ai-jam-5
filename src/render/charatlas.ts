@@ -7,7 +7,7 @@ import { getResources } from '../assets/resources.ts'
 import type { Resources } from '../assets/resources.ts'
 
 export type AtlasFrame = { x: number; y: number; dur: number; flame?: [number, number] }
-export type FlameMaterial = MineralId | 'base'
+export type FlameMaterial = MineralId | 'base' | 'unlit'
 
 type Pt = { readonly x: number; readonly y: number }
 type FrameRec = { readonly rect: Pt; readonly duration_ms: number; readonly flame_center_anchor?: Pt }
@@ -37,6 +37,9 @@ const ANIMS = new Map<string, { frames: AtlasFrame[][]; loop: boolean }>(
       return p ? { x: f.rect.x, y: f.rect.y, dur: f.duration_ms, flame: [p.x, p.y] } : { x: f.rect.x, y: f.rect.y, dur: f.duration_ms }
     })),
   }]))
+
+// The supplied atlas has no unlit walking set. Reuse its authored walk poses; swappedFrame removes only the flame palette.
+ANIMS.set('player/walk_unlit_torch', ANIMS.get('player/walk_lit_torch_base')!)
 
 // Flame colours per material as [outer, middle, core] RGB triples; 'base' is the colour set baked into the sheet.
 const FLAME = new Map<string, number[][]>(J.palettes.filter((p) => p.id.startsWith('flame_'))
@@ -87,14 +90,18 @@ export function swappedFrame(res: Resources, f: AtlasFrame, material: FlameMater
   const g = c.getContext('2d', { willReadFrequently: true })
   if (!sheet || !g) return c
   g.drawImage(sheet, f.x, f.y, FRAME_PX, FRAME_PX, 0, 0, FRAME_PX, FRAME_PX)
-  if (from && to && material !== 'base') {
+  if (from && (to || material === 'unlit') && material !== 'base') {
     const img = g.getImageData(0, 0, FRAME_PX, FRAME_PX)
     const d = img.data
     for (let p = 0; p < d.length; p += 4) {
       for (let k = 0; k < from.length; k++) {
         const s = from[k]
-        const t = to[k]
-        if (s && t && d[p] === s[0] && d[p + 1] === s[1] && d[p + 2] === s[2]) { d[p] = t[0] ?? 0; d[p + 1] = t[1] ?? 0; d[p + 2] = t[2] ?? 0; break }
+        const t = to?.[k]
+        if (s && d[p] === s[0] && d[p + 1] === s[1] && d[p + 2] === s[2]) {
+          if (material === 'unlit') d[p + 3] = 0
+          else if (t) { d[p] = t[0] ?? 0; d[p + 1] = t[1] ?? 0; d[p + 2] = t[2] ?? 0 }
+          break
+        }
       }
     }
     g.putImageData(img, 0, 0)

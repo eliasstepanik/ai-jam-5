@@ -1,5 +1,6 @@
 // Route queries over the escape field (architecture-rocks §4, architecture-rocks-2 §6). L1: pure, DOM-free.
 import type { State } from '../core/types.ts'
+import { bfs4 } from './bfs.ts'
 import { wrapPi } from '../core/math.ts'
 import { T } from '../core/tuning.ts'
 import { getEmptyMask, getExitDist, getPendingMask, getSolid } from './caches.ts'
@@ -128,4 +129,16 @@ export function exitHeading(s: State, prevAngle: number): { angle: number; dist:
   for (let k = route.length - 1; k >= 1; k--) if (lineOfSight(s, p0, route[k])) { q = route[k]; break }
   const dx = tileToWorld(q % w) - s.player.x, dy = tileToWorld(Math.floor(q / w)) - s.player.y
   return { angle: dx === 0 && dy === 0 ? prevAngle : Math.atan2(dy, dx), dist: E[p0] }
+}
+
+// Final physical escape proof at impact: current walls + landed rubble + this footprint, from the player's actual tile.
+// Pending shadows remain walkable; every later impact must prove its own route too.
+export function physicalExitReachable(s: State, blocked: readonly number[]): boolean {
+  const { w, h, exit } = s.world, p = s.player
+  const tx = worldToTile(p.x), ty = worldToTile(p.y)
+  if (!inMap(s, tx, ty) || !inMap(s, exit.tx, exit.ty)) return false
+  const grid = getSolid(s).slice(), source = ty * w + tx, goal = exit.ty * w + exit.tx
+  for (const i of blocked) if (i >= 0 && i < grid.length) grid[i] = 1
+  if (grid[source] || grid[goal]) return false
+  return bfs4(grid, w, h, goal)[source] >= 0
 }

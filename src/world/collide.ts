@@ -46,8 +46,14 @@ function resolve(s: State, p: MoveRes, r: number, axis: 'x' | 'y', delta: number
         const ox = p.x - cx, oy = p.y - cy, d = Math.hypot(ox, oy)
         if (d >= r - EPS) continue
         const oldX = p.x, oldY = p.y
-        if (d > 1e-6) { p.x += ox / d * (r - d); p.y += oy / d * (r - d) }
-        else pushInside(s, p, tx, ty, r, axis, delta)
+        // Resolve only the axis being moved. Radial pushes at each tile corner stole tangential motion at wall seams.
+        const cross = axis === 'x' ? oy : ox
+        const along = axis === 'x' ? ox : oy
+        if (d > 1e-6 && Math.abs(cross) < r) {
+          const extent = Math.sqrt(Math.max(0, r * r - cross * cross))
+          const side = along === 0 ? -Math.sign(delta) || -1 : Math.sign(along)
+          p[axis] = (axis === 'x' ? cx : cy) + side * extent
+        } else pushInside(s, p, tx, ty, r, axis, delta)
         if (Math.abs(p.x - oldX) > EPS) p.hitX = true
         if (Math.abs(p.y - oldY) > EPS) p.hitY = true
       }

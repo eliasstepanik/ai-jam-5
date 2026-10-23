@@ -19,13 +19,13 @@ export function zoneOfDepth(depth: number): Zone {
   return Math.min(4, 1 + Math.floor(depth / 10)) as Zone
 }
 
-// score = depth*100 + (win ? 1000 : 0) + max(0, 600 - seconds) + minerals*25 + hp*50; weights come from T.score (C8).
+// score = depth*100 + (win ? 1000 : 0) + (win ? max(0, 600 - seconds) : 0) + minerals*25 + hp*50; weights come from T.score (C8).
 export function computeScore(i: ScoreInput): ScoreParts {
   const w = T.score
   const p = {
     depth: i.depth * w.depthPts,
     win: i.won ? w.winPts : 0,
-    time: Math.max(0, w.timeCapS - i.seconds),
+    time: i.won ? Math.max(0, w.timeCapS - i.seconds) : 0,
     minerals: i.mineralsUsed * w.mineralPts,
     hp: i.hpLeft * w.hpPts,
   }
