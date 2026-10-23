@@ -48,7 +48,7 @@ export function carveCore(cs: number, p: CaveParams = PARAMS[3]): CaveCore | nul
 
   const entrance = placeEntrance(g, w, h, layout.root, stream('entrance'))
   if (entrance < 0) return null
-  const loops = pickLoopPairs(g, w, h, entrance, layout, stream('tunnels'))
+  const loops = pickLoopPairs(g, w, h, entrance, layout, stream('tunnels'), p)
   if (loops.loops < 2) return null
   const B = placeBeacon(g, w, h, entrance)
   if (!B || B.beaconDist < p.bdLo || B.beaconDist > p.bdHi) return null
@@ -85,7 +85,7 @@ export function generateCave(seed: number, opts: CaveOpts = {}): CaveResult {
   for (let a = 0; a < MAX_ATTEMPTS && !opts.forceFail; a++) {
     const cs = caveSeed(seed, a), core = carveCore(cs, p)
     const res = core && populate(core, cs, a, opts)
-    if (res && validateCave(res).ok) return finalizeCave(res)
+    if (res && validateCave(res, p).ok) return finalizeCave(res)
   }
-  return finalizeCave(fallbackCave(seed))
+  return finalizeCave(fallbackCave(seed, p))
 }
