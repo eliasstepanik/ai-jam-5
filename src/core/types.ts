@@ -34,6 +34,7 @@ export type State = {
   best: Best | null // mirror of persisted personal best
   result: RunResult | null // set when a run ends
   debug: Debug
+  wisp: { on: boolean; d: number; p0: number; ss: number; ps: number; path: number[] } // escape guide light (systems/escape-wisp.ts): d px lead, p0 player tile, ss/ps rock sigs seen, path tile ids
 }
 
 export type Meta = {
@@ -178,7 +179,6 @@ export type Director = {
   relocates: number // int, debug counter for stuck-shade relocations
 }
 export type Cam = { x: number; y: number } // world px, smoothed camera centre
-
 // --- fx, rng, ui (state-2 §7-§9). FxEventKind: 28 members, authoritative list; do not restate elsewhere. ---
 export type FxEventKind =
   | 'swing' | 'parryPerfect' | 'parryGood' | 'parryPoor' | 'flameHit' | 'hpHit'

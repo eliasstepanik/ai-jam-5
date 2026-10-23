@@ -44,6 +44,7 @@ import { run as rocksClass } from './rocks-class.check.ts'
 import { run as depthScreens } from './depth-screens.check.ts'
 import { run as migrateSettings } from './migrate-settings.check.ts'
 import { run as devDepth } from './dev-depth.check.ts'
+import { run as escapeWisp } from './escape-wisp.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -88,6 +89,7 @@ depthScreens()
 migrateSettings()
 devDepth()
 debug()
+escapeWisp()
 
 reportedBugs()
 console.log('checks ok')
