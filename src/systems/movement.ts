@@ -4,9 +4,16 @@ import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
 import { moveCircle } from '../world/collide.ts'
 import { clamp } from '../core/math.ts'
+import { gaitAdvance, gaitSetOf } from '../core/gait.ts'
 import { TILE } from '../core/state.ts'
 import { emit } from './fx.ts'
 import type { Intent } from './intent.ts'
+
+// Cosmetic walk/run phase (issue #79): integrate the clip cycle by the speed the player actually has after this tick's move.
+const stepGait = (s: State, dt: number): void => {
+  const p = s.player
+  p.gaitPhase = gaitAdvance(p.gaitPhase, Math.hypot(p.vx, p.vy), gaitSetOf(s.meta.phase === 'escape', p.energy), dt)
+}
 
 export function stepMovement(s: State, it: Intent, dt: number): void {
   const p = s.player
@@ -15,6 +22,7 @@ export function stepMovement(s: State, it: Intent, dt: number): void {
     p.vx = it.mx * speed; p.vy = it.my * speed
     p.x = clamp(p.x + p.vx * dt, T.player.radiusPx, s.world.w * TILE - T.player.radiusPx)
     p.y = clamp(p.y + p.vy * dt, T.player.radiusPx, s.world.h * TILE - T.player.radiusPx)
+    stepGait(s, dt)
     return
   }
   if (p.roll.t <= 0) { // while rolling, stepRoll owns the velocity
@@ -37,6 +45,7 @@ export function stepMovement(s: State, it: Intent, dt: number): void {
   p.y = res.y
   if (res.hitX) p.vx = 0
   if (res.hitY) p.vy = 0
+  stepGait(s, dt)
 }
 
 const EPS = 1e-9 // R-127: float slack for countdowns

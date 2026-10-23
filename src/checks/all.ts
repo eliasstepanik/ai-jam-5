@@ -43,8 +43,10 @@ import { run as depthRun } from './depth-run.check.ts'
 import { run as rocksClass } from './rocks-class.check.ts'
 import { run as depthScreens } from './depth-screens.check.ts'
 import { run as migrateSettings } from './migrate-settings.check.ts'
+import { run as cracks } from './cracks.check.ts'
 import { run as devDepth } from './dev-depth.check.ts'
 import { run as escapeWisp } from './escape-wisp.check.ts'
+import { run as animSpeed } from './anim-speed.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -87,7 +89,9 @@ depthRun()
 rocksClass()
 depthScreens()
 migrateSettings()
+cracks()
 devDepth()
+animSpeed()
 debug()
 escapeWisp()
 
