@@ -109,7 +109,6 @@ export const HELP = [
       'Resin relights a dead flame instantly.',
       'Plants heal one heart. They grow in side rooms.',
       `Mining takes ${T.mining.holdS} s of standing still – that costs light.`,
-      'Keep half your light for the way back.',
       'After the Beacon, the cave is lit – but it is collapsing. Roll through lunges.',
     ],
   },

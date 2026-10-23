@@ -104,7 +104,7 @@ function landing(): void {
   const plan = { tx: 15, ty: 1, size: 1 as const, tiles: [at(s, 15, 1)], x: 15 * 32 + 16, y: 48 }
   const r = commitRock(s, plan)
   const solid0 = s.world.solidSig, pend0 = s.world.pendingSig
-  ok(landRock(s, r) === 0, 'route survives via B: fast pass, no BFS')
+  ok(landRock(s, r) === 1, 'route survives via B: final physical proof is counted for quake budgeting')
   ok(r.landed && r.hit && !r.shrunk, 'rock landed')
   ok(s.world.solidSig === solid0 + 1 && s.world.pendingSig === pend0 + 1, 'solidSig and pendingSig bump on landing')
   ok(m.ai === 'dying' && s.player.stats.kills === 0, 'monster beneath dies without kill credit')

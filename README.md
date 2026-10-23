@@ -184,6 +184,8 @@ The plan lives in [`docs/`](docs/). Start at [`docs/index.md`](docs/index.md). T
 
 ## AI process
 
+- Unlit walking reuses the delivered lit walking poses at runtime and removes only the three reserved flame colours. Body/torch pixels, atlas files and timing remain unchanged.
+
 The jam requires that the majority of the game is AI-generated. This section says what was generated, with which tools, and how it was processed. Facts here are taken from the repo; open items are marked `OWNER TO FILL:`.
 
 ### Code and design

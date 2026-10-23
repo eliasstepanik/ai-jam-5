@@ -16,6 +16,7 @@ import { fallbackCave } from '../world/gen/fallback.ts'
 import { validateCave } from '../world/validate.ts'
 import { revealAround } from '../world/explored.ts'
 import { lightRadius } from './light.ts'
+import { placeVisiblePickups } from './pickup-placement.ts'
 import { emit } from './fx.ts'
 
 // Seed text of a run: sanitised input, or the digits of a fresh random seed (state-2 §10 step 1; crypto lives in seed.ts).
@@ -57,6 +58,7 @@ export function startRun(s: State, seedText: string, cave?: CaveResult): void {
   m.steps = 0
   m.zone = 1
   m.runId += 1
+  placeVisiblePickups(s)
   s.rng.gameplay = hashSeed(seed, 'gameplay') // 6
   s.rng.cosmetic = hashSeed(seed, 'cosmetic')
   s.director = { // 7

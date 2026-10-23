@@ -16,7 +16,7 @@ export const PLAYER_FOOT = 24 // authored sole offset below the atlas pivot; Sta
 const PIVOT = 32 // source px of the 64x64 frame pivot (R-184)
 const FRAME_PX = 64
 const WALK_MIN_SPEED = 10 // render-2 §3.3: walk anim above this speed (px/s)
-const RUN_MIN_SPEED = 60 // render-2 §3.3: run_* anims above this speed
+const RUN_MIN_SPEED = T.player.walkPxS + 1 // ordinary descent walking must not select the sprint animation
 const WALK_ESCAPE_MUL = 1.6 // render-2 §3.3: walk playback multiplier in the escape
 const TINT_CAP = 64 // render-3 §5: res.images.tints is capped at 64 entries
 const HIT_TINT = '#ffffff'
@@ -60,8 +60,8 @@ const SETS: Record<'escape' | 'lit' | 'unlit', TorchSet> = {
   escape: { idle: 'idle_no_torch', hurt: 'hurt_no_torch', death: 'death_without_torch', walk: 'run_without_torch', run: 'run_without_torch', swing: null, mine: null },
   lit: { idle: 'idle_lit_torch_base', hurt: 'hurt_lit_torch_base', death: 'death_with_unlit_torch', walk: 'walk_lit_torch_base', run: 'run_lit_torch_base',
     swing: 'swing_lit_torch_base', mine: 'material_change_lit_torch_base' },
-  // DEFAULT (OD-D3): no walk/run art for an unlit torch, so it idles while moving.
-  unlit: { idle: 'idle_unlit_torch', hurt: 'hurt_unlit_torch', death: 'death_with_unlit_torch', walk: 'idle_unlit_torch', run: 'idle_unlit_torch',
+  // BUG-003: derive an unlit walk from the delivered lit walk, removing only reserved flame pixels at draw time.
+  unlit: { idle: 'idle_unlit_torch', hurt: 'hurt_unlit_torch', death: 'death_with_unlit_torch', walk: 'walk_unlit_torch', run: 'walk_unlit_torch',
     swing: null, mine: null },
 }
 
@@ -93,7 +93,7 @@ const playerFrame = (s: State): AtlasFrame => {
 }
 
 // Flame colour of the active mineral; plain orange (activeMineral 'none') is the sheet's own 'base' palette.
-const flameMaterial = (s: State): FlameMaterial => (s.player.activeMineral === 'none' ? 'base' : s.player.activeMineral)
+const flameMaterial = (s: State): FlameMaterial => s.player.energy <= 0 ? 'unlit' : s.player.activeMineral === 'none' ? 'base' : s.player.activeMineral
 
 // White silhouette of the drawn frame, cached in res.images.tints under 'atlas|x|y|material' (FIFO, TINT_CAP entries).
 // ponytail: FIFO eviction, not true LRU; upgrade: re-insert on hit if flash tints thrash.

@@ -7,7 +7,7 @@ import { T } from '../core/tuning.ts'
 import { getExitDist, getPendingMask, getSolid, isBeaconRoom } from '../world/caches.ts'
 import { circleRectOverlap } from '../world/collide.ts'
 import { idx, inMap, TILE } from '../world/grid.ts'
-import { downhill, playerSources, routeDist } from '../world/route.ts'
+import { downhill, physicalExitReachable, playerSources, routeDist } from '../world/route.ts'
 import { hurtPlayerHp } from './combat.ts'
 import { addShake, emit } from './fx.ts'
 import { setDying } from './monsters.ts'
@@ -146,7 +146,13 @@ export function cosmeticRockLand(s: State): void {
   if (inMap(s, tx, ty) && !solid[idx(s, tx, ty)]) emit(s, 'rockLand', tx * TILE + TILE / 2, ty * TILE + TILE / 2, 0)
 }
 
-function land(s: State, r: Rock): void {
+function land(s: State, r: Rock): number {
+  if (!physicalExitReachable(s, r.tiles)) {
+    s.rocks.splice(s.rocks.indexOf(r), 1)
+    s.world.pendingSig++
+    emit(s, 'rockLand', r.x, r.y, 0)
+    return 1
+  }
   r.landed = true
   r.hit = true
   s.world.solidSig++
@@ -157,6 +163,7 @@ function land(s: State, r: Rock): void {
   }
   emit(s, 'rockLand', r.x, r.y, r.size)
   addShake(s, 'rockLand', Math.max(0, 1 - Math.hypot(r.x - s.player.x, r.y - s.player.y) / SHAKE_FALLOFF_PX))
+  return 1
 }
 
 // Push the player out of footprint F into the best 4-adjacent free tile (rocks-2 §2). Returns BFS runs used, or -1 when no target.
@@ -191,19 +198,19 @@ function pushOut(s: State, r: Rock): { runs: number; ok: boolean } {
   return { runs, ok: true }
 }
 
-// Impact of a rock whose telegraph ended (rocks-2 §1). Returns the number of routeDist runs used (0..6).
+// Impact of a rock whose telegraph ended (rocks-2 §1). Returns route-query work (0..7), including the final physical proof; quake defers planning when non-zero.
 export function landRock(s: State, r: Rock): number {
   let runs = 0
   if (!circleRectOverlap(s.player.x, s.player.y, T.player.radiusPx, ...rectOf(s, r))) {
     const E = getExitDist(s), src = playerSources(s, r.tiles)
-    if (src.some((i) => E[i] >= 0)) { land(s, r); return 0 } // fast pass: E blocks every pending tile incl. F
+    if (src.some((i) => E[i] >= 0)) return land(s, r) // E proves pending safety; final physical proof still runs
     runs++
-    if (routeDist(s, r.tiles, src, false) >= 0) { land(s, r); return runs }
+    if (routeDist(s, r.tiles, src, false) >= 0) return runs + land(s, r)
   } else {
     hurtPlayerHp(s, 'rock') // roll i-frames never dodge rocks; hurtT / god are handled inside
     const push = pushOut(s, r)
     runs += push.runs
-    if (push.ok) { land(s, r); return runs }
+    if (push.ok) return runs + land(s, r)
   }
   if (r.size === 2) {
     const p = s.player, w = s.world.w
@@ -219,8 +226,7 @@ export function landRock(s: State, r: Rock): number {
       r.x = x0 + TILE / 2
       r.y = y0 + TILE / 2
       r.shrunk = true
-      land(s, r)
-      return runs
+      return runs + land(s, r)
     }
   }
   s.rocks.splice(s.rocks.indexOf(r), 1)
