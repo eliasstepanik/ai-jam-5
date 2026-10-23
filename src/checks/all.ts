@@ -28,6 +28,7 @@ import { run as minerals } from './minerals.check.ts'
 import { run as route } from './route.check.ts'
 import { run as mining } from './mining.check.ts'
 import { run as beacon } from './beacon.check.ts'
+import { run as rocksUnit } from './rocks-unit.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -57,4 +58,5 @@ minerals()
 route()
 mining()
 beacon()
+rocksUnit()
 console.log('checks ok')
