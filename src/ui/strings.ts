@@ -73,7 +73,7 @@ export const STR = {
   parry: { perfect: 'PERFECT', good: 'GOOD', poor: 'POOR' },
   // depth class selector (R-164); `depth` above is the HUD word, so the settings title row gets its own key
   depthLabel: 'Depth',
-  depthRow: 'Depth', // end-screen row label
+  depthRow: 'Class', // end-screen row label
 } as const
 
 // Depth class names for classes 1..4 (R-164): DEPTH_NAMES[cls - 1]
