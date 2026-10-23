@@ -219,6 +219,7 @@ export type Ui = {
   copyMsg: string // 'Copied!' vs 'Copy failed ...'
   genPending: string // '' = idle, else the seed key of the chunked cave generation
   genAttempt: number // int, current generation attempt 0..MAX_ATTEMPTS
+  bestClass: number // depth class the mirrored Best was loaded for (3 = Standard); lets screens reload Best after a hot swap
 }
 export type Settings = {
   volume: number // 0..1

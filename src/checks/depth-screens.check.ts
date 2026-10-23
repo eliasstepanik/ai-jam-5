@@ -7,7 +7,9 @@ import type { State } from '../core/types.ts'
 import { init } from '../core/state.ts'
 import { hashSeed } from '../core/rng.ts'
 import { parseSeed } from '../core/seed.ts'
+import { migrate } from '../core/migrate.ts'
 import { loadBest } from '../core/storage.ts'
+import { endRun } from '../systems/run.ts'
 import { stepScreens } from '../systems/screens.ts'
 import { parseDepth } from '../ui/platform.ts'
 
@@ -161,6 +163,77 @@ function sameClass(mem: Map<string, string>): void {
   }
 }
 
+// (6) The first load records the class it loaded in s.ui.bestClass. A first frame on the help screen isolates the load: the title sync would
+// otherwise reload a missing cache and hide a load that forgot to set it.
+function firstLoadCache(mem: Map<string, string>): void {
+  for (const c of [1, 2, 4]) {
+    const s = title(mem, { depthClass: c })
+    s.meta.screen = 'help'
+    stepScreens(s, inp())
+    ok(s.ui.bestClass === c, `first load with saved class ${c} sets ui.bestClass to ${c}, got ${s.ui.bestClass}`)
+    ok(shown(s) === want(c), `first load with saved class ${c} shows its Best ${want(c)}, got ${shown(s)}`)
+  }
+  const s = title(mem, null) // preset class, no saved settings: the load is skipped but the Best load and the cache still follow the preset
+  s.settings.loaded = false
+  s.settings.depthClass = 1
+  s.meta.screen = 'help'
+  stepScreens(s, inp())
+  ok(s.ui.bestClass === 1 && shown(s) === 10, `first load with a class 1 preset: ui.bestClass 1 and Best 10, got ${s.ui.bestClass} and ${shown(s)}`)
+}
+
+// The first frame of a state hot-swapped like the dev host does: the JSON round trip drops anything not plain data, migrate fills the rest.
+const swap = (s: State): State => migrate(JSON.parse(JSON.stringify(s)) as State)
+
+// A 'random' run whose seed resolves to class 1, started through the real path (title Enter -> begin -> generate). Ends with a class-1 Best loaded
+// in memory (ui.bestClass 1) while the setting still says 'random' (title class 3): the stale-Best situation a hot swap must not turn into class 3.
+function randomClassOne(mem: Map<string, string>): State {
+  let text = '', cls = 3
+  for (let i = 0; cls !== 1; i++) { text = 'h' + i; cls = (hashSeed(parseSeed(text), 'cave:depth') % 4) + 1 }
+  const s = title(mem, { depthClass: 'random' }) // stores Best 10 * class per class
+  mem.set(keyOf(3), record(300)) // class-3 Best 300 vs class-1 Best 10
+  s.ui.seedInput = text
+  stepScreens(s, inp(['Enter']))
+  finish(s, 'random class 1')
+  ok(s.world.depthClass === 1 && shown(s) === 10 && s.ui.bestClass === 1, `random seed ${text}: class-1 run start has Best 10 cached as class 1, got class ${String(s.world.depthClass)} Best ${shown(s)} cache ${s.ui.bestClass}`)
+  return s
+}
+
+// (7) A dev hot swap keeps ui.bestClass, so the title still shows (and a run still commits against) the Best of the right class.
+function hotSwap(mem: Map<string, string>): void {
+  // The title after a swap shows the class of the setting ('random': 3), not the class-1 Best left in memory.
+  const a = randomClassOne(mem)
+  a.meta.screen = 'title'
+  const sa = swap(a)
+  ok(sa.ui.bestClass === 1, 'hot swap keeps ui.bestClass 1, got ' + sa.ui.bestClass)
+  ok(sa.best?.score === 10, 'hot swap keeps the class-1 Best in memory, got ' + shown(sa))
+  stepScreens(sa, inp())
+  ok(shown(sa) === 300 && sa.ui.bestClass === 3, `after a swap the title shows the class-3 Best 300, got ${shown(sa)} (cache ${sa.ui.bestClass})`)
+
+  // A class-3 run after the swap must not compare against, or overwrite, the class-3 Best with the stale class-1 one: score 50 < 300 stays unsaved.
+  const b = swap(randomClassOne(mem))
+  b.meta.screen = 'title'
+  b.meta.time = 20 // past the screen change lock
+  b.settings.depthClass = 3
+  b.ui.seedInput = SEED
+  stepScreens(b, inp(['Enter']))
+  finish(b, 'class 3 after swap')
+  ok((b.world.depthClass ?? 3) === 3 && shown(b) === 300, `class 3 run after a swap starts with Best 300, got class ${String(b.world.depthClass ?? 3)} Best ${shown(b)}`)
+  b.meta.steps = 550 * 60 // 600 - 550 seconds = 50 points, nothing else: below 300, above the stale 10
+  endRun(b, false)
+  ok(b.result?.parts.total === 50 && b.result.isNewBest === false, `class 3 run scores 50 and is no new Best, got ${String(b.result?.parts.total)} isNewBest ${String(b.result?.isNewBest)}`)
+  const stored = JSON.parse(mem.get(keyOf(3)) ?? 'null') as { score: number } | null
+  ok(stored?.score === 300, `the stored class-3 Best stays 300 after a lower class-3 run, got ${String(stored?.score)}`)
+  ok((JSON.parse(mem.get(keyOf(1)) ?? 'null') as { score: number } | null)?.score === 10, 'the stored class-1 Best stays 10')
+
+  // Same class across a swap: no reload, an in-memory Best that storage does not hold survives (the cache said class 1 is loaded).
+  const c = title(mem, { depthClass: 1 })
+  stepScreens(c, inp()) // first load: class 1
+  c.best = JSON.parse(record(99)) as State['best']
+  const sc = swap(c)
+  stepScreens(sc, inp())
+  ok(sc.ui.bestClass === 1 && shown(sc) === 99, `class 1 title after a swap keeps the loaded class-1 Best (no reload), got cache ${sc.ui.bestClass} Best ${shown(sc)}`)
+}
+
 export function run(): void {
   const mem = new Map<string, string>(), restore = install(mem)
   try {
@@ -169,5 +242,7 @@ export function run(): void {
     depthRow(mem)
     link(mem)
     sameClass(mem)
+    firstLoadCache(mem)
+    hotSwap(mem)
   } finally { restore() }
 }

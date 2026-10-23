@@ -49,15 +49,12 @@ function begin(s: State, seedText: string): void {
   s.ui.genAttempt = 0
 }
 
-// Class of the Best now in s.best (Best carries no class and State gets no new field). Unset = 3, the legacy no-class load.
-// ponytail: per-State cache of the class the shown Best was loaded for; lost on dev hot-reload (WeakMap re-created, resets to class 3), so a stale Best of another class can show until the next class change or run start; production unaffected; upgrade: store the class on State.
-const bestClass = new WeakMap<State, number>()
-
-// Make s.best the Best of class `c`. Only reads storage when the class differs from the loaded one, so a same-class call keeps an in-memory Best (dead storage).
+// Make s.best the Best of class `c`. The class of the loaded Best is cached in s.ui.bestClass (default 3, the legacy no-class load), so it survives hot swaps.
+// Only reads storage when the class differs from the loaded one, so a same-class call keeps an in-memory Best (dead storage).
 function syncBest(s: State, c: number): void {
-  if ((bestClass.get(s) ?? 3) === c) return
+  if (s.ui.bestClass === c) return
   loadBest(s, undefined, c)
-  bestClass.set(s, c)
+  s.ui.bestClass = c
 }
 
 // One generation unit in the class of the pending seed. A cancelled generation leaves s.best intact. When the run starts, s.best is reloaded
@@ -117,7 +114,7 @@ function activate(s: State, item: number): void {
 
 export function stepScreens(s: State, input: Input): boolean {
   tick(s)
-  if (!s.settings.loaded) { loadSettings(s); loadBest(s, undefined, shownClass(s)); bestClass.set(s, shownClass(s)) } // once per page session; loadSettings sets the flag even when storage fails
+  if (!s.settings.loaded) { loadSettings(s); loadBest(s, undefined, shownClass(s)); s.ui.bestClass = shownClass(s) } // once per page session; loadSettings sets the flag even when storage fails
   const u = s.ui, k = input.pressed, sc = s.meta.screen
   if (u.genPending !== '') {
     if (k.has('Escape')) { u.genPending = ''; u.genAttempt = 0; ui(s, 'uiBack') } else generate(s)

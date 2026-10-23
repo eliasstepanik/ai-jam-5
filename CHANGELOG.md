@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed stray wall-edge strips inside solid cave walls by using the seamless interior cap instead of fill variants containing a south-edge lip. Cached terrain refreshes on hot reload.
 - The title screen and the run start now show the Best score of the selected depth class. Before, the Standard-depth Best showed on load and after switching class. A shared `?depth=N` link follows the same rule.
 - The random depth setting is kept across dev hot reloads. Before, it reset to Standard.
-- The rock fall ramp and the quake rate now follow the ramp time of the selected depth class.
 
 ### Added
 

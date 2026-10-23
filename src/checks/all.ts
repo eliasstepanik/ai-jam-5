@@ -41,6 +41,7 @@ import { run as aiDevourer } from './ai-devourer.check.ts'
 import { run as depthRun } from './depth-run.check.ts'
 import { run as rocksClass } from './rocks-class.check.ts'
 import { run as depthScreens } from './depth-screens.check.ts'
+import { run as migrateSettings } from './migrate-settings.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -82,6 +83,7 @@ aiDevourer()
 depthRun()
 rocksClass()
 depthScreens()
+migrateSettings()
 debug()
 
 console.log('checks ok')
