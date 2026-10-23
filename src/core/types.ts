@@ -119,6 +119,7 @@ export type World = {
   pendingSig: number // int, +1 on every rock commit, landing, shrink and cancel
   beaconLitAt: number // meta.time when the Beacon was lit; 0 = not yet
   veinGen: number // int, +1 each time a vein is mined away; part of the walls chunk cache key (render/keys.ts tileKey)
+  depthClass?: number // 1..4 (R-164), undefined means 3
 }
 
 export type MonsterAi = 'ring' | 'stalk' | 'windup' | 'lunge' | 'recover' | 'stunned' | 'dying'
