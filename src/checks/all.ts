@@ -11,6 +11,7 @@ import { run as world } from './world.check.ts'
 import { run as assets } from './assets.check.ts'
 import { run as cave } from './cave.check.ts'
 import { run as caveExtra } from './cave-extra.check.ts'
+import { caveClassChecks } from './cave-class.check.ts'
 import { run as caveReject } from './cave-reject.check.ts'
 import { run as caveReject2 } from './cave-reject2.check.ts'
 import { run as caveReject3 } from './cave-reject3.check.ts'
@@ -48,6 +49,7 @@ world()
 assets()
 cave()
 caveExtra()
+caveClassChecks()
 caveReject()
 caveReject2()
 caveReject3()
