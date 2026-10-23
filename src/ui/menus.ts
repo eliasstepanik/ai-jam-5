@@ -14,7 +14,7 @@ import { helpLayout, pauseLayout, titleLayout, titleReady } from './layout.ts'
 import { drawEnd } from './menus-end.ts'
 import { TAU, fadeIn, fill, focus } from './menu-kit.ts'
 import type { Ctx } from './menu-kit.ts'
-import { HELP, STR, clock, pct } from './strings.ts'
+import { HELP, STR, clock, depthName, pct } from './strings.ts'
 
 // Stroked arc, a0..a1 in turns from `from` (default 12 o'clock, clockwise). Callers wrap in save/restore: it leaves alpha and styles set.
 function arc(ctx: Ctx, cx: number, cy: number, r: number, a0: number, a1: number, color: string, lw: number, alpha = 1, from = -Math.PI / 2): void {
@@ -57,6 +57,7 @@ function backdrop(ctx: Ctx, s: State, w: number, h: number, u: number, alpha: nu
 
 const soundLabel = (s: State): string => (s.settings.muted ? STR.soundOff : `${STR.soundOn} ${pct(s.settings.volume)}`)
 const flashLabel = (s: State): string => (s.settings.reducedFlash ? STR.flashReduced : STR.flashFull)
+const depthLabel = (s: State): string => (s.settings.depthClass === 'random' ? `${STR.depthLabel}: Random` : `${STR.depthLabel}: ${depthName(s.settings.depthClass)}`)
 
 // --- title ---
 function drawTitle(ctx: Ctx, s: State, w: number, h: number): void {
@@ -92,15 +93,15 @@ function drawTitle(ctx: Ctx, s: State, w: number, h: number): void {
   }
   text(ctx, STR.tagline, l.tagline.x, l.tagline.y, 16, u, COL.dim, { align: 'center' })
   const prog = im.total > 0 ? im.loaded / im.total : 0
-  const labels = [ready ? STR.play : `${STR.loadingBtn} ${pct(prog)}`, STR.help, soundLabel(s), flashLabel(s)]
-  for (let i = 0; i < 4; i++) button(ctx, l.buttons[i], labels[i], { focused: focus(s, i), enabled: l.buttons[i].enabled }, u, t, red)
+  const labels = [ready ? STR.play : `${STR.loadingBtn} ${pct(prog)}`, STR.help, soundLabel(s), flashLabel(s), depthLabel(s)]
+  for (let i = 0; i < labels.length; i++) button(ctx, l.buttons[i], labels[i], { focused: focus(s, i), enabled: l.buttons[i].enabled }, u, t, red)
   if (!ready) { // progress track + fill under Play
     fill(ctx, COL.border, l.bar.x, l.bar.y, l.bar.w, l.bar.h)
     fill(ctx, COL.accent, l.bar.x, l.bar.y, l.bar.w * prog, l.bar.h)
   }
-  const sb = l.buttons[4], typing = s.ui.cursor === 4, sx = sb.x + 12 * u, sy = sb.y + sb.h / 2 + 5 * u
+  const sb = l.buttons[5], typing = s.ui.cursor === 5, sx = sb.x + 12 * u, sy = sb.y + sb.h / 2 + 5 * u
   text(ctx, STR.seedLabel, l.seedLabel.x, l.seedLabel.y, 14, u, COL.dim)
-  button(ctx, sb, '', { focused: focus(s, 4), enabled: true }, u, t, red)
+  button(ctx, sb, '', { focused: focus(s, 5), enabled: true }, u, t, red)
   text(ctx, s.ui.seedInput || STR.seedPlaceholder, sx, sy, 16, u, s.ui.seedInput ? COL.text : COL.dim)
   if (typing && Math.floor(t * 4) % 2 === 0) fill(ctx, COL.gold, sx + (s.ui.seedInput ? textWidth(ctx, s.ui.seedInput, 16, u) : 0) + 2 * u, sy - 14 * u, 2 * u, 18 * u) // caret, 2 Hz
   text(ctx, STR.seedHint, l.seedHint.x, l.seedHint.y, 12, u, COL.dim, { align: 'center' })
