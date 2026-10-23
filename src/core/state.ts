@@ -72,7 +72,7 @@ export function init(): State {
     ui: {
       cursor: 0, helpPage: 0, toasts: [], storageOk: true, seedInput: '', copied: 0,
       hover: -1, screenAt: 0, helpFrom: 'title', confirmT: 0, denyT: 0, copyMsg: '',
-      genPending: '', genAttempt: 0,
+      genPending: '', genAttempt: 0, bestClass: 3,
     },
     settings: { volume: 0.7, muted: false, lastSeed: '', loaded: false, reducedFlash: false, quality: 'auto', depthClass: 3 },
     best: null, result: null,

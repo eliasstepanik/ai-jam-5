@@ -51,10 +51,18 @@ export function fill(def: unknown, old: unknown, path = ''): unknown {
   return typeof old === typeof def ? old : def // primitive: keep if same type (NaN stays a number)
 }
 
+// fill() rejects the string 'random' against the numeric default 3, so settings.depthClass is resolved here: 'random' and the
+// integers 1..4 are kept, anything else (missing, wrong type, out of range) becomes 3. Idempotent. Called after fill().
+function fixSettings(set: Settings, old: unknown): Settings {
+  const c = isObj(old) ? old.depthClass : undefined
+  const ok = c === 'random' || (typeof c === 'number' && Number.isInteger(c) && c >= 1 && c <= 4)
+  return Object.assign(set, { depthClass: ok ? c : 3 })
+}
+
 // Version mismatch: fresh State, keeping only settings and best when they are objects (state-3 §2).
 function resetKeep(fresh: State, old: unknown): State {
   const o = isObj(old) ? old : {}
-  if (isObj(o.settings)) fresh.settings = fill(fresh.settings, o.settings) as Settings
+  if (isObj(o.settings)) fresh.settings = fixSettings(fill(fresh.settings, o.settings) as Settings, o.settings)
   if (isObj(o.best)) fresh.best = fill(DEFAULT_BEST, o.best) as Best
   console.warn('[migrate] state v' + String(o.version) + ' -> v' + STATE_VERSION + ': reset to title')
   return fresh
@@ -64,6 +72,7 @@ export function migrate(old: unknown): State {
   const fresh = init()
   if (!isObj(old) || old.version !== STATE_VERSION) return resetKeep(fresh, old)
   const s = fill(fresh, old) as State
+  s.settings = fixSettings(s.settings, old.settings)
   if (s.best !== null) s.best = fill(DEFAULT_BEST, s.best) as Best
   if (s.result !== null) s.result = fill(DEFAULT_RESULT, s.result) as RunResult
   return s

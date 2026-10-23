@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Aligned character feet and raised wall art with the collision ground plane. South wall faces now end at the collision boundary, and complete foreground walls hide actors standing to their north.
 
 - Removed stray wall-edge strips inside solid cave walls by using the seamless interior cap instead of fill variants containing a south-edge lip. Cached terrain refreshes on hot reload.
+- The title screen and the run start now show the Best score of the selected depth class. Before, the Standard-depth Best showed on load and after switching class. A shared `?depth=N` link follows the same rule.
+- The random depth setting is kept across dev hot reloads. Before, it reset to Standard.
 
 ### Added
 
@@ -48,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dev builds only: Backquote toggles the debug flag and Shift+1..6 toggle reveal, god mode, debug overlay, frozen AI, path display and the render quality override.
 - Host: a `'Blur'` pseudo-key in `Input.pressed` on window blur or tab hide, `Input.view` with the canvas size in CSS pixels and `devicePixelRatio`, and a fixed-step time budget (12 ms) so a slow frame drops its backlog instead of freezing.
 - Checks in `npm run check`: mining, minerals, Beacon, quake, roll, rocks (unit, rows and a seeded property test with a god-mode exit bot), route, escape, an economy simulator pinned to the tuning constants (including the mining, minerals and Beacon rows through `step()`), run lifecycle, step order and screen controls, world queries and caches, and `scripts/check-assets.ts` (tileset 94 frames, characters 1232 frames, size limits).
+- New checks in `npm run check`: per-class run start, rock and quake ramp per depth class, Best per class on the screens, and the rule-11 scale basis fixture.
 - Engine groundwork (no visible change on its own): the cave generator (`generateCave` with up to 8 attempts and a validated fallback ring cave), seeded macro layout, loop tunnels, connectivity and terrain, world queries (collision with sliding, line of sight, exploration bits, spawn sampling), monster spawn records and steering, a lazy resource registry that survives hot reload, and sprite and sound catalogs.
 - `docs/`: a verbatim local copy of the Last Ember project plan from the knowledge base (design, binding architecture rulings, module tree, asset library, economy and scale rulings, task breakdown and per-file ownership, build progress). Start at `docs/index.md` and `docs/architecture.md`. `docs/MANIFEST.sha256` lists the sha256 of every copied file (69 files) for drift detection.
 

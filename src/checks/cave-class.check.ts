@@ -79,9 +79,36 @@ function determinism(): void {
   ok(hashes.size === 4, `seed 1: the 4 classes give 4 distinct caves, got ${hashes.size}`)
 }
 
+// Copy of r keeping the first n resin pickups (plants and order untouched); the dropped ones are the tail, never the Beacon cluster.
+const withResin = (r: CaveResult, n: number): CaveResult => {
+  let seen = 0
+  return { ...r, pickups: r.pickups.filter((q) => q.kind !== 'resin' || seen++ < n) }
+}
+const resinOf = (r: CaveResult): number => r.pickups.filter((q) => q.kind === 'resin').length
+
+// test 7: rule 11 scales the count minimums by sb = max(beaconDist, p.bdLo). The ring beacon distances (231/383/515/792) never fall below
+// their own class floor, so only a derived fixture tells max(bd, bdLo) from the mutants sb = bd and sb = bdLo.
+function scaleBasis(): void {
+  const lo = PARAMS[1], mid = PARAMS[2]
+  // (a) bd below the floor: the class-1 ring (bd 231 in [lo.fbLo, lo.bdLo]) checked with class-2 params but the class-1 fallback floor.
+  // sb = bdLo = 340 asks 16 resin and 16 veins, sb = bd = 231 only 10 and 10; the ring has 12 and 13, so r11 fires only if bdLo is the basis.
+  const ring1 = fallbackCave(1, lo), below = { ...mid, fbLo: lo.fbLo }
+  const need1 = scaledMin(24, mid.bdLo)
+  ok(ring1.beaconDist >= below.fbLo && ring1.beaconDist < mid.bdLo, `scale (a): ring bd ${ring1.beaconDist} is under bdLo ${mid.bdLo}, over fbLo ${below.fbLo}`)
+  ok(scaledMin(24, ring1.beaconDist) <= resinOf(ring1) && resinOf(ring1) < need1, `scale (a): ${resinOf(ring1)} resin sit between min@bd and min@bdLo ${need1}`)
+  ok(validateCave(ring1, below).why === 'r11 counts', `scale (a): bd under the floor scales by bdLo, got ${validateCave(ring1, below).why}`)
+  ok(validateCave(ring1, lo).ok, 'scale (a): control, the same ring is valid under its own class')
+  // (b) bd above the floor: the class-2 ring (bd 383 > bdLo 340) scales by bd; sb = bdLo would let n - 1 resin through
+  const ring2 = fallbackCave(1, mid), need2 = scaledMin(24, ring2.beaconDist)
+  ok(ring2.beaconDist > mid.bdLo && need2 > scaledMin(24, mid.bdLo) && resinOf(ring2) >= need2, `scale (b): bd ${ring2.beaconDist} over bdLo, floor ${need2} > ${scaledMin(24, mid.bdLo)}`)
+  ok(validateCave(withResin(ring2, need2), mid).ok, `scale (b): ${need2} resin (exactly the floor at bd) is valid`)
+  ok(validateCave(withResin(ring2, need2 - 1), mid).why === 'r11 counts', `scale (b): ${need2 - 1} resin fail r11 (bdLo basis would pass them)`)
+}
+
 export function caveClassChecks(): void {
   const t0 = performance.now()
   paramRows()
+  scaleBasis()
   perClass(heavy() ? SEEDS : SEEDS.filter((_, i) => i % DEFAULT_STRIDE === 0))
   determinism()
   console.log(`cave-class: ok (${Math.round(performance.now() - t0)} ms)`)

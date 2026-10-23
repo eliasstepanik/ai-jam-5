@@ -38,9 +38,13 @@ function rectOf(s: State, r: Rock): [number, number, number, number] {
   return [x0, y0, x0 + r.size * TILE, y0 + r.size * TILE]
 }
 
-// P2 ramp length is per depth class (R-164; class 3 = T.rocks.rampS = 80).
+// Escape ramp fraction 0..1; ramp length is per depth class (R-164; class 3 = T.rocks.rampS = 80). Shared with quake.ts.
+export function rampOf(escapeT: number, cls: number | undefined): number {
+  return Math.min(1, escapeT / paramsOf(cls).rampS)
+}
+
 function p2(s: State): number {
-  return T.rocks.p2Start + (T.rocks.p2End - T.rocks.p2Start) * Math.min(1, s.director.escapeT / paramsOf(s.world.depthClass).rampS)
+  return T.rocks.p2Start + (T.rocks.p2End - T.rocks.p2Start) * rampOf(s.director.escapeT, s.world.depthClass)
 }
 
 // Cheap filters of rocks §3.3 for a candidate footprint.

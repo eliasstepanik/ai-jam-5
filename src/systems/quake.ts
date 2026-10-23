@@ -4,11 +4,10 @@
 import type { State } from '../core/types.ts'
 import { randRange } from '../core/rng.ts'
 import { T } from '../core/tuning.ts'
-import { paramsOf } from '../world/gen/params.ts'
-import { commitRock, cosmeticRockLand, landRock, planRockFall } from './rocks.ts'
+import { commitRock, cosmeticRockLand, landRock, planRockFall, rampOf } from './rocks.ts'
 
-// rocks §2: rocks per second, linear from rateStart to rateEnd over rampS (per depth class, R-164; class 3 = T.rocks.rampS), then flat.
-const rate = (s: State): number => T.rocks.rateStart + (T.rocks.rateEnd - T.rocks.rateStart) * Math.min(1, s.director.escapeT / paramsOf(s.world.depthClass).rampS)
+// rocks §2: rocks per second, linear from rateStart to rateEnd over the per-depth-class ramp (R-164, via rampOf), then flat.
+const rate = (s: State): number => T.rocks.rateStart + (T.rocks.rateEnd - T.rocks.rateStart) * rampOf(s.director.escapeT, s.world.depthClass)
 
 export function stepQuake(s: State, dt: number): void {
   const d = s.director

@@ -281,7 +281,7 @@ export function run(): void {
   try {
     for (const [sc, row, from, key, want] of [
       ['title', 4, 3, 'Enter', '4|4|-|uiConfirm|false'], ['title', 4, 4, 'Space', '1|1|7|uiConfirm|false'], ['title', 4, 1, 'click', '2|2|-|uiConfirm|false'], ['title', 4, 2, 'Enter', '3|3|-|uiConfirm|false'],
-      ['title', 4, 1, 'ArrowLeft', '1|-|7||false'], ['title', 4, 4, 'ArrowRight', '4|-|7||false'], ['title', 4, 3, 'ArrowLeft', '2|2|-|uiMove|false'], ['title', 4, 2, 'Minus', '1|1|7|uiMove|false'],
+      ['title', 4, 1, 'ArrowLeft', '1|-|7||false'], ['title', 4, 4, 'ArrowRight', '4|-|-||false'], ['title', 4, 3, 'ArrowLeft', '2|2|-|uiMove|false'], ['title', 4, 2, 'Minus', '1|1|7|uiMove|false'],
       ['title', 4, 'random', 'Enter', '4|4|-|uiConfirm|false'], ['title', 3, 3, 'ArrowRight', '3|-|7||false'], ['paused', 4, 3, 'ArrowRight', '3|-|7||false'], ['help', 0, 3, 'ArrowRight', '3|-|7||false'],
       ['title', 5, 3, 'Enter', '3|-|7|uiConfirm|true'], ['title', 5, 3, 'ArrowRight', '3|-|7||false'],
     ] as const) {
