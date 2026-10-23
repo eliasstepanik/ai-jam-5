@@ -12,10 +12,11 @@ import type { Tileset } from './tileset.ts'
 
 export const HASH = 35 // '#'
 export const CHUNK_PX = CHUNK_TILES * TILE // 256
-export const FACE_H = 48 // a wall face hangs 48 world px below its cap (R-178)
-export const WALLS_H = CHUNK_PX + FACE_H // 304: walls canvas height, the south overhang of the last tile row (R-181)
+export const FACE_H = 48 // wall height above the collision ground plane
+export const WALL_ROW_H = TILE + FACE_H // complete cap + face; never split a wall around an actor
+export const WALLS_H = CHUNK_TILES * WALL_ROW_H // 640: eight independent 80 px wall-row strips
 const CELL = 24 // floor pattern cell (R-179)
-const FACE_SALT = 0x9e37, CAP_SALT = 0x51ab // DEFAULT: salts for the face variant and the cap_fill pick
+const FACE_SALT = 0x9e37 // DEFAULT: salt for the face variant
 
 const FLOOR_FILL: Record<Zone, string> = { 1: '#2b2420', 2: '#262a2e', 3: '#222a22', 4: '#2a2230' }
 const CAP_FILL: Record<Zone, string> = { 1: '#0c0a09', 2: '#0b0c0e', 3: '#0a0c0a', 4: '#0c0a0e' }
@@ -23,15 +24,6 @@ const FACE_FILL: Record<Zone, string> = { 1: '#3a2e26', 2: '#2f353b', 3: '#2c3a2
 const ORE_FILL: Record<MineralId, string> = { copper: '#c97b3a', sodium: '#e8c14a', strontium: '#d94a4a' }
 
 export const faceVariant = (x: number, y: number, seed: number): number => Math.floor(hash2(x, y, seed ^ FACE_SALT) * 4)
-
-// Cap frame: the open-neighbour mask, except a fully closed cell (mask 0) swaps to `cap_fill_1..3` for hash < 0.3 (render-2 §2.2).
-function capOf(mask: number, tx: number, ty: number, seed: number): string {
-  if (mask === 0) {
-    const h = hash2(tx, ty, seed ^ CAP_SALT)
-    if (h < 0.3) return 'cap_fill_' + (1 + Math.floor(h / 0.1))
-  }
-  return capName(mask)
-}
 
 // Floor canvas content for chunk (cx, cy), top-left drawn at (-ox, -oy): cached chunks pass the chunk origin, the direct fallback 0, 0.
 // Every 24 px cell touching the chunk is painted unconditionally (R-179): a cell may straddle a 32 px tile edge, and the opaque caps
@@ -50,7 +42,7 @@ export function paintFloor(c: CanvasRenderingContext2D, s: State, t: TileCache, 
   }
 }
 
-// Wall layer for the tiles [tx0, tx1) x [ty0, ty1) (clamped to the map), tile (tx, ty) at (tx * 32 - ox, ty * 32 - oy). Order per tile:
+// Wall layer for [tx0, tx1) x [ty0, ty1), raised FACE_H above its collision footprint. The face ends at the tile's south ground edge. Order per tile:
 // cap, face (bit S set: floor to the south) into the south cell, then per inner bit k `inner_cutout_k` (destination-out) and `inner_rim_k`;
 // south-facing ores last (R-186). `cut` false (direct fallback into the main context) skips the cutouts and rims: destination-out would
 // erase the floor underneath. ponytail: inner corners look square for the few frames a chunk is over the build quota; a scratch canvas fixes it.
@@ -62,7 +54,7 @@ export function paintWalls(c: CanvasRenderingContext2D, s: State, t: TileCache, 
     for (let tx = xa; tx < xb; tx++) {
       const i = ty * w + tx
       if (tiles.charCodeAt(i) !== HASH) continue
-      const x = tx * TILE - ox, y = ty * TILE - oy, m = t.mask[i]
+      const x = tx * TILE - ox, y = ty * TILE - oy - FACE_H, m = t.mask[i]
       if (!ts) {
         const z = (t.zone[i] || 1) as Zone
         c.fillStyle = CAP_FILL[z]
@@ -70,7 +62,8 @@ export function paintWalls(c: CanvasRenderingContext2D, s: State, t: TileCache, 
         if (m & 4) { c.fillStyle = FACE_FILL[z]; c.fillRect(x, y + TILE, TILE, FACE_H) }
         continue
       }
-      blit(c, ts, capOf(m, tx, ty, s.meta.seed), x, y)
+      // Delivered cap_fill_1..3 contain a south-edge lip. Only cap_00 is seamless inside solid rock.
+      blit(c, ts, capName(m), x, y)
       if (m & 4) blit(c, ts, faceName(m, (m & 8) !== 0, (m & 2) !== 0, t.variant[i]), x, y + TILE) // W bit 8, E bit 2
       if (!cut || !t.inner[i]) continue
       for (let k = 0; k < 4; k++) {
@@ -86,7 +79,7 @@ export function paintWalls(c: CanvasRenderingContext2D, s: State, t: TileCache, 
   for (const v of s.veins) {
     const tx = v.tile % w, ty = (v.tile - tx) / w
     if (tx < xa || tx >= xb || ty < ya || ty >= yb || v.stand !== v.tile + w || !(t.mask[v.tile] & 4)) continue
-    const x = tx * TILE - ox, y = ty * TILE - oy + TILE
+    const x = tx * TILE - ox, y = ty * TILE - oy - FACE_H + TILE
     if (ts) { blit(c, ts, oreName(v.mineral, v.id), x + TILE / 2, y + FACE_H / 2); continue }
     c.fillStyle = ORE_FILL[v.mineral]
     c.fillRect(x + 10, y + 14, 12, 20)

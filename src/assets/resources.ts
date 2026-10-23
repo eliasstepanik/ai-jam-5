@@ -10,7 +10,7 @@ export type ImageStore = {
   tints: Map<string, HTMLCanvasElement>
   gen: number; loaded: number; total: number; started: boolean
 }
-// R-179/R-181: floor 256x256 + walls 256x304 (48 px south overhang), one pair per 8x8-tile chunk.
+// Per 8x8 chunk: floor 256x256 + walls 256x640, eight separate 80 px cap+face strips sorted by ground row.
 export type Chunk = { floor: HTMLCanvasElement; walls: HTMLCanvasElement }
 export type TileCache = {
   key: string
@@ -56,7 +56,8 @@ export type Resources = {
   dark: Canvas2D | null; scratch: Scratch | null
   swapped: Map<string, HTMLCanvasElement> // flame palette-swap frames (R-185): 64x64, key 'x|y|material' (sheet rect of the frame + material, see render/charatlas.ts swappedFrame), LRU 256; slot name is a DEFAULT (D7)
   particles: Particles; perf: Perf; audio: AudioRes
-  debug: { on: boolean }
+  debug: { on: boolean; available: boolean | null; tab: number; drag: 'none' | 'torch' | 'speed'
+    aimX: number; aimY: number; mouseX: number; mouseY: number; updateAt: number; updateMs: number; map: { key: string; canvas: HTMLCanvasElement } | null }
   ui: { copyResult: 'none' | 'ok' | 'failed'; urlRead: boolean }
   hud: { exitA: number; lastT: number; runId: number; dist: number; distT: number } | null
 }
@@ -86,13 +87,17 @@ function makeRes(ctx: AudioContext | null): Resources {
       lastMaster: -1, pauseAt: -1, nextCrackle: 0, nextBeat: 0, crackleN: 0, growlAt: 0,
       broken: new Set(), synthGen: -1,
     },
-    debug: { on: false }, ui: { copyResult: 'none', urlRead: false }, hud: null,
+    debug: { on: false, available: null, tab: 0, drag: 'none', aimX: 0, aimY: 0, mouseX: 0, mouseY: 0, updateAt: 0, updateMs: 0, map: null }, ui: { copyResult: 'none', urlRead: false }, hud: null,
   }
 }
 
 function fillRes(r: Resources): Resources {
   // Additive fields fill only missing values; active resources and cursors stay intact.
-  r.debug ??= { on: false }
+  r.debug ??= { on: false, available: null, tab: 0, drag: 'none', aimX: 0, aimY: 0, mouseX: 0, mouseY: 0, updateAt: 0, updateMs: 0, map: null }
+  r.debug.available ??= null
+  r.debug.tab ??= 0; r.debug.drag ??= 'none'
+  r.debug.aimX ??= 0; r.debug.aimY ??= 0; r.debug.mouseX ??= 0; r.debug.mouseY ??= 0
+  r.debug.updateAt ??= 0; r.debug.updateMs ??= 0; r.debug.map ??= null
   r.scratch ??= null
   r.swapped ??= new Map()
   r.ui ??= { copyResult: 'none', urlRead: false }
@@ -115,6 +120,7 @@ function releaseRes(r: Resources): void {
   const canvases = new Set<HTMLCanvasElement>([...r.images.tints.values(), ...r.light.values(), ...r.swapped?.values() ?? []])
   for (const ch of r.tiles?.chunks.values() ?? []) { canvases.add(ch.floor); canvases.add(ch.walls) }
   for (const c of [r.memory.canvas, r.dark, r.scratch]) if (c) canvases.add(c.canvas)
+  if (r.debug?.map) canvases.add(r.debug.map.canvas)
   for (const canvas of canvases) canvas.width = canvas.height = 0
   r.images.tints.clear(); r.images.rects.clear(); r.light.clear(); r.swapped?.clear(); r.tiles?.chunks.clear()
   const sources = new Set<AudioScheduledSourceNode>(r.audio.music.srcs)

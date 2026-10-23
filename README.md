@@ -57,6 +57,21 @@ Open the URL Vite prints.
 | `npm run check` | Run `src/check.ts` (state-merge tests) with Node's built-in TypeScript type stripping. Prints `check ok`. |
 | `npm run zip` | Run `build`, then zip the contents of `dist/` into `game.zip` at the repo root. Needs the `zip` binary on your PATH. |
 
+## Developer tools
+
+In development, click **DEV** in the lower-right corner or press **F2** / **Backquote**. Exported builds opt in with `?debug=1` (or `&debug=1` alongside a seed).
+
+- **Player:** noclip (default 4x speed, adjustable 1–10x), infinite HP, freeze torch drain, remaining torch duration/fuel slider, extinguish/refill, and kill player.
+- **Enemies:** spawn a Lurker, Stalker, or Devourer on clear nearby floor, freeze AI, and show player/enemy animation clips and frame indices above their sprites (plus enemy AI state). The same label toggle is available on the Player tab.
+- **Inspect:** disable visual fog, show ground collision shapes/wall cells, show hurt and swept bite volumes/swing reach, and toggle FPS, frame/p95/CPU timings, quality, cache, entity counts, and player/run stats.
+
+Panel clicks and drags do not attack or activate menus. Torch time is estimated at the current zone/mineral burn rate; freezing drain also prevents mining, Beacon, bite, and parry costs. Infinite HP is independent of torch drain. Turning noclip off inside rock returns the player to the nearest clear floor. Debug choices survive hot reload and restarting a run.
+
+
+In **DEV → Enemies**, **Force nearest enemy leap** immediately launches the nearest enemy in clear sight at the player. Spawn an enemy first if needed. This skips windup/cooldown and resumes frozen AI; collision, parries and damage work normally.
+
+Developer navigation is in **DEV → Navigate**: teleport to the entrance or Beacon, toggle the black/white minimap beside health, and choose a Beacon or cave-exit direction arrow around the player. The arrow shows direct bearing; it does not route around walls.
+
 ## Hot reload
 
 Save `src/game.ts` and Vite swaps the module without a page reload. The game keeps running with its current state.

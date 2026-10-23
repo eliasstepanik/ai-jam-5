@@ -43,7 +43,7 @@ export function stepMining(s: State, it: Intent, dt: number): void {
   if (m.targetTile !== v.tile) { m.targetTile = v.tile; m.progress = 0 } // a new vein starts from zero
   const before = m.progress
   m.progress += dt
-  p.energy -= T.mining.costPerS * dt
+  if (!s.debug.freezeTorch) p.energy -= T.mining.costPerS * dt
   if (p.energy <= 0) { // the mining cost snuffed the flame
     p.energy = 0
     emit(s, 'flameOut', p.x, p.y)

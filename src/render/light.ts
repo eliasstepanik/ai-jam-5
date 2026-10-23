@@ -136,7 +136,7 @@ export function drawDarkness(ctx: CanvasRenderingContext2D, s: State, v: View, q
   ctx.globalCompositeOperation = 'source-over'
   ctx.globalAlpha = 1
   ctx.imageSmoothingEnabled = false
-  if (s.debug.reveal) return
+  if (s.debug.reveal || s.debug.noFog) return
   const k = beaconBlend(s)
   if (k >= 1) return
   const d = ensureDark(v, q)
