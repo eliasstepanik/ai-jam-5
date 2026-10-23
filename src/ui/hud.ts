@@ -16,6 +16,7 @@ import { makeView, toScreen } from '../render/view.ts'
 import { drawSprite, spriteReady } from '../assets/images.ts'
 import { getResources } from '../assets/resources.ts'
 import type { SpriteId } from '../assets/sprites.ts'
+import { denyShake, pulse, shakeK } from './anim.ts'
 import { hudLayout } from './layout.ts'
 import type { HudLayout } from './layout.ts'
 import { COL, keycap, panel, ring, text, textWidth } from './draw.ts'
@@ -94,11 +95,11 @@ function pips(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
   // also set by a flame hit (no HP lost), so it must not drive the shake. Events live 30 steps in fx.events; the lost pip is index hp.
   const hit = s.fx.events.some((e) => e.kind === 'hpHit' && s.meta.steps - e.step < HP_LOST_STEPS)
   const lost = hit && p.hp < p.hpMax ? p.hp : -1
-  const beat = rf || p.hp !== 1 ? 0 : 0.15 * (0.5 + 0.5 * Math.sin(2 * Math.PI * (LOW_BPM / 60) * s.meta.time))
+  const beat = p.hp !== 1 ? 0 : 0.15 * pulse(s.meta.time, LOW_BPM / 60, rf, 0) // last pip: scale 1 -> 1.15, steady when reduced
   l.pips.forEach((c, i) => {
     let x = c.x, y = c.y
     if (i === lost) { // shake +-2u, motion-reduced like screen shake
-      const k = (rf ? 0.4 : 1) * 2 * u
+      const k = shakeK(rf) * 2 * u
       x += (hash2(s.meta.steps, i, 3) * 2 - 1) * k
       y += (hash2(s.meta.steps, i, 4) * 2 - 1) * k
     }
@@ -158,7 +159,7 @@ function depthBlock(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void
 
 function hotbar(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
   const p = s.player, u = l.u
-  const shake = s.ui.denyT > 0 ? 3 * u * Math.sin(s.ui.denyT * 60) : 0 // deny shake, 0.25 s
+  const shake = denyShake(s.ui.denyT, u, s.settings.reducedFlash) // deny shake, 0.25 s, x0.4 when reduced
   MINERALS.forEach((m: MineralId, i) => {
     const r = l.slots[i], n = p.minerals[m], x = r.x + shake
     ui(ctx, 'ui_slot', 'v', p.selected === m ? 1 : 0, x + r.w / 2, r.y + r.h / 2, PS * u)
@@ -265,18 +266,18 @@ function exitMarker(ctx: CanvasRenderingContext2D, s: State, w: number, h: numbe
   const [ex, ey] = toScreen(v, tileToWorld(s.world.exit.tx), tileToWorld(s.world.exit.ty))
   ctx.save()
   if (ex >= EXIT_MARGIN && ex <= w - EXIT_MARGIN && ey >= EXIT_MARGIN && ey <= h - EXIT_MARGIN) {
-    const tile = TILE * v.z / v.dpr, pulse = 0.5 + 0.5 * Math.sin(now * Math.PI * 3) // 1.5 Hz, under the 3 Hz flash limit
-    ctx.globalAlpha = 0.5 + 0.5 * pulse
+    const tile = TILE * v.z / v.dpr, rf = s.settings.reducedFlash, pl = pulse(now, 1.5, rf, 1) // 1.5 Hz, under the 3 Hz flash limit; steady when reduced
+    ctx.globalAlpha = 0.5 + 0.5 * pl
     ctx.strokeStyle = EXIT_COL
     ctx.lineWidth = 2 * u
     ctx.beginPath()
-    ctx.arc(ex, ey, tile * (0.55 + 0.15 * pulse), 0, Math.PI * 2)
+    ctx.arc(ex, ey, tile * (0.55 + 0.15 * pl), 0, Math.PI * 2)
     ctx.stroke()
     ctx.globalAlpha = 1
-    ui(ctx, 'ui_exit-arrow', 'idle', 0, ex, ey - tile * 0.9 - 4 * u * (1 + Math.sin(now * Math.PI * 4)), PS, 1, Math.PI / 2) // bobs 8u at 2 Hz, points down
+    ui(ctx, 'ui_exit-arrow', 'idle', 0, ex, ey - tile * 0.9 - 8 * u * pulse(now, 2, rf), PS, 1, Math.PI / 2) // bobs 8u at 2 Hz, points down
   } else {
     const ax = w / 2 + Math.cos(a) * (w / 2 - EXIT_INSET * u), ay = h / 2 + Math.sin(a) * (h / 2 - EXIT_INSET * u)
-    ui(ctx, 'ui_exit-arrow', 'idle', 0, ax, ay, PS, 0.85 + 0.15 * Math.sin(now * Math.PI * 2), a)
+    ui(ctx, 'ui_exit-arrow', 'idle', 0, ax, ay, PS, 0.7 + 0.3 * pulse(now, 1, s.settings.reducedFlash, 1), a)
     const label = `${STR.exit} ${hs.dist} m`, half = textWidth(ctx, label, 14, u) / 2 + 8 * u
     text(ctx, label, clamp(ax - Math.cos(a) * (half + 12 * u), half, w - half), ay - Math.sin(a) * 24 * u + 5 * u, 14, u, EXIT_COL, { align: 'center', bold: true })
   }

@@ -14,6 +14,7 @@ import { moveCircle } from '../world/collide.ts'
 import { lineOfSightPx } from '../world/los.ts'
 import type { Brain } from './ai-lurker.ts'
 import { escapeAim, escapeBrain, escapeStrike } from './ai-escape.ts'
+import { devourerBrain } from './ai-devourer.ts'
 import { lurkerBrain } from './ai-lurker.ts'
 import { RING_BAND_PX, STALKER_BEHIND_S, stalkerBrain } from './ai-stalker.ts'
 import { findSpawn } from './director.ts'
@@ -25,8 +26,7 @@ const KIND_INDEX: Record<MonsterKind, number> = { lurker: 0, stalker: 1, devoure
 const NO_VELOCITY: readonly [number, number] = [0, 0]
 
 // R-075: Brain = (s, m) => [vx, vy]. The brain runs in ring / stalk / recover (it owns the flee latch and m.ringRadius).
-// ponytail: the devourer brain (ai-devourer.ts, C1) is not on master yet; until then a devourer rings like a lurker with its own numbers.
-const BRAINS: Partial<Record<MonsterKind, Brain>> = { lurker: lurkerBrain, stalker: stalkerBrain }
+const BRAINS: Partial<Record<MonsterKind, Brain>> = { lurker: lurkerBrain, stalker: stalkerBrain, devourer: devourerBrain }
 
 // R-073: the only writers of dying / recover. Combat, beacon and rocks call these, so events and timers are never skipped.
 export function setDying(s: State, m: Monster): void {
