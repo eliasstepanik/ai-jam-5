@@ -50,5 +50,5 @@ export function step(s: State, input: Input, dt: number): void {
   checkEnd(s) // D16
   if (s.meta.screen !== 'playing') return
   tickFx(s, dt) // D17
-  stepCamera(s, dt) // D18
+  stepCamera(s, dt, input.view) // D18
 }

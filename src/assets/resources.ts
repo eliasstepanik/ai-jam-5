@@ -10,11 +10,15 @@ export type ImageStore = {
   tints: Map<string, HTMLCanvasElement>
   gen: number; loaded: number; total: number; started: boolean
 }
+// R-179/R-181: floor 256x256 + walls 256x304 (48 px south overhang), one pair per 8x8-tile chunk.
+export type Chunk = { floor: HTMLCanvasElement; walls: HTMLCanvasElement }
 export type TileCache = {
   key: string
   zone: Uint8Array; mask: Uint8Array; inner: Uint8Array; variant: Uint8Array
-  chunks: Map<number, HTMLCanvasElement>; lru: number[]
+  chunks: Map<number, Chunk>; lru: number[]
 }
+// Tint/occlusion scratch; `rows` is the actor sort buffer (bucket heads + next list by foot row, R-180).
+export type Scratch = Canvas2D & { rows: Int32Array }
 export type MemoryCache = { key: number; canvas: Canvas2D | null; img: ImageData | null; words: Int32Array }
 export type LightCache = Map<string, HTMLCanvasElement>
 export type Particles = {
@@ -49,14 +53,15 @@ export type AudioRes = {
 export type Resources = {
   version: number
   images: ImageStore; tiles: TileCache | null; memory: MemoryCache; light: LightCache
-  dark: Canvas2D | null; scratch: Canvas2D | null
+  dark: Canvas2D | null; scratch: Scratch | null
+  swapped: Map<string, HTMLCanvasElement> // flame palette-swap frames (R-185): 64x64, key 'anim|dir|i|material', LRU 256; slot name is a DEFAULT (D7)
   particles: Particles; perf: Perf; audio: AudioRes
   debug: { on: boolean }
   ui: { copyResult: 'none' | 'ok' | 'failed'; urlRead: boolean }
   hud: { exitA: number; lastT: number; runId: number; dist: number; distT: number } | null
 }
 
-export const RES_VERSION = 1
+export const RES_VERSION = 2 // 2 (R-178..R-186, ADR-123): chunk type, scratch.rows, swapped cache; bump only when a field's MEANING changes
 const P_MAX = 512
 const holder: { res?: Resources } = import.meta.hot?.data ?? {}
 
@@ -68,7 +73,7 @@ function makeRes(ctx: AudioContext | null): Resources {
       gen: 0, loaded: 0, total: 0, started: false },
     tiles: null,
     memory: { key: -1, canvas: null, img: null, words: new Int32Array(0) },
-    light: new Map(), dark: null, scratch: null,
+    light: new Map(), dark: null, scratch: null, swapped: new Map(),
     particles: { x0: floats(), y0: floats(), vx: floats(), vy: floats(), born: floats(), life: floats(),
       size: floats(), drag: floats(), grav: floats(), col: bytes(), add: bytes(), shape: bytes(),
       head: 0, lastSeq: -1, runId: -1 },
@@ -89,6 +94,7 @@ function fillRes(r: Resources): Resources {
   // Additive fields fill only missing values; active resources and cursors stay intact.
   r.debug ??= { on: false }
   r.scratch ??= null
+  r.swapped ??= new Map()
   r.ui ??= { copyResult: 'none', urlRead: false }
   r.ui.urlRead ??= false
   r.hud ??= null
@@ -106,10 +112,11 @@ function fillRes(r: Resources): Resources {
 }
 
 function releaseRes(r: Resources): void {
-  const canvases = new Set<HTMLCanvasElement>([...r.images.tints.values(), ...r.light.values(), ...r.tiles?.chunks.values() ?? []])
+  const canvases = new Set<HTMLCanvasElement>([...r.images.tints.values(), ...r.light.values(), ...r.swapped?.values() ?? []])
+  for (const ch of r.tiles?.chunks.values() ?? []) { canvases.add(ch.floor); canvases.add(ch.walls) }
   for (const c of [r.memory.canvas, r.dark, r.scratch]) if (c) canvases.add(c.canvas)
   for (const canvas of canvases) canvas.width = canvas.height = 0
-  r.images.tints.clear(); r.images.rects.clear(); r.light.clear(); r.tiles?.chunks.clear()
+  r.images.tints.clear(); r.images.rects.clear(); r.light.clear(); r.swapped?.clear(); r.tiles?.chunks.clear()
   const sources = new Set<AudioScheduledSourceNode>(r.audio.music.srcs)
   const outputs = new Set<AudioNode>(r.audio.music.gains)
   for (const v of new Set([...r.audio.voices, ...Object.values(r.audio.loops)])) {
