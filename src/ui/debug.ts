@@ -3,7 +3,7 @@ import type { Input } from '../main.ts'
 import type { State } from '../core/types.ts'
 import { clamp } from '../core/math.ts'
 import { getResources } from '../assets/resources.ts'
-import { debugAction, debugRunActive, setDebugValue, torchSeconds } from '../systems/debug.ts'
+import { debugAction, debugDepthClass, debugRunActive, setDebugValue, torchSeconds } from '../systems/debug.ts'
 import type { DebugAction } from '../systems/debug.ts'
 import { currentQuality } from '../render/quality.ts'
 import { drawDebugWorld } from '../render/debug.ts'
@@ -11,6 +11,7 @@ import { debugLayout, contains } from './debug-layout.ts'
 import { drawAiDebug } from './debug-ai.ts'
 import { drawDebugNavigation } from './debug-navigation.ts'
 import { FONT } from './draw.ts'
+import { depthName } from './strings.ts'
 
 export function debugAvailable(): boolean {
   const ui = getResources().debug
@@ -110,9 +111,9 @@ export function drawDebug(ctx: CanvasRenderingContext2D, s: State, w: number, h:
       text(ctx, 'Targets nearest enemy in clear sight.', l.panel.x + 10, l.panel.y + 240)
       text(ctx, 'Spawn an enemy first if none is nearby.', l.panel.x + 10, l.panel.y + 262, '#a5aab5')
     } else if (ui.tab === 3) {
-      text(ctx, 'Arrow follows target around the player.', l.panel.x + 10, l.panel.y + 218)
-      text(ctx, 'Direct bearing; walls may block the route.', l.panel.x + 10, l.panel.y + 240, '#a5aab5')
-      text(ctx, 'Map: white floor, black wall; P / E / B.', l.panel.x + 10, l.panel.y + 262, '#a5aab5')
+      text(ctx, 'Depth ' + debugDepthClass(s) + ' ' + depthName(debugDepthClass(s)) + (debugRunActive(s) ? ': restarts this seed' : ': next run'), l.panel.x + 150, l.panel.y + 12, '#a5aab5')
+      text(ctx, 'Arrow: direct bearing, walls may block it.', l.panel.x + 10, l.panel.y + 242)
+      text(ctx, 'Map: white floor, black wall; P / E / B.', l.panel.x + 10, l.panel.y + 260, '#a5aab5')
     } else if (ui.tab === 2) {
       text(ctx, 'Cyan: physical collision at ground level', l.panel.x + 10, l.panel.y + 218, '#65d9ef')
       text(ctx, 'Orange/red: hurt and swept bite volumes', l.panel.x + 10, l.panel.y + 240, '#ffb573')
@@ -126,7 +127,7 @@ export function drawDebug(ctx: CanvasRenderingContext2D, s: State, w: number, h:
     ctx.strokeStyle = r.on || hover ? '#ffd27a' : '#505663'
     ctx.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1)
     const color = !r.enabled ? '#717780' : r.on ? '#ffd27a' : '#e8dcc8'
-    text(ctx, (r.on === undefined || r.id.startsWith('tab') || r.id === 'open' ? '' : r.on ? '[x] ' : '[ ] ') + r.label, r.x + 7, r.y + 6, color)
+    text(ctx, (r.on === undefined || r.id.startsWith('tab') || r.id.startsWith('depth') || r.id === 'open' ? '' : r.on ? '[x] ' : '[ ] ') + r.label, r.x + 7, r.y + 6, color)
     if (r.slider !== undefined) {
       const left = r.x + 8, trackY = r.y + 27, trackW = r.w - 16
       ctx.fillStyle = '#505663'; ctx.fillRect(left, trackY, trackW, 3)
