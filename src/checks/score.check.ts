@@ -5,7 +5,8 @@ import type { State } from '../core/types.ts'
 import { init } from '../core/state.ts'
 import { DEPTH_MAX, computeScore, depthOf, zoneOfDepth } from '../core/score.ts'
 import { T } from '../core/tuning.ts'
-import { endRun } from '../systems/run.ts'
+import { migrate } from '../core/migrate.ts'
+import { endRun, startRun } from '../systems/run.ts'
 import { commitBest, loadBest, loadSettings, saveSettings } from '../core/storage.ts'
 import type { Store } from '../core/storage.ts'
 
@@ -168,10 +169,130 @@ function storageChecks(): void {
   ok(s4.settings.volume === 0.2 && s4.settings.quality === 'auto' && !s4.settings.muted, 'partial settings fill defaults, bad quality becomes auto')
 }
 
+// R-164 depth classes: Best per class (class 3 keeps the legacy key and v1 record), settings.depthClass clamp and round trip.
+const LEGACY = 'last-ember:best'
+const OLD_BEST = '{"v":1,"score":777,"depth":5,"seconds":9,"mineralsUsed":1,"hpLeft":2,"won":false,"seedText":"old","at":"2020-01-01T00:00:00.000Z"}'
+
+function bestPerClassChecks(): void {
+  const st = fake()
+  commitBest(ended(3000, 100), st) // no class argument: class 3, legacy key
+  commitBest(ended(3000, 100), st, 3)
+  ok([...st.m.keys()].join() === LEGACY, `class 3 writes only the legacy key, got ${[...st.m.keys()].join()}`)
+  const legacy = st.m.get(LEGACY)
+  const one = ended(111, 10)
+  commitBest(one, st, 1)
+  const four = ended(444, 40)
+  commitBest(four, st, 4)
+  const two = ended(222, 20)
+  commitBest(two, st, 2)
+  ok(st.m.get(LEGACY) === legacy, 'class 1/2/4 commits leave the legacy (class 3) record byte-identical')
+  ok([...st.m.keys()].sort().join() === [LEGACY, LEGACY + ':1', LEGACY + ':2', LEGACY + ':4'].sort().join(), 'classes 1, 2, 4 use the :<class> key suffix')
+  ok(one.best?.score === 111 && four.best?.score === 444 && two.best?.score === 222 && one.result?.prevBest === 0, 'a class commit is a new best (prevBest 0) even when other classes have records')
+  const sc = (cls: number | undefined): number | undefined => {
+    const s = init()
+    loadBest(s, st, cls)
+    return s.best?.score
+  }
+  ok(sc(1) === 111 && sc(2) === 222 && sc(3) === 3000 && sc(4) === 444, 'each explicit class loads its own Best')
+  ok(sc(undefined) === 3000, 'loadBest without a class loads the legacy class-3 Best')
+
+  const old = fake()
+  old.m.set(LEGACY, OLD_BEST) // saved before depth classes existed
+  for (const cls of [undefined, 3]) {
+    const s = init()
+    loadBest(s, old, cls)
+    ok(s.best !== null && s.best.score === 777 && s.best.depth === 5 && s.best.seedText === 'old' && s.best.v === 1, `old saved Best loads as class 3 (class arg ${cls})`)
+  }
+  const none = init()
+  loadBest(none, old, 1)
+  ok(none.best === null, 'old saved Best is not visible in class 1')
+  const sw = init() // s.best is a one-class mirror: an explicit class without a record clears it (no stale other-class Best)
+  loadBest(sw, st, 3)
+  loadBest(sw, fake(), 1)
+  ok(sw.best === null, 'explicit class without a record sets s.best = null')
+  const keep = init()
+  loadBest(keep, st, 4)
+  loadBest(keep, fake())
+  ok(keep.best?.score === 444, 'no class argument and no record keeps s.best (old behaviour)')
+  const clamp = fake()
+  commitBest(ended(5, 5), clamp, 9)
+  commitBest(ended(6, 6), clamp, 0)
+  ok([...clamp.m.keys()].sort().join() === [LEGACY + ':1', LEGACY + ':4'].join(), 'commitBest clamps the class to 1..4')
+}
+
+function settingsClassChecks(): void {
+  ok(init().settings.depthClass === 3, 'init() default settings.depthClass is 3')
+  const old = JSON.parse(JSON.stringify(init())) as { settings: { depthClass?: number } }
+  delete old.settings.depthClass
+  ok(migrate(old).settings.depthClass === 3, 'migrate of a State without settings.depthClass gives 3')
+
+  const sv = fake()
+  const load = (raw: unknown): unknown => {
+    sv.m.set('last-ember:settings', JSON.stringify({ v: 1, volume: 0.5, depthClass: raw }))
+    const s = init()
+    s.settings.depthClass = 2 // a mutant that skips the field would leave this
+    loadSettings(s, sv)
+    return s.settings.depthClass
+  }
+  const cases: readonly (readonly [unknown, unknown])[] = [
+    [1, 1], [2, 2], [3, 3], [4, 4], [9, 4], [5, 4], [0, 1], [-5, 1], [2.6, 3], [1.4, 1], [3.5, 4], ['x', 3], ['3', 3], [null, 3], [true, 3], [{}, 3], ['random', 'random'],
+  ]
+  for (const [raw, want] of cases) {
+    const got = load(raw)
+    ok(got === want, `loadSettings depthClass ${JSON.stringify(raw)} -> ${String(want)}, got ${String(got)}`)
+  }
+  sv.m.set('last-ember:settings', '{"v":1,"volume":0.5}')
+  const miss = init()
+  miss.settings.depthClass = 2
+  loadSettings(miss, sv)
+  ok(miss.settings.depthClass === 3, 'stored settings without depthClass load as 3')
+
+  for (const want of [1, 2, 3, 4, 'random'] as const) {
+    const a = init()
+    a.settings.depthClass = want
+    saveSettings(a, sv)
+    ok(JSON.parse(sv.m.get('last-ember:settings') as string).depthClass === want, `saveSettings writes depthClass ${want}`)
+    const b = init()
+    b.settings.depthClass = want === 3 ? 1 : 3 // differs from the saved value
+    loadSettings(b, sv)
+    ok(b.settings.depthClass === want, `settings depthClass round trip ${want}, got ${String(b.settings.depthClass)}`)
+  }
+  const wild = init()
+  wild.settings.depthClass = 9
+  saveSettings(wild, sv)
+  ok(JSON.parse(sv.m.get('last-ember:settings') as string).depthClass === 4, 'saveSettings clamps 9 to 4')
+}
+
+// endRun has no store argument: it commits through globalThis.localStorage. Install a fake for the call, then restore.
+function endRunClassChecks(): void {
+  const prev = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+  const keysAfter = (cls: number | undefined): string => {
+    const st = fake()
+    Object.defineProperty(globalThis, 'localStorage', { value: st, configurable: true, writable: true })
+    try {
+      const s = init()
+      startRun(s, '7', undefined, cls)
+      s.player.stats.maxDepth = 10
+      endRun(s, false)
+      ok(s.best !== null && s.best.score > 0, `endRun class ${cls} sets s.best`)
+    } finally {
+      if (prev) Object.defineProperty(globalThis, 'localStorage', prev)
+      else delete (globalThis as { localStorage?: unknown }).localStorage
+    }
+    return [...st.m.keys()].join()
+  }
+  const k1 = keysAfter(1)
+  ok(k1 === LEGACY + ':1', `endRun of a class-1 run writes last-ember:best:1, got ${k1}`)
+  ok(keysAfter(3) === LEGACY && keysAfter(undefined) === LEGACY, 'endRun of a class-3 (or classless) run writes the legacy key')
+}
+
 export function run(): void {
   formula()
   depthChecks()
   zoneChecks()
   endRunChecks()
   storageChecks()
+  bestPerClassChecks()
+  settingsClassChecks()
+  endRunClassChecks()
 }
