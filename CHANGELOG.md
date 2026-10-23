@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Dev mode shows the commit the checkout is running (7-char short sha as on GitHub, small label at the top centre). A dev-only Vite endpoint `/__commit` reads `git rev-parse --short=7 HEAD` per request, and the game re-fetches it every 30 s, so the label follows a server-side `git reset --hard` without a restart. Absent from `vite build`.
 - Crack decor from the tileset: sparse deterministic ground cracks (about 5% of floor tiles, small and large) and wall-face cracks (about 8% of visible faces), chosen from a per-tile seed hash and baked into the chunk cache. Entrance, Beacon chamber and vein walls stay clean. A new check covers determinism, density, placement and the tileset frame names; floor variants are checked to be evenly spread over all 10.
 
 ### Fixed

@@ -45,6 +45,7 @@ import { run as depthScreens } from './depth-screens.check.ts'
 import { run as migrateSettings } from './migrate-settings.check.ts'
 import { run as cracks } from './cracks.check.ts'
 import { run as devDepth } from './dev-depth.check.ts'
+import { run as commitCheck } from './commit.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -89,6 +90,7 @@ depthScreens()
 migrateSettings()
 cracks()
 devDepth()
+commitCheck()
 debug()
 
 reportedBugs()

@@ -235,6 +235,7 @@ export type Debug = {
   noclip: boolean; speedMul: number; freezeTorch: boolean; infiniteHp: boolean; noFog: boolean
   hurtboxes: boolean; animations: boolean; stats: boolean
   minimap: boolean; arrow: boolean; arrowTarget: 'beacon' | 'exit'
+  commit: string; commitT: number // dev-only running commit label: short sha ('' = not fetched yet) and s until the next fetch
 }
 
 // --- score and save (scoring-and-save §2, §5, §6; SettingsRecord per R-025/R-142) ---
