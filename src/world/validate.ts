@@ -7,7 +7,7 @@ import { depthOf, zoneOfDepth } from '../core/score.ts'
 import { T } from '../core/tuning.ts'
 import { bfs4 } from './bfs.ts'
 import { beaconRoomMask } from './gen/places.ts'
-import { PARAMS, scaledMin } from './gen/params.ts'
+import { BD_BASE, PARAMS, scaledMin } from './gen/params.ts'
 import type { CaveParams } from './gen/params.ts'
 import { buildMain, buildWide2 } from './gen/pockets.ts'
 import { MARGIN, SAFE_START, Z4_E_PER_TILE } from './gen/resin.ts'
@@ -143,7 +143,10 @@ export function validateCave(res: CaveResult, p: CaveParams = PARAMS[3]): Verdic
   // ponytail: the scale basis is max(bd, p.bdLo): a fallback ring may sit below the class band (bd >= p.fbLo) and must still meet the
   // full class-lo minimums, which also keeps class 3 (bdLo 510 >= BD_BASE) byte-identical. Upgrade: scale by the raw bd if short rings need it
   const sb = Math.max(bd, p.bdLo)
-  if (resin.length < scaledMin(MIN_RESIN, sb) || resin.filter((q) => q.size === 'large').length < scaledMin(MIN_LARGE, sb) ||
+  // ponytail: populate places only one large resin per cave below bd 300 (quota rounds to 0), while scaledMin(MIN_LARGE, sb) is 2 from
+  // sb 255, so classes 1-2 allow one fewer large resin whenever sb < BD_BASE (class 3, sb >= BD_BASE, unchanged). Upgrade: place 2 large
+  // resin per cave in populate when bd < BD_BASE, then drop the allowance
+  if (resin.length < scaledMin(MIN_RESIN, sb) || resin.filter((q) => q.size === 'large').length < scaledMin(MIN_LARGE, sb) - (sb < BD_BASE ? 1 : 0) ||
     plantTiles.length < scaledMin(MIN_PLANTS, sb) || veins.length < scaledMin(MIN_VEINS, sb) || pickups.length > MAX_PICKUPS || veins.length > MAX_VEINS ||
     (['sodium', 'copper', 'strontium'] as const).some((m) => !veins.some((v) => v.mineral === m))) return FAIL('r11 counts')
   // 12 teaching T1-T4 (CG2 §4, widest legal ranges)
