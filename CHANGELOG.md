@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Removed stray wall-edge strips inside solid cave walls by using the seamless interior cap instead of fill variants containing a south-edge lip. Cached terrain refreshes on hot reload.
+
 ### Added
 
 - Escape roll: Space rolls 126 px in 0.3 s (in the move direction, or the facing) with 0.3 s of bite immunity, then 1.5 s cooldown from the roll start. A dodged bite shows a dodge; falling rocks still hit. Reaching the exit (within 1 tile) wins the escape, and a lethal hit on the same step still loses.
