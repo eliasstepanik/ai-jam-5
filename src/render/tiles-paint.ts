@@ -6,6 +6,8 @@ import { TILE } from '../core/state.ts'
 import { hash2 } from '../core/noise.ts'
 import { floorVariant } from '../core/grid.ts'
 import type { TileCache } from '../assets/resources.ts'
+import { cleanCells, groundCracks, wallCrackAt } from './cracks.ts'
+import type { Skip } from './cracks.ts'
 import { CHUNK_TILES } from './keys.ts'
 import { blit, capName, faceName, floorName, oreName } from './tileset.ts'
 import type { Tileset } from './tileset.ts'
@@ -40,6 +42,9 @@ export function paintFloor(c: CanvasRenderingContext2D, s: State, t: TileCache, 
       c.fillRect(x, y, CELL, CELL)
     }
   }
+  if (!ts) return
+  // Ground cracks (issue #85): decals centred on their tile, drawn above the floor pattern (placement and exclusions: cracks.ts).
+  groundCracks(s, cx, cy, ox, oy, (name, x, y) => blit(c, ts, name, x, y))
 }
 
 // Wall layer for [tx0, tx1) x [ty0, ty1), raised FACE_H above its collision footprint. The face ends at the tile's south ground edge. Order per tile:
@@ -50,6 +55,7 @@ export function paintWalls(c: CanvasRenderingContext2D, s: State, t: TileCache, 
   tx0: number, tx1: number, ty0: number, ty1: number, ox: number, oy: number, cut: boolean): void {
   const { w, h, tiles } = s.world
   const xa = Math.max(0, tx0), xb = Math.min(w, tx1), ya = Math.max(0, ty0), yb = Math.min(h, ty1)
+  const skip: Skip = ts ? cleanCells(s) : () => false
   for (let ty = ya; ty < yb; ty++) {
     for (let tx = xa; tx < xb; tx++) {
       const i = ty * w + tx
@@ -64,7 +70,12 @@ export function paintWalls(c: CanvasRenderingContext2D, s: State, t: TileCache, 
       }
       // Delivered cap_fill_1..3 contain a south-edge lip. Only cap_00 is seamless inside solid rock.
       blit(c, ts, capName(m), x, y)
-      if (m & 4) blit(c, ts, faceName(m, (m & 8) !== 0, (m & 2) !== 0, t.variant[i]), x, y + TILE) // W bit 8, E bit 2
+      if (m & 4) {
+        blit(c, ts, faceName(m, (m & 8) !== 0, (m & 2) !== 0, t.variant[i]), x, y + TILE) // W bit 8, E bit 2
+        // Wall crack (issue #85): the 32x64 frame's anchor (16, 48) is the centre of its opaque crack (rows 40..56), so putting the anchor
+        // at the middle of the 48 px face keeps the crack inside the face; the rest of the frame is transparent.
+        wallCrackAt(s, skip, tx, ty, x + TILE / 2, y + TILE + FACE_H / 2, (name, ax, ay) => blit(c, ts, name, ax, ay))
+      }
       if (!cut || !t.inner[i]) continue
       for (let k = 0; k < 4; k++) {
         if (!(t.inner[i] & (1 << k))) continue
