@@ -43,7 +43,7 @@ const depthOf = (s: State, seedText: string): number => {
 }
 
 // Chunked generation (SAE1 §4): the title stays up, genStep runs one attempt per update.
-function begin(s: State, seedText: string): void {
+export function begin(s: State, seedText: string): void {
   go(s, 'title')
   s.ui.genPending = runSeedText(seedText)
   s.ui.genAttempt = 0
@@ -66,14 +66,14 @@ function generate(s: State): void {
 
 // Title depth row (focus 4): set the class, save it, and show that class's Best. Applies at the next run start only (R-164); a running cave never changes.
 // ponytail: 'random' is a stored setting only (from an old save or a link); the row shows and cycles classes 1..4, 'random' counts as 3 until the first change.
-function setDepth(s: State, to: number, sound: FxEventKind): void {
+export function setDepth(s: State, to: number, sound: FxEventKind): void {
   s.settings.depthClass = to
   saveSettings(s)
   syncBest(s, to)
   ui(s, sound)
 }
 
-const shownClass = (s: State): number => paramsOf(typeof s.settings.depthClass === 'number' ? s.settings.depthClass : undefined).depthClass
+export const shownClass = (s: State): number => paramsOf(typeof s.settings.depthClass === 'number' ? s.settings.depthClass : undefined).depthClass
 
 function seedKey(code: string): string {
   if (/^Key[A-Z]$/.test(code)) return code.slice(3).toLowerCase()

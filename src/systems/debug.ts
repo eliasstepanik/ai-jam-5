@@ -13,11 +13,15 @@ import { lineOfSightPx } from '../world/los.ts'
 import { emit } from './fx.ts'
 import { flameRadius, insideLight } from './light.ts'
 import { endRun } from './run.ts'
+import { begin, setDepth, shownClass } from './screens.ts'
 
 export const DEBUG_TOGGLES = ['noclip', 'infiniteHp', 'freezeTorch', 'noFog', 'freezeAi', 'overlay', 'hurtboxes', 'animations', 'stats', 'minimap', 'arrow', 'showPaths'] as const
 export type DebugToggle = typeof DEBUG_TOGGLES[number]
-export type DebugAction = DebugToggle | MonsterKind | 'extinguish' | 'refill' | 'kill' | 'teleportEntrance' | 'teleportBeacon' | 'arrowBeacon' | 'arrowExit' | 'forceLeap'
+export type DebugAction = DebugToggle | MonsterKind | 'extinguish' | 'refill' | 'kill' | 'teleportEntrance' | 'teleportBeacon' | 'arrowBeacon' | 'arrowExit' | 'forceLeap' | DebugDepth
+export type DebugDepth = 'depth1' | 'depth2' | 'depth3' | 'depth4'
 export const debugRunActive = (s: State): boolean => s.world.tiles !== '' && (s.meta.screen === 'playing' || s.meta.screen === 'paused')
+// Depth class shown in the panel: the running cave's class (undefined = 3), else the class the next run will use.
+export const debugDepthClass = (s: State): number => (debugRunActive(s) ? s.world.depthClass ?? 3 : shownClass(s))
 export const torchBurn = (s: State): number => zt(T.flame.burnPerS, s.meta.zone) * T.minerals.table[s.player.activeMineral].burnMul
 export const torchSeconds = (s: State): number => s.player.energy / torchBurn(s)
 
@@ -88,6 +92,17 @@ export function debugForceLeap(s: State): boolean {
   return true
 }
 
+// Pick depth class `c` for the next run (title setting + its Best). During a run, restart the same seed in that class: the chunked
+// generator takes over via begin(), keeping debug settings. Same class as the running cave: nothing to do.
+export function debugSetDepth(s: State, c: number): void {
+  const running = debugRunActive(s)
+  if (running && debugDepthClass(s) === c) { toast(s, 'Already depth class ' + c); return }
+  setDepth(s, c, 'uiConfirm')
+  if (!running) { toast(s, 'Depth class ' + c + ' for the next run'); return }
+  begin(s, s.meta.seedText)
+  toast(s, 'Restarting seed in depth class ' + c)
+}
+
 export function debugAction(s: State, action: DebugAction, view?: Input['view']): void {
   if ((DEBUG_TOGGLES as readonly string[]).includes(action)) {
     const key = action as DebugToggle
@@ -99,6 +114,7 @@ export function debugAction(s: State, action: DebugAction, view?: Input['view'])
   if (action === 'arrowBeacon' || action === 'arrowExit') {
     s.debug.arrowTarget = action === 'arrowBeacon' ? 'beacon' : 'exit'; s.debug.arrow = true; return
   }
+  if (action.startsWith('depth')) { debugSetDepth(s, Number(action.slice(5))); return }
   if (!debugRunActive(s)) return
   if (action === 'teleportEntrance' || action === 'teleportBeacon') {
     debugTeleport(s, action === 'teleportEntrance' ? 'entrance' : 'beacon', view); return

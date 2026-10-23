@@ -70,7 +70,7 @@ Panel clicks and drags do not attack or activate menus. Torch time is estimated 
 
 In **DEV → Enemies**, **Force nearest enemy leap** immediately launches the nearest enemy in clear sight at the player. Spawn an enemy first if needed. This skips windup/cooldown and resumes frozen AI; collision, parries and damage work normally.
 
-Developer navigation is in **DEV → Navigate**: teleport to the entrance or Beacon, toggle the black/white minimap beside health, and choose a Beacon or cave-exit direction arrow around the player. The arrow shows direct bearing; it does not route around walls.
+Developer navigation is in **DEV → Navigate**: teleport to the entrance or Beacon, pick the depth class (Shallow, Short, Standard, Deep; during a run this restarts the same seed in that class, on the title screen it sets the class for the next run), toggle the black/white minimap beside health, and choose a Beacon or cave-exit direction arrow around the player. The arrow shows direct bearing; it does not route around walls.
 
 ## Hot reload
 
