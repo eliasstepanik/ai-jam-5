@@ -1,16 +1,17 @@
 // A31 ai check: lurker state machine, capsule bite latch, wrapPi facing examples, devourerMul table and the 24-shade step budget.
 // Spec: docs/architecture-modules-systems-2.md §1 (ai.check row), architecture-monsters-ai.md §2/§5/§5.1/§7, monsters-ai-2.md §1/§8, R-073/R-075.
 // R-039/R-040: local ok(), `export function run(): void`, no import-time work, no DOM, no node: imports, no L4 imports (R-043).
-// ponytail: stalker (ai-stalker.ts, B3) and devourer (ai-devourer.ts, C1) brains are not on master, so only the lurker brain and the
-// shared pipeline are driven here; C3 adds the devourer rows. The stalker facing test below checks the wrapPi arithmetic that
-// brain will use, not the brain itself. Add the stalker behindT rows when B3 lands.
+// B3 adds the stalker rows (behind predicate, ring speed, behindT, windup gate) and the escape rows (intercept, strike gate, aim lead).
+// ponytail: the devourer brain (ai-devourer.ts, C1) is not on master, so C3 adds the devourer rows.
 import type { Monster, State } from '../core/types.ts'
 import { wrapPi } from '../core/math.ts'
 import { init } from '../core/state.ts'
 import { parseSeed } from '../core/seed.ts'
 import { deg, T } from '../core/tuning.ts'
 import { devourerMul, spawnMonster } from '../entities/monster.ts'
+import { escapeAim, escapeBrain, escapeStrike } from '../systems/ai-escape.ts'
 import { lurkerBrain } from '../systems/ai-lurker.ts'
+import { isBehind, stalkerBrain, STALKER_BEHIND_S } from '../systems/ai-stalker.ts'
 import { resolveBites } from '../systems/combat.ts'
 import { findSpawn } from '../systems/director.ts'
 import { lightRadius } from '../systems/light.ts'
@@ -135,6 +136,111 @@ function stateMachine(): void {
   ok(mt.contactT === 0.1, 'capsule: a step that passes through the player latches (end-point test would miss)')
 }
 
+const stalkerAt = (s: State, dx: number, dy: number): Monster => spawnMonster(s, 'stalker', s.player.x + dx, s.player.y + dy, lightRadius(s))
+
+function stalker(): void {
+  const KS = T.monsters.stalker
+  // §7 predicate through the real function: facing 3.0 vs theta -3.0 is in front (off 0.2832), facing 0 vs theta 2.2 is behind
+  const f = arena(), mf = stalkerAt(f, 100 * Math.cos(-3.0), 100 * Math.sin(-3.0))
+  f.player.facing = 3.0
+  ok(!isBehind(f, mf), 'isBehind: facing 3.0 vs theta -3.0 is in front')
+  f.player.facing = 0
+  Object.assign(mf, { x: f.player.x + 100 * Math.cos(2.2), y: f.player.y + 100 * Math.sin(2.2) })
+  ok(isBehind(f, mf), 'isBehind: facing 0 vs theta 2.2 is behind')
+
+  // ring speed: 85 px/s on a 165 px ring = 0.515 rad/s; the brain turns the ring angle by exactly ringSpeed / ringRadius per step
+  ok(near(KS.ringSpeedPxS / 165, 0.515, 0.001), 'stalker ring speed 85 px/s on a 165 px ring is 0.515 rad/s')
+  const r = arena(), mr = stalkerAt(r, 0, 300)
+  r.player.facing = 0 // target angle PI, the ring angle starts at PI/2 (south): +PI/2 away, so it turns counter-clockwise
+  mr.ringAngle = Math.PI / 2
+  stalkerBrain(r, mr)
+  ok(near(mr.ringAngle - Math.PI / 2, KS.ringSpeedPxS / mr.ringRadius / 60, 1e-9), 'stalker ring angle advances ringSpeed / ringRadius per step toward facing + PI')
+  mr.ringAngle = Math.PI - 0.001 // 0.001 rad from the target: snaps onto it instead of overshooting
+  stalkerBrain(r, mr)
+  ok(near(wrapPi(mr.ringAngle - Math.PI), 0, 1e-9), 'stalker ring angle never overshoots facing + PI')
+
+  // behindT: +dt only when behind AND on the ring band; any other step resets it
+  const b = arena(), mb = stalkerAt(b, 0, 0)
+  b.player.facing = 0
+  stalkerBrain(b, mb) // sets ringRadius
+  const place2 = (ang: number, d: number): void => { mb.x = b.player.x + d * Math.cos(ang); mb.y = b.player.y + d * Math.sin(ang) }
+  place2(Math.PI, mb.ringRadius)
+  mb.behindT = 0
+  for (let k = 0; k < 15; k++) stalkerBrain(b, mb)
+  ok(near(mb.behindT, 15 / 60, 1e-9), 'behindT accumulates 15 steps behind on the ring (got ' + mb.behindT + ')')
+  place2(Math.PI, mb.ringRadius + 41)
+  stalkerBrain(b, mb)
+  ok(mb.behindT === 0, 'behindT resets when more than 40 px off the ring')
+  place2(Math.PI, mb.ringRadius)
+  stalkerBrain(b, mb)
+  place2(0, mb.ringRadius)
+  stalkerBrain(b, mb)
+  ok(mb.behindT === 0, 'behindT resets when in front of the player')
+  mb.ai = 'recover'
+  place2(Math.PI, mb.ringRadius)
+  stalkerBrain(b, mb)
+  ok(mb.behindT === 0, 'behindT does not accumulate outside the stalk state')
+
+  // windup gate: zone 4 hazard 0.7/s, shade held behind on the ring; the first windup must come after the 0.25 s dwell
+  const w = arena(), mw = stalkerAt(w, 0, 0)
+  w.meta.zone = 4
+  w.player.facing = 0
+  stalkerBrain(w, mw)
+  Object.assign(mw, { x: w.player.x - mw.ringRadius, y: w.player.y, lungeCd: 0, behindT: 0 })
+  let first = -1
+  for (let k = 1; k <= 1200 && first < 0; k++) { spin(w, 1); if (mw.ai === 'windup') first = k }
+  ok(first > 0 && mw.behindT + 1e-9 >= STALKER_BEHIND_S, 'stalker winds up only after 0.25 s behind (step ' + first + ', behindT ' + mw.behindT + ')')
+  ok(near(mw.aiDur, KS.telegraphS, 1e-12) && KS.telegraphS === 0.4, 'stalker windup lasts 0.40 s')
+}
+
+function escape(): void {
+  const e = (): State => { const s = arena(); s.meta.phase = 'escape'; return s }
+  const KL = T.monsters.lurker
+  // intercept point p + v * 0.3 at chaseSpeed * 1.3 (lurker 123.5 px/s), no flee even deep inside the old light radius
+  const s = e()
+  Object.assign(s.player, { vx: 240, vy: 0 })
+  const m = place(s, -300, 0)
+  const v = escapeBrain(s, m)
+  ok(near(Math.hypot(v[0], v[1]), KL.chaseSpeedPxS * 1.3, 1e-9) && near(v[0], KL.chaseSpeedPxS * 1.3, 1e-9) && near(v[1], 0, 1e-9), 'escape: chase at chaseSpeed * 1.3')
+  m.x = s.player.x + 10
+  m.y = s.player.y
+  m.fleeing = true
+  const v2 = escapeBrain(s, m)
+  ok(!m.fleeing && v2[0] > 0, 'escape: no flee, the shade chases the intercept point ahead of the player')
+  // lead: 240 px/s * leadS 0.15 = 36 px
+  const aim = escapeAim(s, m)
+  ok(near(aim[0] - s.player.x, 36, 1e-9) && near(KL.escapeLeadS, 0.15, 1e-12) && aim[1] === s.player.y, 'escape: lunge aim leads 36 px at 240 px/s')
+  // strike gate: range, cooldown, slots (LOS in the open arena is clear)
+  const g = e(), mg = place(g, 140, 0)
+  mg.lungeCd = 0
+  ok(escapeStrike(g, mg), 'escape: strike at d = escapeStrikePx')
+  mg.x = g.player.x + 141
+  ok(!escapeStrike(g, mg), 'escape: no strike beyond escapeStrikePx')
+  mg.x = g.player.x + 100
+  mg.lungeCd = 0.5
+  ok(!escapeStrike(g, mg), 'escape: no strike while lungeCd > 0')
+  mg.lungeCd = 0
+  for (let k = 0; k < 3; k++) Object.assign(place(g, 200 + k, 50), { ai: 'windup' })
+  ok(!escapeStrike(g, mg), 'escape: no strike when 3 shades already attack')
+
+  // pipeline: stepMonsters in escape starts the windup at once (no hazard draw), then lunges at the led point
+  const w = e()
+  Object.assign(w.player, { vx: 240, vy: 0 })
+  const mw = place(w, 120, 60)
+  mw.lungeCd = 0
+  spin(w, 1)
+  ok(mw.ai === 'windup' && mw.aiDur === KL.telegraphS, 'escape: windup starts the first step the strike test passes')
+  spin(w, 23)
+  ok(mw.ai === 'windup', 'escape: 23 steps still winding up')
+  spin(w, 1)
+  const want = Math.atan2(w.player.y + 0 * 240 - mw.y, w.player.x + 36 - mw.x)
+  ok(mw.ai === 'lunge' && near(wrapPi(mw.lungeDir - want), 0, 1e-9), 'escape: lunge direction locks on p + v * leadS')
+  mw.ai = 'recover'
+  mw.aiT = 0
+  mw.aiDur = T.escape.recoverS
+  ok(T.escape.recoverS === 0.4, 'escape: recover lasts 0.4 s')
+}
+
 function facing(): void {
   // monsters-ai §7: off = |wrapPi(facing - theta)| against deg(stalkerBehindDeg); raw -6.0 must wrap to +0.2832, not -6.0
   const lim = deg(T.ai.stalkerBehindDeg)
@@ -184,6 +290,8 @@ function budget(): void {
 export function run(): void {
   stateMachine()
   facing()
+  stalker()
+  escape()
   devourer()
   budget()
 }

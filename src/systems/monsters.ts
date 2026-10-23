@@ -3,8 +3,8 @@
 // R-127 (accumulated time compares x + EPS >= limit), R-129 (no float equality on contactS), R-130 (beat is a 0-based index), R-012.
 // Layer rule: never import combat.ts, beacon.ts or quake.ts. The bite latch and damagePlayer live in combat.ts (A27 part 2);
 // this file only sticks a latched shade to the player and handles the miss, the wall bonk and the recover.
-// ponytail: escape phase is slice B3 (ai-escape.ts: intercept brain, constant lunges, aim lead). Today stepMonsters runs the descent
-// pipeline in every phase; no escape director exists yet, so no shade is alive there.
+// Escape phase (B3): escapeBrain steers every kind, the hazard draw is replaced by escapeStrike (constant lunges) and the lunge aims
+// at p + v * escapeLeadS (ai-escape.ts); windup / lunge / recover stay in this shared pipeline.
 import type { Monster, MonsterKind, State } from '../core/types.ts'
 import { wrapPi } from '../core/math.ts'
 import { rand, randRange } from '../core/rng.ts'
@@ -13,21 +13,20 @@ import { blend, seek } from '../entities/steer.ts'
 import { moveCircle } from '../world/collide.ts'
 import { lineOfSightPx } from '../world/los.ts'
 import type { Brain } from './ai-lurker.ts'
+import { escapeAim, escapeBrain, escapeStrike } from './ai-escape.ts'
 import { lurkerBrain } from './ai-lurker.ts'
+import { RING_BAND_PX, STALKER_BEHIND_S, stalkerBrain } from './ai-stalker.ts'
 import { findSpawn } from './director.ts'
 import { emit } from './fx.ts'
 import { insideLight } from './light.ts'
 
 const EPS = 1e-9 // R-127
 const KIND_INDEX: Record<MonsterKind, number> = { lurker: 0, stalker: 1, devourer: 2 } // fx event `a` (systems-4 §4)
-const RING_BAND_PX = 40 // §4: lurker/stalker may only start a windup this close to their ring
-const STALKER_BEHIND_S = 0.25 // §4/§7: stalker needs this long behind the player (no T key; spec literal)
 const NO_VELOCITY: readonly [number, number] = [0, 0]
 
 // R-075: Brain = (s, m) => [vx, vy]. The brain runs in ring / stalk / recover (it owns the flee latch and m.ringRadius).
-// ponytail: slice A holds only the lurker brain. Stalker (ai-stalker.ts, B3) and devourer (ai-devourer.ts, C1) fall back to it:
-// they ring like lurkers with their own numbers, and a stalker never attacks because only its brain advances behindT.
-const BRAINS: Partial<Record<MonsterKind, Brain>> = { lurker: lurkerBrain }
+// ponytail: the devourer brain (ai-devourer.ts, C1) is not on master yet; until then a devourer rings like a lurker with its own numbers.
+const BRAINS: Partial<Record<MonsterKind, Brain>> = { lurker: lurkerBrain, stalker: stalkerBrain }
 
 // R-073: the only writers of dying / recover. Combat, beacon and rocks call these, so events and timers are never skipped.
 export function setDying(s: State, m: Monster): void {
@@ -74,9 +73,10 @@ function walk(s: State, m: Monster, dt: number): boolean { // true if a wall was
 }
 
 function startLunge(s: State, m: Monster): void {
-  const p = s.player, K = T.monsters[m.kind]
-  m.lungeDir = Math.atan2(p.y - m.y, p.x - m.x) // locked now
-  const d0 = Math.hypot(m.x - p.x, m.y - p.y)
+  const K = T.monsters[m.kind]
+  const [ax, ay] = s.meta.phase === 'escape' ? escapeAim(s, m) : [s.player.x, s.player.y] // escape: lead the moving player
+  m.lungeDir = Math.atan2(ay - m.y, ax - m.x) // locked now
+  const d0 = Math.hypot(m.x - ax, m.y - ay)
   const vL = Math.max(30, d0 - T.player.radiusPx - K.radiusPx) / K.contactS
   m.vx = Math.cos(m.lungeDir) * vL
   m.vy = Math.sin(m.lungeDir) * vL
@@ -90,6 +90,10 @@ function startLunge(s: State, m: Monster): void {
 function recoverVelocity(s: State, m: Monster): [number, number] {
   const p = s.player, K = T.monsters[m.kind]
   m.ringAngle = Math.atan2(m.y - p.y, m.x - p.x) // resume the orbit in place after the back-off
+  if (s.meta.phase === 'escape') { // no ring in the dark-free cave: drift 40 px straight away from the player (monsters-ai-2 §2)
+    return seek(m.x, m.y, m.x + Math.cos(m.ringAngle) * T.ai.recoverBackPx, m.y + Math.sin(m.ringAngle) * T.ai.recoverBackPx,
+      K.ringSpeedPxS * 1.2)
+  }
   const r = m.ringRadius + T.ai.recoverBackPx + (m.kind === 'stalker' ? T.ai.stalkerRetreatPx : 0)
   return seek(m.x, m.y, p.x + Math.cos(m.ringAngle) * r, p.y + Math.sin(m.ringAngle) * r, K.ringSpeedPxS * 1.2)
 }
@@ -106,7 +110,8 @@ function pipeline(s: State, m: Monster, desired: readonly [number, number], dt: 
     case 'stalk':
       blend(m, desired[0], desired[1], K.steerPerS, dt)
       walk(s, m, dt)
-      if (eligible(s, m) && rand(s, 'gameplay') < 1 - Math.exp(-lungeHazard(s, m) * dt)) { // draw only when eligible
+      // escape: constant lunges (no hazard draw); descent: draw only when eligible
+      if (s.meta.phase === 'escape' ? escapeStrike(s, m) : eligible(s, m) && rand(s, 'gameplay') < 1 - Math.exp(-lungeHazard(s, m) * dt)) {
         m.ai = 'windup'
         m.aiT = 0
         m.aiDur = K.telegraphS
@@ -234,7 +239,8 @@ export function stepMonsters(s: State, dt: number): void {
     m.stunned = Math.max(0, m.stunned - dt)
     // §2: the flee latch runs in ring / stalk / recover; the brain also steers ring / stalk, a fleeing recover takes its velocity
     const thinks = m.ai === 'ring' || m.ai === 'stalk' || m.ai === 'recover'
-    pipeline(s, m, thinks ? (BRAINS[m.kind] ?? lurkerBrain)(s, m) : NO_VELOCITY, dt)
+    const brain = s.meta.phase === 'escape' ? escapeBrain : (BRAINS[m.kind] ?? lurkerBrain)
+    pipeline(s, m, thinks ? brain(s, m) : NO_VELOCITY, dt)
   }
   separate(s, dt)
   for (const m of s.monsters) {
