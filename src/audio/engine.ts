@@ -45,6 +45,7 @@ export function warnOnce(e: unknown): void {
 
 const syncState = (a: AudioRes): void => {
   if (a.ctx && a.state !== 'failed') a.state = a.ctx.state === 'running' ? 'running' : 'suspended' // 'interrupted' = suspended
+  if (a.state === 'running') dropGestureListeners(a) // a re-armed set goes away as soon as the context runs again
 }
 
 // ---------- samples ----------
@@ -145,16 +146,23 @@ function onDomEvent(type: string): void {
 }
 globalThis.__lastEmberAudio = onDomEvent
 
+function listen(a: AudioRes, el: EventTarget, type: string, opts: AddEventListenerOptions): void {
+  const fn: EventListener = (ev) => globalThis.__lastEmberAudio?.(ev.type)
+  el.addEventListener(type, fn, opts)
+  a.unlock.push({ el, type, fn })
+}
+
+// Idempotent: does nothing while any gesture handle is still registered.
+function armGestures(a: AudioRes): void {
+  if (a.unlock.some((u) => u.type !== 'visibilitychange')) return
+  for (const t of GESTURES) listen(a, window, t, { capture: true, passive: true })
+}
+
 export function installAudioListeners(res: Resources): void {
   const a = res.audio
   if (a.unlock.length > 0) return // idempotent: the handles live in the registry
-  const fn: EventListener = (ev) => globalThis.__lastEmberAudio?.(ev.type)
-  const add = (el: EventTarget, type: string, opts: AddEventListenerOptions): void => {
-    el.addEventListener(type, fn, opts)
-    a.unlock.push({ el, type, fn })
-  }
-  if (!(a.ctx && a.state === 'running')) for (const t of GESTURES) add(window, t, { capture: true, passive: true })
-  add(document, 'visibilitychange', {})
+  if (!(a.ctx && a.state === 'running')) armGestures(a)
+  listen(a, document, 'visibilitychange', {})
 }
 
 function resumeSoon(a: EngineRes, s: State): void {
@@ -203,6 +211,9 @@ export function audioStep(s: State, _input: Input): void {
     return
   }
   resumeSoon(a, s)
+  // iOS Safari may later drop the context to 'interrupted' (call, lock screen) and refuse a gesture-less resume():
+  // bring the gesture listeners back (the visible, non-pause case only); syncState/unlock drop them once running again.
+  if (ctx.state !== 'running' && !document.hidden && s.meta.screen !== 'paused' && a.lastScreen !== 'paused') armGestures(a)
   ensureMixer(res)
   setMaster(res, s.settings.volume, s.settings.muted)
   applyDucks(res, duckFor(s))

@@ -19,11 +19,10 @@ const GROWL: Record<MonsterKind, { rate: number; gain: number }> = {
   lurker: { rate: 1.4, gain: 0.6 }, stalker: { rate: 1.0, gain: 0.8 }, devourer: { rate: 0.6, gain: 1.0 },
 }
 
-// Camera mirror: play() has no State (positional PlayParams carry WORLD px), so loopStep writes the camera here every
-// step; the engine runs loopStep before consuming events. ponytail: one step of camera lag, fine for 0.6 max pan.
-type Cam = { x: number; y: number }
-type CamRes = AudioRes & { cam?: Cam }
-type LoopVoice = Voice & { lp?: BiquadFilterNode }
+// Camera mirror: play() has no State (PlayParams carry WORLD px), so loopStep writes the camera here every step
+// (engine runs it before consuming events). ponytail: one step of camera lag, fine for 0.6 max pan.
+type CamRes = AudioRes & { cam?: { x: number; y: number } }
+type LoopVoice = Voice & { lp?: BiquadFilterNode; run?: number } // run: meta.runId an ambience bed belongs to
 type ShotVoice = Voice & { pan?: StereoPannerNode } // positional one-shots: out -> pan -> group
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v))
 const def = (id: SoundId): SoundDef => SOUNDS[id]
@@ -250,23 +249,31 @@ function growlStep(res: Resources, s: State, now: number): void {
   play(res, 'sfx_mon-growl', { seq: s.meta.steps, x: pick.x, y: pick.y, rate: g.rate, gain: g.gain })
 }
 
+/** amb_cave outlives 'playing': it runs on playing/paused/dead/won (duckFor sets the level) and restarts on a new runId. */
+function ambStep(a: AudioRes, s: State, now: number): void {
+  if ((a.loops.amb_cave as LoopVoice | undefined)?.run !== s.meta.runId) stopLoop(a, 'amb_cave')
+  const amb = want(a, 'amb_cave', s.meta.screen !== 'title' && s.meta.screen !== 'help', { seq: 0 })
+  if (!amb) return
+  amb.run = s.meta.runId
+  ;(amb.nodes[0] as AudioBufferSourceNode | undefined)?.playbackRate?.setTargetAtTime(ZONE_RATE[s.meta.zone - 1] ?? 1, now, 2)
+  amb.lp?.frequency.setTargetAtTime(8000 - (5000 * (s.meta.zone - 1)) / 3, now, 2)
+}
+
 /**
- * Per-step loop manager (engine calls it BEFORE consuming events). Everything stops when the screen is not 'playing'.
+ * Per-step loop manager (engine calls it BEFORE consuming events). Every loop but amb_cave stops when not 'playing'.
  * rockLand swell: events with seq > a.lastSeq are new this step (engine advances lastSeq after loopStep), so a fresh
  * rockLand pushes the rumble's out gain to 0.9/0.4 x base for 0.5 s. beacon-charge: started once at hold start with
  * q = hold / holdS (the recipe ramps itself over (1 - q) * 5 s), stopped on release or when the Beacon is lit.
  */
 export function loopStep(res: Resources, s: State): void {
   const a = res.audio
-  const ctx = a.ctx
-  if (!ctx || a.state !== 'running' || !a.groups) return
-  const now = ctx.currentTime
-  ;((a as CamRes).cam ??= { x: 0, y: 0 }).x = s.cam.x
-  ;(a as CamRes).cam!.y = s.cam.y
-  const ids = Object.keys(a.loops) as SoundId[]
+  if (!a.ctx || a.state !== 'running' || !a.groups) return
+  const now = a.ctx.currentTime
+  ;(a as CamRes).cam = { x: s.cam.x, y: s.cam.y }
   if (s.meta.screen !== 'playing') {
-    for (const id of ids) stopLoop(a, id)
+    for (const id of Object.keys(a.loops) as SoundId[]) if (id !== 'amb_cave') stopLoop(a, id)
     a.nextBeat = 0
+    ambStep(a, s, now)
     return
   }
   const pl = s.player
@@ -288,12 +295,6 @@ export function loopStep(res: Resources, s: State): void {
     rumble.out.gain.setTargetAtTime(base * 2.25, now, 0.08)
     rumble.out.gain.setTargetAtTime(base, now + 0.5, 0.2)
   }
-  const amb = want(a, 'amb_cave', true, { seq: 0 })
-  if (amb) {
-    const z = s.meta.zone - 1
-    const bed = amb.nodes[0] as AudioBufferSourceNode | undefined
-    bed?.playbackRate?.setTargetAtTime(ZONE_RATE[z] ?? 1, now, 2)
-    amb.lp?.frequency.setTargetAtTime(8000 - (5000 * z) / 3, now, 2)
-  }
+  ambStep(a, s, now)
   growlStep(res, s, now)
 }
