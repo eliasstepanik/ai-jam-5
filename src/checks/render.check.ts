@@ -1,7 +1,9 @@
-// Checks for src/core/noise.ts and src/core/view.ts (R-043: render.check covers only these two).
-// Spec: docs/architecture-render-2.md §1, architecture-modules-render-2.md §2 table, R-131.
+// Checks for src/core/noise.ts, src/core/view.ts and src/core/grid.ts (R-043: render.check covers only these L0 files).
+// Spec: docs/architecture-render-2.md §1, architecture-modules-render-2.md §2 table, R-131, R-179, R-180, R-184.
 import { hash2, vnoise, quantAngle } from '../core/noise.ts'
 import { VIEW_H_DEV, deviceZoom, viewZoomCss } from '../core/view.ts'
+import { floorVariant, faceKind, footRow, dirIndex } from '../core/grid.ts'
+import type { Dir8 } from '../core/grid.ts'
 
 function ok(cond: boolean, msg: string): void {
   if (!cond) throw new Error('check failed: ' + msg)
@@ -66,4 +68,39 @@ export function run(): void {
     ok(quantAngle(q) === q, `quantAngle idempotent at ${a}`)
     ok(Math.abs(q - a) <= step / 2 + 1e-12, `quantAngle within half a step at ${a}`)
   }
+
+  // grid.floorVariant (R-179): integer 0..9, deterministic, spread over all variants, seed dependent
+  const seen = new Set<number>()
+  let seedDiffers = false
+  for (let fy = 0; fy < 24; fy++) {
+    for (let fx = 0; fx < 24; fx++) {
+      const v = floorVariant(fx, fy, 0x5a)
+      ok(Number.isInteger(v) && v >= 0 && v <= 9, `floorVariant(${fx}, ${fy}) integer 0..9, got ${v}`)
+      ok(v === floorVariant(fx, fy, 0x5a), `floorVariant(${fx}, ${fy}) deterministic`)
+      seen.add(v)
+      if (v !== floorVariant(fx, fy, 0x5b)) seedDiffers = true
+    }
+  }
+  ok(seen.size > 1, 'floorVariant gives more than one distinct value over a 24x24 sweep')
+  ok(seen.size === 10, `floorVariant reaches all 10 variants over a 24x24 sweep, got ${seen.size}`)
+  ok(seedDiffers, 'floorVariant depends on the seed')
+  ok(floorVariant(-5, -9, 7) >= 0 && floorVariant(-5, -9, 7) <= 9, 'floorVariant in 0..9 for negative cells')
+
+  // grid.faceKind: pillar (both open), left (W only), right (E only), fill (none); mask does not change the kind
+  for (const mask of [0, 4, 15]) {
+    ok(faceKind(mask, true, true) === 'pillar', `faceKind(${mask}, W open, E open) is pillar`)
+    ok(faceKind(mask, true, false) === 'left', `faceKind(${mask}, W open only) is left`)
+    ok(faceKind(mask, false, true) === 'right', `faceKind(${mask}, E open only) is right`)
+    ok(faceKind(mask, false, false) === 'fill', `faceKind(${mask}, none open) is fill`)
+  }
+
+  // grid.footRow (R-180): 32 px tile rows
+  ok(footRow(63.9) === 1, 'footRow(63.9) === 1')
+  ok(footRow(0) === 0, 'footRow(0) === 0')
+  ok(footRow(31.99) === 0 && footRow(32) === 1 && footRow(64) === 2, 'footRow row boundaries at 32 px')
+  ok(footRow(-0.1) === -1, 'footRow(-0.1) === -1 (floor, not truncation)')
+
+  // grid.dirIndex (R-184): atlas direction_order n ne e se s sw w nw
+  const order: Dir8[] = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw']
+  for (let i = 0; i < order.length; i++) ok(dirIndex(order[i]) === i, `dirIndex('${order[i]}') === ${i}`)
 }
