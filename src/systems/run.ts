@@ -13,6 +13,7 @@ import { commitBest, saveSettings } from '../core/storage.ts'
 import { carveCore, caveSeed, finalizeCave, generateCave, MAX_ATTEMPTS } from '../world/generate.ts'
 import { populate } from '../world/gen/populate.ts'
 import { fallbackCave } from '../world/gen/fallback.ts'
+import { paramsOf } from '../world/gen/params.ts'
 import { validateCave } from '../world/validate.ts'
 import { revealAround } from '../world/explored.ts'
 import { lightRadius } from './light.ts'
@@ -24,16 +25,20 @@ export const runSeedText = (raw: string): string => sanitizeSeedText(raw) || Str
 
 // state-2 §10 steps 1-7. `cave` is the finished result of the chunked loop (genStep); without it the cave is generated
 // synchronously (checks, R-038). Keeps meta.time, meta.nextId, settings, best, ui.storageOk, debug and fx.seq.
-export function startRun(s: State, seedText: string, cave?: CaveResult): void {
+// `depthClass` (R-164, optional, default 3) picks the cave preset; paramsOf rounds and clamps it once. An already finished `cave` is
+// taken as is (its class was chosen by the caller), the class is then only recorded on the world.
+export function startRun(s: State, seedText: string, cave?: CaveResult, depthClass?: number): void {
   const text = runSeedText(seedText) // 1
   const seed = parseSeed(text)
-  const c = cave ?? generateCave(seed) // 2
+  const dc = paramsOf(depthClass).depthClass
+  const c = cave ?? generateCave(seed, { depthClass: dc }) // 2
   const n = MAP_W * MAP_H
   s.world = {
     w: MAP_W, h: MAP_H, tiles: c.tiles, tilesHash: fnv1a(c.tiles),
     entrance: { ...c.entrance }, exit: { ...c.exit }, beacon: { ...c.beacon },
     beaconDist: Math.max(1, c.beaconDist), beaconLit: false, explored: new Array<number>(Math.ceil(n / 32)).fill(0),
     solidSig: 0, exploreKey: -1, pendingSig: 0, beaconLitAt: 0, veinGen: 0,
+    ...(dc !== 3 && { depthClass: dc }), // ponytail: key absent for class 3 (undefined means 3), so class-3 worlds stay byte-identical
   }
   // Ids in array order, veins then pickups (systems §3, determinism §4). Copies: the CaveResult may be shared (checks memo).
   s.veins = c.veins.map((v) => ({ ...v, id: s.meta.nextId++ }))
@@ -81,21 +86,22 @@ export function startRun(s: State, seedText: string, cave?: CaveResult): void {
 }
 
 // One unit of chunked generation per update while ui.genPending !== '' (SAE1 §4, CG3 §7): one attempt, or the fallback
-// once genAttempt reaches MAX_ATTEMPTS. Pure in (seed key, genAttempt), so HMR resumes mid-way. Starts the run when done.
-export function genStep(s: State): void {
+// once genAttempt reaches MAX_ATTEMPTS. Pure in (seed key, genAttempt, depthClass), so HMR resumes mid-way. Starts the run when done.
+// ponytail: the pending class is not in State (no schema change); the caller passes it on every call, default class 3.
+export function genStep(s: State, depthClass?: number): void {
   const key = s.ui.genPending
   if (key === '') return
-  const seed = parseSeed(key), a = s.ui.genAttempt
+  const seed = parseSeed(key), a = s.ui.genAttempt, p = paramsOf(depthClass)
   let cave: CaveResult | null = null
-  if (a >= MAX_ATTEMPTS) cave = fallbackCave(seed)
+  if (a >= MAX_ATTEMPTS) cave = fallbackCave(seed, p)
   else {
-    const cs = caveSeed(seed, a), core = carveCore(cs)
+    const cs = caveSeed(seed, a), core = carveCore(cs, p)
     const res = core && populate(core, cs, a)
-    if (res && validateCave(res).ok) cave = res
+    if (res && validateCave(res, p).ok) cave = res
     else s.ui.genAttempt = a + 1
   }
   if (cave) {
-    startRun(s, key, finalizeCave(cave)) // R-160: finalizeCave once per accepted cave
+    startRun(s, key, finalizeCave(cave), p.depthClass) // R-160: finalizeCave once per accepted cave
     saveSettings(s) // lastSeed changed (scoring-and-save §6 rule 5); checks that call startRun directly never write
   }
 }
