@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Crack decor from the tileset: sparse deterministic ground cracks (about 5% of floor tiles, small and large) and wall-face cracks (about 8% of visible faces), chosen from a per-tile seed hash and baked into the chunk cache. Entrance, Beacon chamber and vein walls stay clean. A new check covers determinism, density, placement and the tileset frame names; floor variants are checked to be evenly spread over all 10.
+
 ### Fixed
 
 - The player's walk and run animation now plays at the pace of the actual movement speed, so the feet no longer slide: slower when moving slowly or along walls, faster when sprinting or flying with noclip.

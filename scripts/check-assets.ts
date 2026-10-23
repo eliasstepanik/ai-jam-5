@@ -117,13 +117,14 @@ function sheet(pngPath: string, want: Size, maxBytes: number): void {
 const jsonSize = (p: string, max: number): void => { if (existsSync(p) && sizeOf(p) > max) fail(p + ' is ' + sizeOf(p) + ' bytes, max ' + max) }
 
 // ---- tileset (#3) ----
-// Names produced by src/render/tileset.ts (capName, faceName, oreName, floorName); duplicated here because render code is not importable (DOM-free L1 rule for checks).
+// Names produced by src/render/tileset.ts (capName, faceName, oreName, floorName) and src/render/cracks.ts; duplicated here because render code is not importable (DOM-free L1 rule for checks).
 // ponytail: this list mirrors tileset.ts by hand; upgrade by exporting the name table from a DOM-free module if the helpers grow.
 const pad2 = (n: number): string => String(n).padStart(2, '0')
 const range = (n: number, f: (i: number) => string): string[] => Array.from({ length: n }, (_, i) => f(i))
 const TILESET_NAMES = [
   ...range(16, i => 'cap_' + pad2(i)), 'face_pillar', 'face_left', 'face_right', ...range(4, i => 'face_fill_' + i),
   ...['copper', 'sodium', 'strontium', 'resin'].flatMap(m => range(3, i => 'wall_' + m + '_' + pad2(i + 1))), ...range(10, i => 'floor_' + i),
+  ...range(4, i => 'ground_crack_' + pad2(i + 1)), ...range(6, i => 'ground_crack_large_' + pad2(i + 1)), ...range(3, i => 'wall_crack_' + pad2(i + 1)), // src/render/cracks.ts
 ]
 const TILESET_CATEGORIES: Record<string, number> = { floor: 10, wall_cap: 19, wall_face: 7, corner_cutout: 4, corner_rim: 4, wall_composite: 4, overlay_ground: 22, overlay_wall: 24 }
 type Tileset = { frames: Record<string, { frame: Rect; category: string }>; meta: { size: { w: number; h: number }; frame_count: number; png_sha256?: string } }
