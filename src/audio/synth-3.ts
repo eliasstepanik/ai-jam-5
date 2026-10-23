@@ -4,11 +4,11 @@
 import type { AudioRes } from '../assets/resources.ts'
 import type { SoundId } from '../assets/sounds.ts'
 import { hash2 } from '../core/noise.ts'
+import { T } from '../core/tuning.ts'
 import type { NoiseKind, Recipe } from './synth.ts'
 import { biquad, env, layers, noise, osc, thud, whoosh } from './synth.ts'
 
 const LOOP_S = 900 // ponytail: loops outlive any run (~10 min); sfx.ts re-creates a loop if it ever runs out
-const BEACON_S = 5 // = T.beacon.holdS (core/tuning.ts); duplicated because L4 audio does not import tuning
 const CENT14 = 2 ** (14 / 1200)
 
 const gainNode = (a: AudioRes, v: number, out: AudioNode): GainNode => {
@@ -123,7 +123,7 @@ const playerDeath: Recipe = (a, out, t) => {
 // audio time, which tracks the fixed-step hold 1:1), so loopStep needs no per-step param writes. Release = stop.
 const beaconCharge: Recipe = (a, out, t, p) => {
   const p0 = Math.min(1, Math.max(0, p.q ?? 0))
-  const rem = Math.max(0.1, (1 - p0) * BEACON_S)
+  const rem = Math.max(0.1, (1 - p0) * T.beacon.holdS)
   const hum = gainNode(a, 0, out)
   hum.gain.setValueAtTime(0, t)
   hum.gain.linearRampToValueAtTime(0.15, t + 0.05)

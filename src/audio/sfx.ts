@@ -24,6 +24,7 @@ const GROWL: Record<MonsterKind, { rate: number; gain: number }> = {
 type Cam = { x: number; y: number }
 type CamRes = AudioRes & { cam?: Cam }
 type LoopVoice = Voice & { lp?: BiquadFilterNode }
+type ShotVoice = Voice & { pan?: StereoPannerNode } // positional one-shots: out -> pan -> group
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v))
 const def = (id: SoundId): SoundDef => SOUNDS[id]
 
@@ -39,6 +40,12 @@ function silence(v: Voice, now: number, fade: number, stopIn: number): void {
   for (const n of v.nodes) {
     try { n.stop(now + stopIn) } catch { /* already stopped */ }
   }
+}
+
+/** Detach a finished/stolen voice's gain (and panner) from the graph; disconnect() with no args is idempotent. */
+function release(v: Voice): void {
+  v.out.disconnect()
+  ;(v as ShotVoice).pan?.disconnect()
 }
 
 const steal = (a: AudioRes, v: Voice, now: number): void => {
@@ -83,6 +90,7 @@ export function play(res: Resources, id: SoundId, p: PlayParams): void {
   let gain = d.gain * (p.gain ?? 1) * (0.9 + 0.1 * hash2(p.seq, 2, 77))
   const out = ctx.createGain()
   let sink: AudioNode = a.groups[d.group]
+  let panner: StereoPannerNode | undefined
   if (p.x !== undefined && p.y !== undefined) {
     const cam = (a as CamRes).cam ?? { x: p.x, y: p.y }
     const pan = ctx.createStereoPanner()
@@ -90,11 +98,13 @@ export function play(res: Resources, id: SoundId, p: PlayParams): void {
     gain *= clamp(1 - Math.hypot(p.x - cam.x, p.y - cam.y) / 480, 0, 1)
     pan.connect(sink)
     sink = pan
+    panner = pan
   }
   out.gain.value = gain
   out.connect(sink)
   let nodes: AudioScheduledSourceNode[] = []
-  let stopAt = t + 6
+  let stopAt = t + 6 // recipe voices: upper bound until their sources end; sample voices: longest layer below
+  let sampleEnd = 0
   if (buf) {
     for (const f of [d.file ?? id, ...(d.layers ?? [])]) {
       const b = a.buffers.get(f)
@@ -105,18 +115,19 @@ export function play(res: Resources, id: SoundId, p: PlayParams): void {
       src.connect(out)
       src.start(t)
       nodes.push(src)
-      stopAt = Math.max(stopAt === t + 6 ? 0 : stopAt, t + b.duration / rate)
+      sampleEnd = Math.max(sampleEnd, t + b.duration / rate)
     }
+    if (sampleEnd > 0) stopAt = sampleEnd
   } else {
     try {
       nodes = recipe!(a, out, t, { ...p, rate })
     } catch (e) {
-      out.disconnect()
+      out.disconnect(), panner?.disconnect()
       warnBroken(a, id, e)
       return
     }
   }
-  const v: Voice = { id, pri: d.pri, t0: t, stopAt, out, nodes }
+  const v: ShotVoice = { id, pri: d.pri, t0: t, stopAt, out, nodes, pan: panner }
   a.voices.push(v)
   a.lastStart.set(id, t)
   let live = nodes.length
@@ -124,8 +135,8 @@ export function play(res: Resources, id: SoundId, p: PlayParams): void {
     n.onended = () => {
       if (--live > 0) return
       const i = a.voices.indexOf(v)
-      if (i < 0) return
-      if (buf) a.voices.splice(i, 1), out.disconnect() // samples have no tail
+      if (i < 0) return release(v) // stolen: already out of the list, its sources just stopped
+      if (buf) a.voices.splice(i, 1), release(v) // samples have no tail
       else v.stopAt = Math.min(v.stopAt, ctx.currentTime + (id === 'sfx_beacon-horn' ? TAIL_S : 0.3))
     }
   }
@@ -141,7 +152,7 @@ export function pruneVoices(a: AudioRes): void {
   const now = a.ctx.currentTime
   for (let i = a.voices.length - 1; i >= 0; i--) {
     if (a.voices[i]!.stopAt >= now) continue
-    a.voices[i]!.out.disconnect()
+    release(a.voices[i]!)
     a.voices.splice(i, 1)
   }
 }

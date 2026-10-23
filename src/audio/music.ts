@@ -98,7 +98,12 @@ export function musicStep(res: Resources, s: State): void {
     const target = defOf(layer).gain * danger(s)
     if (target !== m.danger) {
       m.danger = target
-      m.gains[1].gain.setTargetAtTime(target, now, LAYER_TC)
+      const p = m.gains[1].gain
+      if (now < m.t0) { // before the track start: startNode's setValueAtTime(0, t0) is still queued, so ramp after it
+        p.cancelScheduledValues(m.t0)
+        p.setValueAtTime(0, m.t0)
+        p.setTargetAtTime(target, m.t0, LAYER_TC)
+      } else p.setTargetAtTime(target, now, LAYER_TC)
     }
   }
 }

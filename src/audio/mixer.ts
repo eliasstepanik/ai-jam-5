@@ -10,7 +10,7 @@ export const MIXER_VERSION = 1
 const GROUP_IDS: readonly Group[] = ['music', 'amb', 'sfx', 'ui']
 const GROUP_GAIN: Readonly<Record<Group, number>> = { music: 0.55, amb: 0.45, sfx: 0.9, ui: 0.7 }
 const LP_HZ = 18000 // masterLp rest frequency; sfx.ts dips it for the hurt sound
-type DuckNode = GainNode & { target?: number } // last linear duck target set through setDuck
+type DuckNode = GainNode & { target?: number } // last linear duck target set through setDuck (undefined = 1)
 
 function disconnectAll(res: Resources): void {
   const a = res.audio
@@ -80,8 +80,26 @@ export function setDuck(res: Resources, group: Group, db: number, tc: number): v
   node.gain.setTargetAtTime(lin, a.ctx.currentTime, Math.max(0, tc))
 }
 
-// Per-step entry for the four group ducks in dB. 0.1 s is the default time constant; the per-case attack/release
-// timings (flare 0.01 / 0.6, pause 0.1, ...) are driven by the caller (music.ts / engine.ts) through setDuck.
+// Attack (duck deepens) and release (duck lifts) time constants in seconds for a duck of depth `db` on `group`.
+// duckFor (trigger.ts) gives each case a distinct (group, depth) pair, so the reason is derivable from the dB alone:
+//   music/amb -6 = perfect parry 0.01 / 0.6 | music -3 = low HP 0.5 / 0.5 | music/amb -10, sfx -inf = pause 0.1 / 0.2
+//   amb -9 = beacon lit 0.05 / 0.1 | anything else (dead/won -12 / -6, ...) 0.1 / 0.1
+// Limit: the same depth from another cause (amb -6 and -10 only ever come from flare / pause today) shares its timing.
+function duckTimes(group: Group, db: number): readonly [number, number] {
+  if (group === 'music' && db === -3) return [0.5, 0.5]
+  if ((group === 'music' || group === 'amb') && db === -6) return [0.01, 0.6]
+  if (((group === 'music' || group === 'amb') && db === -10) || (group === 'sfx' && db === -Infinity)) return [0.1, 0.2]
+  if (group === 'amb' && db === -9) return [0.05, 0.1]
+  return [0.1, 0.1]
+}
+
+// Per-step entry for the four group ducks in dB. Deepening a duck uses the new depth's attack, lifting one uses the
+// release of the depth being left (the node's remembered linear target converted back to dB).
 export function applyDucks(res: Resources, d: Readonly<Record<Group, number>>): void {
-  for (const g of GROUP_IDS) setDuck(res, g, d[g], 0.1)
+  for (const g of GROUP_IDS) {
+    const prev = (res.audio.duck?.[g] as DuckNode | undefined)?.target ?? 1
+    const prevDb = prev <= 0 ? -Infinity : Math.round(20 * Math.log10(prev))
+    const db = d[g]
+    setDuck(res, g, db, db < prevDb ? duckTimes(g, db)[0] : duckTimes(g, prevDb)[1])
+  }
 }

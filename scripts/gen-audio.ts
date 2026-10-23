@@ -90,9 +90,14 @@ export function buildPrompt(base: Workflow, s: Sound, seed: number): Workflow {
   set('Sampler', { seed })
   set('Trim', { duration: s.duration })
   // The three envelopes must sum to the Trim duration; ComfyUI takes them as strings.
-  set('Fade In Env', { duration: String(round3(s.fadeIn)) })
+  // The fade nodes are fixed-phase sine envelopes (in: phase 270, out: phase 90, amp 0.5, dc 0.5). They are a clean
+  // half-cosine 0->1 / 1->0 only when frequency = 1/(2*D) for their duration D, so set it with every duration.
+  // ponytail: fade frequency range is 1 Hz (D = 0.5 s) to 100 Hz (D = 0.005 s); outside it we die (also avoids 1/0 for D = 0). Widen only after checking the node's frequency limits.
+  for (const [title, d] of [['Fade In Env', s.fadeIn], ['Fade Out Env', s.fadeOut]] as const) {
+    if (!(round3(d) >= 0.005 && round3(d) <= 0.5)) die(s.id + ': ' + title + ' duration ' + d + ' s is outside 0.005..0.5 s (envelope frequency 100..1 Hz)')
+    set(title, { duration: String(round3(d)), frequency: 1 / (2 * round3(d)) })
+  }
   set('Hold Env', { duration: String(hold) })
-  set('Fade Out Env', { duration: String(round3(s.fadeOut)) })
   const prefix = 'audio/lastember_' + s.id + '_s' + seed
   set('Save MP3', { filename_prefix: prefix + '_mp3' })
   set('Save Opus', { filename_prefix: prefix + '_opus' })

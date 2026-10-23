@@ -51,9 +51,10 @@ const monster = (id: (k: MonsterKind) => SoundId, kind: (e: FxEvent, s: State) =
 })
 
 // ponytail: goodWindow is not a tuning constant; derived from combat.ts parryLoss (good iff u <= goodSplit).
-function goodWindow(delta: number): number {
+// `delta` is the event's `a` (signed seconds, combat.ts emits it); P carries the active mineral's perfectMul like parryLoss.
+function goodWindow(delta: number, mineral: FlameKind): number {
   const p = T.parry
-  const P = p.perfectS
+  const P = p.perfectS * T.minerals.table[mineral].perfectMul
   const W = Math.max(delta < 0 ? p.earlyMaxS : p.lateMaxS, P + p.minSpanS)
   return P + p.goodSplit * (W - P)
 }
@@ -69,7 +70,7 @@ export const TRIGGERS: Record<FxEventKind, Trigger | null> = {
   },
   parryGood: {
     id: () => 'sfx_parry',
-    params: (e) => flat(e, { gain: 0.8, q: Math.min(1, Math.max(0, 1 - Math.abs(e.a) / goodWindow(e.a))) }),
+    params: (e, s) => flat(e, { gain: 0.8, q: Math.min(1, Math.max(0, 1 - Math.abs(e.a) / goodWindow(e.a, s.player.activeMineral))) }),
   },
   parryPoor: fixed('sfx_parry-bad', 0.7),
   flameHit: fixed('sfx_mon-hit', 1.0, true), // second voice: EXTRAS.flameHit
@@ -175,6 +176,8 @@ export function duckFor(s: State): Duck {
   const { screen, phase } = s.meta
   if (screen === 'playing') {
     if (phase === 'descent' && s.player.hp === 1) d.music = Math.min(d.music, -3)
+    // Beacon lit: music silent (descent stops) and amb -9 only until mus_escape starts; once escapeLive the music duck lifts so it is audible.
+    if (s.world.beaconLit && !escapeLive(s)) d.music = -Infinity
     if (phase === 'escape' && !escapeLive(s)) d.amb = Math.min(d.amb, -9)
   } else if (screen === 'paused') {
     d.music = -10; d.amb = -10; d.sfx = -Infinity
