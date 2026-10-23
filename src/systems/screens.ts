@@ -7,9 +7,11 @@
 import type { Input } from '../main.ts'
 import type { FxEventKind, Screen, State } from '../core/types.ts'
 import { HELP_PAGES, toast } from '../core/state.ts'
-import { SEED_MAX_LEN } from '../core/seed.ts'
+import { hashSeed } from '../core/rng.ts'
+import { parseSeed, SEED_MAX_LEN } from '../core/seed.ts'
 import { loadBest, loadSettings, saveSettings } from '../core/storage.ts'
 import { emit } from './fx.ts'
+import { paramsOf } from '../world/gen/params.ts'
 import { genStep, runSeedText } from './run.ts'
 
 // ponytail: DT mirrors the fixed step in main.ts (stepScreens has no dt parameter, S2 signature); if the host step changes, import it from a shared tuning constant
@@ -32,11 +34,28 @@ function go(s: State, to: Screen): void {
   s.ui.screenAt = s.meta.time
 }
 
+// Depth class of the run for `seedText` (R-164): settings.depthClass 1..4 (paramsOf: round, clamp, default 3), or 'random' = 1 + hashSeed(seed, 'cave:depth') % 4,
+// so the seed still decides the run. Pure in (settings, seed text): begin, genStep and HMR mid-generation all resolve the same class, so no State field.
+// ponytail: the % 4 mapping is the architect-default reading of R-164 (it gives no class mapping); change it here only.
+const depthOf = (s: State, seedText: string): number => {
+  const d = s.settings.depthClass
+  return paramsOf(d === 'random' ? (hashSeed(parseSeed(seedText), 'cave:depth') % 4) + 1 : d).depthClass
+}
+
 // Chunked generation (SAE1 §4): the title stays up, genStep runs one attempt per update.
 function begin(s: State, seedText: string): void {
   go(s, 'title')
   s.ui.genPending = runSeedText(seedText)
   s.ui.genAttempt = 0
+}
+
+// One generation unit in the class of the pending seed. Invariant: s.best is the Best of the class of s.world (class 3 before any run), so a
+// cancelled generation leaves it intact. When a run starts in another class, s.best is reloaded for it before the first playing step (R-164).
+function generate(s: State): void {
+  const was = s.world.depthClass ?? 3
+  genStep(s, depthOf(s, s.ui.genPending))
+  const now = s.world.depthClass ?? 3
+  if (s.ui.genPending === '' && now !== was) loadBest(s, undefined, now)
 }
 
 function seedKey(code: string): string {
@@ -80,7 +99,7 @@ export function stepScreens(s: State, input: Input): boolean {
   if (!s.settings.loaded) { loadSettings(s); loadBest(s) } // once per page session; loadSettings sets the flag even when storage fails
   const u = s.ui, k = input.pressed, sc = s.meta.screen
   if (u.genPending !== '') {
-    if (k.has('Escape')) { u.genPending = ''; u.genAttempt = 0; ui(s, 'uiBack') } else genStep(s)
+    if (k.has('Escape')) { u.genPending = ''; u.genAttempt = 0; ui(s, 'uiBack') } else generate(s)
     return false // the world's first step is the next update, as after a synchronous startRun
   }
   const seedFocus = sc === 'title' && u.cursor === 4
