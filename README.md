@@ -15,6 +15,27 @@ Repo: https://github.com/eliasstepanik/ai-jam-5
 | Rules | Majority of the game must be AI-generated; third-party assets must be credited; sharing your process (tools, prompts) is encouraged |
 | Voting | Overall, Fun, Graphics, Audio, Theme, AI Usage |
 
+## Last Ember: how to play
+
+Theme: TORCH. You carry the last flame of a dying torch down a seeded cave. The flame is your light, your shield and your clock. Go deep, light the Beacon at the bottom, then run back up to the entrance before the cave collapses. Deeper is worth more, and dying still scores.
+
+| Input | Action |
+|---|---|
+| `W` `A` `S` `D` or arrow keys | Move |
+| Mouse | Aim (during the escape you face the way you move) |
+| Left click | Swing the torch / parry a lunging shade (click as its eyes flare) |
+| `E` (hold) | Mine an ore vein, or light the Beacon |
+| `1` `2` `3` | Pick a mineral (changes the flame colour and its effect) |
+| `F` / `G` | Toss the picked mineral into the flame / shake the mineral off |
+| `Space` | Roll (escape only) |
+| `Esc` or `P` | Pause |
+| `M` | Mute toggle |
+| `Enter`, `T`, `C` | Menus and end screen: confirm or new run, retry seed, copy a share link |
+
+The title screen has a seed field. The same seed gives the same cave, and the end screen can copy a `?seed=` link. Your best score (with its seed) is stored in the browser (localStorage). The in-game Help screen explains parrying and minerals.
+
+Sound is not included in this submission: the build ships no audio files and no audio engine. The Sound and `M` settings exist but have no effect yet.
+
 ## Quick start
 
 Requires Node >= 22.18.
@@ -148,15 +169,37 @@ The plan lives in [`docs/`](docs/). Start at [`docs/index.md`](docs/index.md). T
 
 ## AI process
 
-This repo was scaffolded with Claude Code and opencode agents. The jam rewards sharing process, so add notes below as the jam proceeds. Record:
+The jam requires that the majority of the game is AI-generated. This section says what was generated, with which tools, and how it was processed. Facts here are taken from the repo; open items are marked `OWNER TO FILL:`.
 
-- Tools and models used (agent, model, editor), and for which part of the game.
-- Key prompts, or a link or summary of them, for the gameplay code, art and audio.
-- The pipeline for generated assets: how each sprite, sound or music track was produced, then processed and included.
-- Third-party assets and their sources and licences, so credits are complete.
-- What AI got wrong and how you corrected it.
+### Code and design
 
-- A8 asset foundations were implemented with Codex from the catalog and Kittingsl's sheet layout: one actor animation per sheet, 64×64 cells, direction rows N/NE/E/SE/S/SW/W/NW, with frame counts derived from width. This adds metadata and resource handling; artwork, palettes and torch-colour sheets are not integrated yet.
-- Two AI-generated, user-supplied art packs are bundled for the 2.5D view. The PNGs are used as delivered; only the character frame list is post-processed. The packs were created by the repo owner with AI tools; the specific generator and prompts are not recorded in this repository.
-  - Cave tileset: `src/assets/cave_tileset.png` and `src/assets/cave_tileset.json` (512×512, 94 frames).
-  - Character atlas: `src/assets/characters.png` (4096×2048, 1232 frames). `scripts/trim-characters.ts` rewrites `art/characters-source.json` into `src/assets/characters.json`. The PNG is not modified.
+- All game code, the checks and the build setup were written by AI coding agents working on the repo. The repo was scaffolded with Claude Code and opencode agents. The day-to-day workflow was an opencode-based multi-agent setup: an orchestrator agent splits the work into small chunks, builder sub-agents implement them, and reviewer sub-agents check the result. The models were Claude models. Codex was also used for part of the asset foundations (see Assets).
+- The design, the architecture rulings and the task split were written as a project plan with AI help and are kept as a snapshot in [`docs/`](docs/) (start at `docs/last-ember-design.md`).
+- Every change goes through a PR with the `ci` check (`npm run check` and `npm run build`). The checks include seeded property tests and an economy simulator for the flame budget.
+- OWNER TO FILL: link or short summary of the key prompts for the gameplay code (the repo does not record them).
+- OWNER TO FILL: what the AI got wrong and how it was corrected (the repo does not record this).
+- Balance: tuning values are checked by scripted bot runs, not by human playtests. No human playtest data exists yet, so some pacing numbers may be off.
+
+### Assets
+
+| Asset | Origin | Processing |
+|---|---|---|
+| Cave tileset: `src/assets/cave_tileset.png` (512×512) and `cave_tileset.json` (94 frames) | AI-generated art pack supplied by the repo owner | Used as delivered. Floor, wall caps, south faces and ore-vein frames are cut out at runtime from the frame rects in the JSON. |
+| Character atlas: `src/assets/characters.png` (4096×2048, 1232 frames of 64×64: the player, Lurker, Stalker and Devourer, 8 directions) | AI-generated art pack supplied by the repo owner | The PNG is used as delivered. `scripts/trim-characters.ts` rewrites `art/characters-source.json` into `src/assets/characters.json` (the trimmed frame list). The torch flame colour is a palette swap at runtime. |
+| Pickups, HUD icons, props, monster eyes and other small sprites | Drawn in code (`src/assets/placeholders-*.ts`) | Procedural canvas 2D drawing, no image files. |
+| Light, darkness, fog memory, flame glow, particles, overlays and screen effects | Drawn in code (`src/render/`) | Procedural canvas 2D passes. |
+| The caves | Generated at run time from the seed (`src/world/`) | Seeded cellular automata plus a macro layout; there is no hand-made level data. |
+| Menu and HUD text | System monospace font stack (`ui-monospace`, `Menlo`, `Consolas` and similar) | No font file is shipped. |
+| Sound and music | None | This submission has no audio: 0 audio files and no audio engine (the sound catalog in `src/assets/sounds.ts` is data only). |
+
+- OWNER TO FILL: the image generator (tool and model) and the prompts used for the cave tileset and the character atlas. The repo does not record them.
+- Asset formats, the asset catalog and the pipeline are described in `docs/architecture-assets-*.md` and `docs/notes/ai-jam-5-asset-formats-25d.md`.
+- `scripts/check-assets.ts` (part of `npm run check`) validates both sheets: frame counts, size limits and the frame names the renderer uses.
+- Asset foundations (the sprite and sound catalogs, the resource registry and the actor-sheet helpers: one animation per sheet, 64×64 cells, direction rows N, NE, E, SE, S, SW, W, NW) were implemented with Codex from the catalog and Kittingsl's sheet layout. The sound catalog is data only; no audio ships.
+
+## Credits and licences
+
+- Game code, procedural art, and the tileset and character atlas: AI-generated or written by AI agents for this jam; repo owner Elias Stepanik (eliasstepanik), with contributions from Kittingsl.
+- No third-party art, music, sound effects or fonts are used.
+- Runtime dependencies: none (`package.json` has no `dependencies`). The game is plain TypeScript on canvas 2D.
+- Build tools only, not shipped as assets: [Vite](https://vite.dev/) (MIT) and [TypeScript](https://www.typescriptlang.org/) (Apache-2.0).

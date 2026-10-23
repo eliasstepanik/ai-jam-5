@@ -8,79 +8,57 @@ import { getResources } from '../assets/resources.ts'
 import { drawSprite } from '../assets/images.ts'
 import { MINERALS } from '../core/state.ts'
 import { hash2 } from '../core/noise.ts'
-import { FLAME_COL } from './flame.ts'
 import { currentQuality } from './quality.ts'
 import type { View } from './view.ts'
 import { inView } from './view.ts'
+import { C_FLAME, C_SPARK, COL_ARG, COL_SPARK, PAL, TABLE, TAU } from './particles-table.ts'
+import type { Spec, SpawnKind } from './particles-table.ts'
 
 const P_MAX = 512 // matches the registry arrays in assets/resources.ts
-const TAU = Math.PI * 2
-// Palette (<= 16 colours, one fillStyle per bucket). 3..6 are the flame mantle colours: none, then MINERALS order.
-const C_DUST = 0, C_EMBER = 1, C_HOT = 2, C_FLAME = 3
-const PAL: readonly string[] = ['#8c8070', '#ffb347', '#fff4d6', FLAME_COL.none.mantle,
-  ...MINERALS.map(m => FLAME_COL[m].mantle)]
+const REDUCED_FLASH = 0.3 // settings.reducedFlash scales the count of flash-type bursts (same constant as overlay.ts, glow.ts)
+const ROW_STRIDE = 64 // hash index offset per table row, so rows of one event draw different noise (every row has n < 64)
 
-// Shape ids: 0 square, 1 streak along the launch direction, 2 fx_dust sprite (frame by age).
-type Burst = {
-  n: number; col: number; alt: number; add: 0 | 1; shape: 0 | 1 | 2
-  vmin: number; vmax: number; life: number; size: number; drag: number; grav: number
-  ang: number; spread: number; jit: number // launch angle +- spread/2 (TAU = all round); spawn offset +- jit/2 px
+// Palette index for a colour of the table: fixed (>= 0), or a marker: COL_SPARK = active flame spark, COL_FLAME (any other negative
+// except COL_ARG) = active flame mantle, COL_ARG = mineral from e.a.
+// -1 = draw nothing (denied toss, pouch full).
+function colour(s: State, e: FxEvent, c: number): number {
+  if (c >= 0) return c
+  if (c === COL_ARG) return e.a >= 0 && e.a < MINERALS.length ? C_FLAME + 1 + e.a : -1
+  const k = MINERALS.indexOf(s.player.activeMineral as typeof MINERALS[number]) + 1 // none = 0
+  return (c === COL_SPARK ? C_SPARK : C_FLAME) + k
 }
-const BASE: Burst = { n: 0, col: C_HOT, alt: C_HOT, add: 1, shape: 0, vmin: 50, vmax: 140, life: 0.35, size: 1,
-  drag: 2, grav: 0, ang: 0, spread: TAU, jit: 0 }
-const DUST: Burst = { ...BASE, col: C_DUST, alt: C_DUST, add: 0, shape: 2, vmin: 20, vmax: 60, life: 0.5, size: 1, drag: 3, grav: -10 }
 
-function burst(p: Particles, s: State, e: FxEvent, b: Burst): void {
-  const n = Math.round(b.n * currentQuality(s).particles)
+function burst(p: Particles, s: State, e: FxEvent, b: Spec, row: number): void {
+  const col = colour(s, e, b.col), alt = colour(s, e, b.alt)
+  if (col < 0 || alt < 0) return
+  const flash = b.fl && s.settings.reducedFlash ? REDUCED_FLASH : 1
+  const n = Math.round(b.n * flash * currentQuality(s).particles)
+  const jit = b.jitArg ? Math.max(b.jit, e.a) : b.jit
+  const base = b.dir === 1 ? e.a : b.dir === 2 ? e.a + Math.PI : 0
   for (let i = 0; i < n; i++) {
-    const k = p.head
+    const k = p.head, h = i + row * ROW_STRIDE
     p.head = (k + 1) % P_MAX // ponytail: ring overwrite drops the oldest spark when 512 are live. Upgrade: raise P_MAX with the registry.
-    const ang = b.ang + (hash2(e.seq, i, 1) - 0.5) * b.spread, sp = b.vmin + (b.vmax - b.vmin) * hash2(e.seq, i, 2)
-    p.x0[k] = e.x + (hash2(e.seq, i, 3) - 0.5) * b.jit
-    p.y0[k] = e.y + (hash2(e.seq, i, 4) - 0.5) * b.jit
+    const ang = b.ring ? (i / n) * TAU : base + b.ang + (hash2(e.seq, h, 1) - 0.5) * b.spread
+    const sp = b.ring ? b.vmax : b.vmin + (b.vmax - b.vmin) * hash2(e.seq, h, 2)
+    p.x0[k] = e.x + (hash2(e.seq, h, 3) - 0.5) * jit
+    p.y0[k] = e.y + (hash2(e.seq, h, 4) - 0.5) * jit
     p.vx[k] = Math.cos(ang) * sp
     p.vy[k] = Math.sin(ang) * sp
     p.born[k] = s.meta.time
-    p.life[k] = b.life * (0.8 + 0.4 * hash2(e.seq, i, 5))
+    p.life[k] = b.life * (0.8 + 0.4 * hash2(e.seq, h, 5))
     p.size[k] = b.size
     p.drag[k] = b.drag
     p.grav[k] = b.grav
-    p.col[k] = i & 1 ? b.alt : b.col
+    p.col[k] = i & 1 ? alt : col
     p.add[k] = b.add
     p.shape[k] = b.shape
   }
 }
 
-const mineralCol = (a: number): number => C_FLAME + 1 + a // a = MINERALS index (payloads of mineDone and toss)
-
+// Kinds without a row (uiMove, uiConfirm, uiBack, copyLink) are screen sounds, not sparks.
 function spawn(p: Particles, s: State, e: FxEvent): void {
-  switch (e.kind) {
-    // ponytail: mineTick carries progress, not the mineral, so it sparks pale crystal light. Upgrade: look the vein up at e.x, e.y.
-    case 'mineTick': burst(p, s, e, { ...BASE, n: 4, col: C_HOT, alt: C_HOT, grav: 120, jit: 4 }); break
-    case 'mineDone': // a = -1: pouch full, nothing to show
-      if (e.a >= 0 && e.a < MINERALS.length) burst(p, s, e, { ...BASE, n: 10, col: mineralCol(e.a), alt: C_HOT, grav: 120, jit: 6 })
-      break
-    case 'beaconLit':
-      burst(p, s, e, { ...BASE, n: 48, col: C_EMBER, alt: C_HOT, vmin: 60, vmax: 300, life: 1.2, drag: 1.5, grav: -40, size: 2 })
-      break
-    case 'toss': // a = -1: denied, no flame left the hand
-      if (e.a >= 0 && e.a < MINERALS.length) burst(p, s, e, { ...BASE, n: 16, col: mineralCol(e.a), alt: C_HOT, vmin: 40, vmax: 160, life: 0.5 })
-      break
-    case 'roll': // a = heading: dust kicks out behind the player
-      burst(p, s, e, { ...DUST, n: 6, size: 0.5, ang: e.a + Math.PI, spread: 1.2, jit: 6 })
-      break
-    case 'rockLand': // a = 0 is the cosmetic-only landing; both draw the same dust ring
-      burst(p, s, e, { ...DUST, n: 14, size: 1, jit: 10 })
-      break
-    // rockWarn and dodge are not in the spec table (DEFAULT): grit shaking loose above the marker, and a short spark streak.
-    case 'rockWarn':
-      burst(p, s, e, { ...BASE, n: 3, col: C_DUST, alt: C_DUST, add: 0, vmin: 0, vmax: 20, life: 0.4, drag: 1, grav: 90, jit: Math.max(8, e.a) })
-      break
-    case 'dodge':
-      burst(p, s, e, { ...BASE, n: 4, col: C_EMBER, alt: C_HOT, shape: 1, vmin: 80, vmax: 160, life: 0.25, size: 4 })
-      break
-    default: break
-  }
+  const rows = TABLE[e.kind as SpawnKind]
+  if (rows) for (let r = 0; r < rows.length; r++) burst(p, s, e, rows[r], r)
 }
 
 // Pass 2. Spawns from events newer than the cursor. A fresh pool, a new run, or a seq counter that went backwards clears the pool,

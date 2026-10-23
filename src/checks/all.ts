@@ -35,6 +35,7 @@ import { run as quake } from './quake.check.ts'
 import { run as rollCheck } from './roll.check.ts'
 import { run as economy } from './economy.check.ts'
 import { run as escapeCheck } from './escape.check.ts'
+import { run as aiDevourer } from './ai-devourer.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -71,4 +72,5 @@ quake()
 rollCheck()
 economy()
 escapeCheck()
+aiDevourer()
 console.log('checks ok')
