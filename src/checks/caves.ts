@@ -2,14 +2,17 @@
 // rocks and world checks generate each seed once (SAE4 §1.10, MW §4 caves.ts row). Callers must not mutate the shared result.
 import type { CaveResult } from '../core/types.ts'
 import { generateCave } from '../world/generate.ts'
+import { paramsOf } from '../world/gen/params.ts'
 
-// ponytail: unbounded Map keyed by seed >>> 0; about 62 entries x ~80 kB per check run. Add an LRU if checks ever loop over 1000s of seeds.
+// ponytail: unbounded Map keyed by (class - 3) * 2^32 + (seed >>> 0), so class 3 keeps the plain seed key; about 62 entries x ~80 kB per
+// check run and class. Add an LRU if checks ever loop over 1000s of seeds.
 const memo = new Map<number, CaveResult>()
 
-export function caveOf(seed: number): CaveResult {
-  const key = seed >>> 0
+// depthClass is rounded and clamped to 1..4 by paramsOf (default 3, R-164).
+export function caveOf(seed: number, depthClass: number = 3): CaveResult {
+  const seedKey = seed >>> 0, cls = paramsOf(depthClass).depthClass, key = (cls - 3) * 2 ** 32 + seedKey
   let res = memo.get(key)
-  if (!res) { res = generateCave(key); memo.set(key, res) }
+  if (!res) { res = generateCave(seedKey, { depthClass: cls }); memo.set(key, res) }
   return res
 }
 

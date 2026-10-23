@@ -71,7 +71,17 @@ export const STR = {
   runSub: 'Reach the entrance',
   exit: 'EXIT',
   parry: { perfect: 'PERFECT', good: 'GOOD', poor: 'POOR' },
+  // depth class selector (R-164); `depth` above is the HUD word, so the settings title row gets its own key
+  depthLabel: 'Depth',
+  depthRow: 'Class', // end-screen row label
 } as const
+
+// Depth class names for classes 1..4 (R-164): DEPTH_NAMES[cls - 1]
+export const DEPTH_NAMES = ['Shallow', 'Short', 'Standard', 'Deep'] as const
+
+// Name for a depth class; anything that is not a finite number ('random', undefined, NaN) reads as Standard (class 3)
+export const depthName = (c: number | 'random' | undefined): string =>
+  typeof c === 'number' && Number.isFinite(c) ? DEPTH_NAMES[Math.min(4, Math.max(1, Math.round(c))) - 1] : DEPTH_NAMES[2]
 
 export const HELP = [
   {

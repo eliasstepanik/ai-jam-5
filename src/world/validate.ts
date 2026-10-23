@@ -6,8 +6,9 @@ import { MAP_H, MAP_W, TILE } from '../core/state.ts'
 import { depthOf, zoneOfDepth } from '../core/score.ts'
 import { T } from '../core/tuning.ts'
 import { bfs4 } from './bfs.ts'
-import { BEACON_DIST_BAND } from './gen/macro.ts'
 import { beaconRoomMask } from './gen/places.ts'
+import { BD_BASE, PARAMS, scaledMin } from './gen/params.ts'
+import type { CaveParams } from './gen/params.ts'
 import { buildMain, buildWide2 } from './gen/pockets.ts'
 import { MARGIN, SAFE_START, Z4_E_PER_TILE } from './gen/resin.ts'
 
@@ -16,9 +17,9 @@ export { MARGIN, Z4_E_PER_TILE }
 type Verdict = { ok: boolean; why: string }
 const FAIL = (why: string): Verdict => ({ ok: false, why })
 
-// The ONLY read of the Beacon distance band (R-164: C5 swaps this one function for CaveParams). Fallback floor = floor(0.9 * lo), CG4 §5.
-const bandOf = (res: CaveResult): readonly [number, number] =>
-  res.stats.fallback ? [Math.floor(0.9 * BEACON_DIST_BAND[0]), BEACON_DIST_BAND[1]] : BEACON_DIST_BAND
+// The ONLY read of the Beacon distance band (R-164): the class band, fallback floor p.fbLo = min(floor(0.9 * lo), 459), CG4 §5.
+const bandOf = (res: CaveResult, p: CaveParams): readonly [number, number] =>
+  res.stats.fallback ? [p.fbLo, p.bdHi] : [p.bdLo, p.bdHi]
 
 const CLUSTER = 3 // pickups[0..2] = Beacon cluster, large first (populate hand-over)
 const CUT_FRACTIONS = [0.25, 0.5, 0.75] // R-157
@@ -27,7 +28,8 @@ const CUT_R = 9 // rule 6 slice box radius, Chebyshev tiles from the cut tile (R
 // (R=10 rejects core seed 2). Multi-attempt measurement, attempts 0..3 over ~40 seeds: rule 6 falsely rejects 2/136
 // non-null results (seed 29 attempt 1, seed 5 attempt 3); a false reject costs one of 8 attempts, P(all 8 fail) is
 // negligible. Upgrade: derive the radius from corridor width
-const MIN_RESIN = 24, MIN_LARGE = 4, MIN_PLANTS = 6, MIN_VEINS = 24, MAX_PICKUPS = 60, MAX_VEINS = 80 // class-3 minimums (CG4 §5)
+// class-3 absolute minimums (CG4 §5); the four minimums scale with the Beacon distance via scaledMin (R-164), the two caps stay absolute
+const MIN_RESIN = 24, MIN_LARGE = 4, MIN_PLANTS = 6, MIN_VEINS = 24, MAX_PICKUPS = 60, MAX_VEINS = 80
 const GAP = { resin: 10, cluster: 3, plant: 12, vein: 4 } as const // CG2 §3.3
 const T1_DIST: readonly [number, number] = [7, 20], T2_DIST: readonly [number, number] = [8, 40]
 const T3_MAX_DIST = 66, T4_DIST: readonly [number, number] = [14, 40], T4_EUCLID: readonly [number, number] = [8, 16] // widest ranges placeTeach can produce
@@ -62,7 +64,7 @@ function cutKeepsBeacon(g: Uint8Array, t: Uint8Array, dist: Int32Array, m: numbe
   return d[res.beacon.ty * w + res.beacon.tx] >= 0
 }
 
-export function validateCave(res: CaveResult): Verdict {
+export function validateCave(res: CaveResult, p: CaveParams = PARAMS[3]): Verdict {
   const w = MAP_W, h = MAP_H, N = w * h
   // 1 size / alphabet
   if (res.tiles.length !== N) return FAIL('r1 size')
@@ -91,7 +93,7 @@ export function validateCave(res: CaveResult): Verdict {
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!t[ent + dy * w + dx]) return FAIL('r4 entrance')
   // 5 beacon
   if (!t[bea] || dist[bea] !== bd || bd !== maxD) return FAIL('r5 beacon')
-  if (!inRange(bd, bandOf(res))) return FAIL('r5 band')
+  if (!inRange(bd, bandOf(res, p))) return FAIL('r5 band')
   // 6 loops (R-157): at least one of the 25/50/75 % cuts leaves a route to the Beacon
   const main = buildMain(dist, w, ent, bea)
   if (main.length === 0) return FAIL('r6 loops')
@@ -138,8 +140,14 @@ export function validateCave(res: CaveResult): Verdict {
   if (!allGap(w, veins.map((v) => v.tile), GAP.vein)) return FAIL('r10 vein gap')
   // 11 counts
   const resin = pickups.filter((p) => p.kind === 'resin')
-  if (resin.length < MIN_RESIN || resin.filter((p) => p.size === 'large').length < MIN_LARGE || plantTiles.length < MIN_PLANTS ||
-    veins.length < MIN_VEINS || pickups.length > MAX_PICKUPS || veins.length > MAX_VEINS ||
+  // ponytail: the scale basis is max(bd, p.bdLo): a fallback ring may sit below the class band (bd >= p.fbLo) and must still meet the
+  // full class-lo minimums, which also keeps class 3 (bdLo 510 >= BD_BASE) byte-identical. Upgrade: scale by the raw bd if short rings need it
+  const sb = Math.max(bd, p.bdLo)
+  // ponytail: populate places only one large resin per cave below bd 300 (quota rounds to 0), while scaledMin(MIN_LARGE, sb) is 2 from
+  // sb 255, so classes 1-2 allow one fewer large resin whenever sb < BD_BASE (class 3, sb >= BD_BASE, unchanged). Upgrade: place 2 large
+  // resin per cave in populate when bd < BD_BASE, then drop the allowance
+  if (resin.length < scaledMin(MIN_RESIN, sb) || resin.filter((q) => q.size === 'large').length < scaledMin(MIN_LARGE, sb) - (sb < BD_BASE ? 1 : 0) ||
+    plantTiles.length < scaledMin(MIN_PLANTS, sb) || veins.length < scaledMin(MIN_VEINS, sb) || pickups.length > MAX_PICKUPS || veins.length > MAX_VEINS ||
     (['sodium', 'copper', 'strontium'] as const).some((m) => !veins.some((v) => v.mineral === m))) return FAIL('r11 counts')
   // 12 teaching T1-T4 (CG2 §4, widest legal ranges)
   const zoneOf = (i: number): number => zoneOfDepth(depthOf(dist[i], bd))

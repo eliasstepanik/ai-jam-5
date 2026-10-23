@@ -74,7 +74,7 @@ export function init(): State {
       hover: -1, screenAt: 0, helpFrom: 'title', confirmT: 0, denyT: 0, copyMsg: '',
       genPending: '', genAttempt: 0,
     },
-    settings: { volume: 0.7, muted: false, lastSeed: '', loaded: false, reducedFlash: false, quality: 'auto' },
+    settings: { volume: 0.7, muted: false, lastSeed: '', loaded: false, reducedFlash: false, quality: 'auto', depthClass: 3 },
     best: null, result: null,
     debug: { reveal: false, god: false, showPaths: false, freezeAi: false, overlay: false,
       noclip: false, speedMul: 4, freezeTorch: false, infiniteHp: false, noFog: false,

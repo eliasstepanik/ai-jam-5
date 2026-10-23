@@ -1,11 +1,12 @@
 import type { Rnd } from '../../core/rng.ts'
 import { bfs4, shortestPath } from '../bfs.ts'
 import { carveTunnel } from './carve.ts'
-import { BEACON_DIST_BAND, macroCellOf } from './macro.ts'
+import { MH, MW, macroCellOf } from './macro.ts'
 import type { MacroLayout } from './macro.ts'
+import { PARAMS } from './params.ts'
+import type { CaveParams } from './params.ts'
 
 export const GAIN_MIN = 50, SPREAD = 60, TUN_MAX = 12, U = 1000
-export const DMIN = BEACON_DIST_BAND[0]
 
 export function dilate(blk: Uint8Array, w: number, h: number, i: number, k: number): void {
   const cx = i % w, cy = Math.floor(i / w)
@@ -35,7 +36,9 @@ export function hasAlternativeRoute(g: Uint8Array, w: number, h: number, a: numb
 type Pair = { u: number; v: number; gain: number }
 
 // Runs pass 8 in place. A22 rejects the attempt if the returned loops count is < 2.
-export function pickLoopPairs(g: Uint8Array, w: number, h: number, entrance: number, L: MacroLayout, rnd: Rnd): {
+// R-164: p.bdLo is the per-class Beacon-distance floor (class 3: 510). Edge ids always use the full MW x MH numbering (macro.ts), so the
+// decoder below is class-independent; L.edges only holds the active ones.
+export function pickLoopPairs(g: Uint8Array, w: number, h: number, entrance: number, L: MacroLayout, rnd: Rnd, p: CaveParams = PARAMS[3]): {
   loops: number; tunnelTiles: number; pairs: [number, number][]
 } {
   const D0 = bfs4(g, w, h, entrance)
@@ -45,9 +48,10 @@ export function pickLoopPairs(g: Uint8Array, w: number, h: number, entrance: num
   const k = rnd.int(0, 1), pool: number[] = []
   for (let i = 0; i < g.length; i++) if (!g[i] && D0[i] >= 0.2 * dmax) pool.push(i)
   const adjacent = new Set<number>()
+  const nH = (MW - 1) * MH, nCells = MW * MH
   for (const e of L.edges) {
-    const a = e < 42 ? Math.floor(e / 7) * 8 + e % 7 : e - 42, b = a + (e < 42 ? 1 : 8)
-    adjacent.add(a * 48 + b); adjacent.add(b * 48 + a)
+    const a = e < nH ? Math.floor(e / (MW - 1)) * MW + e % (MW - 1) : e - nH, b = a + (e < nH ? 1 : MW)
+    adjacent.add(a * nCells + b); adjacent.add(b * nCells + a)
   }
   const candidates: Pair[] = []
   for (let sample = 0; sample < U; sample++) {
@@ -60,7 +64,7 @@ export function pickLoopPairs(g: Uint8Array, w: number, h: number, entrance: num
         const ring = Math.max(Math.abs(x - ux), Math.abs(y - uy)), v = y * w + x
         if (ring < 3 || g[v] || D0[v] < 0.2 * dmax) continue
         const vc = macroCellOf(v, w)
-        if (uc !== vc && !adjacent.has(uc * 48 + vc)) continue
+        if (uc !== vc && !adjacent.has(uc * nCells + vc)) continue
         const value = Math.abs(D0[u] - D0[v]) - Math.abs(x - ux) - Math.abs(y - uy)
         if (value > gain) { best = v; gain = value }
       }
@@ -83,7 +87,7 @@ export function pickLoopPairs(g: Uint8Array, w: number, h: number, entrance: num
       const dist = bfs4(copy, w, h, entrance)
       let max = 0
       for (const d of dist) if (d > max) max = d
-      if (max < Math.max(DMIN, 0.95 * dmax)) continue
+      if (max < Math.max(p.bdLo, 0.95 * dmax)) continue
       g.set(copy)
       tunnelTiles += carved
       pairs.push([u, v])

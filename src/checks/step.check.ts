@@ -277,7 +277,7 @@ export function run(): void {
     step(t, inp(['KeyM']), DT)
     ok(t.settings.muted && t.ui.seedInput === '', 'KeyM mutes on the title (seed field not focused)')
     t.settings.muted = false
-    t.ui.cursor = 4
+    t.ui.cursor = 5
     step(t, inp(['KeyM']), DT)
     ok(!t.settings.muted && t.ui.seedInput === 'm', 'KeyM types into the focused seed field and does not mute')
   }
@@ -285,7 +285,7 @@ export function run(): void {
   // C24 seed field: capped at SEED_MAX_LEN characters, also when several keys arrive in one update.
   {
     const s = init()
-    Object.assign(s.ui, { cursor: 4, seedInput: 'a'.repeat(SEED_MAX_LEN - 1) })
+    Object.assign(s.ui, { cursor: 5, seedInput: 'a'.repeat(SEED_MAX_LEN - 1) })
     for (let k = 0; k < 16; k++) step(s, inp(), DT)
     step(s, inp(['KeyB', 'KeyC']), DT)
     ok(s.ui.seedInput === 'a'.repeat(SEED_MAX_LEN - 1) + 'b', 'seed field takes characters up to SEED_MAX_LEN only (got ' + s.ui.seedInput.length + ')')
