@@ -1,8 +1,9 @@
 // Shared draw/hit geometry for the canvas developer panel. Four tabs fit a 360 px-high game window.
 import type { State } from '../core/types.ts'
-import { debugRunActive, torchSeconds } from '../systems/debug.ts'
+import { debugDepthClass, debugRunActive, torchSeconds } from '../systems/debug.ts'
 import type { DebugAction } from '../systems/debug.ts'
 import type { Rect } from './layout.ts'
+import { DEPTH_NAMES } from './strings.ts'
 
 export type DebugControlId = DebugAction | 'open' | 'tab0' | 'tab1' | 'tab2' | 'tab3' | 'speed' | 'torch'
 export type DebugControl = Rect & { id: DebugControlId; label: string; enabled: boolean; on?: boolean; slider?: number }
@@ -42,12 +43,13 @@ export function debugLayout(s: State, w: number, h: number, open: boolean, tab: 
     add('stats', 'Performance statistics', 174, x, width, true, s.debug.stats)
   }
   if (tab === 3) {
-    add('teleportEntrance', 'To entrance', 72, x, half, active)
-    add('teleportBeacon', 'To Beacon', 72, x + half + 6, half, active)
-    add('minimap', 'Black/white minimap', 106, x, width, true, s.debug.minimap)
-    add('arrow', 'Destination arrow', 140, x, width, true, s.debug.arrow)
-    add('arrowBeacon', 'Beacon', 174, x, half, true, s.debug.arrowTarget === 'beacon')
-    add('arrowExit', 'Cave exit', 174, x + half + 6, half, true, s.debug.arrowTarget === 'exit')
+    for (let i = 0; i < 4; i++) add(('depth' + (i + 1)) as DebugControlId, DEPTH_NAMES[i], 72, x + i * (fourth + 6), fourth, true, debugDepthClass(s) === i + 1)
+    add('teleportEntrance', 'To entrance', 106, x, half, active)
+    add('teleportBeacon', 'To Beacon', 106, x + half + 6, half, active)
+    add('minimap', 'Black/white minimap', 140, x, width, true, s.debug.minimap)
+    add('arrow', 'Destination arrow', 174, x, width, true, s.debug.arrow)
+    add('arrowBeacon', 'Beacon', 208, x, half, true, s.debug.arrowTarget === 'beacon')
+    add('arrowExit', 'Cave exit', 208, x + half + 6, half, true, s.debug.arrowTarget === 'exit')
   }
   return { panel, controls }
 }
