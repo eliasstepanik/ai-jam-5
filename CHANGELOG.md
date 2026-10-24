@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shadow mist around the three shadow creatures: soft dark wisps drift off each Lurker, Stalker and Devourer (small and quick, long thin trail, big and dense), trail behind them while they move, thicken during windup and lunge, spread out and fade as they die, and idle when the enemy AI is frozen in the dev panel. Purely visual: drawn procedurally in the particle pass under the darkness, capped per enemy and for the whole screen, thinned by the render quality tier and by Reduced flash, and it never touches gameplay state or the seeded random streams. A new check covers the per-type emission, state response, caps and the read-only guarantee.
 - Crack decor from the tileset: sparse deterministic ground cracks (about 5% of floor tiles, small and large) and wall-face cracks (about 8% of visible faces), chosen from a per-tile seed hash and baked into the chunk cache. Entrance, Beacon chamber and vein walls stay clean. A new check covers determinism, density, placement and the tileset frame names; floor variants are checked to be evenly spread over all 10.
 
+### Changed
+
+- The escape wisp now glides: it is a steered orb with its own velocity that eases toward the guide route, so it no longer snaps when the route changes (#81).
+
 ### Fixed
 
 - Enemy grey pixels stay visible outside torch range alongside purple eyes. Both layers now respect the actual foreground wall alpha, including raised walls covering walkable tiles (#121).

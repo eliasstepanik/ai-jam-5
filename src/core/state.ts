@@ -81,6 +81,6 @@ export function init(): State {
       noclip: false, speedMul: 4, freezeTorch: false, infiniteHp: false, noFog: false,
       hurtboxes: false, animations: false, stats: false, minimap: false, arrow: false, arrowTarget: 'beacon',
       commit: '', commitT: 0 },
-    wisp: { on: false, d: 0, p0: -1, ss: -1, ps: -1, path: [] },
+    wisp: { on: false, d: 0, p0: -1, ss: -1, ps: -1, path: [], wx: 0, wy: 0, wvx: 0, wvy: 0 },
   }
 }

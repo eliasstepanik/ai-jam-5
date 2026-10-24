@@ -12,7 +12,7 @@ import { currentQuality } from './quality.ts'
 import { drawMist } from './mist.ts'
 import type { View } from './view.ts'
 import { inView } from './view.ts'
-import { WISP_LEAD_MIN_PX, wispAt } from '../systems/escape-wisp.ts'
+import { WISP_LEAD_MIN_PX } from '../systems/escape-wisp.ts'
 import { C_EMBER, C_FLAME, C_HOT, C_SPARK, COL_ARG, COL_SPARK, PAL, TABLE, TAU } from './particles-table.ts'
 import type { Spec, SpawnKind } from './particles-table.ts'
 
@@ -83,23 +83,23 @@ export function consumeEvents(s: State): void {
 }
 
 // Escape guide wisp (#81), drawn in the additive pass so it glows through the darkness. Analytic like the pool: a pure function of
-// (State.wisp, meta.time). A hot orb at the lead distance plus sparkles trailing back along the route; reducedFlash holds the pulse
-// and the sparkle jitter still, and the quality tier thins the trail. The scratch point is reused so a frame allocates nothing.
-const WISP_PT = { x: 0, y: 0 }
+// (State.wisp, meta.time). A hot orb at the steered position (wx, wy) plus sparkles trailing behind it along its velocity; reducedFlash
+// holds the pulse and the sparkle jitter still, and the quality tier thins the trail. A frame allocates nothing.
 const WISP_TRAIL = 6 // sparkles behind the orb at full quality
-const WISP_GAP_PX = 14 // route distance between sparkles
+const WISP_GAP_PX = 14 // distance between sparkles behind the orb at full speed
+const WISP_TRAIL_FULL_PX_S = 120 // orb speed at which the trail reaches full length; a slower orb pulls it in (rests as one dot)
 const WISP_ORB = [[11, 0.18, C_EMBER], [6, 0.4, C_EMBER], [3, 0.95, C_HOT]] as const // [radius px, alpha, palette index] halo to core
 function drawWisp(ctx: CanvasRenderingContext2D, s: State, v: View): void {
   const w = s.wisp
   if (!w.on || s.meta.screen !== 'playing' || s.meta.phase !== 'escape' || w.path.length < 2) return
   const t = s.meta.time, calm = s.settings.reducedFlash, fade = Math.min(1, w.d / WISP_LEAD_MIN_PX)
   const pulse = calm ? 1 : 0.8 + 0.2 * Math.sin(t * TAU * 1.5)
-  const n = Math.round(WISP_TRAIL * currentQuality(s).particles)
+  const n = Math.round(WISP_TRAIL * currentQuality(s).particles), sp = Math.hypot(w.wvx, w.wvy), gap = WISP_GAP_PX * Math.min(1, sp / WISP_TRAIL_FULL_PX_S)
   for (let k = n; k >= 0; k--) { // back to front, the orb (k = 0) is painted last
-    if (k > 0 && w.d - k * WISP_GAP_PX < 0) continue // the trail never piles up on the player
-    wispAt(s, w.d - k * WISP_GAP_PX, WISP_PT)
+    if (k > 0 && k * gap < 1) continue // a resting orb draws no sparkles: stacked on the orb they would only brighten it (additive)
+    const back = (k * gap) / (sp || 1) // sparkles hang behind the orb along its velocity
     const j = calm ? 0 : Math.floor(t * 10), jx = (hash2(j, k, 11) - 0.5) * 4, jy = (hash2(j, k, 12) - 0.5) * 4
-    const x = WISP_PT.x + (k > 0 ? jx : 0), y = WISP_PT.y + (k > 0 ? jy : 0)
+    const x = w.wx - w.wvx * back + (k > 0 ? jx : 0), y = w.wy - w.wvy * back + (k > 0 ? jy : 0)
     if (!inView(v, x, y)) continue
     const a = fade * (1 - k / (n + 1))
     if (k > 0) {

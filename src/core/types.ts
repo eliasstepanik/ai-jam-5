@@ -34,7 +34,7 @@ export type State = {
   best: Best | null // mirror of persisted personal best
   result: RunResult | null // set when a run ends
   debug: Debug
-  wisp: { on: boolean; d: number; p0: number; ss: number; ps: number; path: number[] } // escape guide light (systems/escape-wisp.ts): d px lead, p0 player tile, ss/ps rock sigs seen, path tile ids
+  wisp: { on: boolean; d: number; p0: number; ss: number; ps: number; path: number[]; wx: number; wy: number; wvx: number; wvy: number } // escape guide orb (systems/escape-wisp.ts): d lead px, p0 player tile, ss/ps rock sigs, path tile ids, wx/wy world pos, wvx/wvy px/s
 }
 
 export type Meta = {
