@@ -21,6 +21,7 @@ import { stepPickups } from './pickups.ts'
 import { stepQuake } from './quake.ts'
 import { checkEnd } from './run.ts'
 import { stepScreens } from './screens.ts'
+import { stepWisp } from './escape-wisp.ts'
 
 export function step(s: State, input: Input, dt: number): void {
   s.meta.time += dt // D1: the run clock counts on every screen
@@ -48,6 +49,7 @@ export function step(s: State, input: Input, dt: number): void {
     stepSwing(s, it, dt) // D10
   }
   if (s.meta.phase === 'escape') stepQuake(s, dt) // X11 (R-169): before checkEnd, so lose wins a same-step tie
+  stepWisp(s, dt) // guide light (#81): after stepQuake so a landed rock re-routes in the same step; switches itself off outside the escape
   stepDirector(s, dt) // D11
   stepMonsters(s, dt) // D12
   if (s.meta.phase === 'descent') resolveParries(s) // D13, before D14: a parry on the bite step wins

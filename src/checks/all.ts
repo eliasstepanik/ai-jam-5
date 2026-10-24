@@ -46,6 +46,9 @@ import { run as migrateSettings } from './migrate-settings.check.ts'
 import { run as cracks } from './cracks.check.ts'
 import { run as devDepth } from './dev-depth.check.ts'
 import { run as commitCheck } from './commit.check.ts'
+import { run as escapeWisp } from './escape-wisp.check.ts'
+import { run as animSpeed } from './anim-speed.check.ts'
+import { run as shadowMist } from './shadow-mist.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -91,7 +94,10 @@ migrateSettings()
 cracks()
 devDepth()
 commitCheck()
+animSpeed()
 debug()
+escapeWisp()
+shadowMist()
 
 reportedBugs()
 console.log('checks ok')

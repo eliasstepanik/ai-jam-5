@@ -42,6 +42,7 @@ export function initPlayer(): Player {
     beaconHold: 0,
     hurtT: 0,
     hitFlash: 0,
+    gaitPhase: 0,
     stats: {
       mineralsUsed: 0, mineralsMined: 0, kills: 0, parries: 0, perfectParries: 0,
       damageTaken: 0, energyLostToHits: 0, resinUsed: 0, plantsEaten: 0,
@@ -80,5 +81,6 @@ export function init(): State {
       noclip: false, speedMul: 4, freezeTorch: false, infiniteHp: false, noFog: false,
       hurtboxes: false, animations: false, stats: false, minimap: false, arrow: false, arrowTarget: 'beacon',
       commit: '', commitT: 0 },
+    wisp: { on: false, d: 0, p0: -1, ss: -1, ps: -1, path: [] },
   }
 }

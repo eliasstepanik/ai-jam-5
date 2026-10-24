@@ -17,7 +17,7 @@ Repo: https://github.com/eliasstepanik/ai-jam-5
 
 ## Last Ember: how to play
 
-Theme: TORCH. You carry the last flame of a dying torch down a seeded cave. The flame is your light, your shield and your clock. Go deep, light the Beacon at the bottom, then run back up to the entrance before the cave collapses. Deeper is worth more, and dying still scores.
+Theme: TORCH. You carry the last flame of a dying torch down a seeded cave. The flame is your light, your shield and your clock. Go deep, light the Beacon at the bottom, then run back up to the entrance before the cave collapses. Deeper is worth more, and dying still scores. During the escape a glowing ember wisp floats ahead of you and shows the way to the exit.
 
 | Input | Action |
 |---|---|
@@ -34,7 +34,7 @@ Theme: TORCH. You carry the last flame of a dying torch down a seeded cave. The 
 
 The title screen has a seed field. The same seed gives the same cave, and the end screen can copy a `?seed=` link. Your best score (with its seed) is stored in the browser (localStorage). The in-game Help screen explains parrying and minerals.
 
-Sound is not included in this submission: the build ships no audio files and no audio engine. The Sound and `M` settings exist but have no effect yet.
+Sound: music, ambience and effects come from a WebAudio engine (`src/audio/`). `M` toggles mute and the Sound row in Settings sets the volume (left/right or `-`/`=`). Sounds without a shipped sample file fall back to a procedural synth recipe, so the game is never silent by accident. See [Audio](#audio).
 
 ## Quick start
 
@@ -56,6 +56,7 @@ Open the URL Vite prints.
 | `npm run preview` | Serve the built `dist/` locally. |
 | `npm run check` | Run `src/check.ts` (state-merge tests) with Node's built-in TypeScript type stripping. Prints `check ok`. |
 | `npm run zip` | Run `build`, then zip the contents of `dist/` into `game.zip` at the repo root. Needs the `zip` binary on your PATH. |
+| `npm run gen-audio` | Generate audio candidates on a ComfyUI server (`COMFY_URL` required), or install picked ones with `--pick`. Dev tool only, see [Audio](#audio). |
 
 ## Developer tools
 
@@ -71,6 +72,14 @@ Panel clicks and drags do not attack or activate menus. Torch time is estimated 
 In **DEV → Enemies**, **Force nearest enemy leap** immediately launches the nearest enemy in clear sight at the player. Spawn an enemy first if needed. This skips windup/cooldown and resumes frozen AI; collision, parries and damage work normally.
 
 Developer navigation is in **DEV → Navigate**: teleport to the entrance or Beacon, pick the depth class (Shallow, Short, Standard, Deep; during a run this restarts the same seed in that class, on the title screen it sets the class for the next run), toggle the black/white minimap beside health, and choose a Beacon or cave-exit direction arrow around the player. The arrow shows direct bearing; it does not route around walls.
+
+## Audio
+
+- **Engine** (`src/audio/`): WebAudio. A mixer has four groups (music, ambience, sfx, ui) with ducking (for example on pause) and a master chain with a compressor. One-shot voices are capped (24), so busy fights do not pile up. Mute (`M`) and volume are stored in the settings.
+- **Samples and fallback:** each sound id (`src/assets/sounds.ts`) loads `src/assets/audio/<id>.ogg` (Opus) or `<id>.mp3`. The format is picked once with `canPlayType`. A sound with no sample file plays its procedural synth recipe (`src/audio/synth*.ts`) instead. `PENDING_AUDIO` in `sounds.ts` lists the 14 sounds that still depend on a sample.
+- **Sample pipeline** (dev only, nothing here runs in the game): `npm run gen-audio` reads `tools/audio-manifest.json` (prompt tags, duration and seed per sound, 4 seed candidates each) and sends `tools/comfy/lastember_post.json` to a ComfyUI server given by the `COMFY_URL` environment variable (`COMFY_URL=http://<host>:8188 npm run gen-audio`; `--dry-run` needs no server). The workflow generates the clip with ACE-Step 1.5 turbo (`ace_step_1.5_turbo_aio.safetensors`), then trims it, makes it mono, cuts below 80 Hz, applies a fade envelope, peak-normalises it and exports Opus in Ogg (96k) and MP3 (V0).
+- **Auditioning is human:** the raw candidates land in the git-ignored `tools/audio-raw/`. The author listens, records the winning seed as `chosenSeed` in the manifest, and `npm run gen-audio -- --pick` copies those takes into `src/assets/audio/`. The pipeline does not choose for the author.
+- The post-processing nodes come from the ComfyUI community packs `audio-batch` and `DJZ-Pedalboard`. They are workflow tooling and not shipped.
 
 ## Hot reload
 
@@ -122,7 +131,10 @@ type Input = {
 │   ├── main.ts       # host: canvas, fixed-step loop, input, HMR (rarely edited)
 │   ├── game.ts       # the game: State, init, update, render (edit this)
 │   ├── merge.ts      # pure state-merge used on every hot swap
-│   └── check.ts      # tests for merge.ts, run by `npm run check`
+│   ├── check.ts      # tests for merge.ts, run by `npm run check`
+│   └── audio/        # WebAudio engine, mixer and synth fallback recipes
+├── scripts/          # dev scripts (gen-audio.ts, trim-characters.ts, checks)
+├── tools/            # audio manifest and ComfyUI workflow for gen-audio
 ├── docs/             # project plan: design, architecture, task split — snapshot of the knowledge base
 │   ├── index.md      # hub, start here
 │   └── tasks.md      # who implements what (Elias or Kittingsl)
@@ -207,16 +219,18 @@ The jam requires that the majority of the game is AI-generated. This section say
 | Light, darkness, fog memory, flame glow, particles, overlays and screen effects | Drawn in code (`src/render/`) | Procedural canvas 2D passes. |
 | The caves | Generated at run time from the seed (`src/world/`) | Seeded cellular automata plus a macro layout; there is no hand-made level data. |
 | Menu and HUD text | System monospace font stack (`ui-monospace`, `Menlo`, `Consolas` and similar) | No font file is shipped. |
-| Sound and music | None | This submission has no audio: 0 audio files and no audio engine (the sound catalog in `src/assets/sounds.ts` is data only). |
+| Sound and music | Samples: ACE-Step 1.5 turbo, run through ComfyUI. Fallback: procedural WebAudio synth recipes in code (`src/audio/synth*.ts`) | Prompts, durations and seeds are in `tools/audio-manifest.json`; the workflow is `tools/comfy/lastember_post.json`. Four candidates per sound, the author auditions and picks one. Post-processing is trim, mono, 80 Hz low-cut, fade, peak normalise, export to Opus (96k) and MP3 (V0). Sounds without a shipped sample use the synth recipe. See [Audio](#audio). |
 
 - OWNER TO FILL: the image generator (tool and model) and the prompts used for the cave tileset and the character atlas. The repo does not record them.
 - Asset formats, the asset catalog and the pipeline are described in `docs/architecture-assets-*.md` and `docs/notes/ai-jam-5-asset-formats-25d.md`.
 - `scripts/check-assets.ts` (part of `npm run check`) validates both sheets: frame counts, size limits and the frame names the renderer uses.
-- Asset foundations (the sprite and sound catalogs, the resource registry and the actor-sheet helpers: one animation per sheet, 64×64 cells, direction rows N, NE, E, SE, S, SW, W, NW) were implemented with Codex from the catalog and Kittingsl's sheet layout. The sound catalog is data only; no audio ships.
+- Asset foundations (the sprite and sound catalogs, the resource registry and the actor-sheet helpers: one animation per sheet, 64×64 cells, direction rows N, NE, E, SE, S, SW, W, NW) were implemented with Codex from the catalog and Kittingsl's sheet layout. The sound catalog (`src/assets/sounds.ts`) lists every sound id; the audio engine and samples came later, see Audio above.
 
 ## Credits and licences
 
 - Game code, procedural art, and the tileset and character atlas: AI-generated or written by AI agents for this jam; repo owner Elias Stepanik (eliasstepanik), with contributions from Kittingsl.
 - No third-party art, music, sound effects or fonts are used.
+- Audio samples (where shipped) were generated with [ACE-Step 1.5](https://github.com/ace-step/ACE-Step-1.5) turbo (Apache-2.0), using the ComfyUI repackage [Comfy-Org/ACE-Step-1.5](https://huggingface.co/Comfy-Org/ACE-Step-1.5). No Stability AI models were used for shipped assets.
+- Audio tooling only, not shipped: [ComfyUI](https://github.com/comfyanonymous/ComfyUI) (GPL-3.0) and the community node packs `audio-batch` and `DJZ-Pedalboard`.
 - Runtime dependencies: none (`package.json` has no `dependencies`). The game is plain TypeScript on canvas 2D.
 - Build tools only, not shipped as assets: [Vite](https://vite.dev/) (MIT) and [TypeScript](https://www.typescriptlang.org/) (Apache-2.0).

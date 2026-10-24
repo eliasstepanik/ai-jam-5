@@ -1,3 +1,5 @@
 node_modules
 dist
 *.zip
+# raw ComfyUI audio candidates (scripts/gen-audio.ts)
+tools/audio-raw/

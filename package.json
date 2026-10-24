@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "check": "node src/check.ts && node src/checks/all.ts && node scripts/check-assets.ts && node scripts/check-guard.ts",
-    "zip": "npm run build && cd dist && zip -r ../game.zip ."
+    "zip": "npm run build && cd dist && zip -r ../game.zip .",
+    "gen-audio": "node scripts/gen-audio.ts"
   },
   "engines": {
     "node": ">=22.18"

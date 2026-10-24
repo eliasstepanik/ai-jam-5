@@ -11,7 +11,7 @@ import type { SoundDef } from '../src/assets/sounds.ts'
 
 const ASSETS = 'src/assets', SCREENS_DIR = ASSETS + '/art', AUDIO = ASSETS + '/audio'
 const MB = 1024 * 1024, KB = 1024
-const NAME = /^[a-z0-9-]+(_[a-z0-9-]+)*\.(png|ogg|m4a)$/
+const NAME = /^[a-z0-9-]+(_[a-z0-9-]+)*\.(png|ogg|mp3)$/
 const PNG_SIG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const failures: string[] = []
 const fail = (msg: string): void => { failures.push('check failed: ' + msg) }
@@ -226,19 +226,22 @@ for (const [id, def] of Object.entries(SOUNDS) as [string, SoundDef][]) {
   if (!/^(mus|amb|sfx|ui)_[a-z0-9-]+$/.test(id)) fail('SOUNDS id ' + id + ' must match ^(mus|amb|sfx|ui)_[a-z0-9-]+$')
   if (def.loop && !(def.loop[0] >= 0 && def.loop[0] < def.loop[1])) fail('SOUNDS ' + id + ' loop must satisfy 0 <= start < end')
   for (const f of [...def.file ? [def.file] : [], ...def.layers ?? []]) {
-    used.add(f + '.ogg'); used.add(f + '.m4a')
+    used.add(f + '.ogg'); used.add(f + '.mp3')
     if (pending.has(id)) continue
-    for (const ext of ['ogg', 'm4a']) if (!existsSync(AUDIO + '/' + f + '.' + ext)) fail('SOUNDS ' + id + ' needs ' + AUDIO + '/' + f + '.' + ext + ' (or list it in PENDING_AUDIO)')
+    for (const ext of ['ogg', 'mp3']) if (!existsSync(AUDIO + '/' + f + '.' + ext)) fail('SOUNDS ' + id + ' needs ' + AUDIO + '/' + f + '.' + ext + ' (or list it in PENDING_AUDIO)')
   }
 }
-const audioBytes: Record<string, number> = { ogg: 0, m4a: 0 }
+// Spec deviation (user decision): the pair is Ogg Opus + MP3, not ogg + m4a as in the docs/ snapshot.
+// .ogg must be Opus-in-Ogg (an `OpusHead` identification header in the first page, not Vorbis); .mp3 starts with an ID3 tag or an MPEG frame sync.
+const audioBytes: Record<string, number> = { ogg: 0, mp3: 0 }
 for (const p of audioFiles) {
   const name = base(p), ext = name.slice(name.lastIndexOf('.') + 1)
   if (!used.has(name)) fail(p + ' is not referenced by any SOUNDS entry (orphan audio)')
-  if (ext !== 'ogg' && ext !== 'm4a') { fail(p + ' must be .ogg or .m4a'); continue }
-  const head = readFileSync(p).subarray(0, 12), size = sizeOf(p)
+  if (ext !== 'ogg' && ext !== 'mp3') { fail(p + ' must be .ogg or .mp3'); continue }
+  const head = readFileSync(p).subarray(0, 64), size = sizeOf(p)
   if (ext === 'ogg' && head.toString('latin1', 0, 4) !== 'OggS') fail(p + ' does not start with OggS')
-  if (ext === 'm4a' && head.toString('latin1', 4, 8) !== 'ftyp') fail(p + ' has no ftyp box at byte 4')
+  else if (ext === 'ogg' && !head.includes('OpusHead', 0, 'latin1')) fail(p + ' is not Ogg Opus (no OpusHead in the first 64 bytes)')
+  if (ext === 'mp3' && head.toString('latin1', 0, 3) !== 'ID3' && !(head[0] === 0xff && (head[1] & 0xe0) === 0xe0)) fail(p + ' has no ID3 tag or MPEG frame sync at byte 0')
   if (size > 900 * KB) fail(p + ' is ' + size + ' bytes, max 900 KB')
   audioBytes[ext] += size
 }
