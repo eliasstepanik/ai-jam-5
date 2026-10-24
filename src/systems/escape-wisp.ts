@@ -4,7 +4,6 @@
 // walls, landed rocks and pending rock shadows and re-routes when either changes. Pure and deterministic: no clock, no random; render is in render/particles.ts.
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
-import { seek } from '../entities/steer.ts'
 import { bfs4 } from '../world/bfs.ts'
 import { getPendingMask, getSolid } from '../world/caches.ts'
 import { idx, inMap, isSolidPx, N4, TILE, tileToWorld, worldToTile } from '../world/grid.ts'
@@ -18,6 +17,7 @@ export const WISP_MAX_PX_S = 360 // orb top speed: above the sprint speed (walkP
 export const WISP_STEER_PER_S = 4 // 1/s, velocity approach rate (time constant 0.25 s): floaty, like the shades' steerPerS
 const WISP_ARRIVE_K = 8 // 1/s, seek slows inside maxSpeed/8 px of the target; also the steady-state lag behind a moving target (30 px at sprint)
 export const WISP_LEASH = 1.5 // the orb is pulled back to the player when farther than WISP_LEAD_MAX_PX * this
+export const WISP_RESEED_PX = 2 * WISP_LEAD_MAX_PX * WISP_LEASH // ... and re-seeded at the player when farther than this (the pull cannot get round walls)
 const TARGET = { x: 0, y: 0 } // scratch point (no per-tick allocation)
 const WAY = { x: 0, y: 0 } // scratch waypoint
 
@@ -57,8 +57,12 @@ export function stepWisp(s: State, dt: number): void {
     if (w.on) { w.on = false; w.path = [] }
     return
   }
-  if (!w.on) Object.assign(w, { on: true, d: 0, p0: -1, ss: -1, ps: -1, path: [], wx: s.player.x, wy: s.player.y, wvx: 0, wvy: 0 }) // starts at the player, then glides out
-  else if (!inMap(s, worldToTile(w.wx), worldToTile(w.wy))) { // stale orb (hot reload from a state without wx/wy, or NaN): re-seed at the player at rest
+  const fresh = !w.on
+  if (fresh) Object.assign(w, { on: true, d: 0, p0: -1, ss: -1, ps: -1, path: [] })
+  // Starts at the player at rest, then glides out. Also re-seeded when the orb is stale or lost: in a wall or off the map or NaN (isSolidPx
+  // covers all three; migrate() fills a missing wx/wy with 0,0, a border wall), under a landed rock, or farther than WISP_RESEED_PX
+  // (noclip, teleport, hot reload far from the player). Re-seeding is a deliberate jump; no other path moves the orb faster than its top speed.
+  if (fresh || isSolidPx(s, w.wx, w.wy) || Math.hypot(w.wx - s.player.x, w.wy - s.player.y) > WISP_RESEED_PX) {
     w.wx = s.player.x
     w.wy = s.player.y
     w.wvx = 0
@@ -79,19 +83,24 @@ export function stepWisp(s: State, dt: number): void {
   // TARGET. It seeks that point, its velocity eases toward the wanted one, then it moves. A re-route moves the target, never the orb.
   // ponytail: axis slide (x then y, a point test on the solid mask) plus a waypoint fallback: when the straight line to the target is
   // blocked, the orb heads for the farthest tile it can see on its own steepest descent of the exit field. Ceiling: no path smoothing,
-  // so it can still snag in concave corners and cuts along tile centres. Upgrade: full path-following with funnel smoothing.
+  // so it can still snag in concave corners and cuts along tile centres. Beyond the leash the target is the player and there is no
+  // waypoint (the exit field leads away from the player): the orb seeks the player and slides along walls, and past WISP_RESEED_PX
+  // it is re-seeded. Upgrade: full path-following with funnel smoothing, and a field rooted at the player for the leash case.
   wispAt(s, w.d, TARGET)
   let tx = TARGET.x, ty = TARGET.y
-  if (Math.hypot(w.wx - s.player.x, w.wy - s.player.y) > WISP_LEAD_MAX_PX * WISP_LEASH) { tx = s.player.x; ty = s.player.y } // too far: come back (still by velocity)
-  if (!clear(s, w.wx, w.wy, tx, ty) && waypoint(s, w.wx, w.wy)) { tx = WAY.x; ty = WAY.y } // a wall between orb and target: go round by the route
-  const [dvx, dvy] = seek(w.wx, w.wy, tx, ty, WISP_MAX_PX_S, WISP_ARRIVE_K), k = 1 - Math.exp(-WISP_STEER_PER_S * dt)
+  const leashed = Math.hypot(w.wx - s.player.x, w.wy - s.player.y) > WISP_LEAD_MAX_PX * WISP_LEASH
+  if (leashed) { tx = s.player.x; ty = s.player.y } // too far: come back (still by velocity)
+  else if (!clear(s, w.wx, w.wy, tx, ty) && waypoint(s, w.wx, w.wy)) { tx = WAY.x; ty = WAY.y } // a wall between orb and target: go round by the route
+  // seek (entities/steer.ts) inlined, same numbers, so the tick allocates nothing: speed ramps down inside MAX / ARRIVE_K px of the target
+  const dx = tx - w.wx, dy = ty - w.wy, len = Math.hypot(dx, dy), speed = Math.min(WISP_MAX_PX_S, len * WISP_ARRIVE_K)
+  const dvx = len < 1e-6 ? 0 : dx / len * speed, dvy = len < 1e-6 ? 0 : dy / len * speed, k = 1 - Math.exp(-WISP_STEER_PER_S * dt)
   w.wvx += (dvx - w.wvx) * k
   w.wvy += (dvy - w.wvy) * k
-  // Slide: a blocked axis keeps its position and its velocity (the blend keeps steering it). An orb already inside a solid tile (a rock
-  // landed on it) moves freely, so it can never stay stuck.
-  const nx = w.wx + w.wvx * dt, ny = w.wy + w.wvy * dt, inside = isSolidPx(s, w.wx, w.wy)
-  if (inside || !isSolidPx(s, nx, w.wy)) w.wx = nx
-  if (inside || !isSolidPx(s, w.wx, ny)) w.wy = ny
+  // Slide: a blocked axis keeps its position and its velocity (the blend keeps steering it). The orb never starts a tick inside a solid
+  // tile (re-seeded above), so it never stays stuck.
+  const nx = w.wx + w.wvx * dt, ny = w.wy + w.wvy * dt
+  if (!isSolidPx(s, nx, w.wy)) w.wx = nx
+  if (!isSolidPx(s, w.wx, ny)) w.wy = ny
 }
 
 // True when the straight segment between two world points crosses no solid tile (point samples at most half a tile apart).

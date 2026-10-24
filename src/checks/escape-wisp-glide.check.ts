@@ -9,16 +9,16 @@ import { clearCaches } from '../world/caches.ts'
 import { isSolidPx, tileToWorld } from '../world/grid.ts'
 import { stepWisp, wispAt, WISP_LEAD_MAX_PX, WISP_LEASH, WISP_MAX_PX_S, WISP_STEER_PER_S } from '../systems/escape-wisp.ts'
 
-const DT = 1 / 60
-const SPRINT = T.player.walkPxS * T.escape.sprintMul
-const LEASH = WISP_LEAD_MAX_PX * WISP_LEASH
+export const DT = 1 / 60
+export const SPRINT = T.player.walkPxS * T.escape.sprintMul
+export const LEASH = WISP_LEAD_MAX_PX * WISP_LEASH
 const STEP = WISP_MAX_PX_S * DT + 1e-6
 const K = 1 - Math.exp(-WISP_STEER_PER_S * DT)
 const ok = (cond: boolean, msg: string): void => { if (!cond) throw new Error('check failed: escape-wisp-glide: ' + msg) }
 
 let runs = 5000
 // '#' wall, 'X' exit, 'P' player (tile centre), everything else floor. Escape phase, standing.
-function grid(rows: string[]): State {
+export function grid(rows: string[]): State {
   const s = init(), w = rows[0].length, raw = rows.join(''), x = raw.indexOf('X'), p = raw.indexOf('P')
   Object.assign(s.world, { w, h: rows.length, tiles: raw.replace('X', '.').replace('P', '.'),
     entrance: { tx: p % w, ty: Math.floor(p / w) }, exit: { tx: x % w, ty: Math.floor(x / w) } })
@@ -41,13 +41,13 @@ const ROOM = ['#########', '#X......#', '#.......#', '#.......#', '#.......#', '
 
 // One tick with the per-tick continuity asserts (position step <= max speed * dt, velocity change <= what the blend allows).
 // Returns true when the route was recomputed this tick (player tile or a rock signature changed).
-function tick(s: State, msg: string): boolean {
-  const w = s.wisp, ox = w.wx, oy = w.wy, ovx = w.wvx, ovy = w.wvy, p0 = w.p0, ss = w.ss, ps = w.ps, wasIn = isSolidPx(s, ox, oy)
+export function tick(s: State, msg: string): boolean {
+  const w = s.wisp, ox = w.wx, oy = w.wy, ovx = w.wvx, ovy = w.wvy, p0 = w.p0, ss = w.ss, ps = w.ps
   stepWisp(s, DT)
   ok(Math.hypot(w.wx - ox, w.wy - oy) <= STEP, msg + ': orb moved ' + Math.hypot(w.wx - ox, w.wy - oy) + ' px in one tick (max ' + STEP + ')')
   const dv = Math.hypot(w.wvx - ovx, w.wvy - ovy), bound = K * (WISP_MAX_PX_S + Math.hypot(ovx, ovy)) + 1e-6
   ok(dv <= bound, msg + ': velocity snapped by ' + dv + ' px/s (blend allows ' + bound + ')')
-  ok(wasIn || !isSolidPx(s, w.wx, w.wy), msg + ': orb moved into a wall tile at (' + w.wx + ',' + w.wy + ')') // a fixture may place the orb outside the map on purpose
+  ok(!isSolidPx(s, w.wx, w.wy), msg + ': orb is in a wall tile at (' + w.wx + ',' + w.wy + ')') // a re-seed or a slide never leaves it in a wall
   return w.p0 !== p0 || w.ss !== ss || w.ps !== ps
 }
 
@@ -127,11 +127,11 @@ function activation(): void {
 // Sprint the WHOLE route with no pauses (the player never stands) and watch the orb: it must keep up round the corners, not stall.
 // Returns lag = orb distance to the route sample at the lead (mean over ticks 200..260, a straight stretch), the share of ticks after a
 // 60-tick warm-up with lag < 100 px, windows of 10 ticks that stalled (target > 30 px away all window, orb moved < 1 px), the closest
-// approach to the exit tile and the final orb / player points. The player stops on the exit tile.
-function sprintRoute(s: State, ticks: number, msg: string): { lag: number; near: number; stalls: number; exit: number; x: number; y: number } {
+// approach to the exit tile, the largest orb-to-player distance and the final orb / player points. The player stops on the exit tile.
+export function sprintRoute(s: State, ticks: number, msg: string): { lag: number; near: number; stalls: number; exit: number; far: number; x: number; y: number } {
   const w = s.wisp, mw = s.world.w, tgt = { x: 0, y: 0 }, ex = tileToWorld(s.world.exit.tx), ey = tileToWorld(s.world.exit.ty)
   stepWisp(s, DT)
-  let lagSum = 0, near = 0, stalls = 0, exit = Infinity, minGap = Infinity, sx = w.wx, sy = w.wy
+  let lagSum = 0, near = 0, stalls = 0, exit = Infinity, far = 0, minGap = Infinity, sx = w.wx, sy = w.wy
   for (let k = 0; k < ticks; k++) {
     s.player.vx = w.path.length > 1 ? SPRINT : 0
     if (w.path.length > 1) { // walk to the next route tile centre at sprint speed
@@ -146,6 +146,7 @@ function sprintRoute(s: State, ticks: number, msg: string): { lag: number; near:
     if (k >= 60 && gap < 100) near++
     if (k >= 200 && k < 260) lagSum += gap
     exit = Math.min(exit, Math.hypot(w.wx - ex, w.wy - ey))
+    far = Math.max(far, Math.hypot(w.wx - s.player.x, w.wy - s.player.y))
     minGap = k % 10 === 0 ? gap : Math.min(minGap, gap)
     if (k % 10 === 9) { // window end
       if (k >= 69 && minGap > 30 && Math.hypot(w.wx - sx, w.wy - sy) < 1) stalls++
@@ -153,18 +154,18 @@ function sprintRoute(s: State, ticks: number, msg: string): { lag: number; near:
       sy = w.wy
     } else if (k % 10 === 0) { sx = w.wx; sy = w.wy }
   }
-  return { lag: lagSum / 60, near: near / (ticks - 60), stalls, exit, x: w.wx, y: w.wy }
+  return { lag: lagSum / 60, near: near / (ticks - 60), stalls, exit, far, x: w.wx, y: w.wy }
 }
 
 // BEND without a pause: the orb rounds the corner pair, stays near its target for >= 95% of the ticks and reaches the last leg.
-// Steady lag behind a target moving at sprint: seek speed = lag * ARRIVE_K must equal SPRINT, so about SPRINT / 8 = 30 px; measured 25.5 px
-// on the straight stretch. Band 15..36 (-40% / +40% of 25.5): ARRIVE_K 8 -> 3 gives 76 px and fails it (also the 'near' share above).
+// Steady lag behind a target moving at sprint: seek speed = lag * ARRIVE_K must equal SPRINT, so about SPRINT / 8 = 30 px; measured 25.7 px
+// on the straight stretch. Band 19..32 (-25% / +25%): ARRIVE_K 12 gives 15.9 px, 6 gives 35.8, 3 gives 76 (and fails 'near' above).
 // (WISP_LEASH 1.5 -> 1.45 is not killed on purpose: a 3% shift of the leash is not observable in a cosmetic orb; leashEdge pins 1.4 / 1.6.)
 function bendRound(): void {
   const s = grid(BEND), r = sprintRoute(s, 800, 'bend')
   ok(r.near >= 0.95, 'bend: orb within 100 px of its target on only ' + r.near + ' of the ticks (want >= 0.95)')
   ok(r.exit < 100, 'bend: orb never reached the last leg, closest to the exit ' + r.exit + ' px')
-  ok(r.lag > 15 && r.lag < 36, 'bend: steady lag ' + r.lag + ' px at sprint, want 15..36 (ARRIVE_K)')
+  ok(r.lag > 19 && r.lag < 32, 'bend: steady lag ' + r.lag + ' px at sprint, want 19..32 (ARRIVE_K)')
 }
 
 // Thin-wall hairpin: the route runs along row 3, up the gap at (10,2) and back along row 1. The straight line from the orb to its target
@@ -176,8 +177,8 @@ function hairpin(): void {
   ok(r.exit < 8, 'hairpin: the orb came only ' + r.exit + ' px close to the exit')
 }
 
-// A far orb accelerates at once: after 0.5 s the displacement is the steered travel, not half of it (integration at dt / 2), and an orb
-// off the map (stale hot-reload state, wx = wy = 0 -> NaN or outside) is re-seeded at the player at rest.
+// A far orb accelerates at once: after 0.5 s the displacement is the steered travel, not half of it (integration at dt / 2).
+// (Stale and lost orbs are in escape-wisp-edge.check.ts.)
 function farAndStale(): void {
   const s = grid(VHALL), w = s.wisp
   stepWisp(s, DT)
@@ -187,10 +188,6 @@ function farAndStale(): void {
   for (let k = 0; k < 30; k++) tick(s, 'far')
   const moved = Math.hypot(w.wx - s.player.x - 200, w.wy - s.player.y + 64)
   ok(moved >= 80, 'far: the orb moved only ' + moved + ' px in 30 ticks (measured 104.7, half-step integration gives about 52)')
-  w.wx = -50
-  w.wy = Number.NaN
-  stepWisp(s, DT)
-  ok(Math.hypot(w.wx - s.player.x, w.wy - s.player.y) < 2 && Math.hypot(w.wvx, w.wvy) < 30, 'stale: an orb off the map is re-seeded at the player (orb ' + w.wx + ',' + w.wy + ')')
 }
 
 // Orb dragged far away (beyond the leash) from the player at a full sprint lead: it returns toward the PLAYER, not toward the route point.
