@@ -53,7 +53,7 @@ function roundTrip(s: unknown, name: string): void {
 // Mid-run state: every collection non-empty and every field away from its default, so migrate must preserve real values.
 // Entities are typed against types.ts: a new field breaks tsc here, a stale DEFAULT_* breaks #5 at run time.
 const monster: Monster = {
-  id: 2, kind: 'stalker', x: 1200, y: 900, vx: 12, vy: -3, hp: 1, ai: 'stalk', aiT: 0.4, aiDur: 1.2, beat: 1,
+  ...DEFAULT_MONSTER, id: 2, kind: 'stalker', x: 1200, y: 900, vx: 12, vy: -3, hp: 1, ai: 'stalk', aiT: 0.4, aiDur: 1.2, beat: 1,
   ringAngle: 0.5, ringRadius: 90, orbitDir: -1, lungeDir: 1.2, lungeCd: 0.7, stunned: 0.5, seen: true,
   contactT: 0.25, stuckT: 0.1, behindT: 0.3, lastX: 1198, lastY: 901, fleeing: true,
 }
