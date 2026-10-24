@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Moving players face their travel direction; stationary descent aiming still follows the mouse (#124).
+- Walk/run animation uses measured displacement, including partial collision and noclip map clamping (#79).
+- Ore placement uses solid south-facing vein walls and their visible interaction tiles, including teaching veins (#120).
+- On-screen enemies remain rendered beyond torch range; purple atlas eyes emit in darkness while walls still block sight (#121).
+- Corrected menu control/audio/end-screen hints, made the quit shortcut honor confirmation, and prevented small help-page text overlaps. The menu audit is recorded in .github/bug-audits/menu-content.txt (#78).
+
 - The depth readout no longer looks the same for every depth class. The HUD zone line, the end screen depth class row and the title Best line now show the class name, and the HUD and end screen also show the real Beacon path length in tiles (for example `Shallow · 262 tiles` against `Deep · 768 tiles`). The 0..40 depth metric and every score number are unchanged. A new check pins the text per class.
 - Audio: removed clicking sounds. The flame loop is now a warm flame with a soft flicker and gentle ember pops instead of sharp crackle bursts. Softer attacks on mine hit, UI click, eye open, roll, relight, hurt, heartbeat and drip. Seamless noise loops (no thump every 2 s).
 - The player's walk and run animation now plays at the pace of the actual movement speed, so the feet no longer slide: slower when moving slowly or along walls, faster when sprinting or flying with noclip.

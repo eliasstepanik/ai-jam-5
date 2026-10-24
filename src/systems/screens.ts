@@ -165,7 +165,7 @@ export function stepScreens(s: State, input: Input): boolean {
   if (sc === 'title' && !seedFocus && k.has('KeyH')) { ui(s, 'uiConfirm'); go(s, 'help'); return false }
   if (sc === 'paused') {
     if (k.has('Escape') || k.has('KeyP')) { ui(s, 'uiConfirm'); go(s, 'playing'); return true }
-    if (k.has('KeyQ')) { ui(s, 'uiBack'); go(s, 'title'); return false }
+    if (k.has('KeyQ')) { u.cursor = 4; activate(s, 4); return false }
   }
   if (sc === 'dead' || sc === 'won') {
     if (k.has('KeyT')) { activate(s, 1); return false }

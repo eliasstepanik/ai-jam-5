@@ -82,7 +82,9 @@ export function run(): void {
   step(s, inp(['Blur']), DT)
   idle(s, LOCK_STEPS)
   step(s, inp(['KeyQ']), DT)
-  ok(s.meta.screen === 'title', 'paused + KeyQ -> title')
+  ok(s.meta.screen === 'paused' && s.ui.confirmT > 0, 'first Q asks before abandoning the run')
+  step(s, inp(['KeyQ']), DT)
+  ok(s.meta.screen === 'title', 'second Q confirms quit to title')
 
   // playing -> dead -> title; dead + Enter inside 0.5 s stays dead, after it Retry queues a new generation
   const d = ended(false)

@@ -10,7 +10,7 @@ import type { State } from '../core/types.ts'
 import { MAX_ATTEMPTS } from '../world/generate.ts'
 import { logoGlow } from './anim.ts'
 import { COL, button, keycap, panel, text, textWidth } from './draw.ts'
-import { helpLayout, pauseLayout, titleLayout, titleReady } from './layout.ts'
+import { helpLayout, pauseLayout, titleLayout, titleReady, uiScale } from './layout.ts'
 import { drawEnd } from './menus-end.ts'
 import { TAU, fadeIn, fill, focus } from './menu-kit.ts'
 import type { Ctx } from './menu-kit.ts'
@@ -111,8 +111,8 @@ function drawTitle(ctx: Ctx, s: State, w: number, h: number): void {
   const best = b ? `${STR.best} ${b.score} · ${depthName(s.ui.bestClass)} · ${STR.depthWord} ${b.depth}/${DEPTH_MAX} · ${clock(b.seconds)}${b.won ? ' · ' + STR.bestEscaped : ''}` : STR.noBest
   text(ctx, best, l.best.x, l.best.y, 14, u, COL.dim)
   if (!s.ui.storageOk) text(ctx, STR.storageOff, l.storage.x, l.storage.y, 12, u, COL.accent)
-  const muted = res.audio.state !== 'running' // browsers keep audio locked until the first click
-  text(ctx, muted ? STR.soundHint : STR.version, l.soundHint.x, l.soundHint.y, 12, u, muted ? COL.accent : COL.dim, { align: 'right' })
+  const hint = res.audio.state === 'failed' ? STR.soundFailed : s.settings.muted ? STR.soundMuted : res.audio.state !== 'running' ? STR.soundHint : STR.version
+  text(ctx, hint, l.soundHint.x, l.soundHint.y, 12, u, hint === STR.version ? COL.dim : COL.accent, { align: 'right' })
   ctx.restore()
 }
 
@@ -236,7 +236,14 @@ function drawHelp(ctx: Ctx, s: State, w: number, h: number): void {
 export function drawScreen(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
   const sc = s.meta.screen
   if (sc === 'title') drawTitle(ctx, s, w, h)
-  else if (sc === 'help') drawHelp(ctx, s, w, h)
+  else if (sc === 'help') {
+    // Scale the whole help page together: clamped individual font sizes overlap its columns on small screens.
+    const scale = Math.min(1, uiScale(w, h))
+    ctx.save()
+    ctx.scale(scale, scale)
+    drawHelp(ctx, s, w / scale, h / scale)
+    ctx.restore()
+  }
   else if (sc === 'paused') drawPause(ctx, s, w, h)
   else if (sc === 'dead' || sc === 'won') drawEnd(ctx, s, w, h)
 }

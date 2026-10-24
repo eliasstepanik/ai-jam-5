@@ -22,7 +22,7 @@ Theme: TORCH. You carry the last flame of a dying torch down a seeded cave. The 
 | Input | Action |
 |---|---|
 | `W` `A` `S` `D` or arrow keys | Move |
-| Mouse | Aim (during the escape you face the way you move) |
+| Mouse | Face while standing; moving faces the travel direction |
 | Left click | Swing the torch / parry a lunging shade (click as its eyes flare) |
 | `E` (hold) | Mine an ore vein, or light the Beacon |
 | `1` `2` `3` | Pick a mineral (changes the flame colour and its effect) |
@@ -30,7 +30,7 @@ Theme: TORCH. You carry the last flame of a dying torch down a seeded cave. The 
 | `Space` | Roll (escape only) |
 | `Esc` or `P` | Pause |
 | `M` | Mute toggle |
-| `Enter`, `T`, `C` | Menus and end screen: confirm or new run, retry seed, copy a share link |
+| `Enter`, `T`, `C` | Confirm selected button, retry seed, copy a share link |
 
 The title screen has a seed field. The same seed gives the same cave, and the end screen can copy a `?seed=` link. Your best score (with its seed) is stored in the browser (localStorage). The in-game Help screen explains parrying and minerals.
 

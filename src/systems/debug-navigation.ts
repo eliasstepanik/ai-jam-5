@@ -13,7 +13,7 @@ export function debugTeleport(s: State, destination: 'entrance' | 'beacon', view
   if (i < 0) { toast(s, 'No free floor near ' + destination); return false }
   const p = s.player
   p.x = (i % w + 0.5) * TILE; p.y = (Math.floor(i / w) + 0.5) * TILE
-  p.vx = p.vy = 0
+  p.vx = p.vy = p.gaitSpeed = 0
   p.roll.t = 0; p.roll.invuln = 0
   p.swing.active = false; p.swing.buffer = 0
   p.mining.targetTile = -1; p.mining.progress = 0; p.beaconHold = 0
