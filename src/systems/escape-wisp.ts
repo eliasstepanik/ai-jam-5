@@ -7,7 +7,7 @@ import { T } from '../core/tuning.ts'
 import { seek } from '../entities/steer.ts'
 import { bfs4 } from '../world/bfs.ts'
 import { getPendingMask, getSolid } from '../world/caches.ts'
-import { idx, inMap, tileToWorld, worldToTile } from '../world/grid.ts'
+import { idx, inMap, isSolidPx, tileToWorld, worldToTile } from '../world/grid.ts'
 import { downhill, playerSources } from '../world/route.ts'
 
 export const WISP_LEAD_MIN_PX = 64 // wisp distance from the player (along the route) when the player stands still
@@ -17,7 +17,7 @@ const WISP_EASE = 4 // 1/s, how fast the lead follows the player's speed
 export const WISP_MAX_PX_S = 360 // orb top speed: above the sprint speed (walkPxS * sprintMul = 240) so it can lead, far from a teleport
 export const WISP_STEER_PER_S = 4 // 1/s, velocity approach rate (time constant 0.25 s): floaty, like the shades' steerPerS
 const WISP_ARRIVE_K = 8 // 1/s, seek slows inside maxSpeed/8 px of the target; also the steady-state lag behind a moving target (30 px at sprint)
-const WISP_LEASH = 1.5 // the orb is pulled back to the player when farther than WISP_LEAD_MAX_PX * this
+export const WISP_LEASH = 1.5 // the orb is pulled back to the player when farther than WISP_LEAD_MAX_PX * this
 const TARGET = { x: 0, y: 0 } // scratch point (no per-tick allocation)
 
 // Own exit field: same blocked set as getExitDist (walls + landed rocks + pending rock shadows) but a private buffer. getExitDist
@@ -70,15 +70,19 @@ export function stepWisp(s: State, dt: number): void {
   w.d += (want - w.d) * (1 - Math.exp(-WISP_EASE * dt))
   // The orb is a body with its own velocity (like the shades in entities/steer.ts): the route point at the eased lead is only its
   // TARGET. It seeks that point, its velocity eases toward the wanted one, then it moves. A re-route moves the target, never the orb.
-  // ponytail: no wall collision; the target lies on walkable floor and the orb eases toward it. Add collision if it cuts corners.
+  // ponytail: axis slide only (x then y, a point test on the solid mask), can snag in concave corners; the leash and the moving target
+  // free it. Upgrade: steer around corners via route waypoints.
   wispAt(s, w.d, TARGET)
   let tx = TARGET.x, ty = TARGET.y
   if (Math.hypot(w.wx - s.player.x, w.wy - s.player.y) > WISP_LEAD_MAX_PX * WISP_LEASH) { tx = s.player.x; ty = s.player.y } // too far: come back (still by velocity)
   const [dvx, dvy] = seek(w.wx, w.wy, tx, ty, WISP_MAX_PX_S, WISP_ARRIVE_K), k = 1 - Math.exp(-WISP_STEER_PER_S * dt)
   w.wvx += (dvx - w.wvx) * k
   w.wvy += (dvy - w.wvy) * k
-  w.wx += w.wvx * dt
-  w.wy += w.wvy * dt
+  // Slide: a blocked axis keeps its position and its velocity (the blend keeps steering it). An orb already inside a solid tile (a rock
+  // landed on it) moves freely, so it can never stay stuck.
+  const nx = w.wx + w.wvx * dt, ny = w.wy + w.wvy * dt, inside = isSolidPx(s, w.wx, w.wy)
+  if (inside || !isSolidPx(s, nx, w.wy)) w.wx = nx
+  if (inside || !isSolidPx(s, w.wx, ny)) w.wy = ny
 }
 
 // Point `d` px along the route from the player (clamped to the route end), written to `out`. The first leg runs from the player's own

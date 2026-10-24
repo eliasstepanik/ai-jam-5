@@ -6,12 +6,12 @@ import { init } from '../core/state.ts'
 import { fnv1a } from '../core/rng.ts'
 import { T } from '../core/tuning.ts'
 import { clearCaches } from '../world/caches.ts'
-import { tileToWorld } from '../world/grid.ts'
-import { stepWisp, wispAt, WISP_LEAD_MAX_PX, WISP_MAX_PX_S, WISP_STEER_PER_S } from '../systems/escape-wisp.ts'
+import { isSolidPx, tileToWorld } from '../world/grid.ts'
+import { stepWisp, wispAt, WISP_LEAD_MAX_PX, WISP_LEASH, WISP_MAX_PX_S, WISP_STEER_PER_S } from '../systems/escape-wisp.ts'
 
 const DT = 1 / 60
 const SPRINT = T.player.walkPxS * T.escape.sprintMul
-const LEASH = WISP_LEAD_MAX_PX * 1.5 // escape-wisp.ts WISP_LEASH (not exported); a drift in either shows up in leash() below
+const LEASH = WISP_LEAD_MAX_PX * WISP_LEASH
 const STEP = WISP_MAX_PX_S * DT + 1e-6
 const K = 1 - Math.exp(-WISP_STEER_PER_S * DT)
 const ok = (cond: boolean, msg: string): void => { if (!cond) throw new Error('check failed: escape-wisp-glide: ' + msg) }
@@ -39,11 +39,12 @@ const ROOM = ['#########', '#X......#', '#.......#', '#.......#', '#.......#', '
 // One tick with the per-tick continuity asserts (position step <= max speed * dt, velocity change <= what the blend allows).
 // Returns true when the route was recomputed this tick (player tile or a rock signature changed).
 function tick(s: State, msg: string): boolean {
-  const w = s.wisp, ox = w.wx, oy = w.wy, ovx = w.wvx, ovy = w.wvy, p0 = w.p0, ss = w.ss, ps = w.ps
+  const w = s.wisp, ox = w.wx, oy = w.wy, ovx = w.wvx, ovy = w.wvy, p0 = w.p0, ss = w.ss, ps = w.ps, wasIn = isSolidPx(s, ox, oy)
   stepWisp(s, DT)
   ok(Math.hypot(w.wx - ox, w.wy - oy) <= STEP, msg + ': orb moved ' + Math.hypot(w.wx - ox, w.wy - oy) + ' px in one tick (max ' + STEP + ')')
   const dv = Math.hypot(w.wvx - ovx, w.wvy - ovy), bound = K * (WISP_MAX_PX_S + Math.hypot(ovx, ovy)) + 1e-6
   ok(dv <= bound, msg + ': velocity snapped by ' + dv + ' px/s (blend allows ' + bound + ')')
+  ok(wasIn || !isSolidPx(s, w.wx, w.wy), msg + ': orb moved into a wall tile at (' + w.wx + ',' + w.wy + ')') // a fixture may place the orb outside the map on purpose
   return w.p0 !== p0 || w.ss !== ss || w.ps !== ps
 }
 
@@ -136,6 +137,25 @@ function leash(): void {
   ok(Math.hypot(w.wx - s.player.x, w.wy - s.player.y) <= LEASH, 'leash: back within the leash after 4 s')
 }
 
+// Leash boundary from both sides. Open hall, route runs right along the player's row; the orb sits straight above the player, so a pull
+// toward the route target has vx > 0 and a pull toward the player has vx = 0. A leash multiplier that drifts either way flips a case.
+function leashEdge(): void {
+  const rows = Array.from({ length: 14 }, (_, r) => '#' + (r === 0 || r === 13 ? '#'.repeat(30) : r === 12 ? 'P' + '.'.repeat(28) + 'X' : '.'.repeat(30)) + '#')
+  // Edges: 0.97/1.03 x the live leash (tracks the constant), and fixed 1.4/1.6 x WISP_LEAD_MAX_PX anchors that pin the design value (~1.5).
+  for (const [dist, toRoute] of [[0.97 * LEASH, true], [1.03 * LEASH, false], [1.4 * WISP_LEAD_MAX_PX, true], [1.6 * WISP_LEAD_MAX_PX, false]] as const) {
+    const s = grid(rows), w = s.wisp, f = dist / LEASH
+    stepWisp(s, DT)
+    w.d = WISP_LEAD_MAX_PX
+    w.wx = s.player.x
+    w.wy = s.player.y - dist
+    w.wvx = 0
+    w.wvy = 0
+    ok(!isSolidPx(s, w.wx, w.wy), 'leash edge: fixture orb sits in a wall')
+    stepWisp(s, DT)
+    ok(toRoute ? w.wvx > 1e-3 : Math.abs(w.wvx) < 1e-9 && w.wvy > 0, 'leash edge ' + f + ' x leash: orb pulled to the ' + (toRoute ? 'route target' : 'player') + ' (wvx ' + w.wvx + ', wvy ' + w.wvy + ')')
+  }
+}
+
 // No route (exit buried under a pending rock): no throw, the orb drifts to the player and rests there.
 function emptyRoute(): void {
   const s = grid(ROOM), w = s.wisp
@@ -159,5 +179,6 @@ export function run(): void {
   glide()
   reroute()
   leash()
+  leashEdge()
   emptyRoute()
 }
