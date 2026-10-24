@@ -4,6 +4,7 @@
 // walls, landed rocks and pending rock shadows and re-routes when either changes. Pure and deterministic: no clock, no random; render is in render/particles.ts.
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
+import { seek } from '../entities/steer.ts'
 import { bfs4 } from '../world/bfs.ts'
 import { getPendingMask, getSolid } from '../world/caches.ts'
 import { idx, inMap, tileToWorld, worldToTile } from '../world/grid.ts'
@@ -13,6 +14,11 @@ export const WISP_LEAD_MIN_PX = 64 // wisp distance from the player (along the r
 export const WISP_LEAD_MAX_PX = 192 // ... and at full sprint
 const WISP_PATH_TILES = 9 // cached route length: 8 tile steps = 256 px, enough for the lead plus the trail
 const WISP_EASE = 4 // 1/s, how fast the lead follows the player's speed
+export const WISP_MAX_PX_S = 360 // orb top speed: above the sprint speed (walkPxS * sprintMul = 240) so it can lead, far from a teleport
+export const WISP_STEER_PER_S = 4 // 1/s, velocity approach rate (time constant 0.25 s): floaty, like the shades' steerPerS
+const WISP_ARRIVE_K = 8 // 1/s, seek slows inside maxSpeed/8 px of the target; also the steady-state lag behind a moving target (30 px at sprint)
+const WISP_LEASH = 1.5 // the orb is pulled back to the player when farther than WISP_LEAD_MAX_PX * this
+const TARGET = { x: 0, y: 0 } // scratch point (no per-tick allocation)
 
 // Own exit field: same blocked set as getExitDist (walls + landed rocks + pending rock shadows) but a private buffer. getExitDist
 // recycles two shared buffers; an extra caller would shift when other readers' fields get overwritten (rocks-prop.check's bot
@@ -50,7 +56,7 @@ export function stepWisp(s: State, dt: number): void {
     if (w.on) { w.on = false; w.path = [] }
     return
   }
-  if (!w.on) Object.assign(w, { on: true, d: 0, p0: -1, ss: -1, ps: -1, path: [] }) // starts at the player, then flies out
+  if (!w.on) Object.assign(w, { on: true, d: 0, p0: -1, ss: -1, ps: -1, path: [], wx: s.player.x, wy: s.player.y, wvx: 0, wvy: 0 }) // starts at the player, then glides out
   // ponytail: recompute only when the player's tile or a rock signature changes (about 7 times a second at sprint); the exit field
   // is not even asked for otherwise. Upgrade: reuse the old path tail instead of walking the field again if profiling shows it.
   const here = idx(s, worldToTile(s.player.x), worldToTile(s.player.y))
@@ -62,6 +68,17 @@ export function stepWisp(s: State, dt: number): void {
   const run = Math.min(1, Math.hypot(s.player.vx, s.player.vy) / (T.player.walkPxS * T.escape.sprintMul))
   const want = WISP_LEAD_MIN_PX + (WISP_LEAD_MAX_PX - WISP_LEAD_MIN_PX) * run
   w.d += (want - w.d) * (1 - Math.exp(-WISP_EASE * dt))
+  // The orb is a body with its own velocity (like the shades in entities/steer.ts): the route point at the eased lead is only its
+  // TARGET. It seeks that point, its velocity eases toward the wanted one, then it moves. A re-route moves the target, never the orb.
+  // ponytail: no wall collision; the target lies on walkable floor and the orb eases toward it. Add collision if it cuts corners.
+  wispAt(s, w.d, TARGET)
+  let tx = TARGET.x, ty = TARGET.y
+  if (Math.hypot(w.wx - s.player.x, w.wy - s.player.y) > WISP_LEAD_MAX_PX * WISP_LEASH) { tx = s.player.x; ty = s.player.y } // too far: come back (still by velocity)
+  const [dvx, dvy] = seek(w.wx, w.wy, tx, ty, WISP_MAX_PX_S, WISP_ARRIVE_K), k = 1 - Math.exp(-WISP_STEER_PER_S * dt)
+  w.wvx += (dvx - w.wvx) * k
+  w.wvy += (dvy - w.wvy) * k
+  w.wx += w.wvx * dt
+  w.wy += w.wvy * dt
 }
 
 // Point `d` px along the route from the player (clamped to the route end), written to `out`. The first leg runs from the player's own
