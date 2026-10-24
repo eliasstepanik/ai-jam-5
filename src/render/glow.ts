@@ -147,14 +147,13 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
   ctx.globalAlpha = 1
 }
 
-// Pass 16: additive purple pixels of the actual displayed atlas frame. No torch-distance cutoff or placeholder halo.
+// Pass 16: grey and purple atlas pixels survive darkness; foreground wall pixels still occlude them.
 export function drawEyes(ctx: CanvasRenderingContext2D, s: State, v: View): void {
   ctx.globalCompositeOperation = 'lighter'
   for (const m of s.monsters) {
     if (!entityInView(v, m.x, m.y) || !eyeVisible(s, m)) continue
     const a = eyeAlpha(s, m)
-    if (a <= 0) continue // dying eyes are fully faded
-    drawAtlasEyes(ctx, s, m, v.z, a)
+    drawAtlasEyes(ctx, s, m, v, a)
   }
   ctx.globalAlpha = 1
 }

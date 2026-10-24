@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Enemy grey pixels stay visible outside torch range alongside purple eyes. Both layers now respect the actual foreground wall alpha, including raised walls covering walkable tiles (#121).
+
 - Moving players face their travel direction; stationary descent aiming still follows the mouse (#124).
 - Walk/run animation uses measured displacement, including partial collision and noclip map clamping (#79).
 - Ore placement uses solid south-facing vein walls and their visible interaction tiles, including teaching veins (#120).
