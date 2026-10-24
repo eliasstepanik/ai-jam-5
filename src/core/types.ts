@@ -67,7 +67,7 @@ export type Player = {
   mining: Mining
   beaconHold: number // s held on the Beacon, reset when released
   hurtT: number // s of post-hit invulnerability left
-  hitFlash: number; gaitPhase: number // s of red flash left; walk/run clip cycle 0..1 integrated per tick by stepMovement (both cosmetic)
+  hitFlash: number; gaitPhase: number; gaitSpeed: number // s of red flash left; walk/run clip cycle 0..1 integrated per tick by stepMovement (both cosmetic)
   stats: Stats
 }
 export type Swing = {

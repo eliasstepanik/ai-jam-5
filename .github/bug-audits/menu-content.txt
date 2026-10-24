@@ -1,0 +1,22 @@
+Menu content audit for GitHub #78 - 2026-10-24
+
+Title: Play/loading state, seed editor, class selector and class-specific Best verified.
+Sound: Audio is now implemented upstream; do not restore the obsolete no-audio warning.
+Corrected audio hint: distinguish muted, browser-locked, unavailable and running audio.
+Pause: Resume, Help, Sound, Flashing and Quit match their actions.
+Corrected Q shortcut: requires the same quit confirmation as the Quit button.
+Help/Goal: corrected movement keys to include arrows and explain movement-facing.
+Help/Goal: Mouse controls facing while standing; walking controls facing while moving.
+Help/Goal: Enter confirms the selected button rather than always restarting.
+Help/Parry: telegraph, parry timing and unlit damage text verified against tuning.
+Help/Minerals: mineral names, keys, effects, mining time, plant heal and escape tips verified.
+Dead/Won: elapsed time still displays, death time bonus is zero, wins retain it.
+Dead/Won: class/path length, score breakdown, seed, share link and buttons verified.
+Corrected end hint: arrows select and Enter confirms; Enter is not always New run.
+Depth: selector and Best are class-specific; random depth is resolved per seed upstream.
+Outdated half-light-return tip remains absent.
+
+Unresolved corner-texture issue #71 is excluded from this audit/fix batch.
+Status: implemented and tested; awaiting user confirmation. Do not close #78 yet.
+
+Small viewport: help pages scale text and artwork together so minimum font clamping cannot overlap columns.

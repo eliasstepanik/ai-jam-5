@@ -2,7 +2,7 @@
 // (layer table) and §4 (flare), architecture-render-2.md §3.3 (swing arc), §5.6 (flame-out ember), R-088 (drawGlowSprite
 // signature). Glow sprites are coloured radial gradients cached in the registry (res.light, key glowKey); this module keeps no
 // state and never writes State. Eyes (drawEyes, pass 16) use the entities.ts helpers. Rocks have no glow layer (render-3 §1 table); their telegraph is in props.ts.
-import type { MonsterKind, State } from '../core/types.ts'
+import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
 import { TILE } from '../core/state.ts'
 import { clamp } from '../core/math.ts'
@@ -15,8 +15,9 @@ import { FLAME_COL } from './flame.ts'
 import { FACE_H } from './tiles-paint.ts'
 import { PLAYER_FOOT } from './entities-player.ts'
 import { GLOW_BUCKETS, bucketOf, glowKey } from './keys.ts'
+import { drawAtlasEyes } from './eyes.ts'
 import { ctx2d, newCanvas } from './light.ts'
-import { EYES_ID, MON_SCALE, MON_FOOT, drawFrame, entityInView, eyeAlpha, eyeAnim, eyeFrame, eyeVisible, monsterDirection, torchTip } from './entities.ts'
+import { entityInView, eyeAlpha, eyeVisible, torchTip } from './entities.ts'
 
 export type TipFn = (s: State) => { x: number; y: number }
 
@@ -29,8 +30,6 @@ const SHAFT_R = 48 // entrance shaft radius (its dust motes stay within 40 px of
 const VEIN_PAD = 32 // vein glints show only within R + 32 (render-3 §1)
 const MOTES = 6, MOTE_SALT = 31 // entrance dust motes
 const SPARK_ARC_R = 22, SPARK_ARC_W = 6 // swing arc (render-2 §3.3)
-const EYE_IDLE = '#6b4fb8', EYE_TELEGRAPH = '#b48cff' // eye halo colours (render-2 §3.2, style §4)
-const EYE_HALO_R: Record<MonsterKind, number> = { lurker: 4, stalker: 6, devourer: 9 } // render-3 §1: 4 / 6 / 9
 
 function glowSprite(hex: string, b: number): HTMLCanvasElement {
   const cache = getResources().light
@@ -148,19 +147,14 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
   ctx.globalAlpha = 1
 }
 
-// Pass 16. Eyes of shades outside the light: additive halo plus the eyes sprite, same direction and scale as the body.
-// Sets 'lighter' and leaves it (like drawGlow; the orchestrator resets), resets globalAlpha; drawn at every quality (eyes are never dropped).
-// ponytail: the halo sits on the monster centre; the spec's per-kind, per-direction authored eye centres (render-2 §3.2) arrive
-// with the art. Upgrade: add (ex, ey) = centre * MON_SCALE to the halo position once the delivered eye anchors exist.
+// Pass 16: additive purple pixels of the actual displayed atlas frame. No torch-distance cutoff or placeholder halo.
 export function drawEyes(ctx: CanvasRenderingContext2D, s: State, v: View): void {
   ctx.globalCompositeOperation = 'lighter'
   for (const m of s.monsters) {
     if (!entityInView(v, m.x, m.y) || !eyeVisible(s, m)) continue
     const a = eyeAlpha(s, m)
     if (a <= 0) continue // dying eyes are fully faded
-    const [act, f] = eyeFrame(s, m), y = m.y - MON_FOOT[m.kind]
-    drawGlowSprite(ctx, eyeAnim(m) === 'telegraph' ? EYE_TELEGRAPH : EYE_IDLE, m.x, y, EYE_HALO_R[m.kind], a)
-    drawFrame(ctx, EYES_ID[m.kind], act + '-' + monsterDirection(s, m), f, m.x, y, MON_SCALE[m.kind], a)
+    drawAtlasEyes(ctx, s, m, v.z, a)
   }
   ctx.globalAlpha = 1
 }

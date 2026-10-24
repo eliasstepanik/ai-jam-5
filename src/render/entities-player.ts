@@ -71,7 +71,7 @@ const gaitClipFrame = (anim: string, phase: number): number =>
 // DEFAULT: swing and mining have art for the lit torch only; in the escape or with an unlit torch they fall through to walk/idle.
 // DEFAULT: death uses the retained facing (State keeps no start-of-death velocity), so the direction holds from the first frame.
 export function playerPose(s: State): { anim: string; frame: number; dir: number } {
-  const p = s.player, esc = s.meta.phase === 'escape', ms = s.meta.time * 1000, speed = Math.hypot(p.vx, p.vy)
+  const p = s.player, esc = s.meta.phase === 'escape', ms = s.meta.time * 1000, speed = p.gaitSpeed
   const set = SETS[gaitSetOf(esc, p.energy)]
   const dir = dirIndex(directionOf(esc && speed > WALK_MIN_SPEED ? Math.atan2(p.vy, p.vx) : p.facing))
   const pose = (anim: string, frame: number) => ({ anim, frame, dir })

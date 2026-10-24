@@ -112,7 +112,9 @@ export function run(): void {
     ok(!stepScreens(at(cave, 'paused'), inp(['KeyQ'])), 'stepScreens returns false on the quit frame')
     const s = at(cave, 'paused'), n = s.meta.steps, x = s.player.x, e = s.player.energy
     step(s, inp(['KeyQ']), DT)
-    ok(s.meta.screen === 'title' && s.meta.steps === n && s.player.x === x && s.player.energy === e, 'quit frame leaves steps, player and flame untouched (steps ' + s.meta.steps + ')')
+    ok(s.meta.screen === 'paused' && s.ui.confirmT > 0 && s.meta.steps === n && s.player.x === x && s.player.energy === e, 'first quit press leaves steps, player and flame untouched (steps ' + s.meta.steps + ')')
+    step(s, inp(['KeyQ']), DT)
+    ok(String(s.meta.screen) === 'title', 'second Q press confirms quit')
     const q = at(cave, 'paused', 4), k = q.fx.events.length
     stepScreens(q, inp(['Enter']))
     ok(q.ui.confirmT > 0 && q.fx.events.length === k + 1 && q.fx.events[k].kind === 'uiConfirm', 'first Quit press arms the confirm and emits one uiConfirm, not uiMove (ui.md §5 rule 7)')

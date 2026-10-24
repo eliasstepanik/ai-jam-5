@@ -42,7 +42,7 @@ export function initPlayer(): Player {
     beaconHold: 0,
     hurtT: 0,
     hitFlash: 0,
-    gaitPhase: 0,
+    gaitPhase: 0, gaitSpeed: 0,
     stats: {
       mineralsUsed: 0, mineralsMined: 0, kills: 0, parries: 0, perfectParries: 0,
       damageTaken: 0, energyLostToHits: 0, resinUsed: 0, plantsEaten: 0,
