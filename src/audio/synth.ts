@@ -51,7 +51,22 @@ export function noiseBuffers(ctx: BaseAudioContext): NoiseSet {
     l = (l + 0.02 * (r() * 2 - 1)) / 1.02
     bd[i] = l * 3.5
   }
+  loopSeam(pd)
+  loopSeam(bd)
   return { white, pink, brown }
+}
+
+/** Subtract a linear ramp so the last sample meets the first (no thump at the loop point); rescale only if it leaves [-1, 1]. */
+function loopSeam(x: Float32Array): void {
+  const n = x.length
+  if (n < 2) return
+  const d = x[n - 1] - x[0]
+  let peak = 0
+  for (let i = 0; i < n; i++) {
+    x[i] -= d * i / (n - 1)
+    peak = Math.max(peak, Math.abs(x[i]))
+  }
+  if (peak > 1) for (let i = 0; i < n; i++) x[i] /= peak
 }
 
 /** Deterministic start offset 0..1.9 s into a noise buffer so bursts differ. */
@@ -151,8 +166,9 @@ export const thud = (o: ThudOpts): Recipe => (a, out, t, p) => {
   if (o.lp !== undefined) dst = biquad(a, 'lowpass', o.lp, 0.7, dst)
   const s: AudioScheduledSourceNode[] = [osc(a, o.type ?? 'sine', o.f0, o.f1, t, o.d * 1.25, dst, o.tf)]
   for (const z of o.n) {
-    const f = biquad(a, z.filter, z.f, z.q ?? 0.7, env(c, t, z.a ?? 0, z.d, amt(z.g, p), out))
-    s.push(noise(a, z.kind, t, (z.a ?? 0) + z.d * 1.25, f))
+    const za = Math.max(z.a ?? 0, 0.004) // noise layers never start with a 1 ms ramp (reads as a click)
+    const f = biquad(a, z.filter, z.f, z.q ?? 0.7, env(c, t, za, z.d, amt(z.g, p), out))
+    s.push(noise(a, z.kind, t, za + z.d * 1.25, f))
   }
   return s
 }
@@ -181,7 +197,7 @@ export const perfectParry = (): Recipe => (a, out, t, p) => {
   if (p.mineral === 'copper') burst.connect(biquad(a, 'bandpass', 1800, 8, env(c, t, 0.005, 0.4, 0.1, out))) // shimmer shares the burst source
   s.push(burst)
   s.push(osc(a, 'sine', 90, 40, t, 0.31, env(c, t, 0, 0.25, 1, out), 0.15))
-  s.push(noise(a, 'white', t, 0.01, env(c, t, 0, 0.004, 0.3, out))) // click
+  s.push(noise(a, 'white', t, 0.01, env(c, t, 0.002, 0.004, 0.18, out))) // click, softened (2 ms attack)
   return s
 }
 // ponytail: perfectParry fallback (no ring sample) allocates ~15 nodes (> the ~12 guideline); sample path ~9. Share envs if profiling shows pressure.

@@ -48,11 +48,14 @@ const drive = (a: AudioRes, v: number, param: AudioParam, t: number): ConstantSo
 //   nodes[0] brown noise (AudioBufferSourceNode)      body: brown -> lp -> gain -> out
 //   nodes[1] ConstantSource -> lp.frequency (Hz)      loopStep: (300 + 900e) * {none 1, sodium 1.25, copper 1, strontium 0.7}
 //   nodes[2] ConstantSource -> body gain              loopStep: 0.15 + 0.35e
-//   nodes[3] ConstantSource -> copper bp(1800,8) gain loopStep: 0.05 for copper, else 0
-//   nodes[4] ConstantSource -> crackle gate gain      rest 0; loopStep per grain: setValueAtTime(0, T), linearRamp(0.1e, T + 0.0005),
-//                                                     setValueAtTime(0, T + 0.006), then T += 0.04 + 0.12 * hash2(k, 0, 9)
-//   nodes[5] white noise (AudioBufferSourceNode)      crackle source: white -> hp(3000) -> gate (always running, gated by [4])
+//   nodes[3] ConstantSource -> copper bp(1400,3) gain loopStep: 0.03 for copper, else 0
+//   nodes[4] ConstantSource -> ember pop gate gain    rest 0; loopStep per pop: setValueAtTime(0, T), linearRamp(0.1e, T + 0.01),
+//                                                     setTargetAtTime(0, T + 0.01, 0.04), then T += 0.25 + 0.45 * hash2(k, 0, 9)
+//   nodes[5] pink noise (AudioBufferSourceNode)       mid layer: pink -> bp(800, 0.7) -> mid gain; pops: pink -> lp(1400) -> gate [4]
+//   nodes[6] sine LFO 1.3 Hz (OscillatorNode)         flicker: lfo -> depth(0.04) -> mid gain AND body gain (no loopStep writes)
 // Initial values come from p.q (= e, default 1) and p.mineral, so an unmodulated loop is already plausible.
+// ponytail: 17 nodes per play (> the ~12 guideline); one loop voice, so cost is fixed. Merge mid/pop filters if profiling shows pressure.
+// ponytail: single sine LFO repeats every 0.77 s; add a second detuned LFO if the flicker ever reads as a tremolo.
 const flameLoop: Recipe = (a, out, t, p) => {
   const e = p.q ?? 1
   const k = p.mineral === 'sodium' ? 1.25 : p.mineral === 'strontium' ? 0.7 : 1
@@ -60,15 +63,26 @@ const flameLoop: Recipe = (a, out, t, p) => {
   const lp = biquad(a, 'lowpass', 0, 0.7, body)
   const brown = noise(a, 'brown', t, LOOP_S, lp)
   const shimmer = closed(a, out)
-  brown.connect(biquad(a, 'bandpass', 1800, 8, shimmer))
+  brown.connect(biquad(a, 'bandpass', 1400, 3, shimmer)) // copper only: soft shimmer, gain driven by [3]
+  const mid = a.ctx!.createGain()
+  mid.gain.value = 0.08
+  mid.connect(out)
+  const pink = noise(a, 'pink', t, LOOP_S, biquad(a, 'bandpass', 800, 0.7, mid))
   const gate = closed(a, out)
+  pink.connect(biquad(a, 'lowpass', 1400, 0.7, gate)) // soft ember pops (gate opens with a 10 ms ramp, no hard cut)
+  const depth = a.ctx!.createGain()
+  depth.gain.value = 0.04
+  depth.connect(mid.gain)
+  depth.connect(body.gain)
+  const lfo = osc(a, 'sine', 1.3, 1.3, t, LOOP_S, depth)
   return [
     brown,
     drive(a, (300 + 900 * e) * k, lp.frequency, t),
     drive(a, 0.15 + 0.35 * e, body.gain, t),
-    drive(a, p.mineral === 'copper' ? 0.05 : 0, shimmer.gain, t),
+    drive(a, p.mineral === 'copper' ? 0.03 : 0, shimmer.gain, t),
     drive(a, 0, gate.gain, t),
-    noise(a, 'white', t, LOOP_S, biquad(a, 'highpass', 3000, 0.7, gate)),
+    pink,
+    lfo,
   ]
 }
 
@@ -92,7 +106,7 @@ const flameOut: Recipe = (a, out, t, p) => [
   ...smoke(a, out, t + 0.4, p),
 ]
 const relight: Recipe = (a, out, t) => [
-  sweep(a, 'white', 'bandpass', 3500, 3500, 0, 2, t, 0, 0.06, 0.5, out), // match scratch
+  sweep(a, 'white', 'bandpass', 2200, 2200, 0, 2, t, 0.006, 0.06, 0.3, out), // match scratch (soft attack, no 1 ms click)
   sweep(a, 'pink', 'lowpass', 300, 2000, 0.4, 0.7, t + 0.05, 0.05, 0.35, 0.8, out), // warm bloom
 ]
 
@@ -109,10 +123,10 @@ const parryBad = hiss({ hp: 1500, lp0: 6000, lp1: 1200, a: 0.01, d: 0.45, peak: 
 
 // ---------- mining / pickups ----------
 const mineHit: Recipe = layers(
-  (a, out, t) => [sweep(a, 'white', 'bandpass', 2800, 2800, 0, 6, t, 0, 0.05, 0.6, out)],
+  (a, out, t) => [sweep(a, 'white', 'bandpass', 1800, 1800, 0, 3, t, 0.004, 0.06, 0.35, out)],
   (a, out, t, p) => { // chip pitch 1800..2600, hash-picked per play
     const f = 1800 + 800 * hash2(p.seq, 5, 61)
-    return [osc(a, 'triangle', f, f, t, 0.15, env(a.ctx!, t, 0, 0.12, 0.25, out))]
+    return [osc(a, 'triangle', f, f, t, 0.15, env(a.ctx!, t, 0.003, 0.12, 0.25, out))]
   },
 )
 const ROOT: Record<string, number> = { sodium: 1046, copper: 784, strontium: 523 } // R3/catalog §4; default (no mineral) = copper
@@ -133,7 +147,7 @@ const plantHeal: Recipe = (a, out, t) => [
 // ---------- player / monster hits ----------
 // The 150 ms master low-pass dip of sfx_hurt (R3 §2.4) is the mixer's masterLp, driven by sfx.ts, not a voice node.
 const monHit = thud({ f0: 120, f1: 50, tf: 0.1, d: 0.15, g: 0.8, n: [{ kind: 'pink', filter: 'lowpass', f: 1500, d: 0.25, g: 0.5 }] })
-const hurt = thud({ f0: 200, f1: 80, tf: 0.12, d: 0.15, g: 0.9, n: [{ kind: 'white', filter: 'highpass', f: 3000, d: 0.04, g: 0.4 }] })
+const hurt = thud({ f0: 200, f1: 80, tf: 0.12, d: 0.15, g: 0.9, n: [{ kind: 'white', filter: 'bandpass', f: 1800, q: 0.7, a: 0.004, d: 0.05, g: 0.22 }] })
 
 // ---------- beacon ----------
 // perfect-parry layer 2 at x2 length, gain 1.0 (catalog §7), mineral-shifted like perfectParry, + sine 60 -> 30 over .8.

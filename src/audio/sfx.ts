@@ -50,7 +50,8 @@ function release(v: Voice): void {
 const steal = (a: AudioRes, v: Voice, now: number): void => {
   const i = a.voices.indexOf(v)
   if (i >= 0) a.voices.splice(i, 1)
-  silence(v, now, 0.01, 0.05)
+  const lf = v.id === 'sfx_heartbeat' // 55 Hz dub: a 10 ms fade is under one period and pops
+  silence(v, now, lf ? 0.06 : 0.01, lf ? 0.4 : 0.05)
 }
 const oldest = (vs: Voice[]): Voice | undefined => vs.reduce<Voice | undefined>((m, v) => (!m || v.t0 < m.t0 ? v : m), undefined)
 
@@ -163,7 +164,7 @@ function startLoop(a: AudioRes, id: SoundId, p: PlayParams): LoopVoice | null {
   const d = def(id)
   const t = ctx.currentTime
   const out = ctx.createGain()
-  out.gain.value = d.gain
+  out.gain.setValueAtTime(0, t).linearRampToValueAtTime(d.gain, t + 0.05) // 50 ms fade-in: sources start at full level
   out.connect(a.groups![d.group])
   const v: LoopVoice = { id, pri: d.pri, t0: t, stopAt: t + LOOP_MAX, out, nodes: [] }
   const buf = a.buffers.get(d.file ?? id)
@@ -212,7 +213,7 @@ function want(a: AudioRes, id: SoundId, on: boolean, p: PlayParams): LoopVoice |
 const param = (n: AudioScheduledSourceNode | undefined): AudioParam | null => (n as ConstantSourceNode | undefined)?.offset ?? null
 
 // Node order required of SYNTH['sfx_flame-loop'] (synth-2.ts LOOP CONTRACT): [0] brown, [1] lp Hz, [2] body gain,
-// [3] copper bp gain, [4] crackle gate, [5] white. [1..4] are ConstantSourceNodes whose .offset loopStep drives.
+// [3] copper bp gain, [4] ember pop gate, [5] pink, [6] flicker LFO. [1..4] are ConstantSourceNodes whose .offset loopStep drives.
 function flameStep(a: AudioRes, s: State, now: number): void {
   const pl = s.player
   const v = want(a, 'sfx_flame-loop', s.meta.phase === 'descent' && pl.energy > 0, { seq: 0, q: 1, mineral: pl.activeMineral })
@@ -221,16 +222,15 @@ function flameStep(a: AudioRes, s: State, now: number): void {
   const k = pl.activeMineral === 'sodium' ? 1.25 : pl.activeMineral === 'strontium' ? 0.7 : 1
   param(v.nodes[1])?.setTargetAtTime((300 + 900 * e) * k, now, 0.05)
   param(v.nodes[2])?.setTargetAtTime(0.15 + 0.35 * e, now, 0.05)
-  param(v.nodes[3])?.setTargetAtTime(pl.activeMineral === 'copper' ? 0.05 : 0, now, 0.05)
+  param(v.nodes[3])?.setTargetAtTime(pl.activeMineral === 'copper' ? 0.03 : 0, now, 0.05)
   const gate = param(v.nodes[4])
   if (!gate) return
   if (a.nextCrackle < now) a.nextCrackle = now
-  while (now + 0.1 > a.nextCrackle) { // 6 ms grains scheduled ahead
+  while (now + 0.1 > a.nextCrackle) { // soft ember pops scheduled ahead: 10 ms rise, 40 ms exponential fall, never a hard cut
     const at = a.nextCrackle
-    gate.setValueAtTime(0, at)
-    gate.linearRampToValueAtTime(0.1 * e, at + 0.0005)
-    gate.setValueAtTime(0, at + 0.006)
-    a.nextCrackle += 0.04 + 0.12 * hash2(a.crackleN++, 0, 9)
+    gate.setValueAtTime(0, at).linearRampToValueAtTime(0.1 * e, at + 0.01) // previous pop decayed >= 6 tc (gap >= 0.25 s): starts ~0
+    gate.setTargetAtTime(0, at + 0.01, 0.04)
+    a.nextCrackle += 0.25 + 0.45 * hash2(a.crackleN++, 0, 9)
   }
 }
 

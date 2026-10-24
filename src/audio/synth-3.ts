@@ -39,7 +39,7 @@ const burst = (
 // ---------- WHOOSH / HISS / THUD class entries ----------
 const roll: Recipe = layers(
   whoosh({ f0: 400, f1: 1200, t1: 0.3, q: 1.5, a: 0.02, d: 0.22, peak: 0.5 }),
-  (a, out, t) => [burst(a, 'white', 'bandpass', 2500, 3, t + 0.24, 0, 0.05, 0.3, out)], // scuff at the end
+  (a, out, t) => [burst(a, 'white', 'bandpass', 1500, 3, t + 0.24, 0.008, 0.05, 0.15, out)], // scuff at the end, soft attack
 )
 const mineEmpty: Recipe = thud({
   type: 'square', f0: 220, f1: 196, tf: 0.08, d: 0.12, g: 0.45, lp: 900,
@@ -54,10 +54,8 @@ const rockImpact: Recipe = thud({
   f0: 80, f1: 35, tf: 0.3, d: 0.4, g: 1,
   n: [{ kind: 'pink', filter: 'lowpass', f: 2000, d: 0.5, g: 0.6 }],
 })
-const uiClick: Recipe = thud({
-  f0: 660, f1: 660, tf: 0.04, d: 0.04, g: 0.2,
-  n: [{ kind: 'white', filter: 'bandpass', f: 2200, q: 4, d: 0.03, g: 0.5 }],
-})
+// soft "tock": sine only, 3 ms attack (the former white-noise layer was the click)
+const uiClick: Recipe = (a, out, t) => [osc(a, 'sine', 660, 660, t, 0.05, env(a.ctx!, t, 0.003, 0.04, 0.2, out))]
 const uiConfirm: Recipe = thud({
   type: 'triangle', f0: 440, f1: 880, tf: 0.12, d: 0.18, g: 0.4,
   n: [{ kind: 'pink', filter: 'lowpass', f: 1200, d: 0.1, g: 0.3 }],
@@ -67,7 +65,7 @@ const uiDenied: Recipe = thud({ type: 'square', f0: 110, f1: 110, tf: 0.1, d: 0.
 // ---------- monsters ----------
 const eyeOpen: Recipe = layers(
   whoosh({ kind: 'white', f0: 800, f1: 3000, t1: 0.35, q: 8, a: 0.02, d: 0.35, peak: 0.5 }),
-  (a, out, t) => [noise(a, 'white', t, 0.01, env(a.ctx!, t, 0, 0.005, 0.4, out))], // wet click
+  (a, out, t) => [burst(a, 'white', 'lowpass', 2500, 0.7, t, 0.006, 0.02, 0.2, out)], // wet click, darkened and softened
 )
 // R3 §2.6: detuned saw pair, rate (lurker 1.4 / stalker 1.0 / devourer 0.6) scales every oscillator frequency.
 const sawPair = (a: AudioRes, t: number, r: number, dur: number, dst: AudioNode): AudioScheduledSourceNode[] => [
@@ -96,7 +94,7 @@ const monLunge: Recipe = layers(
 )
 const monDeath: Recipe = layers(
   whoosh({ kind: 'pink', f0: 3000, f1: 300, t1: 0.5, q: 2, a: 0.3, d: 0.2, peak: 0.6, rate: true }), // honours p.rate
-  (a, out, t, p) => [burst(a, 'brown', 'lowpass', 600, 0.7, t + 0.5, 0, 0.1, 0.6, out, p.rate ?? 1)], // ink splat
+  (a, out, t, p) => [burst(a, 'brown', 'lowpass', 600, 0.7, t + 0.5, 0.004, 0.1, 0.6, out, p.rate ?? 1)], // ink splat
 )
 
 // ---------- player state ----------
@@ -105,8 +103,8 @@ const heartbeat: Recipe = (a, out, t) => {
   const c = a.ctx!
   const s: AudioScheduledSourceNode[] = []
   for (const [dt, g] of [[0, 0.8], [0.28, 0.55]] as const) {
-    s.push(osc(a, 'sine', 55, 55, t + dt, 0.15, env(c, t + dt, 0, 0.12, g, out)))
-    s.push(osc(a, 'sine', 110, 110, t + dt, 0.15, env(c, t + dt, 0, 0.12, 0.1, out))) // laptop-speaker audibility
+    s.push(osc(a, 'sine', 55, 55, t + dt, 0.15, env(c, t + dt, 0.004, 0.12, g, out)))
+    s.push(osc(a, 'sine', 110, 110, t + dt, 0.15, env(c, t + dt, 0.004, 0.12, 0.1, out))) // laptop-speaker audibility
   }
   return s
 }
@@ -199,8 +197,8 @@ const ping = (o: OscillatorNode, g: GainNode, t: number): void => {
   o.frequency.setValueAtTime(1800, t)
   o.frequency.exponentialRampToValueAtTime(900, t + 0.04)
   g.gain.setValueAtTime(0, t)
-  g.gain.linearRampToValueAtTime(0.3, t + 0.001)
-  g.gain.setTargetAtTime(0, t + 0.001, 0.0125)
+  g.gain.linearRampToValueAtTime(0.2, t + 0.004)
+  g.gain.setTargetAtTime(0, t + 0.004, 0.0125)
 }
 const drip: Recipe = (a, out, t) => {
   const [o, g] = dripVoice(a, out, t, 0.6)
