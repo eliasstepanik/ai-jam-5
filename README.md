@@ -234,3 +234,7 @@ The jam requires that the majority of the game is AI-generated. This section say
 - Audio tooling only, not shipped: [ComfyUI](https://github.com/comfyanonymous/ComfyUI) (GPL-3.0) and the community node packs `audio-batch` and `DJZ-Pedalboard`.
 - Runtime dependencies: none (`package.json` has no `dependencies`). The game is plain TypeScript on canvas 2D.
 - Build tools only, not shipped as assets: [Vite](https://vite.dev/) (MIT) and [TypeScript](https://www.typescriptlang.org/) (Apache-2.0).
+
+## Blender source scenes
+
+`blender/` contains 33 confirmed editable source scenes for the Player, Lurker, Stalker and Devourer. `blender/confirmed_sources.json` records their animation names, original delivery locations and SHA-256 checksums. These source files are for asset editing and are not part of the browser build.

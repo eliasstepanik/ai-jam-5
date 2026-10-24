@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added 33 confirmed Blender source scenes under `blender/`, grouped by character, with their source and SHA-256 manifest.
+
 - Dev mode shows the commit the checkout is running (7-char short sha as on GitHub, small label at the top centre). A dev-only Vite endpoint `/__commit` reads `git rev-parse --short=7 HEAD` per request, and the game re-fetches it every 30 s, so the label follows a server-side `git reset --hard` without a restart. Absent from `vite build`.
 - Shadow mist around the three shadow creatures: soft dark wisps drift off each Lurker, Stalker and Devourer (small and quick, long thin trail, big and dense), trail behind them while they move, thicken during windup and lunge, spread out and fade as they die, and idle when the enemy AI is frozen in the dev panel. Purely visual: drawn procedurally in the particle pass under the darkness, capped per enemy and for the whole screen, thinned by the render quality tier and by Reduced flash, and it never touches gameplay state or the seeded random streams. A new check covers the per-type emission, state response, caps and the read-only guarantee.
 - Crack decor from the tileset: sparse deterministic ground cracks (about 5% of floor tiles, small and large) and wall-face cracks (about 8% of visible faces), chosen from a per-tile seed hash and baked into the chunk cache. Entrance, Beacon chamber and vein walls stay clean. A new check covers determinism, density, placement and the tileset frame names; floor variants are checked to be evenly spread over all 10.
