@@ -20,7 +20,7 @@ import { denyShake, pulse, shakeK } from './anim.ts'
 import { hudLayout } from './layout.ts'
 import type { HudLayout } from './layout.ts'
 import { COL, keycap, panel, ring, text, textWidth } from './draw.ts'
-import { STR, clock } from './strings.ts'
+import { STR, clock, depthTag } from './strings.ts'
 
 const PS = 2 // UI sprites are authored at 1x and shown at 2u
 const LOW_BPM = 70 // last-heart pulse; 1.17 Hz, under the 3 Hz flash limit
@@ -153,7 +153,7 @@ function depthBlock(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void
   text(ctx, max, l.depth.x, l.depth.y, 14, u, COL.dim, { align: 'right' })
   text(ctx, main, l.depth.x - maxW, l.depth.y, 18, u, COL.text, { align: 'right', bold: true })
   ui(ctx, 'ui_depth', 'idle', 0, l.depth.x - maxW - mainW - 16 * u, l.depth.y - 5 * u, PS * u)
-  text(ctx, `${STR.zone} ${zoneOfDepth(depth)}`, l.zone.x, l.zone.y, 12, u, COL.dim, { align: 'right' })
+  text(ctx, `${STR.zone} ${zoneOfDepth(depth)} · ${depthTag(s.world.depthClass, s.world.beaconDist)}`, l.zone.x, l.zone.y, 12, u, COL.dim, { align: 'right' })
   text(ctx, clock(s.meta.steps / 60), l.clock.x, l.clock.y, 14, u, COL.dim, { align: 'right' })
 }
 

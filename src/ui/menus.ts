@@ -105,9 +105,10 @@ function drawTitle(ctx: Ctx, s: State, w: number, h: number): void {
   text(ctx, s.ui.seedInput || STR.seedPlaceholder, sx, sy, 16, u, s.ui.seedInput ? COL.text : COL.dim)
   if (typing && Math.floor(t * 4) % 2 === 0) fill(ctx, COL.gold, sx + (s.ui.seedInput ? textWidth(ctx, s.ui.seedInput, 16, u) : 0) + 2 * u, sy - 14 * u, 2 * u, 18 * u) // caret, 2 Hz
   text(ctx, STR.seedHint, l.seedHint.x, l.seedHint.y, 12, u, COL.dim, { align: 'center' })
-  // Best line: `Best 5483 · depth 40/40 · 6:57 · escaped`. DEFAULT: a best that did not escape carries no tag (the death tag is unspecified).
+  // Best line: `Best 5483 · Standard · depth 40/40 · 6:57 · escaped`. DEFAULT: a best that did not escape carries no tag (the death tag is unspecified).
+  // The class name is the class the shown Best was loaded for (ui.bestClass, #119); a Best record stores no Beacon distance, so no tiles here.
   const b = s.best
-  const best = b ? `${STR.best} ${b.score} · ${STR.depthWord} ${b.depth}/${DEPTH_MAX} · ${clock(b.seconds)}${b.won ? ' · ' + STR.bestEscaped : ''}` : STR.noBest
+  const best = b ? `${STR.best} ${b.score} · ${depthName(s.ui.bestClass)} · ${STR.depthWord} ${b.depth}/${DEPTH_MAX} · ${clock(b.seconds)}${b.won ? ' · ' + STR.bestEscaped : ''}` : STR.noBest
   text(ctx, best, l.best.x, l.best.y, 14, u, COL.dim)
   if (!s.ui.storageOk) text(ctx, STR.storageOff, l.storage.x, l.storage.y, 12, u, COL.accent)
   const muted = res.audio.state !== 'running' // browsers keep audio locked until the first click
