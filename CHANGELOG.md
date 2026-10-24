@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The depth readout no longer looks the same for every depth class. The HUD zone line, the end screen depth class row and the title Best line now show the class name, and the HUD and end screen also show the real Beacon path length in tiles (for example `Shallow · 262 tiles` against `Deep · 768 tiles`). The 0..40 depth metric and every score number are unchanged. A new check pins the text per class.
 - The player's walk and run animation now plays at the pace of the actual movement speed, so the feet no longer slide: slower when moving slowly or along walls, faster when sprinting or flying with noclip.
 - Normal descent movement selects walking rather than running; moving with an extinguished torch uses flame-free walking frames and no floating ember glow.
 - Death no longer awards the time bonus; wins retain it. Removed the obsolete light-return help tip.
