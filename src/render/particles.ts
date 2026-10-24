@@ -94,10 +94,10 @@ function drawWisp(ctx: CanvasRenderingContext2D, s: State, v: View): void {
   if (!w.on || s.meta.screen !== 'playing' || s.meta.phase !== 'escape' || w.path.length < 2) return
   const t = s.meta.time, calm = s.settings.reducedFlash, fade = Math.min(1, w.d / WISP_LEAD_MIN_PX)
   const pulse = calm ? 1 : 0.8 + 0.2 * Math.sin(t * TAU * 1.5)
-  const n = Math.round(WISP_TRAIL * currentQuality(s).particles), sp = Math.hypot(w.wvx, w.wvy)
+  const n = Math.round(WISP_TRAIL * currentQuality(s).particles), sp = Math.hypot(w.wvx, w.wvy), gap = WISP_GAP_PX * Math.min(1, sp / WISP_TRAIL_FULL_PX_S)
   for (let k = n; k >= 0; k--) { // back to front, the orb (k = 0) is painted last
-    if (k > 0 && w.d - k * WISP_GAP_PX < 0) continue // the trail never piles up on the player
-    const back = (k * WISP_GAP_PX * Math.min(1, sp / WISP_TRAIL_FULL_PX_S)) / (sp || 1) // sparkles hang behind the orb along its velocity
+    if (k > 0 && k * gap < 1) continue // a resting orb draws no sparkles: stacked on the orb they would only brighten it (additive)
+    const back = (k * gap) / (sp || 1) // sparkles hang behind the orb along its velocity
     const j = calm ? 0 : Math.floor(t * 10), jx = (hash2(j, k, 11) - 0.5) * 4, jy = (hash2(j, k, 12) - 0.5) * 4
     const x = w.wx - w.wvx * back + (k > 0 ? jx : 0), y = w.wy - w.wvy * back + (k > 0 ? jy : 0)
     if (!inView(v, x, y)) continue

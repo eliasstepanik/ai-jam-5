@@ -34,6 +34,9 @@ function grid(rows: string[]): State {
 // Long S-bend: player (1,3) runs right along row 3, up the gap at (40,2), left along row 1 to the exit (1,1): 80 route tiles, one corner pair.
 const BEND = ['#'.repeat(42), '#X' + '.'.repeat(39) + '#', '#'.repeat(40) + '.#', '#P' + '.'.repeat(39) + '#', '#'.repeat(42)]
 const RING = ['#########', '#X.....P#', '#.#####.#', '#.......#', '#########']
+const hall = (row: (r: number) => string): string[] => Array.from({ length: 14 }, (_, r) => '#' + (r === 0 || r === 13 ? '#'.repeat(30) : row(r)) + '#')
+const HALL = hall((r) => r === 12 ? 'P' + '.'.repeat(28) + 'X' : '.'.repeat(30)) // open hall, route runs right along the player's row
+const VHALL = hall((r) => r === 12 ? 'P' + '.'.repeat(29) : r === 1 ? 'X' + '.'.repeat(29) : '.'.repeat(30)) // ... route runs straight up
 const ROOM = ['#########', '#X......#', '#.......#', '#.......#', '#.......#', '#########']
 
 // One tick with the per-tick continuity asserts (position step <= max speed * dt, velocity change <= what the blend allows).
@@ -121,14 +124,83 @@ function activation(): void {
   ok(Math.hypot(w.wx - s.player.x, w.wy - s.player.y) < 0.1 && Math.hypot(w.wvx, w.wvy) < 5, 'second escape: orb at (' + w.wx + ',' + w.wy + ') v ' + Math.hypot(w.wvx, w.wvy) + ', player (' + s.player.x + ',' + s.player.y + ')')
 }
 
+// Sprint the WHOLE route with no pauses (the player never stands) and watch the orb: it must keep up round the corners, not stall.
+// Returns lag = orb distance to the route sample at the lead (mean over ticks 200..260, a straight stretch), the share of ticks after a
+// 60-tick warm-up with lag < 100 px, windows of 10 ticks that stalled (target > 30 px away all window, orb moved < 1 px), the closest
+// approach to the exit tile and the final orb / player points. The player stops on the exit tile.
+function sprintRoute(s: State, ticks: number, msg: string): { lag: number; near: number; stalls: number; exit: number; x: number; y: number } {
+  const w = s.wisp, mw = s.world.w, tgt = { x: 0, y: 0 }, ex = tileToWorld(s.world.exit.tx), ey = tileToWorld(s.world.exit.ty)
+  stepWisp(s, DT)
+  let lagSum = 0, near = 0, stalls = 0, exit = Infinity, minGap = Infinity, sx = w.wx, sy = w.wy
+  for (let k = 0; k < ticks; k++) {
+    s.player.vx = w.path.length > 1 ? SPRINT : 0
+    if (w.path.length > 1) { // walk to the next route tile centre at sprint speed
+      const nx = tileToWorld(w.path[1] % mw), ny = tileToWorld(Math.floor(w.path[1] / mw)), dx = nx - s.player.x, dy = ny - s.player.y, len = Math.hypot(dx, dy)
+      const f = len > SPRINT * DT ? (SPRINT * DT) / len : 1
+      s.player.x += dx * f
+      s.player.y += dy * f
+    }
+    tick(s, msg + ' ' + k)
+    wispAt(s, w.d, tgt)
+    const gap = Math.hypot(w.wx - tgt.x, w.wy - tgt.y)
+    if (k >= 60 && gap < 100) near++
+    if (k >= 200 && k < 260) lagSum += gap
+    exit = Math.min(exit, Math.hypot(w.wx - ex, w.wy - ey))
+    minGap = k % 10 === 0 ? gap : Math.min(minGap, gap)
+    if (k % 10 === 9) { // window end
+      if (k >= 69 && minGap > 30 && Math.hypot(w.wx - sx, w.wy - sy) < 1) stalls++
+      sx = w.wx
+      sy = w.wy
+    } else if (k % 10 === 0) { sx = w.wx; sy = w.wy }
+  }
+  return { lag: lagSum / 60, near: near / (ticks - 60), stalls, exit, x: w.wx, y: w.wy }
+}
+
+// BEND without a pause: the orb rounds the corner pair, stays near its target for >= 95% of the ticks and reaches the last leg.
+// Steady lag behind a target moving at sprint: seek speed = lag * ARRIVE_K must equal SPRINT, so about SPRINT / 8 = 30 px; measured 25.5 px
+// on the straight stretch. Band 15..36 (-40% / +40% of 25.5): ARRIVE_K 8 -> 3 gives 76 px and fails it (also the 'near' share above).
+// (WISP_LEASH 1.5 -> 1.45 is not killed on purpose: a 3% shift of the leash is not observable in a cosmetic orb; leashEdge pins 1.4 / 1.6.)
+function bendRound(): void {
+  const s = grid(BEND), r = sprintRoute(s, 800, 'bend')
+  ok(r.near >= 0.95, 'bend: orb within 100 px of its target on only ' + r.near + ' of the ticks (want >= 0.95)')
+  ok(r.exit < 100, 'bend: orb never reached the last leg, closest to the exit ' + r.exit + ' px')
+  ok(r.lag > 15 && r.lag < 36, 'bend: steady lag ' + r.lag + ' px at sprint, want 15..36 (ARRIVE_K)')
+}
+
+// Thin-wall hairpin: the route runs along row 3, up the gap at (10,2) and back along row 1. The straight line from the orb to its target
+// crosses the one-tile wall, so only the waypoint fallback gets it round (the previous version stalled 2763 of 3000 ticks on row 3).
+function hairpin(): void {
+  const s = grid(['############', '#X.........#', '##########.#', '#P.........#', '############']), r = sprintRoute(s, 600, 'hairpin')
+  ok(r.stalls === 0, 'hairpin: the orb stalled in ' + r.stalls + ' windows of 10 ticks')
+  ok(r.y < tileToWorld(2) && Math.hypot(r.x - s.player.x, r.y - s.player.y) < 8, 'hairpin: orb ended at (' + r.x + ',' + r.y + ') but the player rests at (' + s.player.x + ',' + s.player.y + ')')
+  ok(r.exit < 8, 'hairpin: the orb came only ' + r.exit + ' px close to the exit')
+}
+
+// A far orb accelerates at once: after 0.5 s the displacement is the steered travel, not half of it (integration at dt / 2), and an orb
+// off the map (stale hot-reload state, wx = wy = 0 -> NaN or outside) is re-seeded at the player at rest.
+function farAndStale(): void {
+  const s = grid(VHALL), w = s.wisp
+  stepWisp(s, DT)
+  w.d = 64
+  w.wx = s.player.x + 200
+  w.wy = s.player.y - 64
+  for (let k = 0; k < 30; k++) tick(s, 'far')
+  const moved = Math.hypot(w.wx - s.player.x - 200, w.wy - s.player.y + 64)
+  ok(moved >= 80, 'far: the orb moved only ' + moved + ' px in 30 ticks (measured 104.7, half-step integration gives about 52)')
+  w.wx = -50
+  w.wy = Number.NaN
+  stepWisp(s, DT)
+  ok(Math.hypot(w.wx - s.player.x, w.wy - s.player.y) < 2 && Math.hypot(w.wvx, w.wvy) < 30, 'stale: an orb off the map is re-seeded at the player (orb ' + w.wx + ',' + w.wy + ')')
+}
+
 // Orb dragged far away (beyond the leash) from the player at a full sprint lead: it returns toward the PLAYER, not toward the route point.
 function leash(): void {
-  const s = grid(BEND), w = s.wisp
+  const s = grid(HALL), w = s.wisp
   s.player.vx = SPRINT
   for (let k = 0; k < 240; k++) stepWisp(s, DT) // standing in place with sprint speed: the lead grows to the maximum
   ok(w.d > WISP_LEAD_MAX_PX - 1, 'leash: lead at the maximum (got ' + w.d + ')')
-  w.wx = s.player.x // 400 px above the player: the route runs along the corridor, the player is straight below
-  w.wy = s.player.y - 400
+  w.wx = s.player.x // 330 px above the player: the route runs along the player's row, the player is straight below
+  w.wy = s.player.y - 330
   w.wvx = 0
   w.wvy = 0
   stepWisp(s, DT)
@@ -137,13 +209,27 @@ function leash(): void {
   ok(Math.hypot(w.wx - s.player.x, w.wy - s.player.y) <= LEASH, 'leash: back within the leash after 4 s')
 }
 
+// Leash with the orb off the player in BOTH axes. Route runs straight up from the player, so the route target lies far above the orb;
+// a pull to the player has wvx < 0 and wvy > 0, a retarget that keeps only one player axis (or the route's y) gets a component wrong.
+function leashDiagonal(): void {
+  const s = grid(VHALL), w = s.wisp
+  stepWisp(s, DT)
+  w.d = WISP_LEAD_MAX_PX
+  w.wx = s.player.x + 280
+  w.wy = s.player.y - 100
+  w.wvx = 0
+  w.wvy = 0
+  ok(Math.hypot(280, 100) > LEASH, 'leash diagonal: fixture orb is inside the leash')
+  stepWisp(s, DT)
+  ok(w.wvx < -1e-3 && w.wvy > 1e-3, 'leash diagonal: both components point to the player (wvx ' + w.wvx + ', wvy ' + w.wvy + ')')
+}
+
 // Leash boundary from both sides. Open hall, route runs right along the player's row; the orb sits straight above the player, so a pull
 // toward the route target has vx > 0 and a pull toward the player has vx = 0. A leash multiplier that drifts either way flips a case.
 function leashEdge(): void {
-  const rows = Array.from({ length: 14 }, (_, r) => '#' + (r === 0 || r === 13 ? '#'.repeat(30) : r === 12 ? 'P' + '.'.repeat(28) + 'X' : '.'.repeat(30)) + '#')
   // Edges: 0.97/1.03 x the live leash (tracks the constant), and fixed 1.4/1.6 x WISP_LEAD_MAX_PX anchors that pin the design value (~1.5).
   for (const [dist, toRoute] of [[0.97 * LEASH, true], [1.03 * LEASH, false], [1.4 * WISP_LEAD_MAX_PX, true], [1.6 * WISP_LEAD_MAX_PX, false]] as const) {
-    const s = grid(rows), w = s.wisp, f = dist / LEASH
+    const s = grid(HALL), w = s.wisp, f = dist / LEASH
     stepWisp(s, DT)
     w.d = WISP_LEAD_MAX_PX
     w.wx = s.player.x
@@ -177,8 +263,12 @@ function emptyRoute(): void {
 export function run(): void {
   activation()
   glide()
+  bendRound()
+  hairpin()
+  farAndStale()
   reroute()
   leash()
+  leashDiagonal()
   leashEdge()
   emptyRoute()
 }
