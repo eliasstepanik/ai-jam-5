@@ -9,6 +9,7 @@ import { endLayout, helpClick, helpLayout, hit, pauseLayout, titleLayout, titleR
 import type { Button } from './ui/layout.ts'
 import { platformStep } from './ui/platform.ts'
 import { render as renderFrame } from './render/index.ts'
+import { drawCommit, pollCommit } from './ui/commit.ts'
 import { audioStep, warnOnce } from './audio/engine.ts'
 import { beginDebugUpdate, debugAvailable, debugInput, drawDebug, endDebugUpdate } from './ui/debug.ts'
 
@@ -83,11 +84,13 @@ function pointer(s: State, input: Input): Input {
 // Render the game, then developer overlays. Access is development-only unless the exported build opts in with ?debug=1.
 export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
   renderFrame(ctx, s, w, h)
+  drawCommit(ctx, s, w) // dev only; before the overlays so the stats panel covers it
   if (debugAvailable()) drawDebug(ctx, s, w, h)
 }
 
 // R-096: (1) dev toggles, (2) step (runs stepScreens first, world systems only while playing), (3) platformStep, (4) audioStep (never throws into the loop).
 export function update(s: State, input: Input, dt: number): void {
+  pollCommit(s, dt) // dev only: re-fetches the running commit sha every 30 s
   const dev = debugAvailable()
   const next = dev ? debugInput(s, devKeys(s, input)) : input
   if (dev) beginDebugUpdate(s)

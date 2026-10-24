@@ -234,7 +234,7 @@ export type Debug = {
   reveal: boolean; god: boolean; showPaths: boolean; freezeAi: boolean; overlay: boolean
   noclip: boolean; speedMul: number; freezeTorch: boolean; infiniteHp: boolean; noFog: boolean
   hurtboxes: boolean; animations: boolean; stats: boolean
-  minimap: boolean; arrow: boolean; arrowTarget: 'beacon' | 'exit'
+  minimap: boolean; arrow: boolean; arrowTarget: 'beacon' | 'exit'; commit: string; commitT: number // commit: dev-only short sha ('' = not fetched yet), commitT: s to next fetch
 }
 
 // --- score and save (scoring-and-save §2, §5, §6; SettingsRecord per R-025/R-142) ---
