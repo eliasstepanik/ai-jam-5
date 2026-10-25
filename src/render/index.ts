@@ -22,7 +22,7 @@ import { makeView, screenXf, worldXf } from './view.ts'
 // Re-exported by game.ts (A30), which calls drawDebug after it returns (R-096).
 export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
   const res = getResources()
-  if (!res.images.started) startPreload(res) // R-095: idempotent, begins loading sheets and screen art on the first frame
+  startPreload(res) // R-095: idempotent, begins loading sheets and screen art on the first frame
   frameBegin() // pass 0
   const sc = s.meta.screen
   // Pass 1: title and help draw their own backdrop. An empty world (title, generation pending) has nothing for the world passes.

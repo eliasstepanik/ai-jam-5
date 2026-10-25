@@ -3,6 +3,8 @@ import { init } from '../core/state.ts'
 import { fnv1a } from '../core/rng.ts'
 import { WALK_STRIDE_PX } from '../core/gait.ts'
 import { migrate } from '../core/migrate.ts'
+import { beaconPosition, beaconInReach } from '../world/beacon-position.ts'
+import { entranceWall } from '../world/entrance-art.ts'
 import { clearCaches } from '../world/caches.ts'
 import { generateCave } from '../world/generate.ts'
 import { resolveIntent } from '../systems/intent.ts'
@@ -51,9 +53,17 @@ function ore(): void {
   for (const depthClass of [1, 2, 3, 4]) for (const seed of [1, 7, 53]) {
     const cave = generateCave(seed, { depthClass })
     ok(cave.veins.length >= 8, 'ore quotas retained for every depth class')
+    const s = init(); Object.assign(s.world, { w: 320, h: 240, tiles: cave.tiles, entrance: cave.entrance, beacon: cave.beacon })
+    const door = entranceWall(s)
+    ok(!!door, 'entrance art has a three-cell wall mount near the spawn')
+    const b = beaconPosition(s)
+    s.player.x = b.x; s.player.y = b.y
+    ok(beaconInReach(s, 1), 'beacon interaction follows its displayed floor anchor')
+    s.player.x = (cave.beacon.tx + 0.5) * 32; s.player.y = (cave.beacon.ty + 0.5) * 32
+    ok(beaconInReach(s, 1), 'original beacon interaction remains valid for existing runs')
     for (const vein of cave.veins) {
       ok(cave.tiles[vein.tile] === '#', 'ore is attached to a solid wall')
-      ok(vein.stand === vein.tile + 320 && cave.tiles[vein.stand] !== '#', 'every ore has a visible south face and usable floor stand')
+      ok([320, -320, 1, -1].includes(vein.stand - vein.tile) && cave.tiles[vein.stand] !== '#', 'every ore has an authored wall direction and usable floor stand')
     }
   }
 }

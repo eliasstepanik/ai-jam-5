@@ -1,5 +1,6 @@
 // Full-screen overlays: title, help, paused, dead, won (architecture-ui §7-8, ui-2 §2-3, scoring §7). Stateless: reads State and
 // the resource registry, draws, keeps nothing between calls. Hit-testing and focus live in layout.ts / systems/screens.ts.
+import { resourceIcon } from '../render/tileset.ts'
 import { drawSprite } from '../assets/images.ts'
 import { getResources } from '../assets/resources.ts'
 import { hash2 } from '../core/noise.ts'
@@ -216,7 +217,7 @@ function drawHelp(ctx: Ctx, s: State, w: number, h: number): void {
         ctx.beginPath()
         ctx.arc(c.icon + 16 * u, cy, 8 * u, 0, TAU)
         ctx.fill()
-      } else drawSprite(ctx, `item_mineral-${MINERALS[i - 1]}`, 'idle', 0, c.icon + 16 * u, cy, 0, 2 * u) // placeholder art ignores scale, atlas art honours it
+      } else if (!resourceIcon(ctx, MINERALS[i - 1], c.icon + 16 * u, cy, u)) drawSprite(ctx, `item_mineral-${MINERALS[i - 1]}`, 'idle', 0, c.icon + 16 * u, cy, 0, 2 * u) // placeholder art ignores scale, atlas art honours it
       text(ctx, m.name, c.name, cy + 6 * u, 16, u, COL.text, { bold: true })
       for (const [r, col] of [[12, m.mantle], [5, m.core]] as const) { // flame swatch: mantle disc, core disc
         ctx.fillStyle = col

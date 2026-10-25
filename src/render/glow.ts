@@ -2,8 +2,10 @@
 // (layer table) and §4 (flare), architecture-render-2.md §3.3 (swing arc), §5.6 (flame-out ember), R-088 (drawGlowSprite
 // signature). Glow sprites are coloured radial gradients cached in the registry (res.light, key glowKey); this module keeps no
 // state and never writes State. Eyes (drawEyes, pass 16) use the entities.ts helpers. Rocks have no glow layer (render-3 §1 table); their telegraph is in props.ts.
+import { beaconPosition } from '../world/beacon-position.ts'
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
+import { entranceWall } from '../world/entrance-art.ts'
 import { TILE } from '../core/state.ts'
 import { clamp } from '../core/math.ts'
 import { hash2, vnoise } from '../core/noise.ts'
@@ -93,7 +95,8 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
 
   // Entrance shaft with a few rising dust motes.
   const en = s.world.entrance
-  const ex = (en.tx + 0.5) * TILE, ey = (en.ty + 0.5) * TILE
+  const door = entranceWall(s)
+  const ex = ((door?.tx ?? en.tx) + 0.5) * TILE, ey = door ? (door.ty + 1) * TILE - 31 : (en.ty + 0.5) * TILE
   if (glowInView(v, ex, ey, SHAFT_R)) {
     drawGlowSprite(ctx, SHAFT_COL, ex, ey, SHAFT_R, 0.25)
     for (let i = 0; i < MOTES; i++) {
@@ -104,10 +107,10 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
   }
 
   // Beacon fire: brighter while held, full and steady once lit. beaconFlash adds a short white burst (rf for reducedFlash).
-  const bc = s.world.beacon
-  const bx = (bc.tx + 0.5) * TILE, by = (bc.ty + 0.5) * TILE
+  const { x: bx, y: groundY } = beaconPosition(s)
+  const by = groundY - 32
   const hold = clamp(p.beaconHold / T.beacon.holdS, 0, 1)
-  const fireA = s.world.beaconLit ? 0.8 : 0.4 + 0.3 * hold
+  const fireA = s.world.beaconLit ? 0.8 : 0.7 * hold
   const fireR = s.world.beaconLit ? 64 : 40
   if (glowInView(v, bx, by, fireR)) { // the 16 px core lies inside the fire glow
     drawGlowSprite(ctx, BEACON_COL, bx, by, fireR, fireA)

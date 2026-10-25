@@ -196,6 +196,8 @@ The plan lives in [`docs/`](docs/). Start at [`docs/index.md`](docs/index.md). T
 
 ## AI process
 
+- Integrated the owner-provided complete cave atlas from `spritesheets/cave_tileset.png` and its matching JSON: 254 native frames, exact metadata rectangles/anchors, all 47 corner neighborhoods, directional ore, resource icons, wall entrance, resin/plants, matching rockfall art, and six 100 ms beacon frames. The source pixels are copied unchanged; structural and browser pixel checks verify the mapping and cache seams.
+
 - Unlit walking reuses the delivered lit walking poses at runtime and removes only the three reserved flame colours. Body/torch pixels, atlas files and timing remain unchanged.
 
 The jam requires that the majority of the game is AI-generated. This section says what was generated, with which tools, and how it was processed. Facts here are taken from the repo; open items are marked `OWNER TO FILL:`.

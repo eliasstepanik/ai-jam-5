@@ -10,7 +10,7 @@ export { VIEW_H_DEV, deviceZoom } from '../core/view.ts'
 // Bump when a light mask stop table changes: it is part of the mask key, so stale sprites are ignored (resources §3.1).
 export const LIGHT_VERSION = 1
 // Bump when tile painting changes so HMR discards previously painted chunk canvases.
-const TILE_VERSION = 4
+const TILE_VERSION = 5
 
 export type MaskKind = FlameKind | 'beacon' | 'shaft' | 'ember'
 

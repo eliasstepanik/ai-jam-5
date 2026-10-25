@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Integrated the 254-frame cave tileset: authored ore in four directions with three variants, raw-resource HUD/help icons, a wall-mounted entrance/exit, healing plant/resin art, matching falling/landed boulders, and the six-frame animated Beacon. The large Beacon uses a clear chamber floor anchor, shared by interaction and developer navigation; its original interaction point remains valid.
+
 - Added 33 confirmed Blender source scenes under `blender/`, grouped by character, with their source and SHA-256 manifest.
 
 - Dev mode shows the commit the checkout is running (7-char short sha as on GitHub, small label at the top centre). A dev-only Vite endpoint `/__commit` reads `git rev-parse --short=7 HEAD` per request, and the game re-fetches it every 30 s, so the label follows a server-side `git reset --hard` without a restart. Absent from `vite build`.
@@ -20,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The escape wisp now glides: it is a steered orb with its own velocity that eases toward the guide route, so it no longer snaps when the route changes (#81).
 
 ### Fixed
+
+- Inner corners use the supplied 47-state lookup and complete wall composites, with padded row/chunk clipping and matching cold/cache rendering. Solid northern joins no longer expose stray floor pixels.
+- Atlas hot reload refreshes pixels and frame metadata together while preserving the current run.
+- Replaced all old atlas coordinates with the new frame metadata and extended asset checks for the 1024x1280 sheet, frame overlap, directional ore and beacon animation.
 
 - Enemy grey pixels stay visible outside torch range alongside purple eyes. Both layers now respect the actual foreground wall alpha, including raised walls covering walkable tiles (#121).
 

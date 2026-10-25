@@ -3,8 +3,8 @@
 // R-169/R-176 (one call in step.ts, no counting spy). Writes player.beaconHold/energy/mining, world.beaconLit/beaconLitAt, meta.phase,
 // director.spawnT/quakeT, fx.beaconFlash/shake/shakeMag, monsters (dying). Emits denied (gate) and beaconLit.
 // Never writes ui.toasts (R-003): stepScreens turns `denied` into the toast. All progress lives in State (player.beaconHold).
+import { beaconInReach, beaconPosition } from '../world/beacon-position.ts'
 import type { State } from '../core/types.ts'
-import { TILE } from '../core/state.ts'
 import { T } from '../core/tuning.ts'
 import { emit } from './fx.ts'
 import type { Intent } from './intent.ts'
@@ -14,8 +14,7 @@ import { setDying } from './monsters.ts'
 export function stepBeacon(s: State, it: Intent, dt: number, eStart: number): void {
   const p = s.player, w = s.world
   if (w.beaconLit || s.meta.phase !== 'descent') return
-  const bx = w.beacon.tx * TILE + TILE / 2, by = w.beacon.ty * TILE + TILE / 2
-  if (Math.hypot(p.x - bx, p.y - by) > T.beacon.reachPx || !it.interact || it.moving) { p.beaconHold = 0; return }
+  if (!beaconInReach(s, T.beacon.reachPx) || !it.interact || it.moving) { p.beaconHold = 0; return }
   if (p.beaconHold > 0 && p.energy <= 0) p.beaconHold = 0 // a hit emptied the flame mid-hold: cancelled
   if (p.beaconHold === 0 && Math.max(eStart, p.energy) < T.beacon.minStartE) { // START GATE (also covers e <= 0)
     if (it.interactEdge) emit(s, 'denied', p.x, p.y) // no cost, no progress, one cue per key press
@@ -42,5 +41,6 @@ export function lightBeacon(s: State): void {
   const currentAmp = fx.shakeMag * Math.min(1, fx.shake / T.cam.shakeDecayS)
   fx.shakeMag = Math.min(T.cam.shakeMaxPx, Math.max(currentAmp, B.shakePx))
   fx.shake = Math.max(fx.shake, B.shakeS)
-  emit(s, 'beaconLit', w.beacon.tx * TILE + TILE / 2, w.beacon.ty * TILE + TILE / 2)
+  const { x, y } = beaconPosition(s)
+  emit(s, 'beaconLit', x, y)
 }

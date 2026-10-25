@@ -2,6 +2,7 @@
 // Spec: docs/architecture-assets-pipeline.md §5-§8, architecture-render-3 §5, architecture-modules-ui-assets row `images.ts`, R-019, R-154/R-155.
 // Every cache lives in getResources().images (hot-swap safe). Nothing here throws into update/render; missing art falls back to PLACEHOLDERS.
 import atlas from './atlas.json'
+import tilesetMeta from './cave_tileset.json'
 import { quantAngle } from '../core/noise.ts'
 import { PLACEHOLDERS } from './placeholders-ui.ts'
 import { getResources } from './resources.ts'
@@ -163,20 +164,26 @@ function loadImage(url: string | undefined): Promise<HTMLImageElement | null> {
   return Promise.race([img.decode().then(() => img, () => null), timeout]).finally(() => window.clearTimeout(timer))
 }
 
-// Pipeline §8: sheets in parallel, then the four screens one at a time. Idempotent; call from the render host once.
+// Pipeline §8: sheets in parallel, then screens one at a time. Per-frame calls return immediately while the atlas hash is unchanged.
 // Slots 0/1 are the external sheets (tileset, characters), legacy atlas sheets follow. A failure sets 'failed' + one warning, never throws.
 export function startPreload(res: Resources): void {
   const im = res.images
-  if (im.started) return
+  const sourceKey = tilesetMeta.meta.png_sha256
+  if (im.started && im.sourceKey === sourceKey) return
+  im.sourceKey = sourceKey
+  im.gen += 1 // invalidate old coordinates immediately; the loading slots use safe placeholders
+  im.rects.clear()
   im.started = true
   const slots = LEGACY_BASE + ATLAS.sheets.length
   im.total = slots + SCREEN_KEYS.length
   im.loaded = 0
   im.sheets = Array.from({ length: slots }, () => null)
   im.sheetState = Array.from({ length: slots }, () => 'loading')
+  const sheets = im.sheets // discard asynchronous results from an atlas superseded during hot reload
   const settle = (): void => { im.loaded += 1; im.gen += 1 }
   const sheetJob = async (slot: number, file: string, url: string | undefined, legacy: boolean): Promise<void> => {
     const img = await loadImage(url)
+    if (im.sheets !== sheets) return
     im.sheets[slot] = img
     im.sheetState[slot] = img ? 'ok' : 'failed'
     if (!img) console.warn('[assets] ' + file + ' failed, using placeholders')
@@ -190,7 +197,9 @@ export function startPreload(res: Resources): void {
   void (async () => {
     await Promise.all(sheetJobs)
     for (const k of SCREEN_KEYS) {
-      im.screens[k] = await loadImage(SCREEN_URLS['./art/' + SCREENS[k] + '.png'])
+      const img = await loadImage(SCREEN_URLS['./art/' + SCREENS[k] + '.png'])
+      if (im.sheets !== sheets) return
+      im.screens[k] = img
       settle()
     }
   })()

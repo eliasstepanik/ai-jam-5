@@ -1,4 +1,5 @@
 // Developer-only map and direct destination indicator. Cached terrain lives in the resource registry.
+import { beaconTile } from '../world/beacon-position.ts'
 import type { State } from '../core/types.ts'
 import { TILE } from '../core/state.ts'
 import { getResources } from '../assets/resources.ts'
@@ -44,7 +45,8 @@ function minimap(ctx: CanvasRenderingContext2D, s: State, w: number, h: number):
     ctx.fillStyle = color; ctx.fillRect(Math.round(px) - 2, Math.round(py) - 2, 4, 4)
   }
   marker(world.entrance.tx + 0.5, world.entrance.ty + 0.5, '#70eda7')
-  marker(world.beacon.tx + 0.5, world.beacon.ty + 0.5, '#ffd27a')
+  const beacon = beaconTile(s)
+  marker(beacon.tx + 0.5, beacon.ty + 0.5, '#ffd27a')
   marker(s.player.x / TILE, s.player.y / TILE, '#65d9ef')
   ctx.font = '10px ' + FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'top'
   for (const [label, color, dx] of [['P', '#65d9ef', 0], ['E', '#70eda7', 22], ['B', '#ffd27a', 44]] as const) {
