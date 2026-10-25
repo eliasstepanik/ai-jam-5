@@ -2,8 +2,10 @@
 // architecture-modules-render.md row light.ts, R-083, R-145. Mask sprites live in the registry (res.light, key maskKey), the dark
 // canvas in res.dark; this module keeps no state (hot-reload rule) and never writes State. Flicker is render-only and is
 // computed from T.flame (architecture-tuning.md §3) because T, not a FLAME.flickerFreq table, exists in the code.
+import { beaconPosition } from '../world/beacon-position.ts'
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
+import { entranceWall } from '../world/entrance-art.ts'
 import { TILE } from '../core/state.ts'
 import { flameRadius } from '../systems/light.ts'
 import { getResources } from '../assets/resources.ts'
@@ -70,10 +72,11 @@ function maskSources(s: State): LightSource[] {
     ? { x: p.x, y: p.y, r: T.flame.radiusOutPx, kind: 'ember' } // flame out: MIN_PLAYER_GLOW = 22 px, silhouette stays readable
     : { x: p.x, y: p.y, r: R, kind: p.activeMineral }]
   const en = s.world.entrance
-  out.push({ x: (en.tx + 0.5) * TILE, y: (en.ty + 0.5) * TILE, r: SHAFT_R, kind: 'shaft' })
+  const door = entranceWall(s)
+  out.push({ x: ((door?.tx ?? en.tx) + 0.5) * TILE, y: door ? (door.ty + 1) * TILE - 31 : (en.ty + 0.5) * TILE, r: SHAFT_R, kind: 'shaft' })
   if (!s.world.beaconLit && p.beaconHold > 0) {
-    const b = s.world.beacon
-    out.push({ x: (b.tx + 0.5) * TILE, y: (b.ty + 0.5) * TILE, r: BEACON_R * Math.min(1, p.beaconHold / T.beacon.holdS), kind: 'beacon' })
+    const b = beaconPosition(s)
+    out.push({ x: b.x, y: b.y - 32, r: BEACON_R * Math.min(1, p.beaconHold / T.beacon.holdS), kind: 'beacon' })
   }
   return out
 }

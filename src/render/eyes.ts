@@ -6,7 +6,7 @@ import { charFrame } from './charatlas.ts'
 import { dirIndex } from '../core/grid.ts'
 import { MON_FOOT, monsterDirection, monsterFrame } from './entities.ts'
 import { snap } from './entities-player.ts'
-import { FACE_H } from './tiles-paint.ts'
+import { FACE_H, WALL_PAD } from './tiles-paint.ts'
 import { drawWallRow } from './tiles.ts'
 import { ctx2d, newCanvas } from './light.ts'
 import type { View } from './view.ts'
@@ -53,7 +53,7 @@ export function drawAtlasEyes(ctx: CanvasRenderingContext2D, s: State, m: Monste
   g.globalCompositeOperation = 'destination-out'
   const walls = { ...v, tx0: Math.max(0, Math.floor(x / TILE)), tx1: Math.min(s.world.w - 1, Math.floor((x + 63) / TILE)) }
   // Walls in later foot rows cover the actor. Same-row walls are behind it, exactly as in the main row loop.
-  for (let ty = Math.floor(m.y / TILE) + 1; ty <= Math.min(s.world.h - 1, Math.floor((y + 63 + FACE_H) / TILE)); ty++) {
+  for (let ty = Math.floor(m.y / TILE) + 1; ty <= Math.min(s.world.h - 1, Math.floor((y + 63 + FACE_H + WALL_PAD) / TILE)); ty++) {
     drawWallRow(g, s, walls, ty)
   }
   ctx.save()

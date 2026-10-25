@@ -3,6 +3,7 @@
 // HP, hotbar, flame, depth, prompt, toasts, parry text, pulses and shakes, plus the escape-phase exit marker (ui-2 §1.1, rocks-2 §6).
 // ponytail: no module-level state; every animation is a pure function of meta.time / meta.steps / the State timers. The only
 // state is the exit-arrow smoothing in getResources().hud (render-side registry, not State).
+import { beaconInReach, beaconPosition } from '../world/beacon-position.ts'
 import type { State, FlameKind, MineralId, Vein } from '../core/types.ts'
 import { MINERALS, TILE, TOAST_S } from '../core/state.ts'
 import { T } from '../core/tuning.ts'
@@ -12,6 +13,7 @@ import { DEPTH_MAX, depthOf, zoneOfDepth } from '../core/score.ts'
 import { getDepthField } from '../world/caches.ts'
 import { exitHeading } from '../world/route.ts'
 import { playerTile, tileToWorld } from '../world/grid.ts'
+import { resourceIcon } from '../render/tileset.ts'
 import { makeView, toScreen } from '../render/view.ts'
 import { drawSprite, spriteReady } from '../assets/images.ts'
 import { getResources } from '../assets/resources.ts'
@@ -164,7 +166,7 @@ function hotbar(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
     const r = l.slots[i], n = p.minerals[m], x = r.x + shake
     ui(ctx, 'ui_slot', 'v', p.selected === m ? 1 : 0, x + r.w / 2, r.y + r.h / 2, PS * u)
     const icon: SpriteId = `item_mineral-${m}`
-    ui(ctx, icon, 'idle', 0, x + r.w / 2, r.y + r.h / 2, PS * u, n > 0 ? 1 : 0.3)
+    if (!resourceIcon(ctx, m, x + r.w / 2, r.y + r.h / 2, u, n > 0 ? 1 : 0.3)) ui(ctx, icon, 'idle', 0, x + r.w / 2, r.y + r.h / 2, PS * u, n > 0 ? 1 : 0.3)
     text(ctx, `×${n}`, x + 44 * u, r.y + 44 * u, 12, u, n > 0 ? COL.text : COL.dim, { align: 'right', bold: true })
     text(ctx, String(i + 1), x + r.w / 2, r.y - 6 * u, 12, u, COL.dim, { align: 'center' })
     if (p.activeMineral === m) {
@@ -195,8 +197,8 @@ const faceY = (v: Vein, w: number): number => (Math.floor(v.tile / w) + Math.flo
 function target(s: State): Target | null {
   const p = s.player, wd = s.world
   if (s.meta.phase !== 'descent') return null
-  const bx = (wd.beacon.tx + 0.5) * TILE, by = (wd.beacon.ty + 0.5) * TILE
-  if (!wd.beaconLit && Math.hypot(p.x - bx, p.y - by) <= T.beacon.reachPx) {
+  const { x: bx, y: by } = beaconPosition(s)
+  if (!wd.beaconLit && beaconInReach(s, T.beacon.reachPx)) {
     return { x: bx, y: by, label: STR.beacon, p: p.beaconHold / T.beacon.holdS, full: false }
   }
   const v = nearestVein(s)

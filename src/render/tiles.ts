@@ -1,5 +1,5 @@
 // L4 render: tile passes 5a/5b (2.5D, ADR-123). Derived per-run maps (zone, wall mask, inner corners, face variant) and the 8x8-tile
-// chunk cache of TWO canvases per chunk: `floor` 256x256 and `walls` 256x640 (eight independent complete wall rows).
+// chunk cache of TWO canvases per chunk: `floor` 256x256 and `walls` 256x896 (eight independent complete wall rows).
 // Spec: docs/architecture-render-2.md §2.1-2.2, architecture-modules-render.md (tiles.ts row). Paint helpers: tiles-paint.ts.
 // Maps and chunk canvases live in res.tiles (resources.ts); this module keeps no state and never writes State. No rng, no random calls.
 // The caller (render/index.ts) sets worldXf. Pass 5 is `drawFloor` + `drawWallRow` per row (the plan's `drawTileRow`).
@@ -15,9 +15,9 @@ import { ctx2d, newCanvas } from './light.ts'
 import { CHUNK_TILES, chunkKey, tileKey } from './keys.ts'
 import { tilesetOf } from './tileset.ts'
 import type { Tileset } from './tileset.ts'
-import { CHUNK_PX, FACE_H, HASH, WALL_ROW_H, WALLS_H, faceVariant, paintFloor, paintWalls } from './tiles-paint.ts'
+import { CHUNK_PX, FACE_H, WALL_PAD, HASH, WALL_ROW_H, WALLS_H, faceVariant, paintFloor, paintWalls } from './tiles-paint.ts'
 
-const LRU_CAP = 24 // 24 x (256 + 640) x 256 x 4 B = 22 MB; complete row strips preserve the cache budget
+const LRU_CAP = 24 // 24 x (256 + 896) x 256 x 4 B = 28 MB; complete row strips preserve the cache budget
 const BUILD_QUOTA = 4 // chunks built per frame; the rest are painted straight into the main context
 const TINT: readonly (string | null)[] = [null, null, '#b8c4d6', '#b4d0b0', '#c4b0d8'] // OD-D1 DEFAULT on: zone 1 none; index = zone
 const TINT_ALPHA = 0.25
@@ -135,7 +135,9 @@ function buildChunk(s: State, t: TileCache, ts: Tileset | null, cx: number, cy: 
   paintFloor(gf, s, t, ts, cx, cy, ox, oy)
   for (let row = 0; row < CHUNK_TILES; row++) {
     const ty = cy * CHUNK_TILES + row
-    paintWalls(gw, s, t, ts, cx * CHUNK_TILES, (cx + 1) * CHUNK_TILES, ty, ty + 1, ox, ty * 32 - FACE_H - row * WALL_ROW_H, true)
+    gw.save(); gw.beginPath(); gw.rect(0, row * WALL_ROW_H, CHUNK_PX, WALL_ROW_H); gw.clip()
+    paintWalls(gw, s, t, ts, cx * CHUNK_TILES - 2, (cx + 1) * CHUNK_TILES + 2, ty, ty + 1, ox, ty * 32 - FACE_H - WALL_PAD - row * WALL_ROW_H)
+    gw.restore()
   }
   tint(gf, s, t, cx, cy)
   tint(gw, s, t, cx, cy)
@@ -173,7 +175,7 @@ export function drawFloor(ctx: CanvasRenderingContext2D, s: State, v: View, _q: 
 
 // Pass 5b: draw the complete wall of ground row ty before that row's actors. Raising the wall by FACE_H aligns
 // its south base with collision; drawing its full height here lets the next ground row's caps occlude actors to the north.
-// ponytail: uncached rows skip corner cutouts because destination-out would erase the main canvas floor. Upgrade: a row scratch canvas.
+// Cold rows use the same padded strip and tint as cached rows, including cross-chunk overhang.
 export function drawWallRow(ctx: CanvasRenderingContext2D, s: State, v: View, ty: number): void {
   const t = tileCache(s)
   if (!t || ty < 0 || ty >= s.world.h) return
@@ -182,9 +184,15 @@ export function drawWallRow(ctx: CanvasRenderingContext2D, s: State, v: View, ty
   for (let cx = v.tx0 >> 3; cx <= v.tx1 >> 3; cx++) {
     const ch = t.chunks.get(chunkKey(cx, cy))
     if (ch) {
-      ctx.drawImage(ch.walls, 0, sy, CHUNK_PX, WALL_ROW_H, cx * CHUNK_PX, ty * 32 - FACE_H, CHUNK_PX, WALL_ROW_H)
+      ctx.drawImage(ch.walls, 0, sy, CHUNK_PX, WALL_ROW_H, cx * CHUNK_PX, ty * 32 - FACE_H - WALL_PAD, CHUNK_PX, WALL_ROW_H)
     } else {
-      paintWalls(ctx, s, t, ts, cx * CHUNK_TILES, (cx + 1) * CHUNK_TILES, ty, ty + 1, 0, 0, false)
+      const res = getResources(), key = 'wall-row-v5'
+      let canvas = res.light.get(key)
+      if (!canvas) { canvas = newCanvas(CHUNK_PX, WALL_ROW_H); res.light.set(key, canvas) }
+      const g = reset(canvas, CHUNK_PX, WALL_ROW_H), y = ty * 32 - FACE_H - WALL_PAD
+      paintWalls(g, s, t, ts, cx * CHUNK_TILES - 2, (cx + 1) * CHUNK_TILES + 2, ty, ty + 1, cx * CHUNK_PX, y)
+      tint(g, s, t, cx, cy)
+      ctx.drawImage(canvas, cx * CHUNK_PX, y)
     }
   }
 }
