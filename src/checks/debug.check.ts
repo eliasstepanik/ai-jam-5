@@ -170,7 +170,7 @@ function navigation(): void {
 
 function mapLayers(): void {
   const s = room(), before = JSON.stringify({ world: s.world, rng: s.rng, player: s.player })
-  for (const key of ['mapOres', 'mapResin', 'mapPlants', 'mapEntrance', 'mapExit', 'mapBeacon'] as const) {
+  for (const key of ['mapOres', 'mapResin', 'mapPlants', 'mapEntrance', 'mapBeacon'] as const) {
     const was = s.debug[key]; debugAction(s, key); ok(s.debug[key] !== was, key + ' toggles independently')
   }
   debugAction(s, 'mapZones'); ok(s.debug.mapMode === 'zones' && s.debug.minimap, 'zones selects one enabled map mode')

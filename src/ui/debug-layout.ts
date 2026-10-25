@@ -58,8 +58,7 @@ export function debugLayout(s: State, w: number, h: number, open: boolean, tab: 
     add('mapResin', 'Resin locations', 106, x + half + 6, half, true, s.debug.mapResin)
     add('mapPlants', 'Healing plants', 140, x, half, true, s.debug.mapPlants)
     add('mapBeacon', 'Beacon', 140, x + half + 6, half, true, s.debug.mapBeacon)
-    add('mapEntrance', 'Entrance', 174, x, half, true, s.debug.mapEntrance)
-    add('mapExit', 'Exit', 174, x + half + 6, half, true, s.debug.mapExit)
+    add('mapEntrance', 'Entrance / exit (E)', 174, x, width, true, s.debug.mapEntrance)
     for (const [i, id] of (['mapPlain', 'mapZones', 'mapDistance'] as const).entries()) {
       add(id, ['Floor', 'Zones', 'Distance'][i], 208, x + i * (third + 6), third, true, s.debug.mapMode === ['plain', 'zones', 'distance'][i])
     }

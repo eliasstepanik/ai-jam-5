@@ -8,7 +8,7 @@ import { beaconTile } from '../world/beacon-position.ts'
 import { hudLayout } from './layout.ts'
 import { FONT } from './draw.ts'
 
-export const MAP_MARKERS = { player: '#c85af0', entrance: '#66ddff', exit: '#ffffff', beacon: '#6699ff',
+export const MAP_MARKERS = { player: '#c85af0', entrance: '#66ddff', beacon: '#6699ff',
   copper: '#27cc68', sodium: '#ffe34b', strontium: '#ff4545', resin: '#ff9c32', plant: '#a7f15c' } as const
 
 function terrain(s: State): HTMLCanvasElement {
@@ -42,12 +42,6 @@ export function drawMinimap(ctx: CanvasRenderingContext2D, s: State, w: number, 
   ctx.drawImage(terrain(s), x, y, mw, mh)
   const marker = (tx: number, ty: number, color: string, shape = 'square'): void => {
     const px = Math.round(x + tx / world.w * mw), py = Math.round(y + ty / world.h * mh)
-    if (shape === 'ring') {
-      // Entry and exit can share a tile: retain the entrance color inside the exit's white outline.
-      ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.strokeRect(px - 2.5, py - 2.5, 5, 5)
-      ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.strokeRect(px - 2.5, py - 2.5, 5, 5)
-      return
-    }
     ctx.fillStyle = '#000'; ctx.fillRect(px - 3, py - 3, 7, 7)
     ctx.fillStyle = color
     if (shape === 'cross') { ctx.fillRect(px - 2, py, 5, 1); ctx.fillRect(px, py - 2, 1, 5) }
@@ -65,7 +59,6 @@ export function drawMinimap(ctx: CanvasRenderingContext2D, s: State, w: number, 
   if (d.mapResin) entries.push(['R', MAP_MARKERS.resin])
   if (d.mapPlants) entries.push(['H', MAP_MARKERS.plant])
   if (d.mapEntrance) { marker(world.entrance.tx + 0.5, world.entrance.ty + 0.5, MAP_MARKERS.entrance); entries.push(['E', MAP_MARKERS.entrance]) }
-  if (d.mapExit) { marker(world.exit.tx + 0.5, world.exit.ty + 0.5, MAP_MARKERS.exit, 'ring'); entries.push(['X', MAP_MARKERS.exit]) }
   if (d.mapBeacon) {
     const b = beaconTile(s); marker(b.tx + 0.5, b.ty + 0.5, MAP_MARKERS.beacon); entries.push(['B', MAP_MARKERS.beacon])
   }

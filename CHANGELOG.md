@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Removed the redundant minimap X marker and separate Exit toggle. E represents the shared entrance/exit.
+
 ### Added
 
 - Developer Map tab: independent ore, resin, healing plant, entrance, exit and Beacon markers, plus floor, gameplay-zone and entrance-path-distance heatmap modes. Ore uses copper green, sodium yellow and strontium red; the player is purple. Resource markers update immediately when mined or collected.
