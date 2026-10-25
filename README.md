@@ -194,6 +194,8 @@ The plan lives in [`docs/`](docs/). Start at [`docs/index.md`](docs/index.md). T
 - **`erasableSyntaxOnly` is on.** No `enum`, `namespace` or constructor parameter properties. Use union types, plain objects and normal fields.
 - **Long error lines clip** in the overlay (no wrapping). The full text is in the browser console.
 
+Developer minimap options are in **DEV → Map**: toggle resource/landmark markers and choose Floor, Zones or Distance. Distance uses cave path length from the entrance, normalized to the Beacon distance (blue to red); walls and landed rocks remain black. The purple player marker stays on top.
+
 ## AI process
 
 - Integrated the owner-provided complete cave atlas from `spritesheets/cave_tileset.png` and its matching JSON: 254 native frames, exact metadata rectangles/anchors, all 47 corner neighborhoods, directional ore, resource icons, wall entrance, resin/plants, matching rockfall art, and six 100 ms beacon frames. The source pixels are copied unchanged; structural and browser pixel checks verify the mapping and cache seams.
