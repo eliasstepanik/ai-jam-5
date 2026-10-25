@@ -234,7 +234,7 @@ export type Debug = {
   reveal: boolean; god: boolean; showPaths: boolean; freezeAi: boolean; overlay: boolean
   noclip: boolean; speedMul: number; freezeTorch: boolean; infiniteHp: boolean; noFog: boolean
   hurtboxes: boolean; animations: boolean; stats: boolean
-  mapOres: boolean; mapResin: boolean; mapPlants: boolean; mapEntrance: boolean; mapExit: boolean; mapBeacon: boolean
+  mapOres: boolean; mapResin: boolean; mapPlants: boolean; mapEntrance: boolean; mapBeacon: boolean
   mapMode: 'plain' | 'zones' | 'distance'
   minimap: boolean; arrow: boolean; arrowTarget: 'beacon' | 'exit'; commit: string; commitT: number // commit: dev-only short sha ('' = not fetched yet), commitT: s to next fetch
 }

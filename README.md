@@ -194,7 +194,7 @@ The plan lives in [`docs/`](docs/). Start at [`docs/index.md`](docs/index.md). T
 - **`erasableSyntaxOnly` is on.** No `enum`, `namespace` or constructor parameter properties. Use union types, plain objects and normal fields.
 - **Long error lines clip** in the overlay (no wrapping). The full text is in the browser console.
 
-Developer minimap options are in **DEV → Map**: toggle resource/landmark markers and choose Floor, Zones or Distance. Distance uses cave path length from the entrance, normalized to the Beacon distance (blue to red); walls and landed rocks remain black. The purple player marker stays on top.
+Developer minimap options are in **DEV → Map**: toggle resource/landmark markers and choose Floor, Zones or Distance. Distance uses cave path length from the entrance, normalized to the Beacon distance (blue to red); walls and landed rocks remain black. The purple player marker stays on top. E marks the shared entrance/exit; B marks the Beacon.
 
 ## AI process
 
