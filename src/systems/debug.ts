@@ -15,9 +15,9 @@ import { flameRadius, insideLight } from './light.ts'
 import { endRun } from './run.ts'
 import { begin, setDepth, shownClass } from './screens.ts'
 
-export const DEBUG_TOGGLES = ['noclip', 'infiniteHp', 'freezeTorch', 'noFog', 'freezeAi', 'overlay', 'hurtboxes', 'animations', 'stats', 'minimap', 'arrow', 'showPaths'] as const
+export const DEBUG_TOGGLES = ['noclip', 'infiniteHp', 'freezeTorch', 'noFog', 'freezeAi', 'overlay', 'hurtboxes', 'animations', 'stats', 'minimap', 'arrow', 'showPaths', 'mapOres', 'mapResin', 'mapPlants', 'mapEntrance', 'mapExit', 'mapBeacon'] as const
 export type DebugToggle = typeof DEBUG_TOGGLES[number]
-export type DebugAction = DebugToggle | MonsterKind | 'extinguish' | 'refill' | 'kill' | 'teleportEntrance' | 'teleportBeacon' | 'arrowBeacon' | 'arrowExit' | 'forceLeap' | DebugDepth
+export type DebugAction = DebugToggle | MonsterKind | 'extinguish' | 'refill' | 'kill' | 'teleportEntrance' | 'teleportBeacon' | 'arrowBeacon' | 'arrowExit' | 'forceLeap' | DebugDepth | 'mapPlain' | 'mapZones' | 'mapDistance'
 export type DebugDepth = 'depth1' | 'depth2' | 'depth3' | 'depth4'
 export const debugRunActive = (s: State): boolean => s.world.tiles !== '' && (s.meta.screen === 'playing' || s.meta.screen === 'paused')
 // Depth class shown in the panel: the running cave's class (undefined = 3), else the class the next run will use.
@@ -108,8 +108,13 @@ export function debugAction(s: State, action: DebugAction, view?: Input['view'])
     const key = action as DebugToggle
     if (key === 'noclip' && s.debug.noclip && !leaveNoclip(s)) return
     s.debug[key] = !s.debug[key]
+    if (key.startsWith('map') && s.debug[key]) s.debug.minimap = true
     if (key === 'infiniteHp' && s.debug.infiniteHp && debugRunActive(s)) s.player.hp = s.player.hpMax
     return
+  }
+  if (action === 'mapPlain' || action === 'mapZones' || action === 'mapDistance') {
+    s.debug.mapMode = action === 'mapZones' ? 'zones' : action === 'mapDistance' ? 'distance' : 'plain'
+    s.debug.minimap = true; return
   }
   if (action === 'arrowBeacon' || action === 'arrowExit') {
     s.debug.arrowTarget = action === 'arrowBeacon' ? 'beacon' : 'exit'; s.debug.arrow = true; return

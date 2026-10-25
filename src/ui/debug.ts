@@ -31,7 +31,7 @@ export function debugInput(s: State, input: Input): Input {
       if (control.enabled) {
         const id = control.id
         if (id === 'open') { ui.on = !ui.on; ui.drag = 'none' }
-        else if (id === 'tab0' || id === 'tab1' || id === 'tab2' || id === 'tab3') { ui.tab = Number(id.slice(-1)); ui.drag = 'none' }
+        else if (id === 'tab0' || id === 'tab1' || id === 'tab2' || id === 'tab3' || id === 'tab4') { ui.tab = Number(id.slice(-1)); ui.drag = 'none' }
         else if (id === 'speed' || id === 'torch') {
           ui.drag = id
           setDebugValue(s, id, (c.x - control.x - 8) / (control.w - 16))
@@ -113,7 +113,10 @@ export function drawDebug(ctx: CanvasRenderingContext2D, s: State, w: number, h:
     } else if (ui.tab === 3) {
       text(ctx, 'Depth ' + debugDepthClass(s) + ' ' + depthName(debugDepthClass(s)) + (debugRunActive(s) ? ': restarts this seed' : ': next run'), l.panel.x + 150, l.panel.y + 12, '#a5aab5')
       text(ctx, 'Arrow: direct bearing, walls may block it.', l.panel.x + 10, l.panel.y + 242)
-      text(ctx, 'Map: white floor, black wall; P / E / B.', l.panel.x + 10, l.panel.y + 260, '#a5aab5')
+      text(ctx, 'Map layers and colors: use the Map tab.', l.panel.x + 10, l.panel.y + 260, '#a5aab5')
+    } else if (ui.tab === 4) {
+      text(ctx, 'Cu green / Na yellow / Sr red', l.panel.x + 10, l.panel.y + 246, '#a5aab5')
+      text(ctx, 'Distance: blue entrance -> red Beacon', l.panel.x + 10, l.panel.y + 266, '#a5aab5')
     } else if (ui.tab === 2) {
       text(ctx, 'Cyan: physical collision at ground level', l.panel.x + 10, l.panel.y + 218, '#65d9ef')
       text(ctx, 'Orange/red: hurt and swept bite volumes', l.panel.x + 10, l.panel.y + 240, '#ffb573')

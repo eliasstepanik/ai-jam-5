@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Developer Map tab: independent ore, resin, healing plant, entrance, exit and Beacon markers, plus floor, gameplay-zone and entrance-path-distance heatmap modes. Ore uses copper green, sodium yellow and strontium red; the player is purple. Resource markers update immediately when mined or collected.
+
 - Integrated the 254-frame cave tileset: authored ore in four directions with three variants, raw-resource HUD/help icons, a wall-mounted entrance/exit, healing plant/resin art, matching falling/landed boulders, and the six-frame animated Beacon. The large Beacon uses a clear chamber floor anchor, shared by interaction and developer navigation; its original interaction point remains valid.
 
 - Added 33 confirmed Blender source scenes under `blender/`, grouped by character, with their source and SHA-256 manifest.
