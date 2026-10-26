@@ -230,6 +230,8 @@ The jam requires that the majority of the game is AI-generated. This section say
 - `scripts/check-assets.ts` (part of `npm run check`) validates both sheets: frame counts, size limits and the frame names the renderer uses.
 - Asset foundations (the sprite and sound catalogs, the resource registry and the actor-sheet helpers: one animation per sheet, 64×64 cells, direction rows N, NE, E, SE, S, SW, W, NW) were implemented with Codex from the catalog and Kittingsl's sheet layout. The sound catalog (`src/assets/sounds.ts`) lists every sound id; the audio engine and samples came later, see Audio above.
 
+- Pixel VFX and cave-detail integration (2026-10-26): code authored with Codex; fixed-size historical particles replace the rigid guide trail, and deterministic overlay placement uses the existing owner-supplied atlas without changing gameplay RNG or terrain. The owner supplied `spritesheets/last-ember-logo-native-160x80.png`; it is copied unchanged to the Vite-imported `src/assets/art/logo.png` and displayed at its native 2:1 aspect with nearest-neighbor scaling. No third-party assets were introduced.
+
 ## Credits and licences
 
 - Game code, procedural art, and the tileset and character atlas: AI-generated or written by AI agents for this jam; repo owner Elias Stepanik (eliasstepanik), with contributions from Kittingsl.

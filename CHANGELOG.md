@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Native 160x80 title logo, crisp torch/Beacon fire particles and a wisp particle trail that retains historical positions through turns.
+- Cave moss, vines, roots, pebbles and rubble overlays, a developer comparison toggle, progressive escape cracks and local fracture scars around rockfalls.
+
 - Developer Inspect option: Pure darkness hides explored-area memory without clearing exploration.
 
 - Developer Map tab: independent ore, resin, healing plant, entrance, exit and Beacon markers, plus floor, gameplay-zone and entrance-path-distance heatmap modes. Ore uses copper green, sodium yellow and strontium red; the player is purple. Resource markers update immediately when mined or collected.
@@ -30,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The escape wisp now glides: it is a steered orb with its own velocity that eases toward the guide route, so it no longer snaps when the route changes (#81).
 
 ### Fixed
+
+- Resin and healing plants stay grounded; shadow creatures shed opaque black pixels instead of soft coloured mist.
 
 - Keep the wisp body visible independently of trail fade and quality, remove the escape exit ring/arrow, and use one fading palette for the explored-memory view.
 - Remove Devourer proximity suppression/death restoration so being hit cannot enlarge torch light.

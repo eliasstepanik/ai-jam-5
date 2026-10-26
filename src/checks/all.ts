@@ -1,5 +1,7 @@
 // Runs every pure-logic check (R-040). Add one import + one call per new *.check.ts file; the list is kept in sync by hand.
 import { run as worldVisualFixes } from './world-visual-fixes.check.ts'
+import { run as pixelParticles } from './pixel-particles.check.ts'
+import { run as caveDetail } from './cave-detail.check.ts'
 import { run as state } from './state.check.ts'
 import { run as publishedBugs } from './published-bugs.check.ts'
 import { run as reportedBugs } from './reported-bugs.check.ts'
@@ -110,4 +112,6 @@ depthLabel()
 reportedBugs()
 publishedBugs()
 worldVisualFixes()
+pixelParticles()
+caveDetail()
 console.log('checks ok')

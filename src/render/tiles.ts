@@ -3,7 +3,7 @@
 // Spec: docs/architecture-render-2.md §2.1-2.2, architecture-modules-render.md (tiles.ts row). Paint helpers: tiles-paint.ts.
 // Maps and chunk canvases live in res.tiles (resources.ts); this module keeps no state and never writes State. No rng, no random calls.
 // The caller (render/index.ts) sets worldXf. Pass 5 is `drawFloor` + `drawWallRow` per row (the plan's `drawTileRow`).
-// Ground and wall decor overlays are NOT drawn (GAP, as before: no task or file owns decor; `_q.decor` is reserved for that gate).
+// Available floor/wall detail overlays are cached by the quality/debug gate and collapse damage stage.
 import type { State } from '../core/types.ts'
 import { depthOf, zoneOfDepth } from '../core/score.ts'
 import { getDepthField } from '../world/caches.ts'
@@ -13,6 +13,7 @@ import type { Quality } from './quality.ts'
 import type { View } from './view.ts'
 import { ctx2d, newCanvas } from './light.ts'
 import { CHUNK_TILES, chunkKey, tileKey } from './keys.ts'
+import { damageStage, detailsOn } from './cave-details.ts'
 import { tilesetOf } from './tileset.ts'
 import type { Tileset } from './tileset.ts'
 import { CHUNK_PX, FACE_H, WALL_PAD, HASH, WALL_ROW_H, WALLS_H, faceVariant, paintFloor, paintWalls } from './tiles-paint.ts'
@@ -74,7 +75,7 @@ function buildMaps(s: State, key: string): TileCache {
 export function tileCache(s: State): TileCache | null {
   const { w, h, tiles, tilesHash } = s.world
   if (tiles.length !== w * h || w === 0) return null
-  const res = getResources(), key = tileKey(tilesHash, res.images.gen, s.world.veinGen)
+  const res = getResources(), key = tileKey(tilesHash, res.images.gen, s.world.veinGen) + ':' + damageStage(s) + ':' + Number(detailsOn(s))
   let t = res.tiles
   if (!t || !t.key.startsWith(tilesHash + ':')) {
     t = buildMaps(s, key)
@@ -144,7 +145,11 @@ export function drawFloor(ctx: CanvasRenderingContext2D, s: State, v: View, _q: 
         ch = buildChunk(s, t, ts, cx, cy, k)
       }
       if (ch) ctx.drawImage(ch.floor, cx * CHUNK_PX, cy * CHUNK_PX)
-      else paintFloor(ctx, s, t, ts, cx, cy, 0, 0)
+      else {
+        ctx.save(); ctx.beginPath(); ctx.rect(cx * CHUNK_PX, cy * CHUNK_PX, CHUNK_PX, CHUNK_PX); ctx.clip()
+        paintFloor(ctx, s, t, ts, cx, cy, 0, 0)
+        ctx.restore()
+      }
     }
   }
 }

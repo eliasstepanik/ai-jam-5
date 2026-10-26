@@ -12,9 +12,9 @@ export type MistProfile = { n: number; cap: number; r: number; spread: number; r
 
 // Per-kind tuning (DEFAULT, architect): lurker = small and quick, stalker = long thin trail, devourer = big and dense.
 export const MIST: Record<MonsterKind, MistProfile> = {
-  lurker: { n: 4, cap: 9, r: 7, spread: 8, rise: 10, life: 1.6, trail: 0.18, alpha: 0.22 },
-  stalker: { n: 5, cap: 11, r: 9, spread: 11, rise: 8, life: 1.9, trail: 0.3, alpha: 0.2 },
-  devourer: { n: 10, cap: 22, r: 16, spread: 22, rise: 12, life: 2.4, trail: 0.2, alpha: 0.28 },
+  lurker: { n: 10, cap: 24, r: 7, spread: 8, rise: 26, life: 1.6, trail: 0.18, alpha: 0.22 },
+  stalker: { n: 12, cap: 28, r: 9, spread: 11, rise: 32, life: 1.9, trail: 0.3, alpha: 0.2 },
+  devourer: { n: 22, cap: 44, r: 16, spread: 22, rise: 40, life: 2.4, trail: 0.2, alpha: 0.28 },
 }
 export const MIST_GLOBAL_CAP = 96 // wisps drawn per frame over all monsters (the pool of particles.ts holds 512)
 const DENSITY: Record<MistMode, number> = { idle: 1, move: 1.25, windup: 1.8, lunge: 2.2, dying: 1 } // x profile.n

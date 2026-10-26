@@ -1,0 +1,45 @@
+Pixel polish verification, 2026-10-26
+Scope: #98, #127 (expanded to torch, guide trail and Beacon), #84 and #85.
+
+Automated checks
+- pixel-particles.check.ts: historical spawn positions survive a turn, pause stops
+  the cosmetic clock, teleport clears old trail, extinguish clears torch sparks,
+  fixed 256-slot recycling, quality count reduction and new-run reset.
+- cave-detail.check.ts: all 19 supplied detail names reachable; deterministic
+  choices, sparse density, exclusion from one-tile corridors, 4 damage stages.
+- Existing shadow-mist checks retain per-kind/state/density/cap/read-only proof.
+- Existing crack, cave-hash and rock-route checks remain required.
+- Asset gate now checks every detail name against the delivered atlas.
+
+Browser verification (headless Edge, 1280x800)
+- Plant/large-resin draw coordinates match at 4 times: 8 recorded draws.
+- 41 black shadow squares from 3 enemy kinds; every fill is #000000, alpha 1,
+  with integer position and size; no circles/blur used by the shadow painter.
+- Continuous emission recorded 14 torch, 31 guide and 21 Beacon particles.
+  Extinguishing removes source-0 particles immediately. Old guide particles
+  retain the first leg after a right-angle turn instead of rotating with it.
+- All 19 existing ground/wall detail source rectangles hit by real painters.
+- Crack-anchor sets grow 61 -> 120 -> 195 -> 259 as escape damage progresses;
+  every prior mark keeps its frame. Local rockfall scars are capped at 48.
+- Compared 2,359,296 cold/warm floor bytes including chunk-crossing overlays;
+  no differences after clipping direct fallback floor painting to chunk bounds.
+- Detail toggle changes the cache key; quality 2/3 skips optional decals.
+- First-pass synthetic floor/chunk workload measured about 0.8-0.95 ms per
+  built chunk on this Windows browser. This is NOT proof of the 0.5ms target
+  in broader #112, which remains open. No gameplay tiles/hashes/RNG modified.
+- Isolated shadow/fire work: about 0.03 ms/frame over 360 repetitions with
+  24 enemies; fixed fire pool 256; State serialized identically before/after.
+  CPU-only measurement; canvas/GPU and device performance can vary.
+- Native logo is 160x80, 4.60KB, copied unchanged from the owner.
+  Enlarged 50% after user feedback: display sizes 240x120 (360x640, 640x360),
+  480x240 (1280x800), 720x360 (1920x1080); no tagline overlap or distortion.
+- Actual title and playing views inspected. ?ph=1 reaches the world pickup
+  stand-ins; default reaches delivered art. No browser exceptions.
+- Real main.ts host HMR preserves run/debug choices AND the same live pixel
+  pool object with continuing emission. Export debug hidden unless opted in.
+
+Remaining acceptance work
+- This batch awaits in-game confirmation; #84/#85/#98/#127 remain OPEN.
+- Reopened #93/#110/#112/#101/#102/#103 retain the exact missing criteria in
+  acceptance-2026-10-26.txt. Confirmed sub-fixes remain recorded as solved.
+- #97's separate stalagmite/bones/mushroom/puddle prop art/spawner remains OPEN.

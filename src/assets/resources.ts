@@ -1,4 +1,5 @@
 // Non-State resources: lazy data only, retained in Vite hot.data. No DOM work on import.
+import type { PixelPool } from '../core/pixel-particles.ts'
 import type { SoundId, Group } from './sounds.ts'
 
 export type Canvas2D = { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; w: number; h: number }
@@ -56,6 +57,7 @@ export type Resources = {
   images: ImageStore; tiles: TileCache | null; memory: MemoryCache; light: LightCache
   dark: Canvas2D | null; scratch: Scratch | null
   swapped: Map<string, HTMLCanvasElement> // flame palette-swap frames (R-185): 64x64, key 'x|y|material' (sheet rect of the frame + material, see render/charatlas.ts swappedFrame), LRU 256; slot name is a DEFAULT (D7)
+  pixelFx?: PixelPool
   particles: Particles; perf: Perf; audio: AudioRes
   debug: { on: boolean; available: boolean | null; tab: number; drag: 'none' | 'torch' | 'speed'
     aimX: number; aimY: number; mouseX: number; mouseY: number; updateAt: number; updateMs: number; map: { key: string; canvas: HTMLCanvasElement } | null }

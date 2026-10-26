@@ -12,7 +12,7 @@ export const C_DUST = 0, C_EMBER = 1, C_HOT = 2, C_FLAME = 3
 const C_SMOKE = 7, C_BLOOD = 8, C_INK = 9, C_GREY = 10, C_HEAL = 11
 export const C_SPARK = 12
 export const PAL: readonly string[] = ['#8c8070', '#ffb347', '#fff4d6', FLAME_COL.none.mantle,
-  ...MINERALS.map(m => FLAME_COL[m].mantle), '#2c2540', '#ff3b2a', '#1b1726', '#3a3a3a', '#b6ff8a',
+  ...MINERALS.map(m => FLAME_COL[m].mantle), '#2c2540', '#ff3b2a', '#000000', '#3a3a3a', '#b6ff8a',
   FLAME_COL.none.spark, ...MINERALS.map(m => FLAME_COL[m].spark)]
 
 // Colour markers resolved per event in particles.ts: the player's active flame mantle / spark colour, or the mineral index in e.a.
@@ -53,7 +53,7 @@ export const TABLE: Record<SpawnKind, readonly Spec[]> = {
     add({ n: 6, col: COL_FLAME, alt: COL_FLAME, vmin: 30, vmax: 90, life: 0.6 }),
   ],
   hpHit: [norm({ n: 10, col: C_BLOOD, alt: C_BLOOD, vmin: 60, vmax: 150, life: 0.4 })],
-  monsterDie: [norm({ n: 14, col: C_INK, alt: C_SMOKE, vmin: 40, vmax: 120, life: 0.6 })],
+  monsterDie: [norm({ n: 14, col: C_INK, alt: C_INK, vmin: 40, vmax: 120, life: 0.6 })],
   flameOut: [norm({ n: 10, col: C_GREY, alt: C_GREY, vmin: 10, vmax: 40, life: 1, grav: -40 })],
   relight: [add({ n: 16, col: COL_FLAME, alt: C_HOT, vmin: 40, vmax: 160, life: 0.5, fl: true })],
   toss: [add({ n: 16, col: COL_ARG, alt: C_HOT, vmin: 40, vmax: 160, life: 0.5 })], // a = -1: denied, nothing drawn

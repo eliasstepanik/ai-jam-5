@@ -81,7 +81,7 @@ export function init(): State {
     best: null, result: null,
     debug: { reveal: false, god: false, showPaths: false, freezeAi: false, overlay: false,
       noclip: false, speedMul: 4, freezeTorch: false, infiniteHp: false, noFog: false,
-      hurtboxes: false, animations: false, stats: false, pureDarkness: false, minimap: false, arrow: false, arrowTarget: 'beacon',
+      hurtboxes: false, animations: false, stats: false, pureDarkness: false, caveDetails: true, minimap: false, arrow: false, arrowTarget: 'beacon',
       mapOres: false, mapResin: false, mapPlants: false, mapEntrance: true, mapBeacon: true, mapMode: 'plain',
       commit: '', commitT: 0 },
     wisp: { on: false, d: 0, p0: -1, ss: -1, ps: -1, path: [], wx: 0, wy: 0, wvx: 0, wvy: 0 },

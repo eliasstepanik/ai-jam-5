@@ -33,7 +33,7 @@ const TINT_CAP = 64
 
 // ponytail: URL-derived flag read once per module evaluation (re-read on every hot swap, not game state). Ceiling: a `?ph=` change needs a reload.
 let forced: boolean | null = null
-function forcePlaceholders(): boolean {
+export function forcePlaceholders(): boolean {
   forced ??= typeof location !== 'undefined' && new URLSearchParams(location.search).get('ph') === '1'
   return forced
 }
@@ -169,7 +169,7 @@ function loadImage(url: string | undefined): Promise<HTMLImageElement | null> {
 // Slots 0/1 are the external sheets (tileset, characters), legacy atlas sheets follow. A failure sets 'failed' + one warning, never throws.
 export function startPreload(res: Resources): void {
   const im = res.images
-  const sourceKey = tilesetMeta.meta.png_sha256 + ':' + characterMeta.png_sha256 + ':' + SHEETS['./characters.png']
+  const sourceKey = tilesetMeta.meta.png_sha256 + ':' + characterMeta.png_sha256 + ':' + SHEETS['./characters.png'] + ':' + Object.values(SCREEN_URLS).join('|')
   if (im.started && im.sourceKey === sourceKey) return
   im.sourceKey = sourceKey
   im.gen += 1 // invalidate old coordinates immediately; the loading slots use safe placeholders

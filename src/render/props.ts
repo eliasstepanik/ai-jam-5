@@ -31,7 +31,6 @@ export const TAG_VEIN = 5
 const VEIN_ID: Record<string, SpriteId> = {
   sodium: 'spec_vein-sodium', copper: 'spec_vein-copper', strontium: 'spec_vein-strontium',
 }
-const BOB_PX = 1 // render-2 §3.1: +-1 px at 1 Hz
 const TAU = Math.PI * 2
 const FALL_S = 0.35 // render-2 §3.4: a rock shows as a falling boulder when r.t < 0.35 s
 const FALL_GROW = 0.8 // falling boulder scale 1 + 0.8 * (r.t / FALL_S)
@@ -96,7 +95,7 @@ export function drawProp(ctx: CanvasRenderingContext2D, s: State, v: View, tag: 
     const p = s.pickups[i]
     if (!p) return
     const id: SpriteId = p.kind === 'plant' ? 'item_plant' : p.size === 'large' ? 'item_resin-large' : 'item_resin-small'
-    const ts = tilesetOf(), y = p.y + BOB_PX * Math.sin(t * TAU + p.bob)
+    const ts = tilesetOf(), y = p.y
     const name = p.kind === 'plant' ? 'ground_heal_plant' : (p.size === 'large' ? 'ground_resin_big_0' : 'ground_resin_blob_0') + (1 + i % 3)
     if (ts) blit(ctx, ts, name, p.x, y)
     else drawSprite(ctx, id, 'idle', frameAt(id, 'idle', t), p.x, y)
