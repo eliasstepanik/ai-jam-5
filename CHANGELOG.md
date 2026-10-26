@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- #99: remove the active-mineral underline and raise the duration bar inside the torch info box so it clears the bottom frame.
+
 ### Added
 - #99: delivered UI hearts, nine-slice menu/HUD panels, selection markers, material-colored animated torch/fuel meter and local Hollow Sigil font.
 

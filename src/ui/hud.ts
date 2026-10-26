@@ -129,8 +129,8 @@ function flameReadout(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): vo
   } else {
     text(ctx, STR.flame[p.activeMineral === 'none' ? 'plain' : p.activeMineral], l.flameText.x, base, 14, u, col.mantle, { bold: true })
   }
-  // Energy bar under the name; below flickerLowBelowE it pulses (1.5 Hz, or steady when flashing is reduced).
-  const bx = l.flameText.x, bw = l.flame.x + l.flame.w - 8 * u - bx, by = l.flame.y + l.flame.h - 6 * u
+  // Keep the duration bar above the torch panel bottom rim; low fuel keeps the existing pulse.
+  const bx = l.flameText.x, bw = l.flame.x + l.flame.w - 8 * u - bx, by = l.flame.y + l.flame.h - 10 * u
   const f = clamp(p.energy / p.energyMax, 0, 1)
   ctx.fillStyle = COL.border
   ctx.fillRect(bx, by, bw, 3 * u)
@@ -173,10 +173,6 @@ function hotbar(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
     if (!resourceIcon(ctx, m, x + r.w / 2, r.y + r.h / 2, u, n > 0 ? 1 : 0.3)) ui(ctx, icon, 'idle', 0, x + r.w / 2, r.y + r.h / 2, PS * u, n > 0 ? 1 : 0.3)
     text(ctx, `×${n}`, x + 44 * u, r.y + 44 * u, 12, u, n > 0 ? COL.text : COL.dim, { align: 'right', bold: true })
     text(ctx, String(i + 1), x + r.w / 2, r.y - 6 * u, 12, u, COL.dim, { align: 'center' })
-    if (p.activeMineral === m) {
-      ctx.fillStyle = flameCol(m).mantle
-      ctx.fillRect(x, r.y + 52 * u, r.w, 4 * u)
-    }
   })
   text(ctx, STR.hotbarHint, l.hotbarHint.x, l.hotbarHint.y, 12, u, COL.dim, { align: 'center' })
 }
