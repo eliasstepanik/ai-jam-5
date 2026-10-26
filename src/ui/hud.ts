@@ -130,7 +130,7 @@ function flameReadout(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): vo
     text(ctx, STR.flame[p.activeMineral === 'none' ? 'plain' : p.activeMineral], l.flameText.x, base, 14, u, col.mantle, { bold: true })
   }
   // Keep the duration bar above the torch panel bottom rim; low fuel keeps the existing pulse.
-  const bx = l.flameText.x, bw = l.flame.x + l.flame.w - 8 * u - bx, by = l.flame.y + l.flame.h - 10 * u
+  const bx = l.flameText.x, bw = l.flame.x + l.flame.w - 8 * u - bx, by = l.flame.y + l.flame.h - 12 * u
   const f = clamp(p.energy / p.energyMax, 0, 1)
   ctx.fillStyle = COL.border
   ctx.fillRect(bx, by, bw, 3 * u)
