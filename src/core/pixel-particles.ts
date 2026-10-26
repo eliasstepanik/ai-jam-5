@@ -26,7 +26,7 @@ const RATE = [28, 64, 42] as const
 function clearSource(p: PixelPool, source: PixelSource): void {
   for (let i = 0; i < PIXEL_CAP; i++) if (p.source[i] === source) p.life[i] = 0
 }
-export function samplePixels(p: PixelPool, source: PixelSource, x: number, y: number, enabled: boolean, quality: number, material = 0): void {
+export function samplePixels(p: PixelPool, source: PixelSource, x: number, y: number, enabled: boolean, quality: number, material = 0, origin?: (n: number) => readonly [number, number]): void {
   const now = p.clock, interval = 1 / (RATE[source] * Math.max(0.1, Math.min(1, quality)))
   if (!enabled) {
     if (p.active[source]) clearSource(p, source)
@@ -47,6 +47,7 @@ export function samplePixels(p: PixelPool, source: PixelSource, x: number, y: nu
     const width = source === 2 ? 16 : source === 1 ? 6 : 3
     p.x[i] = p.px[source] + (x - p.px[source]) * mix + (hash2(n, 1, seed) - 0.5) * width
     p.y[i] = p.py[source] + (y - p.py[source]) * mix + (hash2(n, 2, seed) - 0.5) * 4
+    if (origin) { const at = origin(n); p.x[i] = at[0]; p.y[i] = at[1] }
     p.vx[i] = (hash2(n, 3, seed) - 0.5) * (source === 2 ? 16 : 7)
     p.vy[i] = -(source === 1 ? 3 : 16) - hash2(n, 4, seed) * (source === 2 ? 35 : 15)
     p.born[i] = born; p.life[i] = (source === 1 ? 0.7 : 0.6) + hash2(n, 5, seed) * 0.8

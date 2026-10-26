@@ -57,6 +57,8 @@ export type Resources = {
   images: ImageStore; tiles: TileCache | null; memory: MemoryCache; light: LightCache
   dark: Canvas2D | null; scratch: Scratch | null
   swapped: Map<string, HTMLCanvasElement> // flame palette-swap frames (R-185): 64x64, key 'x|y|material' (sheet rect of the frame + material, see render/charatlas.ts swappedFrame), LRU 256; slot name is a DEFAULT (D7)
+  emitterPixels?: { gen: number; frames: Map<string, Uint16Array> }
+  shadowFx?: { runId: number; at: number; slots: Map<number, { cycle: number; x: number; y: number }> }
   pixelFx?: PixelPool
   particles: Particles; perf: Perf; audio: AudioRes
   debug: { on: boolean; available: boolean | null; tab: number; drag: 'none' | 'torch' | 'speed'

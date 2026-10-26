@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- #127: golden-yellow guide trail; Beacon sparks begin inside the flame, and shadow pixels begin inside creature silhouettes, shrink and rise only 4–6 pixels. Torch particles retain their existing appearance.
+
 ### Removed
 
 - Removed the redundant minimap X marker and separate Exit toggle. E represents the shared entrance/exit.
