@@ -6,6 +6,7 @@ import { makeView, screenXf, toScreen } from '../render/view.ts'
 import type { View } from '../render/view.ts'
 import { PLAYER_FOOT } from '../render/entities-player.ts'
 import { drawMinimap } from './debug-map.ts'
+import { skinSprite } from './skin.ts'
 import { FONT } from './draw.ts'
 
 function arrow(ctx: CanvasRenderingContext2D, s: State, v: View): void {
@@ -16,9 +17,15 @@ function arrow(ctx: CanvasRenderingContext2D, s: State, v: View): void {
     const radius = 44
     ctx.save(); ctx.translate(x + Math.cos(bearing.angle) * radius, y + Math.sin(bearing.angle) * radius)
     ctx.rotate(bearing.angle)
-    ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-7, -7); ctx.lineTo(-3, 0); ctx.lineTo(-7, 7); ctx.closePath()
-    ctx.lineWidth = 3; ctx.strokeStyle = '#101015'; ctx.stroke()
-    ctx.fillStyle = color; ctx.fill(); ctx.restore()
+    ctx.save(); ctx.rotate(-Math.PI / 2)
+    const drawn = skinSprite(ctx, 'selection_pointer', s.debug.arrowTarget === 'beacon' ? 'menu' : 'copper', -7, -4, 14, 8)
+    ctx.restore()
+    if (!drawn) {
+      ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-7, -7); ctx.lineTo(-3, 0); ctx.lineTo(-7, 7); ctx.closePath()
+      ctx.lineWidth = 3; ctx.strokeStyle = '#101015'; ctx.stroke()
+      ctx.fillStyle = color; ctx.fill()
+    }
+    ctx.restore()
   }
   const label = (at ? 'AT ' : '') + (s.debug.arrowTarget === 'beacon' ? 'BEACON' : 'EXIT') +
     (at ? '' : ' ' + Math.ceil(debugBearing(s).distance / TILE) + 't')

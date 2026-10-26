@@ -1,5 +1,7 @@
 // Full-screen overlays: title, help, paused, dead, won (architecture-ui §7-8, ui-2 §2-3, scoring §7). Stateless: reads State and
 // the resource registry, draws, keeps nothing between calls. Hit-testing and focus live in layout.ts / systems/screens.ts.
+import { skinSprite } from './skin.ts'
+import { UI_FPS, UI_TORCH_FRAMES } from '../assets/ui-data.ts'
 import { resourceIcon } from '../render/tileset.ts'
 import { drawSprite } from '../assets/images.ts'
 import { getResources } from '../assets/resources.ts'
@@ -49,8 +51,8 @@ function backdrop(ctx: Ctx, s: State, w: number, h: number, u: number, alpha: nu
     for (let i = 0; i < 12; i++) {
       const a = hash2(i, 0, 1) * TAU, x = w / 2 + Math.cos(a) * 260 * u, y = h / 2 + Math.sin(a) * 260 * u
       ctx.globalAlpha = alpha * (s.settings.reducedFlash ? 0.7 : 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(s.meta.time * 0.8 + hash2(i, 0, 2) * TAU)))
-      fill(ctx, '#cbb8ff', x - 5 * u, y, 3 * u, 3 * u)
-      fill(ctx, '#cbb8ff', x + 2 * u, y, 3 * u, 3 * u)
+      fill(ctx, '#a495cf', x - 5 * u, y, 3 * u, 3 * u)
+      fill(ctx, '#a495cf', x + 2 * u, y, 3 * u, 3 * u)
     }
   }
   ctx.restore()
@@ -164,7 +166,7 @@ function timingRing(ctx: Ctx, s: State, cx: number, cy: number, r: number, u: nu
   ctx.moveTo(cx, cy)
   ctx.lineTo(cx + Math.cos(a) * (r + 8 * u), cy + Math.sin(a) * (r + 8 * u))
   ctx.stroke()
-  const eye = ph < m.telegraphS ? '#ffffff' : '#cbb8ff' // the eyes flare during the telegraph
+  const eye = ph < m.telegraphS ? '#ffffff' : '#a495cf' // the eyes flare during the telegraph
   fill(ctx, eye, cx - 12 * u, cy - 6 * u, 8 * u, 6 * u)
   fill(ctx, eye, cx + 4 * u, cy - 6 * u, 8 * u, 6 * u)
   ctx.restore()
@@ -218,11 +220,13 @@ function drawHelp(ctx: Ctx, s: State, w: number, h: number): void {
         ctx.fill()
       } else if (!resourceIcon(ctx, MINERALS[i - 1], c.icon + 16 * u, cy, u)) drawSprite(ctx, `item_mineral-${MINERALS[i - 1]}`, 'idle', 0, c.icon + 16 * u, cy, 0, 2 * u) // placeholder art ignores scale, atlas art honours it
       text(ctx, m.name, c.name, cy + 6 * u, 16, u, COL.text, { bold: true })
-      for (const [r, col] of [[12, m.mantle], [5, m.core]] as const) { // flame swatch: mantle disc, core disc
-        ctx.fillStyle = col
-        ctx.beginPath()
-        ctx.arc(c.flame + 12 * u, cy, r * u, 0, TAU)
-        ctx.fill()
+      if (!skinSprite(ctx, UI_TORCH_FRAMES[Math.floor(s.meta.time * UI_FPS) % 3], i === 0 ? 'normal' : MINERALS[i - 1], c.flame, cy - 18 * u, 24 * u, 36 * u)) {
+        for (const [r, col] of [[12, m.mantle], [5, m.core]] as const) { // flame swatch: mantle disc, core disc
+          ctx.fillStyle = col
+          ctx.beginPath()
+          ctx.arc(c.flame + 12 * u, cy, r * u, 0, TAU)
+          ctx.fill()
+        }
       }
       text(ctx, m.effect, c.effect, cy + 6 * u, 16, u, COL.text)
       keycap(ctx, m.key, c.key - 16 * u, cy, u)

@@ -217,9 +217,9 @@ export function hudLayout(w: number, h: number, s: State): HudLayout {
   return {
     u,
     pips: Array.from({ length: s.player.hpMax }, (_, i) => tl(36 + i * 28, 36)),
-    flame: place(w, h, u, 0, 0, MARGIN, 60, 160, 24),
-    flameSwatch: tl(36, 72),
-    flameText: tl(52, 72),
+    flame: place(w, h, u, 0, 0, MARGIN, 60, 160, 40),
+    flameSwatch: tl(36, 80),
+    flameText: tl(52, 76),
     depth: tr(REF_W - MARGIN, 44),
     zone: tr(REF_W - MARGIN, 64),
     clock: tr(REF_W - MARGIN, 84),

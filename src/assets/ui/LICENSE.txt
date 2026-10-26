@@ -1,0 +1,4 @@
+Original UI sprite shapes, palette data, Hollow Sigil font, and supplied generator source: CC0 1.0 Universal.
+You may use, modify, embed, and redistribute without attribution. https://creativecommons.org/publicdomain/zero/1.0/
+Created with Codex using Python, Pillow and FontTools for this game jam. Font glyphs are original pixel grids; no SAGA font outlines or glyph images were used.
+Existing game ore colours were sampled as visual references. Existing game artwork retains its project terms; only its colour provenance is supplied here.

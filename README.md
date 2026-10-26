@@ -198,6 +198,8 @@ Developer minimap options are in **DEV → Map**: toggle resource/landmark marke
 
 ## AI process
 
+- Integrated the owner-supplied UI pack (2026-10-26): original CC0 pixel sprites, themed palettes and Hollow Sigil font authored with Codex/Python/Pillow/FontTools. PNGs and WOFF2 are copied unchanged and imported locally through Vite; runtime code applies nine-slice panels, native heart states, tiled fuel meters and the supplied font. No third-party font data or external runtime dependency.
+
 - Integrated the owner-provided complete cave atlas from `spritesheets/cave_tileset.png` and its matching JSON: 254 native frames, exact metadata rectangles/anchors, all 47 corner neighborhoods, directional ore, resource icons, wall entrance, resin/plants, matching rockfall art, and six 100 ms beacon frames. The source pixels are copied unchanged; structural and browser pixel checks verify the mapping and cache seams.
 
 - Unlit walking reuses the delivered lit walking poses at runtime and removes only the three reserved flame colours. Body/torch pixels, atlas files and timing remain unchanged.
@@ -233,6 +235,8 @@ The jam requires that the majority of the game is AI-generated. This section say
 - Pixel VFX and cave-detail integration (2026-10-26): code authored with Codex; fixed-size historical particles replace the rigid guide trail, and deterministic overlay placement uses the existing owner-supplied atlas without changing gameplay RNG or terrain. The owner supplied `spritesheets/last-ember-logo-native-160x80.png`; it is copied unchanged to the Vite-imported `src/assets/art/logo.png` and displayed at its native 2:1 aspect with nearest-neighbor scaling. No third-party assets were introduced.
 
 ## Credits and licences
+
+- Supplied UI sprites, palettes and Hollow Sigil font: original CC0 1.0 Universal artwork; bundled license in `src/assets/ui/LICENSE.txt`.
 
 - Game code, procedural art, and the tileset and character atlas: AI-generated or written by AI agents for this jam; repo owner Elias Stepanik (eliasstepanik), with contributions from Kittingsl.
 - No third-party art, music, sound effects or fonts are used.

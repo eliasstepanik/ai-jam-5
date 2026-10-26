@@ -1,4 +1,5 @@
 // Non-State resources: lazy data only, retained in Vite hot.data. No DOM work on import.
+import type { HeartUi } from '../core/heart-ui.ts'
 import type { PixelPool } from '../core/pixel-particles.ts'
 import type { SoundId, Group } from './sounds.ts'
 
@@ -59,11 +60,12 @@ export type Resources = {
   swapped: Map<string, HTMLCanvasElement> // flame palette-swap frames (R-185): 64x64, key 'x|y|material' (sheet rect of the frame + material, see render/charatlas.ts swappedFrame), LRU 256; slot name is a DEFAULT (D7)
   emitterPixels?: { gen: number; frames: Map<string, Uint16Array> }
   shadowFx?: { runId: number; at: number; slots: Map<number, { cycle: number; x: number; y: number }> }
+  uiHearts?: HeartUi
   pixelFx?: PixelPool
   particles: Particles; perf: Perf; audio: AudioRes
   debug: { on: boolean; available: boolean | null; tab: number; drag: 'none' | 'torch' | 'speed'
     aimX: number; aimY: number; mouseX: number; mouseY: number; updateAt: number; updateMs: number; map: { key: string; canvas: HTMLCanvasElement } | null }
-  ui: { copyResult: 'none' | 'ok' | 'failed'; urlRead: boolean }
+  ui: { fontUrl?: string; font?: FontFace; fontReady?: boolean; copyResult: 'none' | 'ok' | 'failed'; urlRead: boolean }
   hud: { exitA: number; lastT: number; runId: number; dist: number; distT: number } | null
 }
 
