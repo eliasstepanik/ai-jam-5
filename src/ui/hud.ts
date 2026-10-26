@@ -3,6 +3,10 @@
 // HP, hotbar, flame, depth, prompts, toasts, parry text and the escape banner. Navigation is the wisp or opt-in developer arrow.
 // ponytail: no module-level state; every animation is a pure function of meta.time / meta.steps / the State timers. The only
 // state belongs to State and the resource registry.
+import { heartFrames } from '../core/heart-ui.ts'
+import { getResources } from '../assets/resources.ts'
+import { UI_FPS, UI_TORCH_FRAMES } from '../assets/ui-data.ts'
+import { skinSprite, skinPanel, skinMeter } from './skin.ts'
 import { beaconInReach, beaconPosition } from '../world/beacon-position.ts'
 import type { State, FlameKind, MineralId, Vein } from '../core/types.ts'
 import { MINERALS, TILE, TOAST_S } from '../core/state.ts'
@@ -19,14 +23,15 @@ import type { SpriteId } from '../assets/sprites.ts'
 import { denyShake, pulse, shakeK } from './anim.ts'
 import { hudLayout } from './layout.ts'
 import type { HudLayout } from './layout.ts'
-import { COL, keycap, panel, ring, text, textWidth } from './draw.ts'
+import { COL as MENU_COL, keycap, panel, ring, text, textWidth } from './draw.ts'
 import { STR, clock, depthTag } from './strings.ts'
 
+const COL = { ...MENU_COL, text: '#d8ccaa', dim: '#a19c85' } as const
 const PS = 2 // UI sprites are authored at 1x and shown at 2u
 const LOW_BPM = 70 // last-heart pulse; 1.17 Hz, under the 3 Hz flash limit
 const BEACON_TICK_TILES = 8 // the minStartE tick shows within this many tiles of the Beacon (systems-2 §5)
 const RUN_BANNER_S = 2
-const HP_LOST_STEPS = 18 // 0.3 s at 60 steps/s: how long the just-lost pip shows frame 2 and shakes
+const HP_LOST_STEPS = 11 // about 180ms at 60 steps/s, fallback for missing UI art
 // ponytail: HudLayout.exitBanner is the (640,200) anchor only; the baselines below sit under it (ui-2 §1.1, 40 bold + 16 under).
 // Upgrade: add runTitle/runSub points to hudLayout (layout.ts) and read them here.
 const RUN_TITLE_DY = 40
@@ -84,19 +89,21 @@ function toasts(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
 
 function pips(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
   const p = s.player, u = l.u, rf = s.settings.reducedFlash
-  // The pip just lost: only an 'hpHit' event (emitted by hurtPlayerHp, the one HP-loss path) marks real HP loss. hurtT alone is
-  // also set by a flame hit (no HP lost), so it must not drive the shake. Events live 30 steps in fx.events; the lost pip is index hp.
+  // Track actual HP changes per slot; flame hits cannot break a heart. Keep the old event fallback for missing art.
+  const frames = heartFrames(getResources().uiHearts ??= { runId: -1, hp: p.hp, time: 0, lostAt: [] }, p.hp, p.hpMax, s.meta.runId, s.meta.time)
   const hit = s.fx.events.some((e) => e.kind === 'hpHit' && s.meta.steps - e.step < HP_LOST_STEPS)
   const lost = hit && p.hp < p.hpMax ? p.hp : -1
   const beat = p.hp !== 1 ? 0 : 0.15 * pulse(s.meta.time, LOW_BPM / 60, rf, 0) // last pip: scale 1 -> 1.15, steady when reduced
   l.pips.forEach((c, i) => {
     let x = c.x, y = c.y
-    if (i === lost) { // shake +-2u, motion-reduced like screen shake
+    if (frames[i] === 2) { // shake +-2u, motion-reduced like screen shake
       const k = shakeK(rf) * 2 * u
       x += (hash2(s.meta.steps, i, 3) * 2 - 1) * k
       y += (hash2(s.meta.steps, i, 4) * 2 - 1) * k
     }
-    ui(ctx, 'ui_hp-pip', 'v', i === lost ? 2 : i < p.hp ? 0 : 1, x, y, PS * u * (i === 0 ? 1 + beat : 1))
+    const scale = PS * u * (i === 0 ? 1 + beat : 1), frame = frames[i]
+    if (!skinSprite(ctx, frame === 0 ? 'heart_full' : frame === 2 ? 'heart_lost' : 'heart_empty', 'ember', x - 6 * scale, y - 6 * scale, 12 * scale, 12 * scale))
+      ui(ctx, 'ui_hp-pip', 'v', i === lost ? 2 : i < p.hp ? 0 : 1, x, y, scale)
   })
 }
 
@@ -104,15 +111,18 @@ function flameReadout(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): vo
   const p = s.player, u = l.u, t = s.meta.time, rf = s.settings.reducedFlash
   const col = flameCol(p.activeMineral)
   const out = p.energy <= 0
-  panel(ctx, l.flame, u)
-  ctx.fillStyle = col.mantle
-  ctx.beginPath()
-  ctx.arc(l.flameSwatch.x, l.flameSwatch.y, 8 * u, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.fillStyle = col.core
-  ctx.beginPath()
-  ctx.arc(l.flameSwatch.x, l.flameSwatch.y, 3 * u, 0, Math.PI * 2)
-  ctx.fill()
+  panel(ctx, l.flame, u, COL.border, 'stone')
+  const theme = p.activeMineral === 'none' ? 'normal' : p.activeMineral
+  if (!skinSprite(ctx, UI_TORCH_FRAMES[Math.floor(t * UI_FPS) % 3], theme, l.flameSwatch.x - 12 * u, l.flameSwatch.y - 18 * u, 24 * u, 36 * u)) {
+    ctx.fillStyle = col.mantle
+    ctx.beginPath()
+    ctx.arc(l.flameSwatch.x, l.flameSwatch.y, 8 * u, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = col.core
+    ctx.beginPath()
+    ctx.arc(l.flameSwatch.x, l.flameSwatch.y, 3 * u, 0, Math.PI * 2)
+    ctx.fill()
+  }
   const base = l.flameText.y + 3 * u
   if (out) {
     if (rf || Math.floor(t * 4) % 2 === 0) text(ctx, STR.flameOut, l.flameText.x, base, 14, u, COL.danger, { bold: true }) // 2 Hz
@@ -127,7 +137,7 @@ function flameReadout(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): vo
   const low = p.energy < T.flame.flickerLowBelowE
   ctx.globalAlpha = low && !rf ? 0.65 + 0.35 * Math.sin(2 * Math.PI * 1.5 * t) : 1
   ctx.fillStyle = low ? COL.danger : col.mantle
-  ctx.fillRect(bx, by, bw * f, 3 * u)
+  if (!skinMeter(ctx, { x: bx, y: by - u, w: bw, h: 4 * u }, f, u, theme)) ctx.fillRect(bx, by, bw * f, 3 * u)
   ctx.globalAlpha = 1
   if (!s.world.beaconLit && Math.hypot(p.x - (s.world.beacon.tx + 0.5) * TILE, p.y - (s.world.beacon.ty + 0.5) * TILE) <= BEACON_TICK_TILES * TILE) {
     ctx.fillStyle = COL.gold // Beacon start gate marker
@@ -145,7 +155,9 @@ function depthBlock(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void
   const mainW = textWidth(ctx, main, 18, u, true)
   text(ctx, max, l.depth.x, l.depth.y, 14, u, COL.dim, { align: 'right' })
   text(ctx, main, l.depth.x - maxW, l.depth.y, 18, u, COL.text, { align: 'right', bold: true })
-  ui(ctx, 'ui_depth', 'idle', 0, l.depth.x - maxW - mainW - 16 * u, l.depth.y - 5 * u, PS * u)
+  const dx = l.depth.x - maxW - mainW - 16 * u
+  if (!skinSprite(ctx, 'selection_pointer', 'stone', dx - 7 * u, l.depth.y - 10 * u, 14 * u, 8 * u))
+    ui(ctx, 'ui_depth', 'idle', 0, dx, l.depth.y - 5 * u, PS * u)
   text(ctx, `${STR.zone} ${zoneOfDepth(depth)} · ${depthTag(s.world.depthClass, s.world.beaconDist)}`, l.zone.x, l.zone.y, 12, u, COL.dim, { align: 'right' })
   text(ctx, clock(s.meta.steps / 60), l.clock.x, l.clock.y, 14, u, COL.dim, { align: 'right' })
 }
@@ -155,7 +167,8 @@ function hotbar(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void {
   const shake = denyShake(s.ui.denyT, u, s.settings.reducedFlash) // deny shake, 0.25 s, x0.4 when reduced
   MINERALS.forEach((m: MineralId, i) => {
     const r = l.slots[i], n = p.minerals[m], x = r.x + shake
-    ui(ctx, 'ui_slot', 'v', p.selected === m ? 1 : 0, x + r.w / 2, r.y + r.h / 2, PS * u)
+    if (!skinPanel(ctx, { ...r, x }, PS * u, 'stone', p.selected === m))
+      ui(ctx, 'ui_slot', 'v', p.selected === m ? 1 : 0, x + r.w / 2, r.y + r.h / 2, PS * u)
     const icon: SpriteId = `item_mineral-${m}`
     if (!resourceIcon(ctx, m, x + r.w / 2, r.y + r.h / 2, u, n > 0 ? 1 : 0.3)) ui(ctx, icon, 'idle', 0, x + r.w / 2, r.y + r.h / 2, PS * u, n > 0 ? 1 : 0.3)
     text(ctx, `×${n}`, x + 44 * u, r.y + 44 * u, 12, u, n > 0 ? COL.text : COL.dim, { align: 'right', bold: true })

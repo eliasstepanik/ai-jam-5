@@ -1,4 +1,5 @@
 // Runs every pure-logic check (R-040). Add one import + one call per new *.check.ts file; the list is kept in sync by hand.
+import { run as heartUi } from './heart-ui.check.ts'
 import { run as worldVisualFixes } from './world-visual-fixes.check.ts'
 import { run as pixelParticles } from './pixel-particles.check.ts'
 import { run as caveDetail } from './cave-detail.check.ts'
@@ -56,6 +57,7 @@ import { run as escapeWispEdge } from './escape-wisp-edge.check.ts'
 import { run as animSpeed } from './anim-speed.check.ts'
 import { run as shadowMist } from './shadow-mist.check.ts'
 import { run as depthLabel } from './depth-label.check.ts'
+heartUi()
 state()
 runCheck()
 stepCheck()
