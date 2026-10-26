@@ -39,6 +39,7 @@ export function initPlayer(): Player {
     parry: { lastGrade: 'none', lastDelta: 0, lastAt: -1, energyLost: 0 },
     roll: { t: 0, cooldown: 0, dirX: 1, dirY: 0, invuln: 0 },
     mining: { targetTile: -1, progress: 0 },
+    pickupAt: -1, materialChangeAt: -1,
     beaconHold: 0,
     hurtT: 0,
     hitFlash: 0,

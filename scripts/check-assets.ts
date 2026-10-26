@@ -164,7 +164,7 @@ const DIRECTIONS = ['north', 'northeast', 'east', 'southeast', 'south', 'southwe
 // ponytail: mirrors the render code by hand; upgrade by exporting the table from a DOM-free module if the mapping grows.
 const MAPPED = [
   ...['death_with_unlit_torch', 'death_without_torch', 'dodge_roll_no_torch', 'hurt_lit_torch_base', 'hurt_no_torch', 'hurt_unlit_torch', 'idle_lit_torch_base',
-    'idle_no_torch', 'idle_unlit_torch', 'material_change_lit_torch_base', 'run_lit_torch_base', 'run_without_torch', 'swing_lit_torch_base', 'walk_lit_torch_base'].map(a => 'player/' + a),
+    'idle_no_torch', 'idle_unlit_torch', 'material_change_lit_torch_base', 'pickup_lit_torch_base', 'run_lit_torch_base', 'run_without_torch', 'swing_lit_torch_base', 'walk_lit_torch_base'].map(a => 'player/' + a),
   ...['idle', 'walk_forward', 'sprint', 'death'].map(a => 'lurker/' + a),
   ...['idle', 'walk_forward', 'leap', 'death', 'hit'].map(a => 'stalker/' + a),
   ...['idle', 'walk_forward', 'attack', 'death', 'hurt'].map(a => 'devourer/' + a),
