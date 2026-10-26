@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- #127: on-screen creature particles continue outside torch range and draw over the explored-memory layer instead of disappearing at the light boundary.
 - #127: golden-yellow guide trail; Beacon sparks begin inside the flame, and shadow pixels begin inside creature silhouettes, shrink and rise only 4–6 pixels. Torch particles retain their existing appearance.
 
 ### Removed

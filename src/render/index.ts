@@ -12,6 +12,7 @@ import { drawEyes, drawGlow } from './glow.ts'
 import { drawDarkness } from './light.ts'
 import { memoryCanvas } from './memory.ts'
 import { drawQuakeScars } from './cave-details.ts'
+import { drawMist } from './mist.ts'
 import { drawPixelFire } from './pixel-fire.ts'
 import { drawEscapeWisp } from './wisp.ts'
 import { drawOreEmission } from './ore-emission.ts'
@@ -65,6 +66,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   drawBeaconMode(ctx, s, v) // pass 15: warm multiply once the Beacon is lit; sets its own identity transform and resets composite and alpha
   passMark('dark')
   worldXf(ctx, v)
+  drawMist(ctx, s, v) // Shadow pixels stay visible over explored memory outside torch range.
   ctx.globalCompositeOperation = 'lighter' // 16-17: additive only, never reveals bodies the darkness hid
   drawOreEmission(ctx, s, v)
   drawEyes(ctx, s, v)
