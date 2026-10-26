@@ -1,7 +1,7 @@
 // Pure regressions for the reported zone fade, doorway alignment and Devourer radius pulse.
 import { init } from '../core/state.ts'
 import { fadePalette } from '../core/zone-palette.ts'
-import { devourerMul, spawnMonster } from '../entities/monster.ts'
+import { spawnMonster } from '../entities/monster.ts'
 import { damagePlayer } from '../systems/combat.ts'
 import { flameRadius } from '../systems/light.ts'
 import { entranceExit, entranceWall } from '../world/entrance-art.ts'
@@ -15,19 +15,27 @@ export function run(): void {
   ok(rgb[0] > before && rgb[0] < 1, 'reversing zones continues smoothly from current colour')
   const s = init(); s.debug.freezeTorch = true
   const m = spawnMonster(s, 'devourer', 60, 0, flameRadius(s))
-  const compressed = flameRadius(s), energy = s.player.energy
+  const initialRadius = flameRadius(s), energy = s.player.energy
   damagePlayer(s, m)
   ok(s.player.energy === energy, 'Freeze Torch retains energy through the actual bite')
-  ok(Math.abs(flameRadius(s) - compressed) < 1e-12, 'bite/death cannot instantly expand the circle')
-  let previous = devourerMul(s)
+  ok(Math.abs(flameRadius(s) - initialRadius) < 1e-12, 'bite/death cannot instantly expand the circle')
+  const previous = flameRadius(s)
   for (let i = 1; i <= 48; i++) {
     m.aiT = i / 60
-    const k = devourerMul(s)
-    ok(k >= previous && k <= 1, 'death release is monotonic and bounded')
-    ok(k - previous < 0.012, 'no single-frame release pulse')
-    previous = k
+    const k = flameRadius(s)
+    ok(k === previous, 'hit and death never grow the radius')
+
   }
-  ok(previous === 1, 'radius returns to its correct unsuppressed size')
+  s.monsters = []
+  ok(flameRadius(s) === previous, 'removing the dead attacker cannot grow the radius')
+  const hit = init(), base = flameRadius(hit)
+  const attacker = spawnMonster(hit, 'devourer', 60, 0, base)
+  damagePlayer(hit, attacker)
+  ok(hit.player.energy < hit.player.energyMax && flameRadius(hit) < base, 'normal hit only drains fuel and shrinks radius')
+  for (const distance of [20, 80, 120, 200, 300]) {
+    attacker.x = hit.player.x + distance
+    ok(flameRadius(hit) < base, 'enemy position/death cannot add radius')
+  }
   s.world.w = 12; s.world.h = 12; s.world.tiles = '#'.repeat(48) + ('#..........#').repeat(7) + '#'.repeat(12)
   s.world.entrance = { tx: 5, ty: 6 }; s.world.exit = { ...s.world.entrance }
   const wall = entranceWall(s), exit = entranceExit(s)

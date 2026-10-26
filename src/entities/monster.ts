@@ -1,5 +1,4 @@
 import type { Monster, MonsterKind, State } from '../core/types.ts'
-import { clamp } from '../core/math.ts'
 import { rand, randRange } from '../core/rng.ts'
 import { T } from '../core/tuning.ts'
 
@@ -19,19 +18,4 @@ export function spawnMonster(s: State, kind: MonsterKind, x: number, y: number, 
   }
   s.monsters.push(m)
   return m
-}
-
-// Devourer light push, docs/architecture-monsters-ai-2.md §1 (moved here by MS-4 so systems/light.ts needs no slice-C file).
-// Strongest nearby aura. Dying shades release smoothly over their death clip; never exceed the normal radius.
-export function devourerMul(s: State): number {
-  const p = s.player
-  let strongest = 0
-  for (const m of s.monsters) {
-    if (m.kind !== 'devourer') continue
-    const L = T.devourerLight
-    const t = clamp((L.farPx - Math.hypot(m.x - p.x, m.y - p.y)) / (L.farPx - L.nearPx), 0, 1)
-    const death = m.ai === 'dying' ? clamp(1 - m.aiT / T.monsters.devourer.dyingS, 0, 1) : 1
-    strongest = Math.max(strongest, t * t * (3 - 2 * t) * death * death * (3 - 2 * death))
-  }
-  return 1 - T.devourerLight.pushMax * strongest
 }

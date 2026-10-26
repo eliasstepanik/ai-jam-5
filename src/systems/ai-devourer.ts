@@ -2,7 +2,7 @@
 // Spec: docs/architecture-monsters-ai.md §8 (devourer FSM: ring 0.85 / margin 30, orbit 0.15 rad/s, 35 px/s, chase 45), §2 (it walks INTO the light).
 // Like every brain it returns only the desired velocity and the ring bookkeeping. The two-beat windup (0.4 + 0.4 s), the lunge
 // (contactS 0.30, miss after 0.60 s), the recover (ring + 40 px at 42 px/s, 1.5 s, lungeCd 4-6) and dying (0.8 s) are the shared
-// pipeline in monsters.ts reading T.monsters.devourer; the light push is devourerMul in entities/monster.ts.
+// pipeline in monsters.ts reading T.monsters.devourer; torch radius is independent of enemy state.
 import type { Monster, State } from '../core/types.ts'
 import { wrapPi } from '../core/math.ts'
 import { T } from '../core/tuning.ts'

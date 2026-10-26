@@ -11,6 +11,7 @@ import { actorRows, drawRowEntities } from './entities.ts'
 import { drawEyes, drawGlow } from './glow.ts'
 import { drawDarkness } from './light.ts'
 import { memoryCanvas } from './memory.ts'
+import { drawEscapeWisp } from './wisp.ts'
 import { drawOreEmission } from './ore-emission.ts'
 import { drawZonePalette } from './zone-palette.ts'
 import { drawBeaconMode, drawFlashes, drawVignettes } from './overlay.ts'
@@ -66,6 +67,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   drawEyes(ctx, s, v)
   drawGlow(ctx, s, v, q)
   drawParticles(ctx, s, v, 'add') // pass 18: sparks above the darkness
+  drawEscapeWisp(ctx, s, v)
   ctx.globalCompositeOperation = 'source-over'
   ctx.globalAlpha = 1
   passMark('glow')
