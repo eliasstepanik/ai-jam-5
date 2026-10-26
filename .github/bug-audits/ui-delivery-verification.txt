@@ -54,3 +54,10 @@ keep #99 OPEN / IN PROGRESS rather than treating automated proof as approval.
   verified fuel bounds remain above the bottom rim, no active underline is
   drawn, hint position and serialized State remain unchanged. No errors.
 - Await user confirmation; #99 remains open.
+
+#99 additional offset, 2026-10-26 (eliasstepanik)
+- User requested another two pixels up inside the torch info box. Duration
+  strip now starts at reference y87 (previous y89); all other HUD layout stays.
+- Build and four-size browser bounds/underline/State checks passed. Local full
+  suite hit the unchanged AI timing limit (1018/1000ms); require complete CI
+  check/build before merge. No AI code or threshold changes.
