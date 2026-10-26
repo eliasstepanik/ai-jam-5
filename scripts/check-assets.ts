@@ -2,6 +2,7 @@
 // Run from the repo root: `node scripts/check-assets.ts`. Node built-ins only; no image or audio decoding (PNG header bytes, sizes and one sha256).
 // Every failure prints one `check failed: ...` line; any failure exits 1. Missing folders (src/assets/art, src/assets/audio) are skipped.
 // Wired into `npm run check` (the `check` script in package.json runs this file).
+import { MATERIAL_CHANGE_S } from '../src/core/player-actions.ts'
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { verifyTileAssembly } from './check-tileset.ts'
@@ -169,7 +170,7 @@ const MAPPED = [
   ...['idle', 'walk_forward', 'leap', 'death', 'hit'].map(a => 'stalker/' + a),
   ...['idle', 'walk_forward', 'attack', 'death', 'hurt'].map(a => 'devourer/' + a),
 ]
-type CharFrame = { rect: Rect; anchor: { x: number; y: number } }
+type CharFrame = { duration_ms: number; rect: Rect; anchor: { x: number; y: number } }
 type Chars = {
   format: string; size: { w: number; h: number }; frame_size: { w: number; h: number }; direction_order: string[]; counts: { frames: number }
   palette_panel_rect: Rect; animations: { id: string; frame_count_per_direction: number; directions: Record<string, CharFrame[]> }[]
@@ -202,6 +203,8 @@ else if (ch) {
       }
     }
   }
+  const materialFrames = ch.animations.find(a => a.id === 'player/material_change_lit_torch_base')?.directions.south
+  if (!materialFrames || Math.abs(materialFrames.reduce((ms, f) => ms + f.duration_ms, 0) / 1000 - MATERIAL_CHANGE_S) > 1e-6) fail('material-change gameplay duration differs from atlas playback')
   if (charFrames !== 1232 || ch.counts.frames !== 1232) fail('characters.json must hold 1232 frames (counts.frames ' + ch.counts.frames + ', actual ' + charFrames + ')')
   for (const id of MAPPED) if (!ids.has(id)) fail('characters.json lacks animation ' + id + ' (used by the animation mapping)')
 }

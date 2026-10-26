@@ -1,6 +1,7 @@
 // L4 render: player body from the character atlas (pass 11), torch tip, hit flash and the atlas frame-timing helpers shared with
 // entities.ts. Spec: docs/architecture-render-2.md §3.3, R-180 (foot offset 24), R-184 (64x64, pivot 32,32, scale 1.0, never
 // rotated or mirrored), R-185 (flame palette swap). Reads State and the image registry only; writes registry caches (swapped, tints).
+import { MATERIAL_CHANGE_S } from '../core/player-actions.ts'
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
 import { clamp } from '../core/math.ts'
@@ -82,7 +83,7 @@ export function playerPose(s: State): { anim: string; frame: number; dir: number
   if (p.hitFlash > 0) return pose(set.hurt, frameAt('player', set.hurt, (T.hurt.flashS - p.hitFlash) * 1000))
   if (p.swing.active && set.swing) return pose(set.swing, fitFrame('player', set.swing, p.swing.t / T.swing.activeS))
   const changeMs = (s.meta.time - p.materialChangeAt) * 1000
-  if (!esc && p.energy > 0 && p.materialChangeAt >= 0 && changeMs < animMs('player', 'material_change_lit_torch_base')) {
+  if (!esc && p.pendingMaterial !== null && p.energy > 0 && p.materialChangeAt >= 0 && changeMs < MATERIAL_CHANGE_S * 1000) {
     return pose('material_change_lit_torch_base', frameAt('player', 'material_change_lit_torch_base', changeMs))
   }
   if (p.mining.targetTile >= 0 && set.mine) return pose(set.mine, fitFrame('player', set.mine, p.mining.progress / T.mining.holdS))
