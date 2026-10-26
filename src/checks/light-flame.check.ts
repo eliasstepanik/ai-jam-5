@@ -81,9 +81,9 @@ export function run(): void {
     ok(!insideLight(s, 270.01, 100), 'point 0.01 px beyond the edge is outside')
     ok(insideLight(s, 280, 100, 10), 'pad widens the light')
     ok(!insideLight(s, 100, 271, 0), 'y axis counts too')
-    // Devourer light push: nearest live devourer at nearPx (80 px) pushes the light by pushMax (0.35); a completed death releases it.
+    // Enemy approach and death cannot modify the radius, independently of fuel.
     const d = spawnMonster(s, 'devourer', 100 + T.devourerLight.nearPx, 100, 170)
-    near(flameRadius(s), 170 * (1 - T.devourerLight.pushMax), 1e-9, 'devourer at nearPx pushes the flame by pushMax')
+    near(flameRadius(s), 170, 1e-9, 'nearby Devourer cannot change the radius')
     d.ai = 'dying'
     s.monsters[0].aiT = T.monsters.devourer.dyingS
     near(flameRadius(s), 170, 1e-9, 'a fully faded devourer pushes nothing')

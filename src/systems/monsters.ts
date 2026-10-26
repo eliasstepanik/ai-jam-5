@@ -228,9 +228,6 @@ function nudge(m: Monster): void {
 
 export function stepMonsters(s: State, dt: number): void {
   if (s.debug.freezeAi) return
-  // ponytail: spec §1 wants devourerMul once per step, but lightRadius(s) takes no multiplier and re-evaluates it per query from
-  // live positions. Only a devourer moving changes it (<= 6 px per step in a lunge), so the drift inside one step is tiny.
-  // Upgrade: give light.ts an optional precomputed multiplier if C1 shows a visible pop.
   for (const m of s.monsters) {
     m.lastX = m.x
     m.lastY = m.y

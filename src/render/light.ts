@@ -150,11 +150,14 @@ export function drawDarkness(ctx: CanvasRenderingContext2D, s: State, v: View, q
   c.setTransform(1, 0, 0, 1, 0, 0)
   c.fillStyle = '#000'
   c.fillRect(0, 0, d.w, d.h) // off-map area and everything the memory layer does not cover
-  if (memory) {
+  if (memory && !s.debug.pureDarkness) {
     c.imageSmoothingEnabled = true // soft memory edges
     const sx = v.tx0, sy = v.ty0, sw = v.tx1 - v.tx0 + 1, sh = v.ty1 - v.ty0 + 1
     const kt = TILE * v.z * r
     c.drawImage(memory, sx, sy, sw, sh, (sx * TILE * v.z + v.ox) * r, (sy * TILE * v.z + v.oy) * r, sw * kt, sh * kt)
+    c.globalCompositeOperation = 'multiply'
+    c.fillStyle = 'rgb(' + s.meta.palette.map(value => Math.round(value * 255)).join(',') + ')'
+    c.fillRect(0, 0, d.w, d.h)
   }
   c.globalCompositeOperation = 'destination-out'
   for (const L of maskSources(s)) stampRadial(c, L, v, r, s)

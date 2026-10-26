@@ -12,7 +12,6 @@ import { currentQuality } from './quality.ts'
 import { drawMist } from './mist.ts'
 import type { View } from './view.ts'
 import { inView } from './view.ts'
-import { drawWispArt } from './wisp.ts'
 import { WISP_LEAD_MIN_PX } from '../systems/escape-wisp.ts'
 import { C_EMBER, C_FLAME, C_HOT, C_SPARK, COL_ARG, COL_SPARK, PAL, TABLE, TAU } from './particles-table.ts'
 import type { Spec, SpawnKind } from './particles-table.ts'
@@ -84,40 +83,26 @@ export function consumeEvents(s: State): void {
 }
 
 // Escape guide wisp (#81), drawn in the additive pass so it glows through the darkness. Analytic like the pool: a pure function of
-// (State.wisp, meta.time). A hot orb at the steered position (wx, wy) plus sparkles trailing behind it along its velocity; reducedFlash
+// (State.wisp, meta.time). Sparkles trail behind the separately rendered native body; reducedFlash
 // holds the pulse and the sparkle jitter still, and the quality tier thins the trail. A frame allocates nothing.
 const WISP_TRAIL = 6 // sparkles behind the orb at full quality
 const WISP_GAP_PX = 14 // distance between sparkles behind the orb at full speed
 const WISP_TRAIL_FULL_PX_S = 120 // orb speed at which the trail reaches full length; a slower orb pulls it in (rests as one dot)
-const WISP_ORB = [[11, 0.18, C_EMBER], [6, 0.4, C_EMBER], [3, 0.95, C_HOT]] as const // [radius px, alpha, palette index] halo to core
-function drawWisp(ctx: CanvasRenderingContext2D, s: State, v: View): void {
+function drawWispTrail(ctx: CanvasRenderingContext2D, s: State, v: View): void {
   const w = s.wisp
   if (!w.on || s.meta.screen !== 'playing' || s.meta.phase !== 'escape' || w.path.length < 2) return
   const t = s.meta.time, calm = s.settings.reducedFlash, fade = Math.min(1, w.d / WISP_LEAD_MIN_PX)
-  const pulse = calm ? 1 : 0.8 + 0.2 * Math.sin(t * TAU * 1.5)
   const n = Math.round(WISP_TRAIL * currentQuality(s).particles), sp = Math.hypot(w.wvx, w.wvy), gap = WISP_GAP_PX * Math.min(1, sp / WISP_TRAIL_FULL_PX_S)
-  for (let k = n; k >= 0; k--) { // back to front, the orb (k = 0) is painted last
-    if (k > 0 && k * gap < 1) continue // a resting orb draws no sparkles: stacked on the orb they would only brighten it (additive)
+  for (let k = n; k > 0; k--) { // trail only; the native body has its own final pass
+    if (k * gap < 1) continue // a resting orb draws no sparkles: stacked on the orb they would only brighten it (additive)
     const back = (k * gap) / (sp || 1) // sparkles hang behind the orb along its velocity
     const j = calm ? 0 : Math.floor(t * 10), jx = (hash2(j, k, 11) - 0.5) * 4, jy = (hash2(j, k, 12) - 0.5) * 4
-    const x = w.wx - w.wvx * back + (k > 0 ? jx : 0), y = w.wy - w.wvy * back + (k > 0 ? jy : 0)
+    const x = w.wx - w.wvx * back + jx, y = w.wy - w.wvy * back + jy
     if (!inView(v, x, y)) continue
     const a = fade * (1 - k / (n + 1))
-    if (k > 0) {
-      ctx.globalAlpha = 0.7 * a
-      ctx.fillStyle = PAL[k & 1 ? C_EMBER : C_HOT]
-      ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2)
-      continue
-    }
-    ctx.globalAlpha = a
-    if (drawWispArt(ctx, s, x, y)) continue
-    for (let L = 0; L < WISP_ORB.length; L++) {
-      ctx.globalAlpha = WISP_ORB[L][1] * a * pulse
-      ctx.fillStyle = PAL[WISP_ORB[L][2]]
-      ctx.beginPath()
-      ctx.arc(x, y, WISP_ORB[L][0], 0, TAU)
-      ctx.fill()
-    }
+    ctx.globalAlpha = 0.7 * a
+    ctx.fillStyle = PAL[k & 1 ? C_EMBER : C_HOT]
+    ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2)
   }
   ctx.globalAlpha = 1
 }
@@ -125,7 +110,7 @@ function drawWisp(ctx: CanvasRenderingContext2D, s: State, v: View): void {
 // Passes 13 ('normal', world transform, source-over) and 18 ('add', world transform, 'lighter'). Analytic: nothing is integrated,
 // every particle is a pure function of (spawn data, meta.time). One fillStyle per palette bucket.
 export function drawParticles(ctx: CanvasRenderingContext2D, s: State, v: View, pass: 'normal' | 'add'): void {
-  if (pass === 'add') drawWisp(ctx, s, v)
+  if (pass === 'add') drawWispTrail(ctx, s, v)
   else drawMist(ctx, s, v) // #83: shadow mist of the monsters, first so sparks and dust lie on top of it
   const p = getResources().particles, want = pass === 'add' ? 1 : 0, now = s.meta.time
   for (let c = 0; c < PAL.length; c++) {

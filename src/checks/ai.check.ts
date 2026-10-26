@@ -1,4 +1,4 @@
-// A31 ai check: lurker state machine, capsule bite latch, wrapPi facing examples, devourerMul table and the 24-shade step budget.
+// A31 ai check: lurker state machine, capsule bite latch, wrapPi facing examples, the 24-shade step budget.
 // Spec: docs/architecture-modules-systems-2.md §1 (ai.check row), architecture-monsters-ai.md §2/§5/§5.1/§7, monsters-ai-2.md §1/§8, R-073/R-075.
 // R-039/R-040: local ok(), `export function run(): void`, no import-time work, no DOM, no node: imports, no L4 imports (R-043).
 // B3 adds the stalker rows (behind predicate, ring speed, behindT, windup gate) and the escape rows (intercept, strike gate, aim lead).
@@ -8,7 +8,7 @@ import { wrapPi } from '../core/math.ts'
 import { init } from '../core/state.ts'
 import { parseSeed } from '../core/seed.ts'
 import { deg, T } from '../core/tuning.ts'
-import { devourerMul, spawnMonster } from '../entities/monster.ts'
+import { spawnMonster } from '../entities/monster.ts'
 import { escapeAim, escapeBrain, escapeStrike } from '../systems/ai-escape.ts'
 import { lurkerBrain } from '../systems/ai-lurker.ts'
 import { isBehind, stalkerBrain, STALKER_BEHIND_S } from '../systems/ai-stalker.ts'
@@ -249,25 +249,6 @@ function facing(): void {
   ok(Math.abs(wrapPi(0 - 2.2)) > lim, 'theta 2.2 with facing 0 is BEHIND')
 }
 
-function devourer(): void {
-  // monsters-ai-2 §1 table: distance -> light multiplier, within 0.001; nearest live devourer counts; its aura releases over the death clip
-  const s = arena()
-  ok(devourerMul(s) === 1, 'no devourer: multiplier 1')
-  const dm = spawnMonster(s, 'devourer', s.player.x + 260, s.player.y, 100)
-  const table: [number, number][] = [[260, 1], [300, 1], [200, 0.909], [170, 0.825], [120, 0.694], [80, 0.65], [40, 0.65]]
-  for (const [d, want] of table) {
-    dm.x = s.player.x + d
-    ok(near(devourerMul(s), want, 0.001), 'devourerMul at ' + d + ' px is ' + want + ' (got ' + devourerMul(s).toFixed(4) + ')')
-  }
-  dm.x = s.player.x + 120
-  const far = spawnMonster(s, 'devourer', s.player.x + 400, s.player.y, 100)
-  ok(near(devourerMul(s), 0.694, 0.001), 'nearest devourer wins')
-  dm.ai = 'dying'
-  ok(devourerMul(s) < 1 && far.ai === 'ring', 'death begins without an instant radius pulse')
-  dm.aiT = T.monsters.devourer.dyingS
-  ok(devourerMul(s) === 1, 'completed death releases all light suppression')
-}
-
 // 24 forced shades in the real cave, topped up every step; god mode so bites never end the run.
 function budget(): void {
   const s = init()
@@ -294,6 +275,5 @@ export function run(): void {
   facing()
   stalker()
   escape()
-  devourer()
   budget()
 }
