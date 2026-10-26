@@ -8340,6 +8340,1667 @@
         "w": 128,
         "h": 160
       }
+    },
+    "ground_moss_patch_01": {
+      "frame": {
+        "x": 918,
+        "y": 1034,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      },
+      "anchor": [
+        24,
+        32
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "moss",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors"
+    },
+    "ground_moss_patch_02": {
+      "frame": {
+        "x": 970,
+        "y": 1034,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      },
+      "anchor": [
+        24,
+        32
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "moss",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors"
+    },
+    "ground_moss_patch_03": {
+      "frame": {
+        "x": 846,
+        "y": 1070,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      },
+      "anchor": [
+        24,
+        32
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "moss",
+      "variant": 3,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors"
+    },
+    "ground_moss_patch_04": {
+      "frame": {
+        "x": 774,
+        "y": 1086,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      },
+      "anchor": [
+        24,
+        32
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "moss",
+      "variant": 4,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors"
+    },
+    "ground_roots_01": {
+      "frame": {
+        "x": 898,
+        "y": 1086,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      },
+      "anchor": [
+        24,
+        32
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "roots",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground"
+    },
+    "ground_roots_02": {
+      "frame": {
+        "x": 950,
+        "y": 1086,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      },
+      "anchor": [
+        24,
+        32
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "roots",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground"
+    },
+    "ground_mushroom_amber_01": {
+      "frame": {
+        "x": 726,
+        "y": 1102,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        36
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "mushroom_amber",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_mushroom_amber_02": {
+      "frame": {
+        "x": 826,
+        "y": 1122,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        36
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "mushroom_amber",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_mushroom_amber_03": {
+      "frame": {
+        "x": 862,
+        "y": 1122,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        36
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "mushroom_amber",
+      "variant": 3,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_mushroom_bonnet_01": {
+      "frame": {
+        "x": 762,
+        "y": 1138,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        36
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "mushroom_bonnet",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_mushroom_bonnet_02": {
+      "frame": {
+        "x": 898,
+        "y": 1138,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        36
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "mushroom_bonnet",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_mushroom_bonnet_03": {
+      "frame": {
+        "x": 934,
+        "y": 1138,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        36
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "mushroom_bonnet",
+      "variant": 3,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_stalagmite_cluster_01": {
+      "frame": {
+        "x": 970,
+        "y": 1138,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        36
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "stalagmite",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_stalagmite_cluster_02": {
+      "frame": {
+        "x": 726,
+        "y": 1154,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        36
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "stalagmite",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "wall_moss_drape_01": {
+      "frame": {
+        "x": 798,
+        "y": 1174,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "moss",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south",
+      "placement_rule": "Place within exposed south-facing wall face; anchor is face-overlay center. Do not rotate projected lighting."
+    },
+    "wall_moss_drape_02": {
+      "frame": {
+        "x": 834,
+        "y": 1174,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "moss",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south",
+      "placement_rule": "Place within exposed south-facing wall face; anchor is face-overlay center. Do not rotate projected lighting."
+    },
+    "wall_moss_drape_03": {
+      "frame": {
+        "x": 762,
+        "y": 1190,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "moss",
+      "variant": 3,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south",
+      "placement_rule": "Place within exposed south-facing wall face; anchor is face-overlay center. Do not rotate projected lighting."
+    },
+    "wall_moss_drape_04": {
+      "frame": {
+        "x": 870,
+        "y": 1190,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "moss",
+      "variant": 4,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south",
+      "placement_rule": "Place within exposed south-facing wall face; anchor is face-overlay center. Do not rotate projected lighting."
+    },
+    "wall_mushroom_shelf_01": {
+      "frame": {
+        "x": 906,
+        "y": 1190,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "mushroom_shelf",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south"
+    },
+    "wall_mushroom_shelf_02": {
+      "frame": {
+        "x": 942,
+        "y": 1190,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "mushroom_shelf",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south"
+    },
+    "wall_mushroom_shelf_03": {
+      "frame": {
+        "x": 978,
+        "y": 1190,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "mushroom_shelf",
+      "variant": 3,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south"
+    },
+    "wall_root_network_01": {
+      "frame": {
+        "x": 798,
+        "y": 1226,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "roots",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south"
+    },
+    "wall_root_network_02": {
+      "frame": {
+        "x": 834,
+        "y": 1226,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "roots",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south"
+    },
+    "wall_root_network_03": {
+      "frame": {
+        "x": 738,
+        "y": 1242,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "roots",
+      "variant": 3,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south"
+    },
+    "ground_cave_fern_01": {
+      "frame": {
+        "x": 870,
+        "y": 1242,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 40
+      },
+      "anchor": [
+        16,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "fern",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_cave_fern_02": {
+      "frame": {
+        "x": 906,
+        "y": 1242,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 40
+      },
+      "anchor": [
+        16,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "fern",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_cave_fern_03": {
+      "frame": {
+        "x": 942,
+        "y": 1242,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 40
+      },
+      "anchor": [
+        16,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "fern",
+      "variant": 3,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_mineral_crust_01": {
+      "frame": {
+        "x": 978,
+        "y": 1242,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 40
+      },
+      "anchor": [
+        16,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "mineral_crust",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors",
+      "resource": false
+    },
+    "ground_mineral_crust_02": {
+      "frame": {
+        "x": 666,
+        "y": 1270,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 40
+      },
+      "anchor": [
+        16,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "mineral_crust",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors",
+      "resource": false
+    },
+    "ground_mineral_crust_03": {
+      "frame": {
+        "x": 702,
+        "y": 1270,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 40
+      },
+      "anchor": [
+        16,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "mineral_crust",
+      "variant": 3,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors",
+      "resource": false
+    },
+    "ground_mushroom_puffball_01": {
+      "frame": {
+        "x": 506,
+        "y": 1278,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 40
+      },
+      "anchor": [
+        16,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "mushroom_puffball",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_mushroom_puffball_02": {
+      "frame": {
+        "x": 542,
+        "y": 1278,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 40
+      },
+      "anchor": [
+        16,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "mushroom_puffball",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_water_puddle_09": {
+      "frame": {
+        "x": 578,
+        "y": 1278,
+        "w": 64,
+        "h": 64
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 64
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 64
+      },
+      "anchor": [
+        32,
+        40
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "water_puddle",
+      "variant": 9,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground",
+      "shape": "rocky_edge",
+      "water": true,
+      "draw_rule": "Decorative floor pool; draw below actors and props. Retain native size and anchor."
+    },
+    "ground_water_puddle_10": {
+      "frame": {
+        "x": 774,
+        "y": 1278,
+        "w": 72,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 72,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 72,
+        "h": 48
+      },
+      "anchor": [
+        36,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "water_puddle",
+      "variant": 10,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground",
+      "shape": "long_pool",
+      "water": true,
+      "draw_rule": "Decorative floor pool; draw below actors and props. Retain native size and anchor."
+    },
+    "ground_water_puddle_07": {
+      "frame": {
+        "x": 2,
+        "y": 1282,
+        "w": 64,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 48
+      },
+      "anchor": [
+        32,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "water_puddle",
+      "variant": 7,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground",
+      "shape": "broad",
+      "water": true,
+      "draw_rule": "Decorative floor pool; draw below actors and props. Retain native size and anchor."
+    },
+    "ground_water_puddle_08": {
+      "frame": {
+        "x": 70,
+        "y": 1282,
+        "w": 64,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 64,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 64,
+        "h": 48
+      },
+      "anchor": [
+        32,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "water_puddle",
+      "variant": 8,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground",
+      "shape": "winding",
+      "water": true,
+      "draw_rule": "Decorative floor pool; draw below actors and props. Retain native size and anchor."
+    },
+    "ground_water_puddle_03": {
+      "frame": {
+        "x": 138,
+        "y": 1282,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      },
+      "anchor": [
+        24,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "water_puddle",
+      "variant": 3,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground",
+      "shape": "crescent",
+      "water": true,
+      "draw_rule": "Decorative floor pool; draw below actors and props. Retain native size and anchor."
+    },
+    "ground_water_puddle_04": {
+      "frame": {
+        "x": 190,
+        "y": 1282,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      },
+      "anchor": [
+        24,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "water_puddle",
+      "variant": 4,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground",
+      "shape": "kidney",
+      "water": true,
+      "draw_rule": "Decorative floor pool; draw below actors and props. Retain native size and anchor."
+    },
+    "ground_water_puddle_05": {
+      "frame": {
+        "x": 242,
+        "y": 1282,
+        "w": 48,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 48
+      },
+      "anchor": [
+        24,
+        30
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "water_puddle",
+      "variant": 5,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground",
+      "shape": "twin_lobes",
+      "water": true,
+      "draw_rule": "Decorative floor pool; draw below actors and props. Retain native size and anchor."
+    },
+    "ground_dry_leaves_01": {
+      "frame": {
+        "x": 294,
+        "y": 1282,
+        "w": 48,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 40
+      },
+      "anchor": [
+        24,
+        28
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "dry_leaves",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors"
+    },
+    "ground_dry_leaves_02": {
+      "frame": {
+        "x": 346,
+        "y": 1282,
+        "w": 48,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 40
+      },
+      "anchor": [
+        24,
+        28
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "dry_leaves",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors"
+    },
+    "ground_fallen_branch_01": {
+      "frame": {
+        "x": 398,
+        "y": 1282,
+        "w": 48,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 40
+      },
+      "anchor": [
+        24,
+        28
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "fallen_branch",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_fallen_branch_02": {
+      "frame": {
+        "x": 450,
+        "y": 1282,
+        "w": 48,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 40
+      },
+      "anchor": [
+        24,
+        28
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "fallen_branch",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground dressing sorted with actors"
+    },
+    "ground_wet_gravel_01": {
+      "frame": {
+        "x": 850,
+        "y": 1286,
+        "w": 48,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 40
+      },
+      "anchor": [
+        24,
+        28
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "wet_gravel",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors"
+    },
+    "ground_wet_gravel_02": {
+      "frame": {
+        "x": 902,
+        "y": 1286,
+        "w": 48,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 40
+      },
+      "anchor": [
+        24,
+        28
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "wet_gravel",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors"
+    },
+    "ground_water_puddle_02": {
+      "frame": {
+        "x": 954,
+        "y": 1286,
+        "w": 48,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 48,
+        "h": 32
+      },
+      "anchor": [
+        24,
+        20
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "water_puddle",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground",
+      "shape": "narrow",
+      "water": true,
+      "draw_rule": "Decorative floor pool; draw below actors and props. Retain native size and anchor."
+    },
+    "wall_lichen_01": {
+      "frame": {
+        "x": 738,
+        "y": 1294,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "lichen",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south"
+    },
+    "wall_lichen_02": {
+      "frame": {
+        "x": 646,
+        "y": 1314,
+        "w": 32,
+        "h": 48
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 48
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 48
+      },
+      "anchor": [
+        16,
+        24
+      ],
+      "category": "overlay_wall",
+      "prop_kind": "decorative_dressing",
+      "family": "lichen",
+      "variant": 2,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "wall overlays before actors",
+      "orientation": "south"
+    },
+    "ground_water_puddle_06": {
+      "frame": {
+        "x": 682,
+        "y": 1314,
+        "w": 32,
+        "h": 40
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 40
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 40
+      },
+      "anchor": [
+        16,
+        26
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "water_puddle",
+      "variant": 6,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground",
+      "shape": "angular",
+      "water": true,
+      "draw_rule": "Decorative floor pool; draw below actors and props. Retain native size and anchor."
+    },
+    "ground_water_puddle_01": {
+      "frame": {
+        "x": 502,
+        "y": 1322,
+        "w": 32,
+        "h": 32
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      },
+      "sourceSize": {
+        "w": 32,
+        "h": 32
+      },
+      "anchor": [
+        16,
+        20
+      ],
+      "category": "overlay_ground",
+      "prop_kind": "decorative_dressing",
+      "family": "water_puddle",
+      "variant": 1,
+      "decorative": true,
+      "collision": false,
+      "pixel_scale": 1,
+      "draw_layer": "ground surface dressing below props and actors",
+      "orientation": "ground",
+      "shape": "small_round",
+      "water": true,
+      "draw_rule": "Decorative floor pool; draw below actors and props. Retain native size and anchor."
     }
   },
   "meta": {
@@ -8347,15 +10008,15 @@
     "format": "RGBA8888",
     "size": {
       "w": 1024,
-      "h": 1280
+      "h": 1536
     },
     "scale": "1",
     "filter": "nearest",
     "padding": 2,
     "extrude": 1,
-    "frame_count": 254,
+    "frame_count": 304,
     "selected_corner_set": "first top-curve set",
-    "png_sha256": "7cab00d39f1ad627ceb38edec66496fdd94ed09cbb39bc719992d9810ed005b5"
+    "png_sha256": "9aeeb41ad97cd6a93f833a0ef1c072569399d20b9f9818b222dc9de4b6650b99"
   },
   "assembly": {
     "floor_grid": [
@@ -9244,7 +10905,110 @@
           4.69
         ]
       }
-    ]
+    ],
+    "cave_dressing": {
+      "frame_count": 50,
+      "families": {
+        "moss": [
+          "ground_moss_patch_01",
+          "ground_moss_patch_02",
+          "ground_moss_patch_03",
+          "ground_moss_patch_04",
+          "wall_moss_drape_01",
+          "wall_moss_drape_02",
+          "wall_moss_drape_03",
+          "wall_moss_drape_04"
+        ],
+        "mushroom_amber": [
+          "ground_mushroom_amber_01",
+          "ground_mushroom_amber_02",
+          "ground_mushroom_amber_03"
+        ],
+        "mushroom_bonnet": [
+          "ground_mushroom_bonnet_01",
+          "ground_mushroom_bonnet_02",
+          "ground_mushroom_bonnet_03"
+        ],
+        "mushroom_shelf": [
+          "wall_mushroom_shelf_01",
+          "wall_mushroom_shelf_02",
+          "wall_mushroom_shelf_03"
+        ],
+        "mushroom_puffball": [
+          "ground_mushroom_puffball_01",
+          "ground_mushroom_puffball_02"
+        ],
+        "roots": [
+          "ground_roots_01",
+          "ground_roots_02",
+          "wall_root_network_01",
+          "wall_root_network_02",
+          "wall_root_network_03"
+        ],
+        "mineral_crust": [
+          "ground_mineral_crust_01",
+          "ground_mineral_crust_02",
+          "ground_mineral_crust_03"
+        ],
+        "fern": [
+          "ground_cave_fern_01",
+          "ground_cave_fern_02",
+          "ground_cave_fern_03"
+        ],
+        "stalagmite": [
+          "ground_stalagmite_cluster_01",
+          "ground_stalagmite_cluster_02"
+        ],
+        "dry_leaves": [
+          "ground_dry_leaves_01",
+          "ground_dry_leaves_02"
+        ],
+        "fallen_branch": [
+          "ground_fallen_branch_01",
+          "ground_fallen_branch_02"
+        ],
+        "lichen": [
+          "wall_lichen_01",
+          "wall_lichen_02"
+        ],
+        "wet_gravel": [
+          "ground_wet_gravel_01",
+          "ground_wet_gravel_02"
+        ],
+        "water_puddle": [
+          "ground_water_puddle_01",
+          "ground_water_puddle_02",
+          "ground_water_puddle_03",
+          "ground_water_puddle_04",
+          "ground_water_puddle_05",
+          "ground_water_puddle_06",
+          "ground_water_puddle_07",
+          "ground_water_puddle_08",
+          "ground_water_puddle_09",
+          "ground_water_puddle_10"
+        ]
+      },
+      "placement": "Integer pixel scatter; draw origin = placement minus frame anchor. Surface details and water below props/actors. Wall overlays on exposed south faces below black caps. Preserve authored projection.",
+      "collision": false,
+      "pixel_scale": 1
+    },
+    "water_puddles": {
+      "frames": [
+        "ground_water_puddle_01",
+        "ground_water_puddle_02",
+        "ground_water_puddle_03",
+        "ground_water_puddle_04",
+        "ground_water_puddle_05",
+        "ground_water_puddle_06",
+        "ground_water_puddle_07",
+        "ground_water_puddle_08",
+        "ground_water_puddle_09",
+        "ground_water_puddle_10"
+      ],
+      "variants": 10,
+      "placement": "Decorative floor layer below actors, props and other dressing. Per-frame anchors and native sizes; collision is false.",
+      "animated": false
+    }
   },
   "validation": {
     "source_frames_pixel_identical": true,
@@ -9263,6 +11027,14 @@
     "new_raw_ui_items": 4,
     "new_ground_resin_blobs": 6,
     "new_heal_plant": 1,
-    "new_cave_object_sprites": 28
+    "new_cave_object_sprites": 28,
+    "existing_frame_coordinates_preserved": true,
+    "existing_frame_pixels_preserved": false,
+    "new_cave_dressing_frames": 0,
+    "unrelated_254_frame_pixels_preserved": true,
+    "palette_revision_frames": 10,
+    "palette_only_revisions_alpha_preserved": true,
+    "cave_dressing_frame_total": 50,
+    "unrelated_294_frame_pixels_preserved": true
   }
 }

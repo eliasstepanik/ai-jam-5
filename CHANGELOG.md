@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- #97: updated cave atlas with non-blocking mushrooms, roots, ferns, stalagmites, leaves, branches, gravel and wall dressing; ten muddy puddle variants reflect nearby sprites and ripple when walked through.
+
 ### Changed
 - #99: raise the torch-duration bar another two reference pixels inside its info box.
 - #99: remove the active-mineral underline and raise the duration bar inside the torch info box so it clears the bottom frame.

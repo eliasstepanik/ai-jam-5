@@ -198,6 +198,8 @@ Developer minimap options are in **DEV → Map**: toggle resource/landmark marke
 
 ## AI process
 
+- Cave dressing/water update (2026-10-26): integrated the owner-supplied 304-frame cave atlas unchanged, including 50 decorative overlays and ten muddy puddle shapes. Codex authored deterministic non-blocking scatter, native water masks, mirrored sprite reflections and bounded footstep ripples. Source pixels remain untouched; rendering does not change terrain, routes or gameplay RNG.
+
 - Integrated the owner-supplied UI pack (2026-10-26): original CC0 pixel sprites, themed palettes and Hollow Sigil font authored with Codex/Python/Pillow/FontTools. PNGs and WOFF2 are copied unchanged and imported locally through Vite; runtime code applies nine-slice panels, native heart states, tiled fuel meters and the supplied font. No third-party font data or external runtime dependency.
 
 - Integrated the owner-provided complete cave atlas from `spritesheets/cave_tileset.png` and its matching JSON: 254 native frames, exact metadata rectangles/anchors, all 47 corner neighborhoods, directional ore, resource icons, wall entrance, resin/plants, matching rockfall art, and six 100 ms beacon frames. The source pixels are copied unchanged; structural and browser pixel checks verify the mapping and cache seams.

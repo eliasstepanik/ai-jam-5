@@ -1,3 +1,4 @@
+import { dressingFloor, dressingWallAt } from './dressing.ts'
 import type { State } from '../core/types.ts'
 import type { TileCache } from '../assets/resources.ts'
 import { TILE } from '../core/state.ts'
@@ -12,6 +13,7 @@ export const damageStage = (s: State): number => detailStage(s.meta.phase === 'e
 export const detailsOn = (s: State): boolean => s.debug.caveDetails && currentQuality(s).decor
 export function floorDetails(s: State, t: TileCache, cx: number, cy: number, ox: number, oy: number, draw: Draw): void {
   if (!detailsOn(s)) return
+  dressingFloor(s, cx, cy, ox, oy, draw)
   const { w, h, tiles } = s.world, skip = cleanCells(s)
   // Wide vines straddle chunks. Visit neighboring anchors and let the destination clip to its chunk.
   for (let y = cy * 8 - 1; y <= (cy + 1) * 8; y++) for (let x = cx * 8 - 1; x <= (cx + 1) * 8; x++) {
@@ -23,6 +25,7 @@ export function floorDetails(s: State, t: TileCache, cx: number, cy: number, ox:
 }
 export function wallDetails(s: State, skip: Skip, tx: number, ty: number, x: number, y: number, draw: Draw): void {
   if (!detailsOn(s) || skip(ty * s.world.w + tx) || skip((ty + 1) * s.world.w + tx) || skip(ty * s.world.w + tx - 1) || skip(ty * s.world.w + tx + 1)) return
+  dressingWallAt(s, tx, ty, x + 16, y + 56, draw)
   const name = wallDetail(tx, ty, s.meta.seed)
   if (name) draw(name, x + 16, y + 56)
 }

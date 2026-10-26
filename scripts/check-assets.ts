@@ -1,3 +1,4 @@
+import { CAVE_DRESSING } from '../src/core/cave-props.ts'
 // Asset gate: the two external atlases, atlas.json, screens, audio and budgets. Spec: docs/architecture-assets-pipeline-2.md §2-§3 (checks #1-#11), architecture-assets-pipeline §4, ai-jam-5-asset-formats-25d, R-183, R-184.
 // Run from the repo root: `node scripts/check-assets.ts`. Node built-ins only; no image or audio decoding (PNG header bytes, sizes and one sha256).
 // Every failure prints one `check failed: ...` line; any failure exits 1. Missing folders (src/assets/art, src/assets/audio) are skipped.
@@ -109,7 +110,7 @@ for (const p of sheetPaths) {
 // Sheet sizes are fixed by the spec (R-183/R-184), never taken from the JSON itself: both the PNG header and the JSON `size` must equal them.
 type Size = { w: number; h: number }
 const isSize = (s: unknown): s is Size => !!s && Number.isInteger((s as Size).w) && Number.isInteger((s as Size).h)
-const TS_SIZE: Size = { w: 1024, h: 1280 }, CH_SIZE: Size = { w: 4096, h: 2048 }
+const TS_SIZE: Size = { w: 1024, h: 1536 }, CH_SIZE: Size = { w: 4096, h: 2048 }
 function sheet(pngPath: string, want: Size, maxBytes: number): void {
   if (!existsSync(pngPath)) { fail(pngPath + ' is missing'); return }
   const bytes = readFileSync(pngPath), h = png(pngPath, bytes)
@@ -130,7 +131,7 @@ const TILESET_NAMES = [
   ...['copper', 'sodium', 'strontium', 'resin'].flatMap(m => range(3, i => 'wall_' + m + '_' + pad2(i + 1))), ...range(10, i => 'floor_' + i),
   ...range(4, i => 'ground_crack_' + pad2(i + 1)), ...range(6, i => 'ground_crack_large_' + pad2(i + 1)), ...range(3, i => 'wall_crack_' + pad2(i + 1)), // src/render/cracks.ts
 ]
-const TILESET_CATEGORIES: Record<string, number> = { floor: 10, wall_cap: 19, wall_face: 7, wall_corner_composite: 93, wall_composite: 4, overlay_ground: 56, overlay_wall: 61, ui_resource: 4 }
+const TILESET_CATEGORIES: Record<string, number> = { floor: 10, wall_cap: 19, wall_face: 7, wall_corner_composite: 93, wall_composite: 4, overlay_ground: 94, overlay_wall: 73, ui_resource: 4 }
 type Tileset = { frames: Record<string, { frame: Rect; category: string }>; meta: { size: { w: number; h: number }; frame_count: number; png_sha256?: string } }
 const TS_PNG = ASSETS + '/cave_tileset.png', TS_JSON = ASSETS + '/cave_tileset.json'
 const ts = readJson<Tileset>(TS_JSON)
@@ -142,7 +143,7 @@ if (ts) {
     const names = Object.keys(ts.frames)
     tileFrames = names.length
     if (ts.meta.size.w !== TS_SIZE.w || ts.meta.size.h !== TS_SIZE.h) fail('cave_tileset.json meta.size is ' + ts.meta.size.w + 'x' + ts.meta.size.h + ', must be ' + TS_SIZE.w + 'x' + TS_SIZE.h)
-    if (ts.meta.frame_count !== 254 || names.length !== 254) fail('cave_tileset.json must hold 254 frames (meta.frame_count ' + ts.meta.frame_count + ', actual ' + names.length + ')')
+    if (ts.meta.frame_count !== 304 || names.length !== 304) fail('cave_tileset.json must hold 304 frames (meta.frame_count ' + ts.meta.frame_count + ', actual ' + names.length + ')')
     const counts: Record<string, number> = {}
     for (const [name, f] of Object.entries(ts.frames)) {
       counts[f.category] = (counts[f.category] ?? 0) + 1
@@ -150,6 +151,13 @@ if (ts) {
     }
     for (const [c, n] of Object.entries(TILESET_CATEGORIES)) if (counts[c] !== n) fail('cave_tileset.json category ' + c + ' must have ' + n + ' frames, has ' + (counts[c] ?? 0))
     for (const c of Object.keys(counts)) if (!(c in TILESET_CATEGORIES)) fail('cave_tileset.json has unknown category ' + c)
+    for (const d of CAVE_DRESSING) {
+      const f = ts.frames[d.name] as { frame?: Rect; anchor?: number[]; category?: string; collision?: boolean; water?: boolean; draw_layer?: string } | undefined
+      const r = f?.frame, layer = f?.category === 'overlay_wall' ? 'wall' : f?.draw_layer?.includes('sorted') ? 'actor' : 'surface'
+      if (!r || r.w !== d.w || r.h !== d.h || f?.anchor?.[0] !== d.ax || f?.anchor?.[1] !== d.ay || layer !== d.layer)
+        fail('cave dressing metadata mismatch: ' + d.name)
+      if (f?.collision !== false || Boolean(f?.water) !== d.water) fail('cave dressing collision/water flags: ' + d.name)
+    }
     for (const n of TILESET_NAMES) if (!(n in ts.frames)) fail('cave_tileset.json lacks frame ' + n + ' (needed by src/render/tileset.ts)')
     if (!ts.meta.png_sha256) fail('cave_tileset.json meta.png_sha256 is missing')
     else if (existsSync(TS_PNG) && createHash('sha256').update(readFileSync(TS_PNG)).digest('hex') !== ts.meta.png_sha256) {
@@ -157,7 +165,7 @@ if (ts) {
     }
   }
   verifyTileAssembly(ts, fail)
-  sheet(TS_PNG, TS_SIZE, 100 * KB)
+  sheet(TS_PNG, TS_SIZE, 128 * KB)
   jsonSize(TS_JSON, 250 * KB)
 }
 
