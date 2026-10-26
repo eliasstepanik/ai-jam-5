@@ -92,7 +92,6 @@ function drawTitle(ctx: Ctx, s: State, w: number, h: number): void {
     text(ctx, STR.logoFallback, x, y, 64, u, COL.accent, { align: 'center', bold: true, shadow: false })
     ctx.restore()
   }
-  text(ctx, STR.tagline, l.tagline.x, l.tagline.y, 16, u, COL.dim, { align: 'center' })
   const prog = im.total > 0 ? im.loaded / im.total : 0
   const labels = [ready ? STR.play : `${STR.loadingBtn} ${pct(prog)}`, STR.help, soundLabel(s), flashLabel(s), depthLabel(s)]
   for (let i = 0; i < labels.length; i++) button(ctx, l.buttons[i], labels[i], { focused: focus(s, i), enabled: l.buttons[i].enabled }, u, t, red)

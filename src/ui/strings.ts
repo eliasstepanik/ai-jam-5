@@ -5,7 +5,6 @@
 import { T } from '../core/tuning.ts'
 
 export const STR = {
-  tagline: 'Carry the last flame down. Light the Beacon. Get out.',
   loading: 'Carving the cave…',
   loadingBtn: 'Loading', // Play button while assets load; caller appends pct(progress) (architecture-ui §7)
   logoFallback: 'LAST EMBER', // text logo when art_logo is missing (architecture-ui §7)

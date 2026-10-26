@@ -134,15 +134,19 @@ export function run(): void {
   // 4. Resin by size, cap at energyMax, plant heal, escape ignores resin.
   {
     const s = init()
+    s.meta.time = 10
     s.player.energy = 0
     s.pickups.push(resin(s, 'small'))
     stepPickups(s)
     ok(s.player.energy === T.resin.smallE && s.pickups.length === 0 && s.player.stats.resinUsed === 1, 'small resin restores smallE and is consumed')
     ok(events(s, 'relight').join() === '0', 'resin on a dead flame: relight a = 0')
+    ok(s.player.pickupAt === -1, 'resin relights without starting the player pickup animation')
+    s.player.pickupAt = 7
     s.pickups.push(resin(s, 'large'))
     stepPickups(s)
     ok(s.player.energy === T.resin.smallE + T.resin.largeE, 'large resin restores largeE')
     ok(events(s, 'relight').join() === '0,1', 'resin on a lit flame: relight a = 1')
+    ok(s.player.pickupAt === 7, 'large resin does not restart or cancel another pickup animation')
     s.player.energy = s.player.energyMax - 10
     s.pickups.push(resin(s, 'large'))
     stepPickups(s)
@@ -151,6 +155,10 @@ export function run(): void {
     s.pickups.push(resin(s, 'small'))
     stepPickups(s)
     ok(s.player.energy === s.player.energyMax, 'small resin caps at energyMax')
+    s.player.hp = 1; s.player.pickupAt = -1
+    s.pickups.push({ id: 98, kind: 'plant', x: s.player.x, y: s.player.y, bob: 0, size: 'small' })
+    stepPickups(s)
+    ok(s.player.hp === 2 && s.player.pickupAt === 10, 'healing plants retain their pickup animation')
     const esc = init()
     esc.meta.phase = 'escape'
     esc.player.energy = 10
