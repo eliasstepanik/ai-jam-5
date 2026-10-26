@@ -118,3 +118,23 @@ Remaining acceptance work
   standard full CI check/build remains required before merge.
 - Await user visual confirmation; no future black-background contrast change
   is planned. Existing creature gray body accents/eyes are unaffected.
+
+#84/#98 follow-up, 2026-10-26 (submitter eliasstepanik)
+- #85 user confirmed working; closed completed. Other cave/terrain issues
+  remain separate and were not closed by that confirmation.
+- Title logo now sits 32 reference pixels above Play, lowering it into the
+  available space on tall windows. Native size/aspect preserved, tagline
+  removed from rendering, strings and layout data.
+- Browser title layouts: 360x640, 640x360, 1280x720, 1280x800, 1187 square,
+  1920x1080. Positive top margin, no overlap with Play, 2:1 aspect retained;
+  no tagline text rendered. Native title screenshot visually inspected.
+- Resin no longer writes pickupAt; fuel gain, cap, relight event and stats
+  preserved. Existing pickup animations are not restarted or cancelled.
+- Eight browser cases: small/large resin, lit/extinguished torch, idle/walk.
+  Every case retained normal locomotion/idle pose, consumed resin and gained
+  fuel without pickup/material animation. Plant pickup animation preserved.
+- Added focused regression to minerals.check.ts for no resin animation,
+  preservation of existing timestamp, and healing-plant animation.
+- Full npm check passed (Node nursery 64MB), build passed; real-host HMR keeps
+  gameplay/debug choices/live pool. No browser exceptions.
+- Both #84/#98 remain IN PROGRESS awaiting user confirmation.

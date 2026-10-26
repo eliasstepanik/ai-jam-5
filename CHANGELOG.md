@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- #84: position the enlarged title logo just above Play, lower on tall windows, and remove its tagline.
+- #98: resin refills the torch without triggering the player pickup animation; healing-plant and ore animations are retained.
 - #127: restore pure-black creature particles at the user’s request; blending into black terrain is intentional. Retain lifetime fading and foreground-wall occlusion.
 - #127: mix sparse native dark-gray pixels into creature trails so they remain readable against unexplored/pure-black darkness. Stable colors cross the light boundary without popping, fade at life end, and respect foreground walls.
 - #127: on-screen creature particles continue outside torch range and draw over the explored-memory layer instead of disappearing at the light boundary.
