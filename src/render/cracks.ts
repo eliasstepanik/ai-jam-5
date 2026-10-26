@@ -3,6 +3,7 @@
 // supplied by tiles-paint.ts, so checks can run the real placement loops with a recording callback.
 // The tileset frames are `ground_crack_01..04`, `ground_crack_large_01..06` (overlay_ground) and `wall_crack_01..03` (overlay_wall).
 import type { State } from '../core/types.ts'
+import { detailStage } from '../core/cave-detail.ts'
 import { TILE } from '../core/state.ts'
 import { hash2 } from '../core/noise.ts'
 import { getBeaconRoom } from '../world/caches.ts'
@@ -30,8 +31,8 @@ export type Skip = (i: number) => boolean
 const isFloor = (tiles: string, w: number, h: number, x: number, y: number): boolean => x >= 0 && y >= 0 && x < w && y < h && tiles.charCodeAt(y * w + x) !== WALL_CH
 
 // Ground crack frame anchored at floor tile (tx, ty), or null. Anchor = tile centre (drawn at tx*32+16, ty*32+16).
-export function groundCrack(tiles: string, w: number, h: number, tx: number, ty: number, seed: number, skip: Skip): string | null {
-  if (!isFloor(tiles, w, h, tx, ty) || hash2(tx, ty, seed ^ G_SALT) >= GROUND_P) return null
+export function groundCrack(tiles: string, w: number, h: number, tx: number, ty: number, seed: number, skip: Skip, chance = GROUND_P): string | null {
+  if (!isFloor(tiles, w, h, tx, ty) || hash2(tx, ty, seed ^ G_SALT) >= chance) return null
   const k = hash2(tx, ty, seed ^ G_KIND_SALT)
   if (k >= LARGE_SHARE) {
     if (skip(ty * w + tx)) return null
@@ -44,11 +45,11 @@ export function groundCrack(tiles: string, w: number, h: number, tx: number, ty:
 }
 
 // Wall crack frame for wall tile (tx, ty): only when the tile below is clean floor (the face is visible, bit S of the wall mask).
-export function wallCrack(tiles: string, w: number, h: number, tx: number, ty: number, seed: number, skip: Skip): string | null {
+export function wallCrack(tiles: string, w: number, h: number, tx: number, ty: number, seed: number, skip: Skip, chance = WALL_P): string | null {
   if (tx < 0 || ty < 0 || tx >= w || ty >= h || tiles.charCodeAt(ty * w + tx) !== WALL_CH) return null
   if (!isFloor(tiles, w, h, tx, ty + 1) || skip(ty * w + tx) || skip((ty + 1) * w + tx)) return null
   const u = hash2(tx, ty, seed ^ W_SALT)
-  return u < WALL_P ? WALL_CRACKS[Math.floor((u / WALL_P) * WALL_CRACKS.length)] : null
+  return u < chance ? WALL_CRACKS[Math.floor(hash2(tx, ty, seed ^ (W_SALT + 1)) * WALL_CRACKS.length)] : null
 }
 
 // Draw callback: frame `name` with its anchor at (x, y) in the target canvas (tiles-paint.ts passes `blit`).
@@ -59,7 +60,7 @@ export type Draw = (name: string, x: number, y: number) => void
 export function cleanCells(s: State): Skip {
   const { w, entrance } = s.world, room = getBeaconRoom(s), ei = entrance.ty * w + entrance.tx, veins = new Set<number>()
   for (const v of s.veins) veins.add(v.tile)
-  return (i) => i === ei || room[i] === 1 || veins.has(i)
+  return (i) => i === ei || (Math.abs(i % w - s.world.exit.tx) <= 2 && Math.abs(Math.floor(i / w) - s.world.exit.ty) <= 3) || room[i] === 1 || veins.has(i)
 }
 
 // Ground cracks for chunk (cx, cy), canvas origin at world pixel (ox, oy). Large frames reach LARGE_RX / LARGE_RY tiles out, so anchors in the
@@ -69,7 +70,8 @@ export function groundCracks(s: State, cx: number, cy: number, ox: number, oy: n
   const tx1 = (cx + 1) * CHUNK_TILES + LARGE_RX, ty1 = (cy + 1) * CHUNK_TILES + LARGE_RY
   for (let ty = cy * CHUNK_TILES - LARGE_RY; ty < ty1; ty++) {
     for (let tx = cx * CHUNK_TILES - LARGE_RX; tx < tx1; tx++) {
-      const name = groundCrack(tiles, w, h, tx, ty, seed, skip)
+      const stage = detailStage(s.meta.phase === 'escape', s.director.escapeT)
+      const name = groundCrack(tiles, w, h, tx, ty, seed, skip, GROUND_P + stage * 0.05)
       if (name) draw(name, tx * TILE - ox + TILE / 2, ty * TILE - oy + TILE / 2)
     }
   }
@@ -77,6 +79,6 @@ export function groundCracks(s: State, cx: number, cy: number, ox: number, oy: n
 
 // Wall crack for wall tile (tx, ty), drawn with its anchor at (ax, ay) = the middle of the tile's south face (the caller knows the face height).
 export function wallCrackAt(s: State, skip: Skip, tx: number, ty: number, ax: number, ay: number, draw: Draw): void {
-  const { w, h, tiles } = s.world, name = wallCrack(tiles, w, h, tx, ty, s.meta.seed, skip)
+  const { w, h, tiles } = s.world, name = wallCrack(tiles, w, h, tx, ty, s.meta.seed, skip, WALL_P + detailStage(s.meta.phase === 'escape', s.director.escapeT) * 0.06)
   if (name) draw(name, ax, ay)
 }

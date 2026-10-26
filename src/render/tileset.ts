@@ -3,6 +3,7 @@
 // The loaded atlas image is NOT loaded here: the caller (images.ts / tiles.ts) owns the decoded sheet and passes it in as `Tileset.image`.
 import tilesetJson from '../assets/cave_tileset.json'
 import { faceKind } from '../core/grid.ts'
+import { forcePlaceholders } from '../assets/images.ts'
 import { getResources } from '../assets/resources.ts'
 
 type FrameRec = { readonly frame: { readonly x: number; readonly y: number; readonly w: number; readonly h: number }; readonly anchor: readonly number[] }
@@ -30,6 +31,7 @@ export function tileFrame(name: string): [number, number, number, number, number
 // DEFAULT: the tileset sheet is the first external sheet (`res.images.sheets[0]`, cave_tileset.png; charatlas.ts uses index 1). Until it
 // has decoded (or when images.ts does not load it yet) callers draw flat fills (tiles.ts) or the spec_boulder sprite (props.ts).
 export function tilesetOf(): Tileset | null {
+  if (forcePlaceholders()) return null
   const im = getResources().images, img = im.sheets[0]
   return img && im.sheetState[0] === 'ok' ? { image: img } : null
 }

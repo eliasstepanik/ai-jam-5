@@ -74,7 +74,7 @@ export function titleLayout(w: number, h: number, _s: State, ready = true): Titl
       btn('seed', c(520, 612, 240, 40)),
     ],
     bar: c(540, 364, 200, 2),
-    logo: place(w, h, u, 0.5, 0, 400, 96, 480, 120),
+    logo: place(w, h, u, 0.5, 0, 400, 0, 480, 240),
     tagline: pt(w, h, u, 0.5, 0, 640, 244),
     seedLabel: pt(w, h, u, 0.5, 0.5, 520, 604),
     seedHint: pt(w, h, u, 0.5, 0.5, 640, 668),

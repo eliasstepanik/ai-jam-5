@@ -2,6 +2,7 @@
 // Run from the repo root: `node scripts/check-assets.ts`. Node built-ins only; no image or audio decoding (PNG header bytes, sizes and one sha256).
 // Every failure prints one `check failed: ...` line; any failure exits 1. Missing folders (src/assets/art, src/assets/audio) are skipped.
 // Wired into `npm run check` (the `check` script in package.json runs this file).
+import { GROUND_DETAILS, WALL_DETAILS } from '../src/core/cave-detail.ts'
 import { MATERIAL_CHANGE_S } from '../src/core/player-actions.ts'
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
@@ -124,6 +125,7 @@ const jsonSize = (p: string, max: number): void => { if (existsSync(p) && sizeOf
 const pad2 = (n: number): string => String(n).padStart(2, '0')
 const range = (n: number, f: (i: number) => string): string[] => Array.from({ length: n }, (_, i) => f(i))
 const TILESET_NAMES = [
+  ...GROUND_DETAILS, ...WALL_DETAILS,
   ...range(16, i => 'cap_' + pad2(i)), 'face_pillar', 'face_left', 'face_right', ...range(4, i => 'face_fill_' + i),
   ...['copper', 'sodium', 'strontium', 'resin'].flatMap(m => range(3, i => 'wall_' + m + '_' + pad2(i + 1))), ...range(10, i => 'floor_' + i),
   ...range(4, i => 'ground_crack_' + pad2(i + 1)), ...range(6, i => 'ground_crack_large_' + pad2(i + 1)), ...range(3, i => 'wall_crack_' + pad2(i + 1)), // src/render/cracks.ts

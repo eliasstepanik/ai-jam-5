@@ -11,6 +11,8 @@ import { actorRows, drawRowEntities } from './entities.ts'
 import { drawEyes, drawGlow } from './glow.ts'
 import { drawDarkness } from './light.ts'
 import { memoryCanvas } from './memory.ts'
+import { drawQuakeScars } from './cave-details.ts'
+import { drawPixelFire } from './pixel-fire.ts'
 import { drawEscapeWisp } from './wisp.ts'
 import { drawOreEmission } from './ore-emission.ts'
 import { drawZonePalette } from './zone-palette.ts'
@@ -46,6 +48,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   ctx.imageSmoothingEnabled = false
   passMark('view')
   drawFloor(ctx, s, v, q) // pass 5a. Pass 6 (decor) is closed: ground overlays are part of the floor chunks (G6).
+  drawQuakeScars(ctx, s, v)
   passMark('tiles')
   actorRows(s, v) // buckets monsters, player, pickups, landmarks, landed rocks and non-south veins by foot row (R-180)
   for (let ty = v.ty0; ty <= v.ty1; ty++) { // pass 5b with 7-11: one wall row, then the actors whose foot row is ty
@@ -67,6 +70,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   drawEyes(ctx, s, v)
   drawGlow(ctx, s, v, q)
   drawParticles(ctx, s, v, 'add') // pass 18: sparks above the darkness
+  drawPixelFire(ctx, s, v)
   drawEscapeWisp(ctx, s, v)
   ctx.globalCompositeOperation = 'source-over'
   ctx.globalAlpha = 1

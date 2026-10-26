@@ -1,0 +1,60 @@
+Closed-issue acceptance audit, 2026-10-26
+Audited against master e301be6, issue bodies, repository implementation/checks,
+prior verification notes and explicit user confirmations. A solved sub-report is
+not evidence that every criterion of its broader ticket is complete.
+
+REOPENED
+85 (eliasstepanik): Existing cracks/floor checks pass. Remaining scope was unused
+  detail overlays and the Wanted section's progressive quake/escape damage.
+  User expressly requested implementation in this batch; keep open for confirmation.
+93 (eliasstepanik): Doorway/exit and six lit Beacon frames confirmed solved.
+  Distinct authored charging animation is absent (unlit art + glow ramp is used).
+110 (eliasstepanik): Ore emission/no-dot confirmed solved. Original bloom pass,
+  Quality.bloom, F2 bloom toggle, new falloff check and comparison/performance
+  evidence are absent. These are still open enhancement work.
+112 (eliasstepanik): Player-zone and explored-memory fades confirmed solved.
+  Original terrain anti-repeat/spatial blend/noise scope, blend comparison toggle,
+  chunk-border tests and first-visit build-cost evidence are incomplete.
+101 (eliasstepanik): Playback engine exists; the explicitly required automated
+  24-voice priority/stealing and 30ms retrigger check is missing from src/checks.
+102 (eliasstepanik): Typed event map exists; required automated trigger coverage
+  check is missing from src/checks and all.ts.
+103 (eliasstepanik): Synth recipes exist; required instantiate/render-every-recipe
+  check is missing from src/checks and all.ts.
+Audio reopenings concern missing acceptance evidence, not a claim of broken sound.
+
+RETAINED CLOSED -- implementation/checks and user confirmation support completion
+67: Normal walking clip, distinct run selection; animation-speed regressions.
+68: Death gives no time points; score win/death regressions.
+69: Unlit movement and flame removal; extinguished continuous particles must stay off.
+70,72: Deterministic accessible visible-floor pickup placement, no solid overlap.
+71: Authored corner lookup/composites; cold/warm rendering and user confirmation.
+73: Obsolete return-light instruction removed.
+74: Planning/landing route proofs, rock property suites and escape bot.
+75: Axis-resolved sliding and wall seam/collision fuzz checks.
+79: Gait/stride speed checks exist; owner closed it and asked that it be ignored as a bug.
+80: Developer depth controls, debug checks, README/changelog entries.
+81: Escape route/wisp checks, rerouting and glide checks; native body verified and
+  user confirmed. Historical trail change is a new request tracked under 127.
+83: All monster profiles/state/caps/read-only checks exist. Pixel styling in 127
+  supersedes the old soft-mist proposal; preserve those behavior guarantees.
+119: Shared class-aware depth label across HUD/end/Best, pinned extreme/default
+  label checks, score unchanged, changelog and prior publication checks.
+120: Authored directional ore on solid walls; visible interaction placement,
+  published-bugs regression and user confirmation.
+121: Viewport body rendering, grey/eye emission and actual foreground-alpha
+  occlusion; browser pixel comparisons and user confirmation. Body status text is stale.
+124: Movement-facing logic, regression checks and user confirmation.
+129: Enemy-independent light radius, actual hit/death/removal regressions;
+  user confirmed the revised behavior. Old proximity suppression is superseded.
+
+OTHER CAVE DETAILS
+97 is already OPEN for separate stalagmite/bones/mushroom/puddle prop art and a
+spawner. This batch's existing atlas overlay decals do not complete that issue.
+wall_full_0..3 are alternate precomposed geometry, not missing decoration; the
+active cap/face/corner assembly is used instead, so drawing both would double walls.
+
+NEW RULE
+List unmet acceptance criteria explicitly in completion reports. Keep/reopen the
+broader issue even when a narrow fix is confirmed. Never call an unchecked box
+incomplete solely because the issue body was not updated; inspect the actual code.

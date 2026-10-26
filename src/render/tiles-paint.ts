@@ -7,6 +7,7 @@ import { hash2 } from '../core/noise.ts'
 import { floorVariant } from '../core/grid.ts'
 import type { TileCache } from '../assets/resources.ts'
 import { entranceWall } from '../world/entrance-art.ts'
+import { floorDetails, wallDetails } from './cave-details.ts'
 import { cleanCells, groundCracks, wallCrackAt } from './cracks.ts'
 import type { Skip } from './cracks.ts'
 import { CHUNK_TILES } from './keys.ts'
@@ -47,6 +48,7 @@ export function paintFloor(c: CanvasRenderingContext2D, s: State, t: TileCache, 
   if (!ts) return
   // Ground cracks (issue #85): decals centred on their tile, drawn above the floor pattern (placement and exclusions: cracks.ts).
   groundCracks(s, cx, cy, ox, oy, (name, x, y) => blit(c, ts, name, x, y))
+  floorDetails(s, t, cx, cy, ox, oy, (name, x, y) => blit(c, ts, name, x, y))
 }
 
 // Wall row raised FACE_H above the collision footprint. Corner composites replace cap/face per owning cell;
@@ -81,6 +83,7 @@ export function paintWalls(c: CanvasRenderingContext2D, s: State, t: TileCache, 
         blit(c, ts, capName(m), x, y)
         if (m & 4) blit(c, ts, faceName(m, (m & 8) !== 0, (m & 2) !== 0, t.variant[i]), x, y + TILE)
       }
+      if (m & 4) wallDetails(s, skip, tx, ty, x, y, (name, ax, ay) => blit(c, ts, name, ax, ay))
       if (m & 4) wallCrackAt(s, skip, tx, ty, x + TILE / 2, y + TILE + FACE_H / 2, (name, ax, ay) => blit(c, ts, name, ax, ay))
     }
   }
