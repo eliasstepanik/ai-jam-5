@@ -1,4 +1,4 @@
-// A few native gray pixels keep black shadows readable over unexplored/pure darkness.
+// Pure-black shadows intentionally blend into unlit black terrain.
 // Color is stable over the entire life, independent of torch distance; foreground walls still cover it.
 import type { State } from '../core/types.ts'
 import { getResources } from '../assets/resources.ts'
@@ -6,7 +6,7 @@ import { ctx2d, newCanvas } from './light.ts'
 import { eraseForeground } from './foreground-walls.ts'
 import type { View } from './view.ts'
 
-export type ShadowPixel = { x: number; y: number; size: number; gray: boolean; alpha: number }
+export type ShadowPixel = { x: number; y: number; size: number; alpha: number }
 export function paintShadowPixels(ctx: CanvasRenderingContext2D, s: State, v: View, footY: number, pixels: ShadowPixel[]): void {
   if (!pixels.length) return
   const x = Math.max(Math.floor(v.x0), Math.min(...pixels.map(p => p.x)))
@@ -24,8 +24,8 @@ export function paintShadowPixels(ctx: CanvasRenderingContext2D, s: State, v: Vi
   g.setTransform(1, 0, 0, 1, 0, 0)
   g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1
   g.clearRect(0, 0, w, h)
+  g.fillStyle = '#000000'
   for (const p of pixels) {
-    g.fillStyle = p.gray ? '#4a4a4a' : '#000000' // exact gray from the delivered creature atlas
     g.globalAlpha = p.alpha
     g.fillRect(p.x - x, p.y - y, p.size, p.size)
   }

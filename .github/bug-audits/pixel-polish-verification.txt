@@ -104,3 +104,17 @@ Remaining acceptance work
   (1018-1079ms), including after explicit warm-up; AI code/threshold untouched.
   Required CI must pass its standard complete npm check/build before merge.
 - Visual confirmation pending; wisp/Beacon subparts remain confirmed solved.
+
+#127 black-only restoration, 2026-10-26 (Kittingsl)
+- User explicitly clarified black-on-black blending is an intended feature;
+  remove gray particles. Supersedes the prior contrast interpretation.
+- Removed gray slot/color data. All creature particle RGB is #000000.
+  Lifetime fade, shrinking, short rise and foreground-wall alpha preserved.
+- Browser verified black-only output over 48 creature birth cases, six Beacon
+  frames and unchanged golden wisp colors, with no errors. Cold/warm wall
+  occlusion and same-row preservation passed. Actual-host HMR passed.
+- Build, asset/guard and targeted mist/pool/render/assets checks passed.
+  Local full suite again hit the unchanged AI timing budget (1027/1000ms);
+  standard full CI check/build remains required before merge.
+- Await user visual confirmation; no future black-background contrast change
+  is planned. Existing creature gray body accents/eyes are unaffected.

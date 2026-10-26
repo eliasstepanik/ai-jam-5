@@ -39,7 +39,7 @@ export function drawMist(ctx: CanvasRenderingContext2D, s: State, v: View): void
       if (a <= 0) return
       const size = Math.max(1, Math.ceil((kind === 'devourer' ? 4 : 3) * r / profile.r))
       pixels.push({ x: birth.x, y: Math.round(birth.y - profile.rise * age), size,
-        gray: slot % 4 === 0, alpha: Math.min(1, (1 - age) * 5) })
+        alpha: Math.min(1, (1 - age) * 5) })
     })
   flush()
   for (const key of fx.slots.keys()) if (!seen.has(key)) fx.slots.delete(key)
