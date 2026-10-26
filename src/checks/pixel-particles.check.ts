@@ -26,6 +26,14 @@ export function run(): void {
     pixelClock(pool, 2, n / 60, true); samplePixels(pool, 2, 0, 0, true, q)
   }
   ok(low.head < high.head && low.head > 0, 'quality reduces count while retaining fire')
+  const anchored = createPixelPool(), fallback = createPixelPool()
+  pixelClock(anchored, 1, 0, true); pixelClock(fallback, 1, 0, true)
+  samplePixels(anchored, 2, 100, 100, true, 1, 0, () => [31, 47])
+  ok(anchored.x[0] === 31 && anchored.y[0] === 47, 'sprite birth points override the rectangular jitter')
+  samplePixels(anchored, 0, 100, 100, true, 1, 2)
+  samplePixels(fallback, 0, 100, 100, true, 1, 2)
+  ok(anchored.x[1] === fallback.x[0] && anchored.y[1] === fallback.y[0]
+    && anchored.vy[1] === fallback.vy[0] && anchored.life[1] === fallback.life[0], 'custom Beacon origins leave torch behavior unchanged')
   pixelClock(p, 2, 20, true)
   ok(p.life.every(v => !v) && !p.head, 'new runs clear particle history')
 }

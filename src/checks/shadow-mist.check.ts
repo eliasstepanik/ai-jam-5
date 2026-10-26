@@ -100,7 +100,7 @@ function dying(): void {
     ok(sum(t5.w, e => e.a) < sum(t0.w, e => e.a) && sum(t1.w, e => e.a) === 0, `${k}: mist dissipates over the death animation`)
     ok(Math.max(...t5.w.map(e => Math.abs(e.x - 500))) > Math.max(...t0.w.map(e => Math.abs(e.x - 500))), `${k}: the dying cloud spreads outward`)
     ok(t5.w.length === t0.w.length, `${k}: dying keeps the wisp count (it only fades)`)
-    ok(t0.w.every((e, i) => t5.w[i].r > e.r && t1.w[i].r > t5.w[i].r), `${k}: every dying wisp grows while it disperses`)
+    ok(t0.w.every((e, i) => t5.w[i].r < e.r && t1.w[i].r < t5.w[i].r), `${k}: every dying wisp shrinks while it disperses`)
     // aiT/aiDur is clamped to 0..1, and a zero-length animation counts as finished
     const same = (a: W[], b: W[]): boolean => JSON.stringify(a) === JSON.stringify(b)
     ok(same(at(2).w, t1.w) && same(at(-1).w, t0.w), `${k}: dying progress clamps to 0..1`)
@@ -153,7 +153,7 @@ function readOnly(): void {
       f.s.meta.time = t
       for (const e of wisps(f.s)) { lo = Math.min(lo, e.a); hi = Math.max(hi, e.a); rlo = Math.min(rlo, e.r); rhi = Math.max(rhi, e.r) }
     }
-    ok(rlo >= 0.6 * P.r - 1e-9 && rlo < 0.62 * P.r && rhi <= 1.4 * P.r + 1e-9 && rhi > 1.38 * P.r, `${k}: wisps grow from 0.6 to 1.4 of the profile radius (${rlo.toFixed(2)}..${rhi.toFixed(2)} of ${P.r})`)
+    ok(rlo >= 0.2 * P.r - 1e-9 && rlo < 0.22 * P.r && rhi <= P.r + 1e-9 && rhi > 0.98 * P.r, `${k}: wisps shrink from 1.0 to 0.2 of the profile radius (${rlo.toFixed(2)}..${rhi.toFixed(2)} of ${P.r})`)
     ok(lo < 0.02 * P.alpha && hi > 0.95 * P.alpha && hi <= P.alpha + 1e-9, `${k}: wisp opacity fades in and out (min ${lo.toFixed(4)}, max ${hi.toFixed(4)}, peak ${P.alpha})`)
   }
   const ids = world(), p = mon(ids, 'lurker', 'ring'), q = mon(ids, 'lurker', 'ring')
@@ -185,12 +185,16 @@ function perWisp(): void {
     for (let t = 0; t < MIST[k].life; t += 0.01) {
       const a = ext(k, 'lunge', 0, t), b = ext(k, 'lunge', 100, t), c = ext(k, 'ring', 0, t), d = ext(k, 'ring', 0, t + 0.002)
       tr = Math.max(tr, ...a.map((e, i) => (e.x - b[i].x) / 100))
-      c.forEach((e, i) => slope.push((e.y - d[i].y) / 0.002 * MIST[k].life))
+      c.forEach((e, i) => {
+        slope.push((e.y - d[i].y) / 0.002 * MIST[k].life)
+        if (d[i].r < e.r) ok(Math.abs(e.r - d[i].r - MIST[k].r * 0.8 * 0.002 / MIST[k].life) < 1e-8, `${k}: surviving particles shrink at a constant rate`)
+        else ok(d[i].r > MIST[k].r * 0.99, `${k}: only a new life may grow`)
+      })
     }
     trails.push(tr)
     rises.push(slope.sort((p, q) => p - q)[slope.length >> 1])
     ok(tr > 0.97 * MIST[k].trail && tr <= MIST[k].trail + 1e-9, `${k}: trail ${tr.toFixed(3)} s follows the profile ${MIST[k].trail}`)
-    ok(Math.abs(rises[rises.length - 1] - MIST[k].rise) < 1e-6 && MIST[k].rise > 6, `${k}: idle wisps climb ${rises[rises.length - 1]} px per life`)
+    ok(Math.abs(rises[rises.length - 1] - MIST[k].rise) < 1e-6 && MIST[k].rise > 0 && MIST[k].rise <= 6, `${k}: idle wisps climb ${rises[rises.length - 1]} px per life`)
     // the death burst lies on an ellipse: 1.5 spreads wide, flattened to 0.6 of that tall (3/4 view)
     const b0 = one(k, 'dying').w, b1 = one(k, 'dying', 0, 0, (_s, m) => { m.aiT = m.aiDur }).w, B = 1.5 * MIST[k].spread
     ok(b0.every((e, i) => Math.abs(((b1[i].x - e.x) / B) ** 2 + ((b1[i].y - e.y) / (0.6 * B)) ** 2 - 1) < 1e-9), `${k}: the death burst is a 1.5-spread ellipse flattened to 0.6`)

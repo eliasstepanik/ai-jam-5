@@ -43,3 +43,22 @@ Remaining acceptance work
 - Reopened #93/#110/#112/#101/#102/#103 retain the exact missing criteria in
   acceptance-2026-10-26.txt. Confirmed sub-fixes remain recorded as solved.
 - #97's separate stalagmite/bones/mushroom/puddle prop art/spawner remains OPEN.
+
+#127 follow-up, 2026-10-26 (submitter Kittingsl)
+- Golden trail colors: #ffe394, #f9cd60, #d8ab35 at early/mid/late ages.
+- Body births: 48 cases (three types, eight directions, idle/moving), sampled
+  from opaque dark sprite pixels with a four-pixel inset square. Birth sites
+  remain fixed in world coordinates while creatures move or animate.
+- All six Beacon frames have hot flame birth sites; fresh source-2 particles
+  match those sites, replacing the previous origin above the fire.
+- Shadow radii shrink from 1.0 to 0.2, including death; rising limited to
+  4/5/6px over 0.65/0.75/0.9s. Global shadow cap remains 96.
+- Required check/build pass. The initial simultaneous build/check run missed
+  the AI CPU budget by 0.68ms; the full check passed without concurrent build
+  and with a larger Node GC nursery. No threshold changes.
+- Browser has no errors; actual-host HMR retains debug choices and live pool.
+- Existing pixel-pool checks cover history, pause, reset, quality and teleport;
+  added exact origin override and unchanged torch trajectory/lifetime checks.
+- Acceptance implemented and verified; visual confirmation still pending.
+- Follow-up CPU check: 24 enemies, 360 repetitions, 0.044ms/frame average;
+  State unchanged, 256 fire slots, no browser errors (CPU-only measurement).
