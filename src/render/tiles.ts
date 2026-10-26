@@ -4,7 +4,7 @@
 // Maps and chunk canvases live in res.tiles (resources.ts); this module keeps no state and never writes State. No rng, no random calls.
 // The caller (render/index.ts) sets worldXf. Pass 5 is `drawFloor` + `drawWallRow` per row (the plan's `drawTileRow`).
 // Ground and wall decor overlays are NOT drawn (GAP, as before: no task or file owns decor; `_q.decor` is reserved for that gate).
-import type { State, Zone } from '../core/types.ts'
+import type { State } from '../core/types.ts'
 import { depthOf, zoneOfDepth } from '../core/score.ts'
 import { getDepthField } from '../world/caches.ts'
 import { getResources } from '../assets/resources.ts'
@@ -19,8 +19,6 @@ import { CHUNK_PX, FACE_H, WALL_PAD, HASH, WALL_ROW_H, WALLS_H, faceVariant, pai
 
 const LRU_CAP = 24 // 24 x (256 + 896) x 256 x 4 B = 28 MB; complete row strips preserve the cache budget
 const BUILD_QUOTA = 4 // chunks built per frame; the rest are painted straight into the main context
-const TINT: readonly (string | null)[] = [null, null, '#b8c4d6', '#b4d0b0', '#c4b0d8'] // OD-D1 DEFAULT on: zone 1 none; index = zone
-const TINT_ALPHA = 0.25
 // Neighbour offsets: wall mask bits N=1 E=2 S=4 W=8; inner bits NE=1 SE=2 SW=4 NW=8 (render-2 §2.1).
 const ORTHO: readonly (readonly [number, number, number])[] = [[0, -1, 1], [1, 0, 2], [0, 1, 4], [-1, 0, 8]]
 const DIAG: readonly (readonly [number, number])[] = [[1, -1], [1, 1], [-1, 1], [-1, -1]] // NE, SE, SW, NW
@@ -89,26 +87,6 @@ export function tileCache(s: State): TileCache | null {
   return t
 }
 
-// Zone tint (OD-D1): the chunk's majority zone colour at alpha 0.25 over what is already painted. ponytail: 'source-atop' (a plain blend
-// toward the colour that leaves the transparent walls canvas alone) instead of the spec's multiply, which would colour transparent
-// pixels. Ceiling: lighter than a true multiply. Upgrade: multiply on the floor canvas only.
-function tint(g: CanvasRenderingContext2D, s: State, t: TileCache, cx: number, cy: number): void {
-  const { w, h } = s.world, n = [0, 0, 0, 0, 0]
-  for (let ty = cy * CHUNK_TILES; ty < Math.min(h, (cy + 1) * CHUNK_TILES); ty++) {
-    for (let tx = cx * CHUNK_TILES; tx < Math.min(w, (cx + 1) * CHUNK_TILES); tx++) n[t.zone[ty * w + tx]]++
-  }
-  let z = 1
-  for (let k = 2; k <= 4; k++) if (n[k] > n[z]) z = k
-  const col = TINT[z as Zone]
-  if (!col) return
-  g.globalCompositeOperation = 'source-atop'
-  g.globalAlpha = TINT_ALPHA
-  g.fillStyle = col
-  g.fillRect(0, 0, g.canvas.width, g.canvas.height)
-  g.globalAlpha = 1
-  g.globalCompositeOperation = 'source-over'
-}
-
 function reset(cv: HTMLCanvasElement, w: number, h: number): CanvasRenderingContext2D {
   const g = ctx2d(cv)
   g.setTransform(1, 0, 0, 1, 0, 0)
@@ -139,8 +117,6 @@ function buildChunk(s: State, t: TileCache, ts: Tileset | null, cx: number, cy: 
     paintWalls(gw, s, t, ts, cx * CHUNK_TILES - 2, (cx + 1) * CHUNK_TILES + 2, ty, ty + 1, ox, ty * 32 - FACE_H - WALL_PAD - row * WALL_ROW_H)
     gw.restore()
   }
-  tint(gf, s, t, cx, cy)
-  tint(gw, s, t, cx, cy)
   const made = { floor, walls }
   t.chunks.set(k, made)
   t.lru.push(k)
@@ -175,7 +151,7 @@ export function drawFloor(ctx: CanvasRenderingContext2D, s: State, v: View, _q: 
 
 // Pass 5b: draw the complete wall of ground row ty before that row's actors. Raising the wall by FACE_H aligns
 // its south base with collision; drawing its full height here lets the next ground row's caps occlude actors to the north.
-// Cold rows use the same padded strip and tint as cached rows, including cross-chunk overhang.
+// Cold rows use the same padded strip as cached rows, including cross-chunk overhang.
 export function drawWallRow(ctx: CanvasRenderingContext2D, s: State, v: View, ty: number): void {
   const t = tileCache(s)
   if (!t || ty < 0 || ty >= s.world.h) return
@@ -191,7 +167,6 @@ export function drawWallRow(ctx: CanvasRenderingContext2D, s: State, v: View, ty
       if (!canvas) { canvas = newCanvas(CHUNK_PX, WALL_ROW_H); res.light.set(key, canvas) }
       const g = reset(canvas, CHUNK_PX, WALL_ROW_H), y = ty * 32 - FACE_H - WALL_PAD
       paintWalls(g, s, t, ts, cx * CHUNK_TILES - 2, (cx + 1) * CHUNK_TILES + 2, ty, ty + 1, cx * CHUNK_PX, y)
-      tint(g, s, t, cx, cy)
       ctx.drawImage(canvas, cx * CHUNK_PX, y)
     }
   }

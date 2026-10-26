@@ -135,12 +135,22 @@ function bot(): void {
   const from = route[route.length - 1 - BOT_E]
   s.player.x = tileToWorld(from % s.world.w)
   s.player.y = tileToWorld(Math.floor(from / s.world.w))
-  const E = getExitDist(s), w = s.world.w
+  const w = s.world.w
+  let stuck = 0, lastX = s.player.x, lastY = s.player.y, centre = false
   let n = 0
   for (; n < 3600 && s.meta.screen === 'playing'; n++) {
+    const E = getExitDist(s) // live field: rocks invalidate the prior buffer
+    stuck = Math.hypot(s.player.x - lastX, s.player.y - lastY) < 0.5 ? stuck + 1 : 0
+    lastX = s.player.x; lastY = s.player.y
+    if (stuck > 20) centre = true
     const p0 = playerSources(s, []).reduce((m, i) => (E[i] >= 0 && (m < 0 || E[i] < E[m]) ? i : m), -1)
     const ahead = p0 < 0 ? [] : downhill(s, E, p0, BOT_AHEAD + 1)
-    const q = ahead[ahead.length - 1]
+    let q = ahead[ahead.length - 1]
+    if (centre) {
+      // A digital diagonal can cut a solid corner. Re-centre before following the route again.
+      q = Math.floor(s.player.y / 32) * w + Math.floor(s.player.x / 32)
+      if (Math.hypot(tileToWorld(q % w) - s.player.x, tileToWorld(Math.floor(q / w)) - s.player.y) < 5) centre = false
+    }
     const keys: string[] = []
     if (q !== undefined) {
       const a = Math.round(Math.atan2(tileToWorld(Math.floor(q / w)) - s.player.y, tileToWorld(q % w) - s.player.x) / (Math.PI / 4)) * (Math.PI / 4)

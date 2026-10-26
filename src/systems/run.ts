@@ -18,6 +18,7 @@ import { validateCave } from '../world/validate.ts'
 import { revealAround } from '../world/explored.ts'
 import { lightRadius } from './light.ts'
 import { placeVisiblePickups } from './pickup-placement.ts'
+import { entranceExit, entranceSpawn } from '../world/entrance-art.ts'
 import { emit } from './fx.ts'
 
 // Seed text of a run: sanitised input, or the digits of a fresh random seed (state-2 §10 step 1; crypto lives in seed.ts).
@@ -46,9 +47,12 @@ export function startRun(s: State, seedText: string, cave?: CaveResult, depthCla
   s.pickups = c.pickups.map((p) => ({ ...p, id: s.meta.nextId++ }))
   s.rng.cave = c.rngState
   if (c.stats.fallback) console.warn('[cave] fallback ring used for seed ' + text) // CG2 §6 step 6: logged once by startRun, not by the pure generator
+  const doorway = entranceExit(s)
+  s.world.exit = doorway
   const p = initPlayer() // 3
-  p.x = c.entrance.tx * TILE + TILE / 2
-  p.y = c.entrance.ty * TILE + TILE / 2
+  const spawn = entranceSpawn(s)
+  p.x = spawn.tx * TILE + TILE / 2
+  p.y = spawn.ty * TILE + TILE / 2
   p.facing = T.player.facingStart
   s.player = p
   s.monsters = [] // 4
@@ -62,6 +66,7 @@ export function startRun(s: State, seedText: string, cave?: CaveResult, depthCla
   m.phase = 'descent'
   m.steps = 0
   m.zone = 1
+  m.palette = [1, 1, 1]
   m.runId += 1
   placeVisiblePickups(s)
   s.rng.gameplay = hashSeed(seed, 'gameplay') // 6

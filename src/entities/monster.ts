@@ -22,16 +22,16 @@ export function spawnMonster(s: State, kind: MonsterKind, x: number, y: number, 
 }
 
 // Devourer light push, docs/architecture-monsters-ai-2.md §1 (moved here by MS-4 so systems/light.ts needs no slice-C file).
-// Smoothstep push from the nearest live (ai !== 'dying') devourer; 1 when there is none. Pure: never stored.
+// Strongest nearby aura. Dying shades release smoothly over their death clip; never exceed the normal radius.
 export function devourerMul(s: State): number {
   const p = s.player
-  let best = Infinity
+  let strongest = 0
   for (const m of s.monsters) {
-    if (m.kind !== 'devourer' || m.ai === 'dying') continue
-    best = Math.min(best, Math.hypot(m.x - p.x, m.y - p.y))
+    if (m.kind !== 'devourer') continue
+    const L = T.devourerLight
+    const t = clamp((L.farPx - Math.hypot(m.x - p.x, m.y - p.y)) / (L.farPx - L.nearPx), 0, 1)
+    const death = m.ai === 'dying' ? clamp(1 - m.aiT / T.monsters.devourer.dyingS, 0, 1) : 1
+    strongest = Math.max(strongest, t * t * (3 - 2 * t) * death * death * (3 - 2 * death))
   }
-  if (best === Infinity) return 1
-  const L = T.devourerLight
-  const t = clamp((L.farPx - best) / (L.farPx - L.nearPx), 0, 1)
-  return 1 - L.pushMax * (t * t * (3 - 2 * t)) // smoothstep: no pop at the edges
+  return 1 - T.devourerLight.pushMax * strongest
 }

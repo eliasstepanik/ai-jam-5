@@ -1,4 +1,5 @@
 // Developer minimap: cached terrain colors, live resources/landmarks, always-visible purple player.
+import { entranceExit } from '../world/entrance-art.ts'
 import type { State } from '../core/types.ts'
 import { TILE } from '../core/state.ts'
 import { mapColor, MAP_ZONES } from '../core/debug-map.ts'
@@ -58,7 +59,7 @@ export function drawMinimap(ctx: CanvasRenderingContext2D, s: State, w: number, 
   }
   if (d.mapResin) entries.push(['R', MAP_MARKERS.resin])
   if (d.mapPlants) entries.push(['H', MAP_MARKERS.plant])
-  if (d.mapEntrance) { marker(world.entrance.tx + 0.5, world.entrance.ty + 0.5, MAP_MARKERS.entrance); entries.push(['E', MAP_MARKERS.entrance]) }
+  if (d.mapEntrance) { const e = entranceExit(s); marker(e.tx + 0.5, e.ty + 0.5, MAP_MARKERS.entrance); entries.push(['E', MAP_MARKERS.entrance]) }
   if (d.mapBeacon) {
     const b = beaconTile(s); marker(b.tx + 0.5, b.ty + 0.5, MAP_MARKERS.beacon); entries.push(['B', MAP_MARKERS.beacon])
   }

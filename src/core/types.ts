@@ -44,6 +44,7 @@ export type Meta = {
   phase: Phase
   time: number // s, simulated time since init() on any screen
   steps: number // int, update steps spent in screen 'playing' this run; run seconds = steps / 60
+  palette: number[] // smooth world colour, independent of gameplay zones
   zone: Zone // stored mirror, written by trackDepth
   runId: number // int, +1 per started run; 0 = no run yet
   nextId: number // int, next entity id (shared by monsters, pickups, veins, rocks); 0 is never used

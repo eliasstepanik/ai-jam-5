@@ -2,6 +2,7 @@
 // Spec: docs/architecture-assets-pipeline.md §5-§8, architecture-render-3 §5, architecture-modules-ui-assets row `images.ts`, R-019, R-154/R-155.
 // Every cache lives in getResources().images (hot-swap safe). Nothing here throws into update/render; missing art falls back to PLACEHOLDERS.
 import atlas from './atlas.json'
+import characterMeta from './characters.json'
 import tilesetMeta from './cave_tileset.json'
 import { quantAngle } from '../core/noise.ts'
 import { PLACEHOLDERS } from './placeholders-ui.ts'
@@ -168,7 +169,7 @@ function loadImage(url: string | undefined): Promise<HTMLImageElement | null> {
 // Slots 0/1 are the external sheets (tileset, characters), legacy atlas sheets follow. A failure sets 'failed' + one warning, never throws.
 export function startPreload(res: Resources): void {
   const im = res.images
-  const sourceKey = tilesetMeta.meta.png_sha256
+  const sourceKey = tilesetMeta.meta.png_sha256 + ':' + characterMeta.png_sha256 + ':' + SHEETS['./characters.png']
   if (im.started && im.sourceKey === sourceKey) return
   im.sourceKey = sourceKey
   im.gen += 1 // invalidate old coordinates immediately; the loading slots use safe placeholders

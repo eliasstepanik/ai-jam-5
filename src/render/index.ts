@@ -11,6 +11,8 @@ import { actorRows, drawRowEntities } from './entities.ts'
 import { drawEyes, drawGlow } from './glow.ts'
 import { drawDarkness } from './light.ts'
 import { memoryCanvas } from './memory.ts'
+import { drawOreEmission } from './ore-emission.ts'
+import { drawZonePalette } from './zone-palette.ts'
 import { drawBeaconMode, drawFlashes, drawVignettes } from './overlay.ts'
 import { consumeEvents, drawParticles } from './particles.ts'
 import { drawRocks } from './props.ts'
@@ -51,6 +53,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   }
   drawRocks(ctx, s, v) // pass 12: telegraph shadows and falling boulders above every row; landed rocks sit in the buckets
   drawParticles(ctx, s, v, 'normal') // pass 13: dust and grit under the darkness
+  drawZonePalette(ctx, s, v)
   passMark('ents')
   // Pass 14. memoryCanvas runs once per frame, before the darkness, and hands over the up-to-date explored-tile canvas (C4).
   // drawDarkness leaves identity transform, source-over, alpha 1 and smoothing off on every path.
@@ -59,6 +62,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   passMark('dark')
   worldXf(ctx, v)
   ctx.globalCompositeOperation = 'lighter' // 16-17: additive only, never reveals bodies the darkness hid
+  drawOreEmission(ctx, s, v)
   drawEyes(ctx, s, v)
   drawGlow(ctx, s, v, q)
   drawParticles(ctx, s, v, 'add') // pass 18: sparks above the darkness

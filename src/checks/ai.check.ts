@@ -250,7 +250,7 @@ function facing(): void {
 }
 
 function devourer(): void {
-  // monsters-ai-2 §1 table: distance -> light multiplier, within 0.001; nearest live devourer counts, dying ones do not
+  // monsters-ai-2 §1 table: distance -> light multiplier, within 0.001; nearest live devourer counts; its aura releases over the death clip
   const s = arena()
   ok(devourerMul(s) === 1, 'no devourer: multiplier 1')
   const dm = spawnMonster(s, 'devourer', s.player.x + 260, s.player.y, 100)
@@ -263,7 +263,9 @@ function devourer(): void {
   const far = spawnMonster(s, 'devourer', s.player.x + 400, s.player.y, 100)
   ok(near(devourerMul(s), 0.694, 0.001), 'nearest devourer wins')
   dm.ai = 'dying'
-  ok(devourerMul(s) === 1 && far.ai === 'ring', 'a dying devourer no longer pushes the light')
+  ok(devourerMul(s) < 1 && far.ai === 'ring', 'death begins without an instant radius pulse')
+  dm.aiT = T.monsters.devourer.dyingS
+  ok(devourerMul(s) === 1, 'completed death releases all light suppression')
 }
 
 // 24 forced shades in the real cave, topped up every step; god mode so bites never end the run.

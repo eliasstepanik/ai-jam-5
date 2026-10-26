@@ -1,5 +1,6 @@
 // Developer tools regression checks: independent cheats, grounded collision recovery, actual spawns, and kill override.
 // L0-L3 only; UI pointer capture, overlays, statistics and exported-build access are browser-verified.
+import { entranceExit } from '../world/entrance-art.ts'
 import type { State } from '../core/types.ts'
 import { init } from '../core/state.ts'
 import { migrate } from '../core/migrate.ts'
@@ -141,13 +142,14 @@ function navigation(): void {
   ok(p.vx === 0 && p.vy === 0 && !p.roll.t && !p.roll.invuln && !p.swing.active && !p.swing.buffer && !p.beaconHold && p.mining.targetTile === -1, 'teleport cancels transient movement and interactions')
   s.meta.screen = 'paused'
   debugAction(s, 'teleportEntrance', input.view)
-  const cam = clampCam(80, 80, s.world.w, s.world.h, input.view)
-  ok(p.x === 80 && p.y === 80 && s.cam.x === cam.x && s.cam.y === cam.y && s.meta.screen === 'paused', 'paused entrance teleport clamps camera immediately')
+  const doorway = entranceExit(s), ex = doorway.tx * 32 + 16, ey = doorway.ty * 32 + 16
+  const cam = clampCam(ex, ey, s.world.w, s.world.h, input.view)
+  ok(p.x === ex && p.y === ey && s.cam.x === cam.x && s.cam.y === cam.y && s.meta.screen === 'paused', 'paused entrance teleport clamps camera immediately')
   s.world.beacon = { tx: 12, ty: 6 }
   ok(debugTeleport(s, 'beacon') && !circleHitsSolid(s, p.x, p.y, T.player.radiusPx), 'blocked landmark falls back to clear floor')
-  s.rocks = [{ id: 900, x: 80, y: 80, size: 1, tiles: [2 * 24 + 2], t: 2, landed: true, hit: true, shrunk: false }]
+  s.rocks = [{ id: 900, x: ex, y: ey, size: 1, tiles: [doorway.ty * s.world.w + doorway.tx], t: 2, landed: true, hit: true, shrunk: false }]
   s.world.solidSig++
-  ok(debugTeleport(s, 'entrance') && !circleHitsSolid(s, p.x, p.y, T.player.radiusPx) && (p.x !== 80 || p.y !== 80), 'teleport avoids a landed rock')
+  ok(debugTeleport(s, 'entrance') && !circleHitsSolid(s, p.x, p.y, T.player.radiusPx) && (p.x !== ex || p.y !== ey), 'teleport avoids a landed rock')
   const oldX = p.x
   s.meta.screen = 'title'
   ok(!debugTeleport(s, 'beacon') && p.x === oldX, 'teleport disabled outside a run')

@@ -169,6 +169,7 @@ const MAPPED = [
   ...['idle', 'walk_forward', 'sprint', 'death'].map(a => 'lurker/' + a),
   ...['idle', 'walk_forward', 'leap', 'death', 'hit'].map(a => 'stalker/' + a),
   ...['idle', 'walk_forward', 'attack', 'death', 'hurt'].map(a => 'devourer/' + a),
+  'wisp/fire_loop',
 ]
 type CharFrame = { duration_ms: number; rect: Rect; anchor: { x: number; y: number } }
 type Chars = {
@@ -190,22 +191,24 @@ else if (ch) {
   const ids = new Set<string>()
   for (const a of ch.animations) {
     ids.add(a.id)
-    if (Object.keys(a.directions).join() !== DIRECTIONS.join()) fail('characters.json ' + a.id + ' must have directions ' + DIRECTIONS.join(',') + ' in order')
+    const directions = a.id === 'wisp/fire_loop' ? ['center', 'left', 'right'] : DIRECTIONS
+    const size = a.id === 'wisp/fire_loop' ? 32 : 64
+    if (Object.keys(a.directions).join() !== directions.join()) fail('characters.json ' + a.id + ' must have directions ' + DIRECTIONS.join(',') + ' in order')
     for (const [dir, list] of Object.entries(a.directions)) {
       if (list.length !== a.frame_count_per_direction) fail('characters.json ' + a.id + '/' + dir + ' has ' + list.length + ' frames, expected ' + a.frame_count_per_direction)
       for (const f of list) {
         charFrames++
         const where = 'characters.json ' + a.id + '/' + dir
         if (!isRect(f.rect) || !inside(f.rect, CH_SIZE.w, CH_SIZE.h)) fail(where + ' rect is outside ' + CH_SIZE.w + 'x' + CH_SIZE.h)
-        else if (f.rect.w !== 64 || f.rect.h !== 64) fail(where + ' frame must be 64x64')
+        else if (f.rect.w !== size || f.rect.h !== size) fail(where + ' frame must be ' + size + 'x' + size)
         else if (overlaps(f.rect, ch.palette_panel_rect)) fail(where + ' rect overlaps palette_panel_rect')
-        if (f.anchor?.x !== 32 || f.anchor?.y !== 32) fail(where + ' pivot must be (32,32)')
+        if (f.anchor?.x !== size / 2 || f.anchor?.y !== size / 2) fail(where + ' pivot must be centred at ' + size / 2)
       }
     }
   }
   const materialFrames = ch.animations.find(a => a.id === 'player/material_change_lit_torch_base')?.directions.south
   if (!materialFrames || Math.abs(materialFrames.reduce((ms, f) => ms + f.duration_ms, 0) / 1000 - MATERIAL_CHANGE_S) > 1e-6) fail('material-change gameplay duration differs from atlas playback')
-  if (charFrames !== 1232 || ch.counts.frames !== 1232) fail('characters.json must hold 1232 frames (counts.frames ' + ch.counts.frames + ', actual ' + charFrames + ')')
+  if (charFrames !== 1268 || ch.counts.frames !== 1268) fail('characters.json must hold 1268 frames (counts.frames ' + ch.counts.frames + ', actual ' + charFrames + ')')
   for (const id of MAPPED) if (!ids.has(id)) fail('characters.json lacks animation ' + id + ' (used by the animation mapping)')
 }
 if (ch) {

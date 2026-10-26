@@ -29,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Clip inner-corner wall faces to their open neighbors; align the exit trigger and three-tile spawn spacing with the doorway.
+- Replace ore glow dots with crystal-pixel emission, fade the whole cave palette on zone entry, and ease Devourer light release on death.
+- Use the updated native 32px, 20fps wisp atlas animation after Beacon ignition.
+
 - Torch material/color and inventory cost now apply only after the material-change animation finishes. Walking cancels the action without spending a mineral; shake-off follows the same timing (#87).
 
 - Corrected player action clips: mining and collected materials use the pickup animation; successful mineral tosses and shake-off use the material-change animation. Combat priorities, effect timing and movement are unchanged (#87).

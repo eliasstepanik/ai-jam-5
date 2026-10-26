@@ -2,6 +2,7 @@
 // Spec: docs/architecture-modules-ui-assets-2.md (trim-characters), docs/notes/ai-jam-5-asset-formats-25d.md.
 // Rewrites the JSON ONLY; characters.png is used as delivered. Not wired into check.
 // Run from the repo root: node scripts/trim-characters.ts
+import { createHash } from 'node:crypto'
 import { readFileSync, writeFileSync } from 'node:fs'
 
 const SRC = 'art/characters-source.json'
@@ -35,15 +36,16 @@ const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y
 let frames = 0
 const animations = src.animations.map((a) => {
   const directions: Record<string, unknown> = {}
-  for (const dir of src.direction_order) {
+  for (const dir of Object.keys(a.directions)) {
     const list: Frame[] | undefined = a.directions[dir]
     if (!list || list.length !== a.frame_count_per_direction) return fail(`${a.id}: bad direction ${dir}`) // `return` narrows `list` (fail never returns)
     directions[dir] = list.map((f) => {
       const r: Rect = f.rect
       const anchor: Pt = f.anchor
-      if (r.w !== 64 || r.h !== 64) fail(`${a.id}/${dir}/${f.index}: rect not 64x64`)
+      const size = a.id === 'wisp/fire_loop' ? 32 : 64
+      if (r.w !== size || r.h !== size) fail(`${a.id}/${dir}/${f.index}: rect not ${size}x${size}`)
       if (!inside(r, src.size.w, src.size.h) || overlaps(r, panel)) fail(`${a.id}/${dir}/${f.index}: rect out of bounds`)
-      if (anchor.x !== 32 || anchor.y !== 32) fail(`${a.id}/${dir}/${f.index}: pivot not 32,32`)
+      if (anchor.x !== size / 2 || anchor.y !== size / 2) fail(`${a.id}/${dir}/${f.index}: pivot not centred`)
       frames++
       const out: Partial<Frame> = { index: f.index, rect: r, anchor, duration_ms: f.duration_ms }
       if (f.flame_center_anchor) out.flame_center_anchor = f.flame_center_anchor
@@ -65,9 +67,10 @@ const animations = src.animations.map((a) => {
   out.directions = directions
   return out
 })
-if (frames !== src.counts.frames || frames !== 1232) fail(`frame count ${frames}`)
+if (frames !== src.counts.frames || frames !== 1268) fail(`frame count ${frames}`)
 
 const out = {
+  png_sha256: createHash('sha256').update(readFileSync('src/assets/characters.png')).digest('hex'),
   format: src.format,
   image: src.image,
   size: src.size,
