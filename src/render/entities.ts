@@ -60,7 +60,6 @@ export function monsterFrame(s: State, m: Monster): [string, number] {
   }
 }
 
-export const monsterLit = (s: State, m: Monster): boolean => s.meta.phase === 'escape' || s.debug.noFog || s.debug.reveal || m.seen // light classification for mist; body drawing uses only viewport culling
 
 function drawMonster(ctx: CanvasRenderingContext2D, s: State, v: View, m: Monster): void {
   if (!entityInView(v, m.x, m.y)) return

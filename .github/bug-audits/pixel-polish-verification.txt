@@ -62,3 +62,20 @@ Remaining acceptance work
 - Acceptance implemented and verified; visual confirmation still pending.
 - Follow-up CPU check: 24 enemies, 360 repetitions, 0.044ms/frame average;
   State unchanged, 256 fire slots, no browser errors (CPU-only measurement).
+
+#127 screen visibility follow-up, 2026-10-26 (submitter Kittingsl)
+- User confirmed golden wisp trail and Beacon effects; those subparts solved.
+- Removed light/seen gating from shadow emission; draw explicitly after the
+  darkness/memory overlay in source-over, independent of torch radius.
+- Actual full-frame browser check: lurker/stalker/devourer at radius +70px,
+  normal descent, fog enabled, no reveal, m.seen=false. Emitted 10/12/22
+  particles; 4/10/9 final black pixels outside sprite bounds survived the
+  explored-memory overlay (23 total). Torch radius in the scene: 170px.
+- Switching seen false/true preserves count and birth history. Moving each
+  emitter offscreen clears its emission/history. No browser exceptions.
+- Full checks passed with larger Node nursery and single-CPU/high scheduling
+  priority after two Windows AI timing misses (1049/1032ms vs 1000ms budget).
+  No gameplay, AI code or timing thresholds changed. Build passed.
+- Actual-host HMR preserved state/debug choices/live pixel pool. Prior sprite
+  origin/golden-color checks passed. No changes to wisp/Beacon/torch painter.
+- This targeted visibility fix awaits user confirmation; keep #127 OPEN.

@@ -1,9 +1,10 @@
-// Opaque pixel shadows born inside the current sprite, retaining their birth site through animation/movement.
+// Opaque pixel shadows born inside the sprite, retaining their birth site through animation/movement.
+// Draw after darkness: screen visibility, rather than torch range, controls emission.
 import type { State } from '../core/types.ts'
 import { dirIndex } from '../core/grid.ts'
 import { getResources } from '../assets/resources.ts'
 import { currentQuality } from './quality.ts'
-import { MON_FOOT, entityInView, monsterLit, monsterFrame, monsterDirection } from './entities.ts'
+import { MON_FOOT, entityInView, monsterFrame, monsterDirection } from './entities.ts'
 import { charFrame } from './charatlas.ts'
 import { emitterPixels, emitterPoint } from './emitter-pixels.ts'
 import type { View } from './view.ts'
@@ -18,7 +19,7 @@ export function drawMist(ctx: CanvasRenderingContext2D, s: State, v: View): void
   ctx.globalCompositeOperation = 'source-over'
   ctx.fillStyle = '#000000'
   ctx.globalAlpha = 1
-  eachMist(s, currentQuality(s).particles, m => monsterLit(s, m) && entityInView(v, m.x, m.y),
+  eachMist(s, currentQuality(s).particles, m => entityInView(v, m.x, m.y),
     (kind, _x, _y, r, a, m, slot, cycle, age) => {
       const key = m.id * 64 + slot, profile = MIST[kind]
       seen.add(key)
