@@ -17,6 +17,7 @@ export function stepMinerals(s: State, it: Intent): void {
     if (p.minerals[p.selected] >= 1 && p.energy > 0) {
       p.minerals[p.selected] -= 1
       p.activeMineral = p.selected // re-tossing the active type is allowed: costs a piece, refreshes, counts for score
+      p.materialChangeAt = s.meta.time
       p.stats.mineralsUsed += 1
       emit(s, 'toss', p.x, p.y, MINERALS.indexOf(p.selected))
     } else {
@@ -26,6 +27,7 @@ export function stepMinerals(s: State, it: Intent): void {
   }
   if (it.shake && p.activeMineral !== 'none') {
     p.activeMineral = 'none'
+    p.materialChangeAt = s.meta.time
     emit(s, 'shakeOff', p.x, p.y)
   }
 }

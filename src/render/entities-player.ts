@@ -57,7 +57,7 @@ type TorchSet = { idle: string; hurt: string; death: string; walk: string; run: 
 const SETS: Record<'escape' | 'lit' | 'unlit', TorchSet> = {
   escape: { idle: 'idle_no_torch', hurt: 'hurt_no_torch', death: 'death_without_torch', walk: 'run_without_torch', run: 'run_without_torch', swing: null, mine: null },
   lit: { idle: 'idle_lit_torch_base', hurt: 'hurt_lit_torch_base', death: 'death_with_unlit_torch', walk: 'walk_lit_torch_base', run: 'run_lit_torch_base',
-    swing: 'swing_lit_torch_base', mine: 'material_change_lit_torch_base' },
+    swing: 'swing_lit_torch_base', mine: 'pickup_lit_torch_base' },
   // BUG-003: derive an unlit walk from the delivered lit walk, removing only reserved flame pixels at draw time.
   unlit: { idle: 'idle_unlit_torch', hurt: 'hurt_unlit_torch', death: 'death_with_unlit_torch', walk: 'walk_unlit_torch', run: 'walk_unlit_torch',
     swing: null, mine: null },
@@ -67,7 +67,7 @@ const SETS: Record<'escape' | 'lit' | 'unlit', TorchSet> = {
 const gaitClipFrame = (anim: string, phase: number): number =>
   gaitFrame(phase, Array.from({ length: animLen('player', anim) }, (_, i) => charFrame('player', anim, 0, i).dur))
 
-// Animation, frame index and atlas direction of the player body. Priority death > roll > hurt > swing > mining > walk > idle.
+// Animation, frame index and atlas direction of the player body. Priority death > roll > hurt > swing > material change > mining/pickup > walk > idle.
 // DEFAULT: swing and mining have art for the lit torch only; in the escape or with an unlit torch they fall through to walk/idle.
 // DEFAULT: death uses the retained facing (State keeps no start-of-death velocity), so the direction holds from the first frame.
 export function playerPose(s: State): { anim: string; frame: number; dir: number } {
@@ -81,7 +81,15 @@ export function playerPose(s: State): { anim: string; frame: number; dir: number
   if (p.roll.t > 0) return pose('dodge_roll_no_torch', fitFrame('player', 'dodge_roll_no_torch', 1 - p.roll.t / T.roll.durationS))
   if (p.hitFlash > 0) return pose(set.hurt, frameAt('player', set.hurt, (T.hurt.flashS - p.hitFlash) * 1000))
   if (p.swing.active && set.swing) return pose(set.swing, fitFrame('player', set.swing, p.swing.t / T.swing.activeS))
+  const changeMs = (s.meta.time - p.materialChangeAt) * 1000
+  if (!esc && p.energy > 0 && p.materialChangeAt >= 0 && changeMs < animMs('player', 'material_change_lit_torch_base')) {
+    return pose('material_change_lit_torch_base', frameAt('player', 'material_change_lit_torch_base', changeMs))
+  }
   if (p.mining.targetTile >= 0 && set.mine) return pose(set.mine, fitFrame('player', set.mine, p.mining.progress / T.mining.holdS))
+  const pickupMs = (s.meta.time - p.pickupAt) * 1000
+  if (!esc && p.pickupAt >= 0 && pickupMs < animMs('player', 'pickup_lit_torch_base')) {
+    return pose('pickup_lit_torch_base', frameAt('player', 'pickup_lit_torch_base', pickupMs))
+  }
   if (speed > WALK_MIN_SPEED) {
     const anim = gaitRuns(speed) ? set.run : set.walk
     return pose(anim, gaitClipFrame(anim, p.gaitPhase))

@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Corrected player action clips: mining and collected materials use the pickup animation; successful mineral tosses and shake-off use the material-change animation. Combat priorities, effect timing and movement are unchanged (#87).
+
 - Inner corners use the supplied 47-state lookup and complete wall composites, with padded row/chunk clipping and matching cold/cache rendering. Solid northern joins no longer expose stray floor pixels.
 - Atlas hot reload refreshes pixels and frame metadata together while preserving the current run.
 - Replaced all old atlas coordinates with the new frame metadata and extended asset checks for the 1024x1280 sheet, frame overlap, directional ore and beacon animation.

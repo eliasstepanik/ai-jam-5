@@ -17,12 +17,14 @@ export function stepPickups(s: State): void {
       const wasOut = p.energy <= 0
       p.energy = Math.min(p.energyMax, p.energy + (k.size === 'large' ? T.resin.largeE : T.resin.smallE))
       p.stats.resinUsed += 1
+      p.pickupAt = s.meta.time
       s.pickups.splice(i, 1)
       emit(s, 'relight', k.x, k.y, wasOut ? 0 : 1) // a=0 flame was out, a=1 flame was lit
     } else {
       if (p.hp >= p.hpMax) continue // cannot be stored; stays
       p.hp = Math.min(p.hpMax, p.hp + T.plant.healHp)
       p.stats.plantsEaten += 1
+      p.pickupAt = s.meta.time
       s.pickups.splice(i, 1)
       emit(s, 'heal', k.x, k.y)
     }
