@@ -1,3 +1,4 @@
+import { dressingFloor } from './dressing.ts'
 // L4 render: tile paint helpers for tiles.ts (2.5D, R-179/R-180/R-181/R-186). Spec: docs/architecture-render-2.md §2.2 (paintFloor, wall layer order),
 // docs/notes/ai-jam-5-asset-formats-25d.md. Pure drawing into a given context: no state, no rng, never writes State.
 // `ts === null` (tileset image not decoded) paints flat per-zone fills in the same geometry (placeholders, assets-sprites-2 §2.3-2.4).
@@ -46,6 +47,7 @@ export function paintFloor(c: CanvasRenderingContext2D, s: State, t: TileCache, 
     }
   }
   if (!ts) return
+  dressingFloor(s, cx, cy, ox, oy, (name, x, y) => blit(c, ts, name, x, y), true)
   // Ground cracks (issue #85): decals centred on their tile, drawn above the floor pattern (placement and exclusions: cracks.ts).
   groundCracks(s, cx, cy, ox, oy, (name, x, y) => blit(c, ts, name, x, y))
   floorDetails(s, t, cx, cy, ox, oy, (name, x, y) => blit(c, ts, name, x, y))

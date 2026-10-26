@@ -9,6 +9,8 @@
 //   5 TAG_VEIN      i = index in s.veins (veins the wall layer does not bake: unmapped or malformed wall cell)
 // Spec: docs/architecture-render-2.md §3.1, §3.4, architecture-modules-render.md (props.ts row), R-180, R-186.
 // Reads State only, draws in world space (the caller sets worldXf). Time-driven art uses s.meta.time. No state, no rng, no random calls.
+import { visibleDressing, dressingCache, drawDressingProp } from './dressing.ts'
+import { CAVE_DRESSING } from '../core/cave-props.ts'
 import { beaconPosition } from '../world/beacon-position.ts'
 import type { Rock, State } from '../core/types.ts'
 import { TILE } from '../core/state.ts'
@@ -27,6 +29,7 @@ export const TAG_PICKUP = 2
 export const TAG_LANDMARK = 3
 export const TAG_ROCK = 4
 export const TAG_VEIN = 5
+export const TAG_DRESSING = 6
 
 const VEIN_ID: Record<string, SpriteId> = {
   sodium: 'spec_vein-sodium', copper: 'spec_vein-copper', strontium: 'spec_vein-strontium',
@@ -52,6 +55,7 @@ function wallBaked(s: State, tile: number): boolean {
 
 // Pushes every visible prop into the actor row buckets. Foot y = pivot y (footOffset 0, R-180).
 export function propActors(s: State, v: View, push: (footY: number, tag: number, i: number) => void): void {
+  for (const p of visibleDressing(s, v)) if (CAVE_DRESSING[p.def].layer === 'actor') push(p.y, TAG_DRESSING, p.tile)
   const { w, h, tiles, entrance } = s.world, mapped = w > 0 && tiles.length === w * h // false: no wall bake runs, veins are props
   for (let i = 0; i < s.pickups.length; i++) {
     const p = s.pickups[i]
@@ -91,7 +95,10 @@ function boulder(ctx: CanvasRenderingContext2D, v: View, r: Rock, k: number, alp
 // Draws the bucket entry (tag, i) written by `propActors`; an index that no longer exists draws nothing.
 export function drawProp(ctx: CanvasRenderingContext2D, s: State, v: View, tag: number, i: number): void {
   const t = s.meta.time
-  if (tag === TAG_PICKUP) {
+  if (tag === TAG_DRESSING) {
+    const p = dressingCache(s).cells.get(i)
+    if (p) drawDressingProp(ctx, p)
+  } else if (tag === TAG_PICKUP) {
     const p = s.pickups[i]
     if (!p) return
     const id: SpriteId = p.kind === 'plant' ? 'item_plant' : p.size === 'large' ? 'item_resin-large' : 'item_resin-small'

@@ -11,6 +11,8 @@ import { actorRows, drawRowEntities } from './entities.ts'
 import { drawEyes, drawGlow } from './glow.ts'
 import { drawDarkness } from './light.ts'
 import { memoryCanvas } from './memory.ts'
+import { drawPuddles } from './puddles.ts'
+import { drawFallbackDressing } from './dressing.ts'
 import { drawQuakeScars } from './cave-details.ts'
 import { drawMist } from './mist.ts'
 import { drawPixelFire } from './pixel-fire.ts'
@@ -49,6 +51,8 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   ctx.imageSmoothingEnabled = false
   passMark('view')
   drawFloor(ctx, s, v, q) // pass 5a. Pass 6 (decor) is closed: ground overlays are part of the floor chunks (G6).
+  drawPuddles(ctx, s, v)
+  drawFallbackDressing(ctx, s, v)
   drawQuakeScars(ctx, s, v)
   passMark('tiles')
   actorRows(s, v) // buckets monsters, player, pickups, landmarks, landed rocks and non-south veins by foot row (R-180)
