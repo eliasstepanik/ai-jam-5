@@ -65,7 +65,8 @@ export type Player = {
   parry: Parry
   roll: Roll
   mining: Mining
-  pickupAt: number; materialChangeAt: number // cosmetic action start time; -1 before first action
+  pendingMaterial: FlameKind | null // apply only after the material-change clip; null means no pending action
+  pickupAt: number; materialChangeAt: number // action start times; -1 before first action or after cancellation
   beaconHold: number // s held on the Beacon, reset when released
   hurtT: number // s of post-hit invulnerability left
   hitFlash: number; gaitPhase: number; gaitSpeed: number // s of red flash left; walk/run clip cycle 0..1 integrated per tick by stepMovement (both cosmetic)

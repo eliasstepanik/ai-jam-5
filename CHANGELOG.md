@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Torch material/color and inventory cost now apply only after the material-change animation finishes. Walking cancels the action without spending a mineral; shake-off follows the same timing (#87).
+
 - Corrected player action clips: mining and collected materials use the pickup animation; successful mineral tosses and shake-off use the material-change animation. Combat priorities, effect timing and movement are unchanged (#87).
 
 - Inner corners use the supplied 47-state lookup and complete wall composites, with padded row/chunk clipping and matching cold/cache rendering. Solid northern joins no longer expose stray floor pixels.

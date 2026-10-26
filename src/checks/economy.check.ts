@@ -2,6 +2,7 @@
 // (binding; supersedes the economy-check §8 draft) with its numeric asserts and the tuning cross-check. Part 2: the runtime rows of
 // docs/architecture-systems-4.md §8 (#5 mining, #6 minerals, #7/#7a/#7b Beacon) through step(). Overlaps beacon/mining/minerals checks on
 // purpose with the same fixtures: this is the single place that asserts the full §8 list. L0-L3 imports only; DOM-free; state is local.
+import { MATERIAL_CHANGE_S } from '../core/player-actions.ts'
 import type { Input } from '../main.ts'
 import type { State, Vein } from '../core/types.ts'
 import { init } from '../core/state.ts'
@@ -165,18 +166,22 @@ function mining(): void {
   ok(m.player.mining.progress === 0 && m.veins.length === 1, '#5 moving at step 60: progress 0, vein kept')
 }
 
+const finishMaterial = (s: State): void => {
+  if (s.player.pendingMaterial !== null) for (let i = 0; i < Math.ceil(MATERIAL_CHANGE_S / DT); i++) step(s, inp(), DT)
+}
+
 function minerals(): void {
   // #6 worked sequence of systems-2 §6 (sodium 2, copper 1): copper 0, sodium 1, used 2, then the copper toss is denied.
   const s = quiet()
   Object.assign(s.player.minerals, { sodium: 2, copper: 1, strontium: 0 })
   step(s, inp([], ['Digit2']), DT)
-  step(s, inp([], ['KeyF']), DT)
+  step(s, inp([], ['KeyF']), DT); finishMaterial(s)
   ok(s.player.minerals.copper === 0 && s.player.activeMineral === 'copper', '#6 copper toss: copper 0, active copper')
   step(s, inp([], ['Digit1']), DT)
-  step(s, inp([], ['KeyF']), DT)
+  step(s, inp([], ['KeyF']), DT); finishMaterial(s)
   ok(s.player.minerals.sodium === 1 && s.player.activeMineral === 'sodium' && s.player.stats.mineralsUsed === 2, '#6 sodium toss: sodium 1, used 2')
   step(s, inp([], ['Digit2']), DT)
-  step(s, inp([], ['KeyF']), DT)
+  step(s, inp([], ['KeyF']), DT); finishMaterial(s)
   ok(s.player.minerals.copper === 0 && s.player.activeMineral === 'sodium' && s.player.stats.mineralsUsed === 2, '#6 third toss denied, nothing changes')
   ok(s.fx.events.some(e => e.kind === 'toss' && e.a === -1 && e.step === s.meta.steps), '#6 denied toss emits toss a = -1')
   // #6 toss into a dead flame is denied (copper stays).
