@@ -242,3 +242,5 @@ The jam requires that the majority of the game is AI-generated. This section say
 ## Blender source scenes
 
 `blender/` contains 33 confirmed editable source scenes for the Player, Lurker, Stalker and Devourer. `blender/confirmed_sources.json` records their animation names, original delivery locations and SHA-256 checksums. These source files are for asset editing and are not part of the browser build.
+
+Character atlas update (2026-10-26): owner-supplied `all_characters_atlas_v1` includes the authored 32px wisp (12 frames at 20fps, center/left/right eye looks). Existing character frames are preserved. Runtime metadata is trimmed from the delivered source; the native sprite replaces the procedural orb.

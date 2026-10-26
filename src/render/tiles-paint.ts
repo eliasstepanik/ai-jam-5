@@ -73,7 +73,7 @@ export function paintWalls(c: CanvasRenderingContext2D, s: State, t: TileCache, 
         // Connect the rounded crest to its solid northern neighbour; otherwise its transparent padding exposes floor inside rock.
         if (!(m & 1)) { c.fillStyle = '#000'; c.fillRect(x, y, TILE, 8) }
         // A padded crest must not paint a floating lip over the solid cap in the previous ground row.
-        c.save(); c.beginPath(); c.rect(x - 8, y, 48, TILE + FACE_H + 8); c.clip()
+        c.save(); c.beginPath(); c.rect(x - (m & 8 ? 8 : 0), y, TILE + (m & 8 ? 8 : 0) + (m & 2 ? 8 : 0), TILE + (m & 4 ? FACE_H : 0)); c.clip()
         blit(c, ts, corner, x, y)
         c.restore()
       }

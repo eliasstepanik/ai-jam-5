@@ -14,7 +14,6 @@ import { getResources } from '../assets/resources.ts'
 import type { Quality } from './quality.ts'
 import type { View } from './view.ts'
 import { FLAME_COL } from './flame.ts'
-import { FACE_H } from './tiles-paint.ts'
 import { PLAYER_FOOT } from './entities-player.ts'
 import { GLOW_BUCKETS, bucketOf, glowKey } from './keys.ts'
 import { drawAtlasEyes } from './eyes.ts'
@@ -24,12 +23,9 @@ import { entityInView, eyeAlpha, eyeVisible, torchTip } from './entities.ts'
 export type TipFn = (s: State) => { x: number; y: number }
 
 const RESIN = '#d9861c', PLANT = '#b6ff8a' // pickup glow colours (render-3 §1)
-const CRYSTAL = { sodium: '#ffe14a', copper: '#1fd6b8', strontium: '#e0182d' } as const // style §4.4 "Crystal light"
 const BEACON_COL = '#ffb347', BEACON_CORE = '#fff4d6', SHAFT_COL = '#cfe3ff', FLARE_COL = '#fff4d6'
 const REDUCED_FLASH = 0.3 // settings.reducedFlash scales every flash layer (ui-2 §6, render-3 §4)
-const VEIN_R = 10 // vein glint radius
 const SHAFT_R = 48 // entrance shaft radius (its dust motes stay within 40 px of the centre)
-const VEIN_PAD = 32 // vein glints show only within R + 32 (render-3 §1)
 const MOTES = 6, MOTE_SALT = 31 // entrance dust motes
 const SPARK_ARC_R = 22, SPARK_ARC_W = 6 // swing arc (render-2 §3.3)
 
@@ -66,8 +62,6 @@ export function drawGlowSprite(ctx: CanvasRenderingContext2D, hex: string, x: nu
 // ponytail: square, not circle, so a glow just past a rect corner may still draw; harmless (additive, off-screen) and cheaper.
 const glowInView = (v: View, x: number, y: number, r: number): boolean => x + r >= v.x0 && x - r <= v.x1 && y + r >= v.y0 && y - r <= v.y1
 
-const tileCenter = (i: number, w: number): [number, number] => [(i % w + 0.5) * TILE, (Math.floor(i / w) + 0.5) * TILE]
-
 // Pass 17. Sets 'lighter' and leaves it (the orchestrator resets to source-over); resets globalAlpha to 1.
 // `tipOf` defaults to torchTip(s) from entities.ts (tests may inject another); core flame, flare, ember, Beacon and shaft are drawn at every quality.
 export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Quality, tipOf: TipFn = torchTip): void {
@@ -84,13 +78,7 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
       if (glowInView(v, k.x, k.y, T.pickup.radiusPx)) drawGlowSprite(ctx, k.kind === 'resin' ? RESIN : PLANT, k.x, k.y, T.pickup.radiusPx,
         0.25 + 0.2 * (0.5 + 0.5 * Math.sin(t * 1.5 * 2 * Math.PI)))
     }
-    if (!escape) {
-      for (const vein of s.veins) {
-        const [x, y] = tileCenter(vein.tile, s.world.w)
-        const drawY = y - (vein.stand === vein.tile + s.world.w ? 8 : FACE_H)
-        if (Math.hypot(x - p.x, y - p.y) <= R + VEIN_PAD && glowInView(v, x, drawY, VEIN_R)) drawGlowSprite(ctx, CRYSTAL[vein.mineral], x, drawY, VEIN_R, 0.3)
-      }
-    }
+
   }
 
   // Entrance shaft with a few rising dust motes.

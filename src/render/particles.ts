@@ -12,6 +12,7 @@ import { currentQuality } from './quality.ts'
 import { drawMist } from './mist.ts'
 import type { View } from './view.ts'
 import { inView } from './view.ts'
+import { drawWispArt } from './wisp.ts'
 import { WISP_LEAD_MIN_PX } from '../systems/escape-wisp.ts'
 import { C_EMBER, C_FLAME, C_HOT, C_SPARK, COL_ARG, COL_SPARK, PAL, TABLE, TAU } from './particles-table.ts'
 import type { Spec, SpawnKind } from './particles-table.ts'
@@ -108,6 +109,8 @@ function drawWisp(ctx: CanvasRenderingContext2D, s: State, v: View): void {
       ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2)
       continue
     }
+    ctx.globalAlpha = a
+    if (drawWispArt(ctx, s, x, y)) continue
     for (let L = 0; L < WISP_ORB.length; L++) {
       ctx.globalAlpha = WISP_ORB[L][1] * a * pulse
       ctx.fillStyle = PAL[WISP_ORB[L][2]]

@@ -15,7 +15,7 @@ import { beginDebugUpdate, debugAvailable, debugInput, drawDebug, endDebugUpdate
 
 export type { State } from './core/types.ts'
 export { init } from './core/state.ts'
-export { migrate } from './core/migrate.ts' // idempotent deep default fill (never transforms valid values)
+export { migrate } from './game-migrate.ts' // idempotent deep default fill (never transforms valid values)
 
 const QUALITY = ['auto', 'q0', 'q1', 'q2', 'q3'] as const
 

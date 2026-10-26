@@ -56,7 +56,7 @@ export function initPlayer(): Player {
 export function init(): State {
   return {
     version: STATE_VERSION,
-    meta: { seed: 0, seedText: '', screen: 'title', phase: 'descent', time: 0, steps: 0, zone: 1, runId: 0, nextId: 1 },
+    meta: { seed: 0, seedText: '', screen: 'title', phase: 'descent', time: 0, steps: 0, palette: [1, 1, 1], zone: 1, runId: 0, nextId: 1 },
     player: initPlayer(),
     world: {
       w: MAP_W, h: MAP_H, tiles: '', tilesHash: 0,
