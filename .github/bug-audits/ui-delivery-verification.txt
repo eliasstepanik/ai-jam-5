@@ -44,3 +44,13 @@ Verification
 Acceptance
 Implemented and verified for the delivered pack. Await user visual confirmation;
 keep #99 OPEN / IN PROGRESS rather than treating automated proof as approval.
+
+#99 bar placement follow-up, 2026-10-26 (submitter eliasstepanik)
+- User clarified that duration stays in the upper-left torch info box.
+- Removed the active-mineral underline. Raised duration fill/track by 4u
+  inside its existing box so it clears the lower nine-slice rim. Hotbar slots,
+  selection frame, control hint, material label and fuel behavior unchanged.
+- Full checks and build passed; actual-host HMR passed. Four browser sizes
+  verified fuel bounds remain above the bottom rim, no active underline is
+  drawn, hint position and serialized State remain unchanged. No errors.
+- Await user confirmation; #99 remains open.
