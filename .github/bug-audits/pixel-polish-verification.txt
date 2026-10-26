@@ -79,3 +79,28 @@ Remaining acceptance work
 - Actual-host HMR preserved state/debug choices/live pixel pool. Prior sprite
   origin/golden-color checks passed. No changes to wisp/Beacon/torch painter.
 - This targeted visibility fix awaits user confirmation; keep #127 OPEN.
+
+#127 black-background contrast correction, 2026-10-26 (Kittingsl)
+- Reproduced the remaining failure with Pure Darkness enabled: prior emission
+  continued, but pure-black particles had zero contrast against black terrain.
+  The earlier explored-memory-only pixel test missed this case.
+- Keep 3/4 of slots black; 1/4 use #4a4a4a, the exact gray already present in
+  the creature atlas. Colors do not depend on light distance or seen state.
+  Gray pixels continue over unexplored/pure-black areas; all pixels shrink,
+  rise only 4/5/6px and fade over the final 20% of their life.
+- Shared actual foreground-wall alpha masks clip both eyes and particles.
+  Cold/warm wall tests passed for all three kinds, including transparent
+  cutouts and same-row walls. Existing gray/purple eye masks unchanged.
+- Actual final-frame contrast passed for all three kinds, normal unexplored
+  terrain AND Pure Darkness, at radius +70px with fog enabled/seen=false.
+  Setting torch energy from 100 to zero at fixed time preserves exact particle
+  pixel/color output. Offscreen emission/history is still culled.
+- 48 sprite-birth cases, six Beacon frames, gold trail palette, live-host HMR,
+  bounded pools and unchanged State checks passed; no browser exceptions.
+- Particle CPU work with 24 enemies averaged 0.239ms/frame over 360 samples
+  on this Windows browser, including new wall clipping. CPU-only measurement.
+- Build, check.ts, asset gate, guard and targeted mist/pool/render/assets
+  checks passed. Local full suite hit the pre-existing AI 1000ms benchmark
+  (1018-1079ms), including after explicit warm-up; AI code/threshold untouched.
+  Required CI must pass its standard complete npm check/build before merge.
+- Visual confirmation pending; wisp/Beacon subparts remain confirmed solved.

@@ -1,6 +1,6 @@
-// Opaque pixel shadows born inside the sprite, retaining their birth site through animation/movement.
+// Pixel shadows born inside the sprite, retaining their birth site through animation/movement.
 // Draw after darkness: screen visibility, rather than torch range, controls emission.
-import type { State } from '../core/types.ts'
+import type { Monster, State } from '../core/types.ts'
 import { dirIndex } from '../core/grid.ts'
 import { getResources } from '../assets/resources.ts'
 import { currentQuality } from './quality.ts'
@@ -8,6 +8,8 @@ import { MON_FOOT, entityInView, monsterFrame, monsterDirection } from './entiti
 import { charFrame } from './charatlas.ts'
 import { emitterPixels, emitterPoint } from './emitter-pixels.ts'
 import type { View } from './view.ts'
+import { paintShadowPixels } from './shadow-pixels.ts'
+import type { ShadowPixel } from './shadow-pixels.ts'
 import { eachMist, MIST } from '../systems/mist.ts'
 
 export function drawMist(ctx: CanvasRenderingContext2D, s: State, v: View): void {
@@ -15,12 +17,14 @@ export function drawMist(ctx: CanvasRenderingContext2D, s: State, v: View): void
   if (fx.runId !== s.meta.runId || s.meta.time < fx.at) fx.slots.clear()
   fx.runId = s.meta.runId; fx.at = s.meta.time
   const seen = new Set<number>()
+  let actor: Monster | null = null, pixels: ShadowPixel[] = []
+  const flush = (): void => { if (actor) paintShadowPixels(ctx, s, v, actor.y, pixels) }
   ctx.save()
   ctx.globalCompositeOperation = 'source-over'
-  ctx.fillStyle = '#000000'
   ctx.globalAlpha = 1
   eachMist(s, currentQuality(s).particles, m => entityInView(v, m.x, m.y),
     (kind, _x, _y, r, a, m, slot, cycle, age) => {
+      if (actor !== m) { flush(); actor = m; pixels = [] }
       const key = m.id * 64 + slot, profile = MIST[kind]
       seen.add(key)
       let birth = fx.slots.get(key)
@@ -34,8 +38,10 @@ export function drawMist(ctx: CanvasRenderingContext2D, s: State, v: View): void
       }
       if (a <= 0) return
       const size = Math.max(1, Math.ceil((kind === 'devourer' ? 4 : 3) * r / profile.r))
-      ctx.fillRect(birth.x, Math.round(birth.y - profile.rise * age), size, size)
+      pixels.push({ x: birth.x, y: Math.round(birth.y - profile.rise * age), size,
+        gray: slot % 4 === 0, alpha: Math.min(1, (1 - age) * 5) })
     })
+  flush()
   for (const key of fx.slots.keys()) if (!seen.has(key)) fx.slots.delete(key)
   ctx.restore()
 }
