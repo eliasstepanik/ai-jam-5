@@ -17,6 +17,7 @@ import { escapeAim, escapeBrain, escapeStrike } from './ai-escape.ts'
 import { devourerBrain } from './ai-devourer.ts'
 import { lurkerBrain } from './ai-lurker.ts'
 import { RING_BAND_PX, STALKER_BEHIND_S, stalkerBrain } from './ai-stalker.ts'
+import { searchVelocity, stepAwareness } from './awareness.ts'
 import { findSpawn } from './director.ts'
 import { emit } from './fx.ts'
 import { insideLight } from './light.ts'
@@ -237,10 +238,14 @@ export function stepMonsters(s: State, dt: number): void {
     m.aiT += dt
     m.lungeCd = Math.max(0, m.lungeCd - dt)
     m.stunned = Math.max(0, m.stunned - dt)
+    stepAwareness(s, m, dt) // issue #113 step 1: perception first, it picks which desired velocity the pipeline gets
     // §2: the flee latch runs in ring / stalk / recover; the brain also steers ring / stalk, a fleeing recover takes its velocity
     const thinks = m.ai === 'ring' || m.ai === 'stalk' || m.ai === 'recover'
-    const brain = s.meta.phase === 'escape' ? escapeBrain : (BRAINS[m.kind] ?? lurkerBrain)
-    pipeline(s, m, thinks ? brain(s, m) : NO_VELOCITY, dt)
+    const esc = s.meta.phase === 'escape', brain = esc ? escapeBrain : (BRAINS[m.kind] ?? lurkerBrain)
+    // hunting (and the relentless escape phase) = kind brain; searching = walk to lastKnown; unaware / suspicious = hold (B4: patrol)
+    const want = !thinks ? NO_VELOCITY : esc || m.awareness === 'hunting' ? brain(s, m)
+      : m.awareness === 'searching' ? searchVelocity(s, m) : NO_VELOCITY
+    pipeline(s, m, want, dt)
   }
   separate(s, dt)
   for (const m of s.monsters) {
