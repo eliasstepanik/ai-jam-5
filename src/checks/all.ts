@@ -60,6 +60,7 @@ import { run as shadowMist } from './shadow-mist.check.ts'
 import { run as depthLabel } from './depth-label.check.ts'
 import { run as depthTone } from './depth-tone.check.ts'
 import { run as caveGuide } from './cave-guide.check.ts'
+import { run as puddleSurface } from './puddle-surface.check.ts'
 puddleDressing()
 heartUi()
 state()
@@ -116,6 +117,7 @@ shadowMist()
 depthLabel()
 depthTone()
 caveGuide()
+puddleSurface()
 
 reportedBugs()
 publishedBugs()
