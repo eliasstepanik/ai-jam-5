@@ -1,10 +1,12 @@
-// Cave overhaul A1: render/depth-tone.ts is pure and continuous. Written from design-render §2 and the plan row A1.
+// Cave overhaul A1: render/depth-tone.ts is pure and continuous. Written from design-render §2 and the plan row A1. A9 adds descent-fx.
 import type { State } from '../core/types.ts'
 import { init, MAP_H, MAP_W } from '../core/state.ts'
 import { fnv1a } from '../core/rng.ts'
 import { CAVE_DRESSING, dressingAt } from '../core/cave-props.ts'
 import { clearCaches, getDepthField } from '../world/caches.ts'
 import { crackMul, depth01Field, playerDepth01, toneOf, vineDensity, wetField } from '../render/depth-tone.ts'
+import { drawDescentFx, moteAt, moteCount, pebbleAt, pebbleCount, pebbleList } from '../render/descent-fx.ts'
+import type { View } from '../render/view.ts'
 import { caveOf } from './caves.ts'
 
 const ok = (c: boolean, why: string): void => { if (!c) throw new Error('depth tone: ' + why) }
@@ -134,11 +136,77 @@ function wet(): void {
   ok(wetField(solid).every(v => v === 0), 'no floor: no wet tiles')
 }
 
+// Cave overhaul A9: descent dust and pebbles are stateless pure functions of time, density follows depth.
+function descent(): void {
+  const per = (n: (d: number) => number): number[] => Array.from({ length: 101 }, (_, i) => n(i / 100))
+  const mc = per(moteCount), pc = per(pebbleCount)
+  ok(mc[0] === 2 && mc[100] === 12 && pc[0] === 0 && pc[100] === 6, 'counts at the ends: motes 2..12, pebbles 0..6')
+  ok(moteCount(0.5) === Math.round(2 + 10 * 0.5 ** 1.5) && pebbleCount(0.5) === Math.floor(6 * 0.25), 'count formulas')
+  ok(moteCount(NaN) === 2 && pebbleCount(NaN) === 0 && moteCount(9) === 12 && pebbleCount(-3) === 0, 'counts clamp d to [0,1]')
+  for (let i = 1; i <= 100; i++) ok(mc[i] >= mc[i - 1] && pc[i] >= pc[i - 1], 'counts monotone non-decreasing in d at ' + i / 100)
+  ok(mc[100] > mc[0] && pc[100] > pc[0], 'counts grow with depth')
+
+  const big = '.'.repeat(64 * 64)
+  for (const t of [0, 0.37, 5.5, 123.456, 9999.1]) {
+    for (let i = 0; i < 12; i++) {
+      const a = moteAt(i, t, 500, 600), b = moteAt(i, t, 500, 600)
+      ok(a.x === b.x && a.y === b.y && a.a === b.a, 'moteAt deterministic for equal t')
+      ok(a.a >= 0 && a.a <= 0.5 && Math.abs(a.x - 500) <= 90 && Math.abs(a.y - 600) <= 80 + 6 * 8 + 1, 'mote alpha 0..0.5 and inside its box')
+    }
+    for (let j = 0; j < 6; j++) {
+      const a = pebbleAt(j, t, 500, 600), b = pebbleAt(j, t, 500, 600)
+      ok(JSON.stringify(a) === JSON.stringify(b), 'pebbleAt deterministic for equal t')
+      if (a) ok(a.y <= a.ly && a.ly - a.y <= 48 && a.a >= 0 && a.a <= 1, 'pebble falls at most 48 px onto its landing point')
+    }
+    ok(JSON.stringify(pebbleList(big, 64, 64, t, 1000, 1000, 1)) === JSON.stringify(pebbleList(big, 64, 64, t, 1000, 1000, 1)), 'pebbleList deterministic')
+    ok(pebbleList(big, 64, 64, t, 1000, 1000, 0).length === 0, 'pebble list empty at d=0')
+    ok(pebbleList(big, 64, 64, t, 1000, 1000, 0.4).length <= pebbleCount(0.4), 'pebble list at most pebbleCount')
+  }
+  let seen = 0, quiet = 0
+  for (let i = 0; i < 4000; i++) {
+    const n = pebbleList(big, 64, 64, i * 0.05, 1000, 1000, 1).length
+    seen += n; if (n === 0) quiet++
+  }
+  ok(seen > 0 && quiet > 0, 'pebbles come and go over time')
+  const walls = '#'.repeat(64 * 64), edge = '.'.repeat(64 * 64)
+  for (let i = 0; i < 400; i++) ok(pebbleList(walls, 64, 64, i * 0.1, 1000, 1000, 1).length === 0, 'no pebble lands on a wall')
+  for (let i = 0; i < 400; i++) ok(pebbleList(edge, 64, 64, i * 0.1, -5000, -5000, 1).length === 0, 'no pebble lands outside the map')
+  const half = ('.'.repeat(32) + '#'.repeat(32)).repeat(64)
+  for (let i = 0; i < 600; i++) for (const p of pebbleList(half, 64, 64, i * 0.1, 1024, 1024, 1)) {
+    ok(half[Math.floor(p.ly / 32) * 64 + Math.floor(p.lx / 32)] === '.', 'every pebble lands on a floor tile')
+  }
+
+  // drawDescentFx: stub canvas records fillRect calls; quality gate and time freeze.
+  const rects: number[][] = []
+  const ctx = { save() {}, restore() {}, fillRect: (...a: number[]) => { rects.push(a) }, globalAlpha: 1, globalCompositeOperation: 'source-over', fillStyle: '' }
+  const c = ctx as unknown as CanvasRenderingContext2D
+  const v = { x0: -1e9, y0: -1e9, x1: 1e9, y1: 1e9 } as View
+  const w = 7, h = 5, s = load(['#######', '#.....#', '#.###.#', '#.....#', '#######'].join(''), w, h, 1 * w + 1, 3 * w + 5, 6)
+  s.player.x = 5.5 * 32; s.player.y = 3.5 * 32 // beacon tile: depth 1
+  const frame = (q: 'q0' | 'q1' | 'q2' | 'q3', t: number): string => {
+    s.settings.quality = q; s.meta.time = t; rects.length = 0
+    const rng = JSON.stringify(s.rng)
+    drawDescentFx(c, s, v)
+    ok(JSON.stringify(s.rng) === rng, 'drawDescentFx never advances the rng streams')
+    return JSON.stringify(rects)
+  }
+  ok(frame('q0', 3.3).length > 2 && frame('q1', 3.3) === frame('q0', 3.3), 'decor quality draws and is stateless')
+  ok(frame('q2', 3.3) === '[]' && frame('q3', 3.3) === '[]', 'no draw when decor is off')
+  ok(frame('q0', 3.3) === frame('q0', 3.3), 'same time, same frame')
+  ok(frame('q0', 3.3) !== frame('q0', 4.1), 'the pass animates with time')
+  s.player.x = 1.5 * 32; s.player.y = 1.5 * 32 // entrance: depth 0
+  ok(playerDepth01(s) === 0, 'entrance depth is 0')
+  frame('q0', 3.3)
+  ok(rects.length <= moteCount(0) && rects.every(r => r[2] === 1 && r[3] === 1), 'entrance: at most the 2 motes, no pebble or puff')
+  s.settings.quality = 'auto'
+}
+
 export function run(): void {
   tone()
   factors()
   fixture()
   generated()
   wet()
+  descent()
   clearCaches()
 }
