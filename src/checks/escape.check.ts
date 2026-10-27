@@ -1,5 +1,5 @@
 // B11 escape check, all through step(): the escape-phase economy rules (light, frozen energy, resin ignored, plant heals) and the
-// movement rows (sprint 240 px/s, roll 126 px with 18 i-frames, cooldown 1.5 s, win within Chebyshev 1 of the exit).
+// movement rows (sprint 240 px/s, roll 126 px with 18 i-frames, cooldown 1.0 s, win within Chebyshev 1 of the exit).
 // Spec: docs/architecture-systems-4.md §8, architecture-systems-3.md §6, R-127. Overlaps light-flame/minerals/roll checks on purpose
 // with the same fixtures: this is the one place that asserts the whole escape list in one run. L0-L3 imports only; DOM-free.
 import type { Input } from '../main.ts'
@@ -70,7 +70,7 @@ function movement(): void {
   const x0 = sp.player.x
   step(sp, inp(['KeyD']), DT)
   ok(Math.abs(sp.player.x - x0 - 240 * DT) < 1e-6, 'sprint 240 px/s (got ' + (sp.player.x - x0) / DT + ')')
-  // Roll: 126 px +-1 over 18 steps, 18 i-frame steps, then sprint speed straight away; the cooldown re-rolls on step 91, not 90.
+  // Roll: 126 px +-1 over 18 steps, 18 i-frame steps, then sprint speed straight away; the cooldown re-rolls on step 61, not 60.
   const r = arena(), rx = r.player.x
   step(r, inp(['KeyD'], ['Space']), DT)
   ok(rollCount(r) === 1 && r.player.roll.t > 0, 'Space in escape starts a roll')
@@ -80,10 +80,10 @@ function movement(): void {
   ok(inv === 18, '18 i-frame steps (got ' + inv + ')')
   step(r, inp(['KeyD']), DT)
   ok(r.player.roll.t === 0 && r.player.roll.invuln === 0, 'step 19: roll and i-frames over')
-  ok(T.roll.cooldownS === 1.5, 'tuning: roll cooldown 1.5 s')
+  ok(T.roll.cooldownS === 1.0, 'tuning: roll cooldown 1.0 s')
   const c = arena(), starts: number[] = []
-  for (let k = 1; k <= 92; k++) { step(c, inp([], ['Space']), DT); if (rollCount(c) > 0) starts.push(k) }
-  ok(starts.join() === '1,91', 'cooldown 1.5 s: second roll on step 91 (got ' + starts.join() + ')')
+  for (let k = 1; k <= 62; k++) { step(c, inp([], ['Space']), DT); if (rollCount(c) > 0) starts.push(k) }
+  ok(starts.join() === '1,61', 'cooldown 1.0 s: second roll on step 61 (got ' + starts.join() + ')')
 }
 
 function win(): void {

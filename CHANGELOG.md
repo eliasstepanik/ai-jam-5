@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - #97: updated cave atlas with non-blocking mushrooms, roots, ferns, stalagmites, leaves, branches, gravel and wall dressing; ten muddy puddle variants reflect nearby sprites and ripple when walked through.
 
 ### Changed
+- Make parry and dodge more forgiving: wider parry window (perfect ±55 ms, early 180 ms, late 120 ms), longer lurker and stalker telegraph (0.55 s), shorter escape roll cooldown (1.0 s).
 - #99: raise the torch-duration bar another two reference pixels inside its info box.
 - #99: remove the active-mineral underline and raise the duration bar inside the torch info box so it clears the bottom frame.
 

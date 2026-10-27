@@ -73,12 +73,12 @@ function stateMachine(): void {
   lurkerBrain(s, m)
   ok(near(wrapPi(m.ringAngle - a0), m.orbitDir * K.orbitRadS / 60, 1e-9), 'ring angle orbits by orbitDir * orbitRadS / 60')
 
-  // windup -> lunge: 0.4 s telegraph, then the lunge locks onto the player and starts at (d0 - radii) / contactS
+  // windup -> lunge: 0.55 s telegraph, then the lunge locks onto the player and starts at (d0 - radii) / contactS
   const w = arena(), d0 = 163
   const mw = place(w, d0, 0)
   Object.assign(mw, { ai: 'windup', aiT: 0, aiDur: K.telegraphS })
-  spin(w, 23)
-  ok(mw.ai === 'windup', 'still winding up after 23 steps')
+  spin(w, Math.round(K.telegraphS * 60) - 1)
+  ok(mw.ai === 'windup', 'still winding up one step before the telegraph ends')
   spin(w, 1)
   const vL = (d0 - T.player.radiusPx - K.radiusPx) / K.contactS
   ok(mw.ai === 'lunge' && mw.contactT === -1 && near(Math.hypot(mw.vx, mw.vy), vL, 1e-6) && near(vL, 720, 1e-6), 'windup -> lunge at 720 px/s (got ' + mw.ai + ')')
@@ -190,7 +190,7 @@ function stalker(): void {
   let first = -1
   for (let k = 1; k <= 1200 && first < 0; k++) { spin(w, 1); if (mw.ai === 'windup') first = k }
   ok(first > 0 && mw.behindT + 1e-9 >= STALKER_BEHIND_S, 'stalker winds up only after 0.25 s behind (step ' + first + ', behindT ' + mw.behindT + ')')
-  ok(near(mw.aiDur, KS.telegraphS, 1e-12) && KS.telegraphS === 0.4, 'stalker windup lasts 0.40 s')
+  ok(near(mw.aiDur, KS.telegraphS, 1e-12) && KS.telegraphS === 0.55, 'stalker windup lasts 0.55 s')
 }
 
 function escape(): void {
@@ -230,8 +230,8 @@ function escape(): void {
   mw.lungeCd = 0
   spin(w, 1)
   ok(mw.ai === 'windup' && mw.aiDur === KL.telegraphS, 'escape: windup starts the first step the strike test passes')
-  spin(w, 23)
-  ok(mw.ai === 'windup', 'escape: 23 steps still winding up')
+  spin(w, Math.round(KL.telegraphS * 60) - 1)
+  ok(mw.ai === 'windup', 'escape: still winding up one step before the telegraph ends')
   spin(w, 1)
   const want = Math.atan2(w.player.y + 0 * 240 - mw.y, w.player.x + 36 - mw.x)
   ok(mw.ai === 'lunge' && near(wrapPi(mw.lungeDir - want), 0, 1e-9), 'escape: lunge direction locks on p + v * leadS')
