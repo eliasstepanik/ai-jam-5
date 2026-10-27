@@ -14,6 +14,7 @@ import { moveCircle } from '../world/collide.ts'
 import { lineOfSightPx } from '../world/los.ts'
 import type { Brain } from './ai-lurker.ts'
 import { escapeAim, escapeBrain, escapeStrike } from './ai-escape.ts'
+import { patrolBrain } from './ai-patrol.ts'
 import { devourerBrain } from './ai-devourer.ts'
 import { lurkerBrain } from './ai-lurker.ts'
 import { RING_BAND_PX, STALKER_BEHIND_S, stalkerBrain } from './ai-stalker.ts'
@@ -242,9 +243,13 @@ export function stepMonsters(s: State, dt: number): void {
     // §2: the flee latch runs in ring / stalk / recover; the brain also steers ring / stalk, a fleeing recover takes its velocity
     const thinks = m.ai === 'ring' || m.ai === 'stalk' || m.ai === 'recover'
     const esc = s.meta.phase === 'escape', brain = esc ? escapeBrain : (BRAINS[m.kind] ?? lurkerBrain)
-    // hunting (and the relentless escape phase) = kind brain; searching = walk to lastKnown; unaware / suspicious = hold (B4: patrol)
+    // hunting (and the relentless escape phase) = kind brain; searching = walk to lastKnown (or flee the light);
+    // unaware = patrol (B4), suspicious = hold. AC7: a lit unaware/suspicious monster flees the light -
+    // ponytail: reuse searchVelocity's light branch as the flee vector (identical math, gated on the monster itself
+    // being lit so a stale lastKnown never triggers it); upgrade: export a fleeLight helper from awareness.ts if a third caller appears.
     const want = !thinks ? NO_VELOCITY : esc || m.awareness === 'hunting' ? brain(s, m)
-      : m.awareness === 'searching' ? searchVelocity(s, m) : NO_VELOCITY
+      : m.awareness === 'searching' || insideLight(s, m.x, m.y) ? searchVelocity(s, m)
+      : m.awareness === 'unaware' ? patrolBrain(s, m) : NO_VELOCITY
     pipeline(s, m, want, dt)
   }
   separate(s, dt)
