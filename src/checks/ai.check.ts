@@ -184,6 +184,7 @@ function stalker(): void {
   // windup gate: zone 4 hazard 0.7/s, shade held behind on the ring; the first windup must come after the 0.25 s dwell
   const w = arena(), mw = stalkerAt(w, 0, 0)
   w.meta.zone = 4
+  w.player.energy = T.ai.flameRetreat // exactly at the C4 flame-retreat threshold (strict >), so retreat never triggers here
   w.player.facing = 0
   stalkerBrain(w, mw)
   Object.assign(mw, { x: w.player.x - mw.ringRadius, y: w.player.y, lungeCd: 0, behindT: 0 })
