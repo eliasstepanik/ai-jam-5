@@ -41,7 +41,7 @@ function quiet(cave: CaveResult): State {
 // A shade in the lunge, latched on the player (contactT) long enough ago that this step's bite fires, 24 px ahead (dir 0).
 function latched(s: State): Monster {
   const m = spawnMonster(s, 'lurker', s.player.x + 24, s.player.y, 100)
-  return Object.assign(m, { ai: 'lunge' as const, aiT: T.monsters.lurker.contactS, contactT: 0.1 })
+  return Object.assign(m, { ai: 'lunge' as const, aiT: T.monsters.lurker.contactS, contactT: T.monsters.lurker.contactS - T.parry.lateMaxS })
 }
 
 // A quiet run paused by Blur and waited out past the 0.25 s screen lock (18 steps = 0.3 s), cursor on `row`.
