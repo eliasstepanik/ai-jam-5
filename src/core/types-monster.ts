@@ -28,19 +28,19 @@ export type Monster = {
   behindT: number // s a stalker has spent behind the player
   lastX: number; lastY: number // px, position at the previous step (swept bite test, R-066)
   fleeing: boolean // latched between trigger and exit of the light
-  // Issue #113 smarter monsters. OPTIONAL until DEFAULT_MONSTER/spawnMonster carry them, then made required.
-  awareness?: Awareness // perception state; default 'hunting' (old behaviour)
-  detectionTimer?: number // s, one perception meter: unaware/suspicious = fill 0..noticeT; hunting = s left before losing track (0..loseT)
-  lastKnownX?: number // px, where the player was last sensed
-  lastKnownY?: number // px
-  searchT?: number // s of the search budget used while 'searching'
-  homeX?: number // px, spawn position, patrol anchor
-  homeY?: number // px
-  patrolX?: number // px, current patrol target
-  patrolY?: number // px
-  patrolT?: number // s; >0 pausing, <0 walk budget left (counts up to 0), 0 = pick next point
-  retreatT?: number // s of retreat left (flame is strong)
-  facing?: number // rad, view-cone direction
-  stalkT?: number // s, stalk-commit timer
-  stalkAngle?: number // rad, committed stalk approach angle
+  // Issue #113 smarter monsters. Required: DEFAULT_MONSTER (migrate.ts) and spawnMonster (entities/monster.ts) carry them.
+  awareness: Awareness // perception state; default 'hunting' (old behaviour)
+  detectionTimer: number // s, one perception meter: unaware/suspicious = fill 0..noticeT; hunting = s left before losing track (0..loseT)
+  lastKnownX: number // px, where the player was last sensed
+  lastKnownY: number // px
+  searchT: number // s of the search budget used while 'searching'
+  homeX: number // px, spawn position, patrol anchor
+  homeY: number // px
+  patrolX: number // px, current patrol target
+  patrolY: number // px
+  patrolT: number // s; >0 pausing, <0 walk budget left (counts up to 0), 0 = pick next point
+  retreatT: number // s of retreat left (flame is strong)
+  facing: number // rad, view-cone direction
+  stalkT: number // s, stalk-commit timer
+  stalkAngle: number // rad, committed stalk approach angle
 }
