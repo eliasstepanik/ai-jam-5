@@ -1,5 +1,5 @@
 // B11 escape check, all through step(): the escape-phase economy rules (light, frozen energy, resin ignored, plant heals) and the
-// movement rows (sprint 240 px/s, roll 126 px with 18 i-frames, cooldown 1.5 s, win within Chebyshev 1 of the exit).
+// movement rows (sprint 240 px/s, roll 126 px with 18 i-frames, cooldown 1.0 s, win within Chebyshev 1 of the exit).
 // Spec: docs/architecture-systems-4.md §8, architecture-systems-3.md §6, R-127. Overlaps light-flame/minerals/roll checks on purpose
 // with the same fixtures: this is the one place that asserts the whole escape list in one run. L0-L3 imports only; DOM-free.
 import type { Input } from '../main.ts'
