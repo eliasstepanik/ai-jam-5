@@ -6,6 +6,9 @@ import { buildGuide, guideFields } from '../core/cave-guide.ts'
 import type { GuideFields } from '../core/cave-guide.ts'
 import { clearCaches, getDepthField } from '../world/caches.ts'
 import { caveOf } from './caves.ts'
+import { SEEDS } from './cave.check.ts'
+import { CAVE_DRESSING, dressingAt, dressingWall } from '../core/cave-props.ts'
+import { POOL_NAMES, WALL_POOL_NAMES, classAt, onRoute, purposeDef, purposeWall } from '../core/cave-purpose.ts'
 
 const ok = (c: boolean, why: string): void => { if (!c) throw new Error('cave guide: ' + why) }
 
@@ -132,6 +135,83 @@ function real(): void { // one generated cave: the invariants hold at full size
   ok(same(f, buildGuide(c.tiles, w, 240, e, b)), 'real: accessor equals a fresh build')
 }
 
+// ---- section 2 (G2): purposeful props on generated caves ----
+type Tally = { slots: number; placed: number; crumbs: number; honest: number; landmarks: number; mainLen: number; byClass: string }
+const PURPOSE_SEEDS = SEEDS
+const W = 320, H = 240
+
+function tally(seed: number): Tally {
+  const c = caveOf(seed), e = c.entrance.ty * W + c.entrance.tx, b = c.beacon.ty * W + c.beacon.tx, f = guideFields(c.tiles, W, H, e, b)
+  const t: Tally = { slots: 0, placed: 0, crumbs: 0, honest: 0, landmarks: 0, mainLen: c.beaconDist + 1, byClass: '' }
+  const by: Record<string, number> = {}
+  for (let y = 1; y < H - 1; y += 3) for (let x = 1; x < W - 1; x += 3) {
+    if (dressingAt(c.tiles, W, H, x, y, seed) < 0) continue
+    const i = y * W + x, cls = classAt(f, i, seed), def = purposeDef(f, x, y, seed)
+    t.slots++
+    if (def < 0) continue
+    t.placed++
+    by[cls] = (by[cls] ?? 0) + 1
+    ok(CAVE_DRESSING[def].layer !== 'wall' && (!CAVE_DRESSING[def].water || cls === 'wet'), 'seed ' + seed + ': ' + cls + ' def ' + def + ' is a ground frame, water only for wet')
+    if (cls === 'crumb') { t.crumbs++; t.honest += onRoute(f, x, y) ? 1 : 0 }
+    if (cls === 'landmark') { t.landmarks++; ok(onRoute(f, x, y), 'seed ' + seed + ': landmarks sit on the main route') }
+  }
+  t.byClass = Object.keys(by).sort().map((k) => k + ':' + by[k]).join(',')
+  return t
+}
+
+function pools(): void {
+  for (const [cls, names] of Object.entries(POOL_NAMES)) {
+    ok(names.length > 0, 'pool ' + cls + ' is not empty')
+    for (const n of names) {
+      const d = CAVE_DRESSING.find((x) => x.name === n)
+      ok(!!d && d.layer !== 'wall', 'pool ' + cls + ': ' + n + ' is a ground frame of CAVE_DRESSING')
+      ok(d!.water === (cls === 'wet' && n.includes('puddle')), 'pool ' + cls + ': ' + n + ' water flag')
+    }
+  }
+  for (const n of Object.values(WALL_POOL_NAMES).flat()) ok(CAVE_DRESSING.some((d) => d.name === n && d.layer === 'wall'), 'wall pool: ' + n + ' is a wall frame of CAVE_DRESSING')
+}
+
+function purpose(): void {
+  const all = PURPOSE_SEEDS.map(tally)
+  ok(all.length === SEEDS.length, 'purpose: all ' + SEEDS.length + ' seeds')
+  ok(JSON.stringify(all) === JSON.stringify(PURPOSE_SEEDS.map(tally)), 'purpose: deterministic when run twice')
+  let crumbs = 0, honest = 0
+  all.forEach((t, k) => {
+    const seed = PURPOSE_SEEDS[k], share = t.crumbs ? t.honest / t.crumbs : 0, ratio = t.landmarks ? t.mainLen / t.landmarks : Infinity
+    ok(t.placed > 0 && t.placed < t.slots, 'seed ' + seed + ': purposeDef thins the slots (' + t.placed + ' of ' + t.slots + ')')
+    // ponytail: each cave has only about 5-17 crumbs, so the per-seed share is noisy (0.25..1.00 measured): wide bound, only for caves with >= 5 crumbs; the aggregate below is the real pin. Upgrade: raise the per-seed sample.
+    if (t.crumbs >= 5) ok(share >= 0.2 && share <= 1, 'seed ' + seed + ': honest crumb share ' + share.toFixed(3) + ' in [0.2, 1] (' + t.honest + '/' + t.crumbs + ')')
+    ok(ratio >= 12 && ratio <= 60, 'seed ' + seed + ': main length / landmarks ' + ratio.toFixed(1) + ' in [12, 60] (' + t.mainLen + '/' + t.landmarks + ')')
+    crumbs += t.crumbs; honest += t.honest
+  })
+  ok(honest / crumbs >= 0.55 && honest / crumbs <= 0.75, 'purpose: aggregated honest crumb share ' + (honest / crumbs).toFixed(3) + ' in [0.55, 0.75] (' + honest + '/' + crumbs + ')')
+}
+
+function depthMatch(): void { // guide depth is the metric render's depth01 uses: equals the world cache on 5 generated caves
+  for (const seed of PURPOSE_SEEDS.slice(0, 5)) {
+    const c = caveOf(seed), s: State = init()
+    Object.assign(s.world, { w: W, h: H, tiles: c.tiles, tilesHash: fnv1a(c.tiles), entrance: c.entrance, beacon: c.beacon, beaconDist: c.beaconDist })
+    clearCaches()
+    const f = guideFields(c.tiles, W, H, c.entrance.ty * W + c.entrance.tx, c.beacon.ty * W + c.beacon.tx), d = getDepthField(s)
+    ok(f.depth.length === d.length && f.depth.every((v, i) => v === d[i]), 'seed ' + seed + ': guide depth equals getDepthField')
+  }
+  clearCaches()
+}
+
+function walls(): void { // purposeWall: dressingWall gate stays, def comes from the wall pools, pure
+  const f = guideFields(caveOf(61).tiles, W, H, caveOf(61).entrance.ty * W + caveOf(61).entrance.tx, caveOf(61).beacon.ty * W + caveOf(61).beacon.tx)
+  let gated = 0, kept = 0, repl = 0
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+    if (f.depth[y * W + x] >= 0) continue
+    const base = dressingWall(x, y, 61), d = purposeWall(f, x, y, 61)
+    ok(d === purposeWall(f, x, y, 61), 'walls: deterministic at ' + x + ',' + y)
+    if (!base) { ok(d === null, 'walls: no wall prop where dressingWall has none'); continue }
+    gated++
+    if (d) { ok(d.layer === 'wall', 'walls: wall frame only'); if (d === base) kept++; else repl++ }
+  }
+  ok(gated > 0 && kept > 0 && repl > 0 && kept + repl < gated, 'walls: gate ' + gated + ', kept ' + kept + ', remapped ' + repl + ' (some rejected, some remapped)')
+}
+
 export function run(): void {
   for (const g of GRIDS) { distances(g); route(g); wallDist(g); d01(g) }
   tips()
@@ -139,5 +219,9 @@ export function run(): void {
   memo()
   metric()
   real()
-  console.log('cave-guide: ok (' + GRIDS.length + ' synthetic grids + 1 generated cave)')
+  pools()
+  depthMatch()
+  purpose()
+  walls()
+  console.log('cave-guide: ok (' + GRIDS.length + ' synthetic grids + 1 generated cave + purpose on ' + PURPOSE_SEEDS.length + ' seeds)')
 }
