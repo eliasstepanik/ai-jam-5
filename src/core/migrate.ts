@@ -51,12 +51,12 @@ export function fill(def: unknown, old: unknown, path = ''): unknown {
   return typeof old === typeof def ? old : def // primitive: keep if same type (NaN stays a number)
 }
 
-// fill() rejects the string 'random' against the numeric default 3, so settings.depthClass is resolved here: 'random' and the
-// integers 1..4 are kept, anything else (missing, wrong type, out of range) becomes 3. Idempotent. Called after fill().
+// fill() rejects the string 'random' against the numeric default, so settings.depthClass is resolved here: 'random' and the
+// integers 1..4 are kept, anything else (missing, wrong type, out of range) becomes 1 (Shallow default). Idempotent. Called after fill().
 function fixSettings(set: Settings, old: unknown): Settings {
   const c = isObj(old) ? old.depthClass : undefined
   const ok = c === 'random' || (typeof c === 'number' && Number.isInteger(c) && c >= 1 && c <= 4)
-  return Object.assign(set, { depthClass: ok ? c : 3 })
+  return Object.assign(set, { depthClass: ok ? c : 1 })
 }
 
 // Version mismatch: fresh State, keeping only settings and best when they are objects (state-3 §2).

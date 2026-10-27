@@ -221,10 +221,10 @@ function bestPerClassChecks(): void {
 }
 
 function settingsClassChecks(): void {
-  ok(init().settings.depthClass === 3, 'init() default settings.depthClass is 3')
+  ok(init().settings.depthClass === 1, 'init() default settings.depthClass is 1')
   const old = JSON.parse(JSON.stringify(init())) as { settings: { depthClass?: number } }
   delete old.settings.depthClass
-  ok(migrate(old).settings.depthClass === 3, 'migrate of a State without settings.depthClass gives 3')
+  ok(migrate(old).settings.depthClass === 1, 'migrate of a State without settings.depthClass gives 1')
 
   const sv = fake()
   const load = (raw: unknown): unknown => {
@@ -235,7 +235,7 @@ function settingsClassChecks(): void {
     return s.settings.depthClass
   }
   const cases: readonly (readonly [unknown, unknown])[] = [
-    [1, 1], [2, 2], [3, 3], [4, 4], [9, 4], [5, 4], [0, 1], [-5, 1], [2.6, 3], [1.4, 1], [3.5, 4], ['x', 3], ['3', 3], [null, 3], [true, 3], [{}, 3], ['random', 'random'],
+    [1, 1], [2, 2], [3, 3], [4, 4], [9, 4], [5, 4], [0, 1], [-5, 1], [2.6, 3], [1.4, 1], [3.5, 4], ['x', 1], ['3', 1], [null, 1], [true, 1], [{}, 1], ['random', 'random'],
   ]
   for (const [raw, want] of cases) {
     const got = load(raw)
@@ -245,7 +245,7 @@ function settingsClassChecks(): void {
   const miss = init()
   miss.settings.depthClass = 2
   loadSettings(miss, sv)
-  ok(miss.settings.depthClass === 3, 'stored settings without depthClass load as 3')
+  ok(miss.settings.depthClass === 1, 'stored settings without depthClass load as 1')
 
   for (const want of [1, 2, 3, 4, 'random'] as const) {
     const a = init()

@@ -234,7 +234,8 @@ export function run(): void {
   }
   // N46/N47: toasts age and `copied` decays by exactly 1 s per 60 steps. N01-N03/N12: startRun then drops toasts, copy label, deny shake.
   {
-    const s = at(cave, 'title', 0, { toasts: [{ text: 'a', t: 0.9 }, { text: 'b', t: 1.5 }], copied: 2 })
+    // bestClass 1 matches the shown class (settings default 1): the title frame does not read storage (no store in node -> a toast would).
+    const s = at(cave, 'title', 0, { toasts: [{ text: 'a', t: 0.9 }, { text: 'b', t: 1.5 }], copied: 2, bestClass: 1 })
     for (let k = 0; k < 60; k++) stepScreens(s, inp())
     ok(s.ui.toasts.length === 1 && Math.abs(s.ui.toasts[0].t - 0.5) < 1e-9 && Math.abs(s.ui.copied - 1) < 1e-9, 'toasts and copied age 1 s per 60 steps (copied ' + s.ui.copied + ')')
     Object.assign(s.ui, { copied: 1, copyMsg: 'Copied!', denyT: 0.3 })
