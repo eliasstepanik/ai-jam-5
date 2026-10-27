@@ -94,12 +94,12 @@ export function run(): void {
     ok(s.ui.cursor === 0, 'ArrowRight at the last button wraps to 0 on dead')
   }
 
-  // S13/S19: Space and a mouse click activate the focused item like Enter (Sound row toggles mute). Space types nowhere in the seed field.
+  // S13/S19: Space and a mouse click activate the focused item like Enter (Sound row cycles: 0.7 default -> 100, see volume-cycle.check.ts). Space types nowhere in the seed field.
   for (const sc of ['title', 'paused'] as const) {
     for (const [what, input] of [['Enter', inp(['Enter'])], ['Space', inp(['Space'])], ['click', inp([], 1)]] as const) {
       const s = at(cave, sc, 2)
       stepScreens(s, input)
-      ok(s.settings.muted, what + ' activates the focused Sound row on ' + sc)
+      ok(s.settings.volume === 1 && !s.settings.muted, what + ' cycles the focused Sound row on ' + sc)
     }
   }
   {
