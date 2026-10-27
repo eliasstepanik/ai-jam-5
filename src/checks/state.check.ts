@@ -56,7 +56,13 @@ const monster: Monster = {
   ...DEFAULT_MONSTER, id: 2, kind: 'stalker', x: 1200, y: 900, vx: 12, vy: -3, hp: 1, ai: 'stalk', aiT: 0.4, aiDur: 1.2, beat: 1,
   ringAngle: 0.5, ringRadius: 90, orbitDir: -1, lungeDir: 1.2, lungeCd: 0.7, stunned: 0.5, seen: true,
   contactT: 0.25, stuckT: 0.1, behindT: 0.3, lastX: 1198, lastY: 901, fleeing: true,
+  awareness: 'searching', detectionTimer: 0.3, lastKnownX: 5, lastKnownY: 7, searchT: 2, homeX: 1150, homeY: 870,
+  patrolX: 30, patrolY: -20, patrolT: 0.5, retreatT: 1, facing: 0.7, stalkT: 0.4, stalkAngle: 1,
 }
+// Issue #113 (M5): the 14 monster keys added by the smarter-monsters work. The literal sets them to non-default
+// values, so migrate(mid) deep-equal (below) proves migrate keeps them; deleting them below proves migrate fills them.
+const ISSUE_113_KEYS = ['awareness', 'detectionTimer', 'lastKnownX', 'lastKnownY', 'searchT', 'homeX', 'homeY',
+  'patrolX', 'patrolY', 'patrolT', 'retreatT', 'facing', 'stalkT', 'stalkAngle']
 const pickup: Pickup = { id: 3, kind: 'plant', x: 1300, y: 850, bob: 1.5, size: 'large' }
 const vein: Vein = { id: 4, mineral: 'copper', tile: 2400, stand: 2401, pieces: 2 }
 const rock: Rock = { id: 5, x: 1100, y: 800, size: 2, tiles: [1000, 1001, 1320, 1321], t: 0.8, landed: false, hit: true, shrunk: true }
@@ -133,8 +139,11 @@ export function run(): void {
   delete noRoll.player.roll
   const noStunned = structuredClone(mid) as unknown as { monsters: Record<string, unknown>[] }
   delete noStunned.monsters[0].stunned
+  const noIssue113 = structuredClone(mid) as unknown as { monsters: Record<string, unknown>[] }
+  for (const k of ISSUE_113_KEYS) delete noIssue113.monsters[0][k]
   const inputs: [string, unknown][] = [
     ['init()', init()], ['mid-run', mid], ['player.roll deleted', noRoll], ['monster.stunned deleted', noStunned],
+    ['monster.issue-113 keys deleted', noIssue113],
     ['{ version: 0 }', { version: 0 }], ['null', null], ['5', 5],
   ]
   quietly(() => {
@@ -148,6 +157,9 @@ export function run(): void {
     ok(deepEq(migrate(noRoll).player.roll, init().player.roll), 'migrate fills a deleted player.roll with its default')
     ok(migrate(noStunned).monsters[0].stunned === DEFAULT_MONSTER.stunned, 'migrate fills a missing monster.stunned with its default')
     ok(migrate(noStunned).monsters[0].x === monster.x, 'migrate keeps the other monster fields')
+    const filled113 = migrate(noIssue113).monsters[0] as unknown as Record<string, unknown>
+    ok(ISSUE_113_KEYS.every((k) => filled113[k] === (DEFAULT_MONSTER as Record<string, unknown>)[k]),
+      'migrate fills the 14 deleted issue-113 monster keys with their defaults')
     for (const bad of [{ version: 0 }, null, 5]) ok(deepEq(migrate(bad), init()), `migrate(${JSON.stringify(bad)}) is init()`)
 
     // B2s: an old save without the rock/escape fields gets the defaults; set values survive
