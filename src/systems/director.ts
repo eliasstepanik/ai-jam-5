@@ -68,6 +68,7 @@ export function stepDirector(s: State, dt: number): void {
   if (pick < 0) return
   const pos = findSpawn(s, KINDS[pick])
   if (!pos) return
-  spawnMonster(s, KINDS[pick], pos.x, pos.y, esc ? 0 : lightRadius(s))
+  const m = spawnMonster(s, KINDS[pick], pos.x, pos.y, esc ? 0 : lightRadius(s))
+  if (!esc) m.awareness = 'unaware' // A5: descent spawns start unaware (escape stays relentless; stepAwareness forces hunting in escape anyway)
   dir.alive[KINDS[pick]] += 1
 }
