@@ -58,6 +58,7 @@ import { run as escapeWispEdge } from './escape-wisp-edge.check.ts'
 import { run as animSpeed } from './anim-speed.check.ts'
 import { run as shadowMist } from './shadow-mist.check.ts'
 import { run as depthLabel } from './depth-label.check.ts'
+import { run as depthTone } from './depth-tone.check.ts'
 puddleDressing()
 heartUi()
 state()
@@ -112,6 +113,7 @@ escapeWispGlide()
 escapeWispEdge()
 shadowMist()
 depthLabel()
+depthTone()
 
 reportedBugs()
 publishedBugs()
