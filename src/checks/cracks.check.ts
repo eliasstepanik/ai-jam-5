@@ -12,6 +12,7 @@ import { startRun } from '../systems/run.ts'
 import { getBeaconRoom } from '../world/caches.ts'
 import { caveOf } from './caves.ts'
 import { CHUNK_TILES } from '../render/keys.ts'
+import { depth01Field } from '../render/depth-tone.ts'
 import { ALL_CRACK_FRAMES, GROUND_LARGE, GROUND_P, GROUND_SMALL, LARGE_RX, LARGE_RY, WALL_CRACKS, WALL_P, cleanCells, groundCrack, groundCracks, wallCrack, wallCrackAt } from '../render/cracks.ts'
 
 function ok(cond: boolean, msg: string): void { if (!cond) throw new Error('cracks check: ' + msg) }
@@ -66,8 +67,16 @@ function exclusions(s: State, label: string): void {
   }
 }
 
-// Chunk margin: the same cell decision is seen from every chunk the frame touches, and every anchor is drawn by its own chunk.
+// The chunk-level calls scale their chance by crackMul(depth01); the single-anchor reference uses the default chance, which equals crackMul = 1,
+// i.e. depth01 0.5. Pin the (cached, derived) depth field to 0.5 for the comparison and restore it afterwards.
 function margins(s: State, label: string): void {
+  const f = depth01Field(s), saved = f.slice()
+  f.fill(0.5)
+  try { marginsAt(s, label) } finally { f.set(saved) }
+}
+
+// Chunk margin: the same cell decision is seen from every chunk the frame touches, and every anchor is drawn by its own chunk.
+function marginsAt(s: State, label: string): void {
   const { w, h, tiles } = s.world, skip = cleanCells(s), cw = Math.ceil(w / CHUNK_TILES), draws = chunkDraws(s)
   let all = 0, crossing = 0
   for (let ty = 0; ty < h; ty++) for (let tx = 0; tx < w; tx++) {
