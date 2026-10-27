@@ -50,6 +50,7 @@ import { run as escapeWisp } from './escape-wisp.check.ts'
 import { run as animSpeed } from './anim-speed.check.ts'
 import { run as shadowMist } from './shadow-mist.check.ts'
 import { run as depthLabel } from './depth-label.check.ts'
+import { run as stuckProbe } from './stuck-probe.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -102,4 +103,5 @@ shadowMist()
 depthLabel()
 
 reportedBugs()
+stuckProbe()
 console.log('checks ok')
