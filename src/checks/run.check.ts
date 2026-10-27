@@ -79,6 +79,7 @@ export function run(): void {
     const s = init()
     startRun(s, seed, cave(seed))
     s.settings.loaded = true
+    s.settings.depthClass = 3 // the memo cave is built at class 3 (generateCave default); retry resolves the class from settings (screens.ts depthOf), so keep them equal
     return s
   }
   for (const seed of ['1', '42', 'Ember', '4294967295']) {

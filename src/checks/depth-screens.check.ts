@@ -118,6 +118,7 @@ function firstLoad(mem: Map<string, string>): void {
 function depthRow(mem: Map<string, string>): void {
   const s = title(mem, null)
   loadBest(s) // a session that loaded class 3 (the cache default)
+  s.settings.depthClass = 3 // pinned: the settings default is class 1 now, this scenario targets class 3
   s.ui.cursor = 4
   stepScreens(s, inp()) // the settled title: class 3
   ok(shown(s) === 30, 'depth row setup: class 3 shows 30, got ' + shown(s))
@@ -137,6 +138,7 @@ function link(mem: Map<string, string>): void {
   ok(parseDepth('1') === 1 && parseDepth('7') === 4 && parseDepth('x') === null && parseDepth(null) === null, 'parseDepth: 1 -> 1, 7 -> 4, x and absent -> null')
   const s = title(mem, null)
   loadBest(s)
+  s.settings.depthClass = 3 // pinned: the settings default is class 1 now, this scenario targets class 3
   stepScreens(s, inp())
   ok(shown(s) === 30, 'link setup: class 3 shows 30')
   s.settings.depthClass = parseDepth('1') ?? 3
