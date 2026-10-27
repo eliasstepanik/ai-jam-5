@@ -16,6 +16,9 @@ export function spawnMonster(s: State, kind: MonsterKind, x: number, y: number, 
     lungeDir: 0, lungeCd: randRange(s, 'gameplay', ...K.lungeCdStartS),
     stunned: 0, seen: false, contactT: -1, stuckT: 0, behindT: 0,
     lastX: x, lastY: y, fleeing: false,
+    // Issue #113 perception fields; the director sets 'unaware' for its spawns (no RNG here).
+    awareness: 'hunting', detectionTimer: 0, lastKnownX: 0, lastKnownY: 0, searchT: 0,
+    homeX: x, homeY: y, patrolX: 0, patrolY: 0, patrolT: 0, retreatT: 0, facing: 0, stalkT: 0, stalkAngle: 0,
   }
   s.monsters.push(m)
   return m

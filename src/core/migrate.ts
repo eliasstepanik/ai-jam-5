@@ -13,6 +13,8 @@ export const DEFAULT_MONSTER: Readonly<Monster> = Object.freeze({
   id: 0, kind: 'lurker', x: 0, y: 0, vx: 0, vy: 0, hp: 1, ai: 'ring', aiT: 0, aiDur: 0, beat: 0,
   ringAngle: 0, ringRadius: 0, orbitDir: 1, lungeDir: 0, lungeCd: 0, stunned: 0, seen: false,
   contactT: -1, stuckT: 0, behindT: 0, lastX: 0, lastY: 0, fleeing: false,
+  awareness: 'hunting', detectionTimer: 0, lastKnownX: 0, lastKnownY: 0, searchT: 0, homeX: 0, homeY: 0,
+  patrolX: 0, patrolY: 0, patrolT: 0, retreatT: 0, facing: 0, stalkT: 0, stalkAngle: 0,
 })
 export const DEFAULT_PICKUP: Readonly<Pickup> = Object.freeze({ id: 0, kind: 'resin', x: 0, y: 0, bob: 0, size: 'small' })
 export const DEFAULT_VEIN: Readonly<Vein> = Object.freeze({ id: 0, mineral: 'sodium', tile: 0, stand: 0, pieces: 1 })
