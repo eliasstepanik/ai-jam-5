@@ -59,6 +59,7 @@ import { run as animSpeed } from './anim-speed.check.ts'
 import { run as shadowMist } from './shadow-mist.check.ts'
 import { run as depthLabel } from './depth-label.check.ts'
 import { run as depthTone } from './depth-tone.check.ts'
+import { run as caveGuide } from './cave-guide.check.ts'
 puddleDressing()
 heartUi()
 state()
@@ -114,6 +115,7 @@ escapeWispEdge()
 shadowMist()
 depthLabel()
 depthTone()
+caveGuide()
 
 reportedBugs()
 publishedBugs()
