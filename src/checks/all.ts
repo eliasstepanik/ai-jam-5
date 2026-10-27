@@ -51,6 +51,7 @@ import { run as animSpeed } from './anim-speed.check.ts'
 import { run as shadowMist } from './shadow-mist.check.ts'
 import { run as depthLabel } from './depth-label.check.ts'
 import { run as stuckProbe } from './stuck-probe.check.ts'
+import { run as awarenessChecks } from './ai-awareness.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -104,4 +105,5 @@ depthLabel()
 
 reportedBugs()
 stuckProbe()
+awarenessChecks()
 console.log('checks ok')
