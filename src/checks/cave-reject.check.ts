@@ -88,7 +88,7 @@ function classBand(): void {
   const cut = (seed: number, p: number, q: number, bd: number): CaveResult => exactly(carve(caveOf(seed), p, q, false), bd)
   const wall = (seed: number, k: number, bd: number): CaveResult => exactly(detour(caveOf(seed), k, 16), bd)
   const lo = cut(6, 209, 288, 509), lo2 = cut(25, 162, 204, 509), a510 = cut(11, 39, 107, 510), b510 = cut(30, 185, 264, 510)
-  const hi = wall(22, 411, 691), a690 = wall(44, 264, 690)
+  const hi = wall(22, 411, 691), a690 = wall(44, 263, 690)
   for (const v of [lo, lo2, a510, b510, hi, a690]) ok(!v.stats.fallback, 'rule 5 band: fixture is a non-fallback cave')
   ok(why(lo) === 'r5 band' && why(lo2) === 'r5 band', 'rule 5: non-fallback beaconDist 509 (real geometry) is rejected as r5 band')
   ok(validateCave(a510).ok && validateCave(b510).ok, 'rule 5: non-fallback beaconDist 510 (real geometry) is accepted')

@@ -6,6 +6,7 @@ import { hashSeed, makeRnd } from '../core/rng.ts'
 import { BEACON_DIST_BAND, macroCellOf } from '../world/gen/macro.ts'
 import { placeBeacon, placeEntrance } from '../world/gen/places.ts'
 import { pickLoopPairs } from '../world/gen/loops.ts'
+import { sculpt } from '../world/gen/sculpt.ts'
 import { carveCore, caveSeed } from '../world/generate.ts'
 import { replay } from './cave-extra.check.ts'
 import { ok } from './cave.check.ts'
@@ -21,7 +22,7 @@ function rows(seed: number, a: number): { early: boolean; rootMinY: number; loop
   const early = R.keep >= 16000 && R.spanX >= 0.9 * W && R.spanY >= 0.9 * H && R.cells.every((n) => n >= 150) // keep, bbox, cell floor
   const e = placeEntrance(R.g, W, H, R.L.root, stream(cs, 'entrance'))
   if (e < 0) return { early, rootMinY, loops: -1, beaconOk: false }
-  const loops = pickLoopPairs(R.g, W, H, e, R.L, stream(cs, 'tunnels')).loops, B = placeBeacon(R.g, W, H, e)
+  const loops = pickLoopPairs(R.g, W, H, e, R.L, stream(cs, 'tunnels')).loops, B = (sculpt(R.g, W, H, e, hashSeed(cs, 'cave:sculpt')), placeBeacon(R.g, W, H, e))
   return { early, rootMinY, loops, beaconOk: !!B && B.beaconDist >= BEACON_DIST_BAND[0] && B.beaconDist <= BEACON_DIST_BAND[1] }
 }
 

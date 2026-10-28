@@ -1,6 +1,6 @@
 // Cave overhaul G6: natural-shape pass (caverns, cover pillars, dead-end alcoves). Pure in (grid, entrance, salt): it writes only `g`
-// (1 = wall, 0 = floor), draws nothing from any RNG stream and decides every placement with the stateless core hash2. Not wired into
-// carveCore yet (chunk G7 calls it between the loops and placeBeacon with salt = hashSeed(cs, 'cave:sculpt')).
+// (1 = wall, 0 = floor), draws nothing from any RNG stream and decides every placement with the stateless core hash2. carveCore calls it
+// between the loops and placeBeacon with salt = hashSeed(cs, 'cave:sculpt') (skipped when its `skip` list names 'sculpt').
 // Design: KB projects/ai-jam-5/cave-overhaul-design-gen.md section 1. Caverns and alcoves only add floor next to existing floor; a pillar
 // removes one tile whose 5x5 neighbourhood is floor, so the single 4-connected component (validate r3) is preserved.
 import { hash2 } from '../../core/noise.ts'

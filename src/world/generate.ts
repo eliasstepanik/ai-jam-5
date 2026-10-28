@@ -8,6 +8,7 @@ import { noiseFill, smooth, widen, fixDiagonals } from './gen/ca.ts'
 import { largestRegion } from './gen/region.ts'
 import { placeEntrance, placeBeacon } from './gen/places.ts'
 import { hasAlternativeRoute, pickLoopPairs } from './gen/loops.ts'
+import { sculpt } from './gen/sculpt.ts'
 import { populate } from './gen/populate.ts'
 import { fallbackCave } from './gen/fallback.ts'
 import { validateCave } from './validate.ts'
@@ -22,7 +23,8 @@ export const caveSeed = (seed: number, a: number): number =>
   a === 0 ? seed >>> 0 : hashSeed(seed >>> 0, 'cave:' + a)
 
 // One terrain attempt (passes 0-9); populate, validateCave and fallbackCave complete it in generateCave below.
-export function carveCore(cs: number, p: CaveParams = PARAMS[3]): CaveCore | null {
+// `skip` names optional passes to leave out ('sculpt'); checks use it to compare against the unsculpted terrain.
+export function carveCore(cs: number, p: CaveParams = PARAMS[3], skip: readonly string[] = []): CaveCore | null {
   const w = MAP_W, h = MAP_H, stream = (tag: string) => makeRnd(hashSeed(cs, 'cave:' + tag))
   const layout = buildMacro(stream('macro'), w, h, p), raw = new Uint8Array(w * h)
   noiseFill(raw, w, h, stream('fill'), layout.M)
@@ -50,6 +52,7 @@ export function carveCore(cs: number, p: CaveParams = PARAMS[3]): CaveCore | nul
   if (entrance < 0) return null
   const loops = pickLoopPairs(g, w, h, entrance, layout, stream('tunnels'), p)
   if (loops.loops < 2) return null
+  if (!skip.includes('sculpt')) sculpt(g, w, h, entrance, hashSeed(cs, 'cave:sculpt')) // hash2 only: draws nothing from any stream
   const B = placeBeacon(g, w, h, entrance)
   if (!B || B.beaconDist < p.bdLo || B.beaconDist > p.bdHi) return null
 
