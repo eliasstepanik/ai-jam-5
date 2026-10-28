@@ -14,7 +14,7 @@ import type { Quality } from './quality.ts'
 import { beaconBlend } from './view.ts'
 import type { View } from './view.ts'
 import { playerDepth01, toneOf } from './depth-tone.ts'
-import { MASK_BUCKETS, bucketOf, maskKey } from './keys.ts'
+import { MASK_BUCKETS, bucketOf, maskKey, torchFade } from './keys.ts'
 import type { MaskKind } from './keys.ts'
 
 export type LightSource = { x: number; y: number; r: number; kind: MaskKind }
@@ -24,7 +24,7 @@ const DARK_DPR_CAP = 1 // dark canvas never exceeds CSS resolution: the mask is 
 const MASK_OUTER = 1.25 // sprite radius / gameplay radius: the gameplay edge sits in the fade band (render-2 §5.4)
 const SHAFT_R = 72, BEACON_R = 96 // world px (render-2 §5.6)
 const FLICKER_PHASE = 1.7 // second sine phase (architecture-tuning.md §3)
-const VINE_R = 28, VINE_MAX = 24 // world px, nearest stamps per frame (cave overhaul A8)
+const VINE_R = 18, VINE_MAX = 24 // world px, nearest stamps per frame (cave overhaul A8; 28 -> 18 so the carve hugs the vine, not a wide disc)
 // Scratch for the nearest-vine pick (distance², index of the site's x), sorted ascending. Derived scratch only, no game state.
 const nearD = new Float64Array(VINE_MAX), nearI = new Int32Array(VINE_MAX)
 
@@ -100,12 +100,18 @@ function stampVines(c: CanvasRenderingContext2D, s: State, v: View, r: number, s
     nearD[j] = d
     nearI[j] = i
   }
+  // Carve strength follows torchFade (same fade as vine-glow.ts): inside the torch a vine still carves its small hole, far outside it
+  // drops to the residual, so the darkness no longer gets wide round holes across the level. The cached mask sprite is unchanged
+  // (only stamp-time globalAlpha and VINE_R change), so LIGHT_VERSION stays 2.
   const L: LightSource = { x: 0, y: 0, r: VINE_R, kind: 'vine' }
+  const R = flameRadius(s)
   for (let k = 0; k < n; k++) {
     L.x = sites[nearI[k]]
     L.y = sites[nearI[k] + 1]
+    c.globalAlpha = torchFade(Math.sqrt(nearD[k]), R)
     stampRadial(c, L, v, r, s)
   }
+  c.globalAlpha = 1
 }
 
 function maskSprite(kind: MaskKind, b: number): HTMLCanvasElement {
