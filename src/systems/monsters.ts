@@ -178,9 +178,10 @@ function pipeline(s: State, m: Monster, desired: readonly [number, number], dt: 
 
 const pushable = (m: Monster): boolean => m.ai !== 'windup' && m.ai !== 'lunge' && m.ai !== 'dying'
 
-// §3.4. ponytail: O(n^2) pair loop (n <= T.director.monstersMax = 24); a spatial hash is pointless below ~100 entities.
+// §3.4. ponytail: O(n^2) pair loop (n <= T.director.monstersMax = 24), pushes summed per monster and collided once (moveCircle is O(n)). Ceiling: moveCircle clamps a large summed push, thin walls can leak; upgrade: per-pair sub-steps.
 function separate(s: State, dt: number): void {
   const ms = s.monsters
+  const px = new Float64Array(ms.length), py = new Float64Array(ms.length)
   for (let i = 0; i < ms.length; i++) {
     const a = ms[i]
     if (!pushable(a)) continue
@@ -192,12 +193,18 @@ function separate(s: State, dt: number): void {
       if (L >= gap || L < 1e-6) continue
       const push = T.ai.separationPxS * (1 - L / gap) * dt
       const ux = dx / L * push * 0.5, uy = dy / L * push * 0.5
-      const ma = moveCircle(s, a.x, a.y, -ux, -uy, ra), mb = moveCircle(s, b.x, b.y, ux, uy, rb)
-      a.x = ma.x
-      a.y = ma.y
-      b.x = mb.x
-      b.y = mb.y
+      px[i] -= ux
+      py[i] -= uy
+      px[j] += ux
+      py[j] += uy
     }
+  }
+  for (let i = 0; i < ms.length; i++) {
+    if (px[i] === 0 && py[i] === 0) continue
+    const m = ms[i]
+    const r = moveCircle(s, m.x, m.y, px[i], py[i], T.monsters[m.kind].radiusPx)
+    m.x = r.x
+    m.y = r.y
   }
 }
 
