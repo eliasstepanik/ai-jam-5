@@ -61,6 +61,7 @@ import { run as depthLabel } from './depth-label.check.ts'
 import { run as depthTone } from './depth-tone.check.ts'
 import { run as caveGuide } from './cave-guide.check.ts'
 import { run as puddleSurface } from './puddle-surface.check.ts'
+import { run as caveSculpt } from './cave-sculpt.check.ts'
 puddleDressing()
 heartUi()
 state()
@@ -124,4 +125,5 @@ publishedBugs()
 worldVisualFixes()
 pixelParticles()
 caveDetail()
+caveSculpt()
 console.log('checks ok')
