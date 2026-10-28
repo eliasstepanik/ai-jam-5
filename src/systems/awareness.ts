@@ -7,7 +7,7 @@ import type { Monster, MonsterAi, State } from '../core/types.ts'
 import { wrapPi } from '../core/math.ts'
 import { T } from '../core/tuning.ts'
 import { seek } from '../entities/steer.ts'
-import { insideLight } from './light.ts'
+import { insideLight, lightRadius } from './light.ts'
 import { lineOfSightPx } from '../world/los.ts'
 
 // ai states where perception is frozen (mid-attack / stunned / dying: awareness must not flip).
@@ -23,6 +23,14 @@ export function canSee(s: State, m: Monster): boolean {
   const dy = p.y - m.y
   if (Math.hypot(dx, dy) > T.ai.viewRange) return false
   if (Math.abs(wrapPi(Math.atan2(dy, dx) - m.facing)) > T.ai.viewHalfAngle) return false
+  return lineOfSightPx(s, m.x, m.y, p.x, p.y)
+}
+
+// Lit notice (playtest-tuning-1b §5.1): the torch is a beacon. A player within lightRadius + margin with wall LOS is seen
+// from the dark, cone or not, so a standing player on the ring is noticed. At e = 0 the radius is small, so a dead torch can still slip past.
+export function inLight(s: State, m: Monster): boolean {
+  const p = s.player
+  if (Math.hypot(p.x - m.x, p.y - m.y) > lightRadius(s) + T.ai.noticeLitMarginPx) return false
   return lineOfSightPx(s, m.x, m.y, p.x, p.y)
 }
 
@@ -49,7 +57,7 @@ export function stepAwareness(s: State, m: Monster, dt: number): void {
     return
   }
   if (m.awareness === 'unaware' || m.awareness === 'suspicious') {
-    const see = canSee(s, m)
+    const see = canSee(s, m) || inLight(s, m)
     const hear = !see && canHear(s, m)
     if (see || hear) {
       m.detectionTimer += see ? dt : dt / 2 // hearing fills at half rate
@@ -61,8 +69,15 @@ export function stepAwareness(s: State, m: Monster, dt: number): void {
     if (m.detectionTimer >= T.ai.noticeT) {
       m.awareness = 'hunting'
       m.detectionTimer = 0
+      m.suspectT = 0
     } else {
       m.awareness = m.detectionTimer > 0 ? 'suspicious' : 'unaware'
+      m.suspectT = m.awareness === 'suspicious' ? m.suspectT + dt : 0
+      if (m.suspectT >= T.ai.suspectMaxS) { // bounded suspicion: a shade never stays suspicious forever (lastKnown set by the sense)
+        m.awareness = 'hunting'
+        m.detectionTimer = 0
+        m.suspectT = 0
+      }
     }
   } else if (m.awareness === 'hunting') {
     // hunting sees wider and cone-less (it knows where to look): range*1.5 + LOS, or hearing.

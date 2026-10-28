@@ -53,7 +53,7 @@ const EPS = 1e-9 // R-127: float slack for countdowns
 // Countdown step: 0.3 - 18 x 1/60 leaves ~1e-17, which a bare `<= 0` would treat as time left (step 19 still i-framed).
 const tick = (v: number, dt: number): number => (v - dt - EPS <= 0 ? 0 : v - dt)
 
-// Escape roll (architecture-systems-3.md §6, R-127). Called at X3 before stepMovement, escape only. Owns p.vx/vy while roll.t > 0.
+// Roll (architecture-systems-3.md §6, R-127). Called at X3 before stepMovement; escape always, descent only at energy <= 0. Owns p.vx/vy while roll.t > 0.
 // Distance: the start step and 17 more run at speedPxS (18 x 7 px = 126 px), the step the timer ends already sprints.
 export function stepRoll(s: State, it: Intent, dt: number): void {
   const p = s.player, r = p.roll
@@ -67,6 +67,7 @@ export function stepRoll(s: State, it: Intent, dt: number): void {
     return
   }
   if (!it.roll || r.cooldown > 0) return
+  if (s.meta.phase !== 'escape' && p.energy > 0) return // playtest-tuning-1b §5.3: in descent only a dead torch may roll
   const dx = it.moving ? it.mx : Math.cos(p.facing), dy = it.moving ? it.my : Math.sin(p.facing)
   r.dirX = dx
   r.dirY = dy

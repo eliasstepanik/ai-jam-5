@@ -7,19 +7,19 @@
 // at p + v * escapeLeadS (ai-escape.ts); windup / lunge / recover stay in this shared pipeline.
 import type { Monster, MonsterKind, State } from '../core/types.ts'
 import { wrapPi } from '../core/math.ts'
-import { rand, randRange } from '../core/rng.ts'
-import { T, zt } from '../core/tuning.ts'
+import { randRange } from '../core/rng.ts'
+import { T } from '../core/tuning.ts'
 import { blend, seek } from '../entities/steer.ts'
 import { moveCircle } from '../world/collide.ts'
-import { lineOfSightPx } from '../world/los.ts'
 import type { Brain } from './ai-lurker.ts'
+import { wantsWindup } from './ai-attack.ts'
 import { escapeAim, escapeBrain, escapeStrike } from './ai-escape.ts'
 import { flowSeek } from './ai-flow.ts'
 import { patrolBrain } from './ai-patrol.ts'
 import { retreatBrain, startRetreat } from './ai-retreat.ts'
 import { devourerBrain } from './ai-devourer.ts'
 import { lurkerBrain } from './ai-lurker.ts'
-import { RING_BAND_PX, STALKER_BEHIND_S, stalkerBrain } from './ai-stalker.ts'
+import { stalkerBrain } from './ai-stalker.ts'
 import { searchVelocity, stepAwareness } from './awareness.ts'
 import { findSpawn } from './director.ts'
 import { emit } from './fx.ts'
@@ -48,26 +48,6 @@ export function toRecover(s: State, m: Monster): void {
   m.aiT = 0
   m.aiDur = esc ? T.escape.recoverS : K.recoverS
   m.lungeCd = randRange(s, 'gameplay', ...(esc ? K.escapeLungeCdS : K.lungeCdS))
-}
-
-// λ per second of §4. Pure; reused by the debug overlay.
-export function lungeHazard(s: State, m: Monster): number {
-  const p = s.player, z = s.meta.zone
-  const A = T.minerals.table[p.activeMineral].attractMul
-  return zt(T.monsters[m.kind].lungeChancePerS, z) * A * (1 + T.ai.darkLungeMul * (1 - p.energy / p.energyMax))
-    * (p.energy <= 0 ? T.ai.flameOutLungeMul : 1)
-}
-
-function eligible(s: State, m: Monster): boolean {
-  const p = s.player, K = T.monsters[m.kind]
-  const d = Math.hypot(m.x - p.x, m.y - p.y)
-  if (m.lungeCd > EPS || m.fleeing || m.stunned > EPS || d > K.lungeRangePx) return false
-  if (m.awareness !== 'hunting') return false // #113 C4 retrospect: only shades that have noticed the player may lunge (escape forces hunting)
-  if (m.kind !== 'devourer' && Math.abs(d - m.ringRadius) > RING_BAND_PX) return false
-  if (m.kind === 'stalker' && m.behindT + EPS < STALKER_BEHIND_S) return false
-  let used = 0
-  for (const o of s.monsters) if (o.ai === 'windup' || o.ai === 'lunge') used += 1
-  return used < zt(T.director.attackSlots, s.meta.zone) && lineOfSightPx(s, m.x, m.y, p.x, p.y) // R-013
 }
 
 function walk(s: State, m: Monster, dt: number): boolean { // true if a wall was hit
@@ -116,8 +96,9 @@ function pipeline(s: State, m: Monster, desired: readonly [number, number], dt: 
       blend(m, desired[0], desired[1], K.steerPerS, dt)
       walk(s, m, dt)
       // escape: constant lunges (no hazard draw); descent: draw only when eligible
-      if (s.meta.phase === 'escape' ? escapeStrike(s, m) : eligible(s, m) && rand(s, 'gameplay') < 1 - Math.exp(-lungeHazard(s, m) * dt)) {
+      if (s.meta.phase === 'escape' ? escapeStrike(s, m) : wantsWindup(s, m, dt)) {
         m.ai = 'windup'
+        m.patience = 0
         m.aiT = 0
         m.aiDur = K.telegraphS
         m.lungeDir = Math.atan2(p.y - m.y, p.x - m.x)

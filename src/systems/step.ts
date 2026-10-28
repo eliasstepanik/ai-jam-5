@@ -37,7 +37,7 @@ export function step(s: State, input: Input, dt: number): void {
   }
   const it = resolveIntent(s, input) // D2
   const esc = s.meta.phase === 'escape'
-  if (esc) stepRoll(s, it, dt) // X3 (R-169): before stepMovement, which skips its velocity block while roll.t > 0
+  stepRoll(s, it, dt) // X3 (R-169): before stepMovement, which skips its velocity block while roll.t > 0; descent: only a dead torch starts a roll (movement.ts)
   stepMovement(s, it, dt) // D3
   trackDepth(s) // D4
   fadePalette(s.meta.palette, s.meta.zone, dt)
