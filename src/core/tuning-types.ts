@@ -89,6 +89,7 @@ export type Tuning = {
   escape: {
     sprintMul: number; accelPxS2: number; maxAlive: number; spawnIntervalS: number
     spawnGapPx: [number, number]; despawnPx: number
+    spawnAheadTiles: [number, number]; spawnAheadP: number // playtest-tuning-1 §4: ahead-route escape spawn window (tiles) and probability
     rockWarnS: number; rocksMax: number; firstRockS: number; firstSpawnS: number
     quakeShakePx: number; winRadiusTiles: number
     frictionMul: number; attackSlots: number; chaseMul: number; interceptS: number; recoverS: number

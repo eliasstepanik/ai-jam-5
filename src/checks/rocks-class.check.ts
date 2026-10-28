@@ -1,5 +1,5 @@
 // Per-depth-class rock ramp (R-164): rampOf unit rows, the rocks.ts p2 size odds (seen through planRockFall, whose private p2 picks
-// 1x1 vs 2x2) and the quake.ts rate (seen through the quakeT that stepQuake arms). Class 3 / undefined = T.rocks.rampS = 80.
+// 1x1 vs 2x2) and the quake.ts rate (seen through the quakeT that stepQuake arms). Class 3 / undefined = the params table value 80 (T.rocks.rampS is 60 since playtest-tuning-1).
 // L0-L3 imports only; DOM-free; every scenario builds its own State; no module-level mutable state.
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
@@ -47,7 +47,10 @@ function armed(cls: number | undefined, escapeT: number): { quakeT: number; u: (
 
 export function run(): void {
   const { rateStart, rateEnd, rampS, p2Start, p2End } = T.rocks
-  ok(rampS === 80, 'T.rocks.rampS is the class-3 value 80')
+  // playtest-tuning-1 §4: T.rocks.rampS is 60 now; rampOf reads the per-class table in world/gen/params.ts (class 3 stays 80), so the
+  // 80 rows below are pinned by that table, not by T.
+  ok(rampS === 60, 'T.rocks.rampS is the tuned value 60')
+  ok(near(rampOf(40, 3), 0.5), 'class 3 ramp length comes from the params table (80), independent of T.rocks.rampS')
 
   // (a) rampOf: per-class length, class 3 and undefined share T.rocks.rampS, clamped to 0..1.
   const len: [number | undefined, number][] = [[1, 40], [2, 55], [3, 80], [undefined, 80], [4, 105]]

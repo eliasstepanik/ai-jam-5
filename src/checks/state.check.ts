@@ -174,10 +174,11 @@ export function run(): void {
 
   // B2s: T.rocks table (architecture-rocks.md §1-§4, tuning-2 §6)
   const r = T.rocks
-  ok(r.rateStart === 0.6 && r.rateEnd === 1.6 && r.rampS === 80 && r.minIntervalS === 0.4 && r.retryS === 0.25, 'T.rocks cadence values')
-  ok(r.pendingMax === 4 && r.p2Start === 0.15 && r.p2End === 0.4 && r.routeModeP === 0.75 && r.lateralTiles === 2, 'T.rocks selection values')
-  ok(r.lookahead === 28 && r.exitClearTiles === 5 && r.beaconClearTiles === 6 && r.playerGapPx === 16 && r.damageHp === 1, 'T.rocks clear-zone values')
-  ok(r.detourMaxTiles === 12 && r.detourMaxFrac === 0.5 && r.bfsTestsMax === 3, 'T.rocks detour and BFS values')
+  // playtest-tuning-1 §4 values (supersede economy-3 §3 and tuning-2 §6): harsher escape rocks
+  ok(r.rateStart === 1.0 && r.rateEnd === 2.4 && r.rampS === 60 && r.minIntervalS === 0.3 && r.retryS === 0.25, 'T.rocks cadence values')
+  ok(r.pendingMax === 6 && r.p2Start === 0.25 && r.p2End === 0.5 && r.routeModeP === 0.9 && r.lateralTiles === 1, 'T.rocks selection values')
+  ok(r.lookahead === 36 && r.exitClearTiles === 5 && r.beaconClearTiles === 6 && r.playerGapPx === 16 && r.damageHp === 1, 'T.rocks clear-zone values')
+  ok(r.detourMaxTiles === 12 && r.detourMaxFrac === 0.5 && r.bfsTestsMax === 5, 'T.rocks detour and BFS values')
   ok(!('rockIntervalS' in T.escape), 'T.escape.rockIntervalS is deleted (R-056)')
 
   // #4 migrate does not change valid values

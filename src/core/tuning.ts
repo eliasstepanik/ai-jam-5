@@ -125,18 +125,19 @@ export const T = {
     flowStuckT: 0.25, // s, stuck time before flow-field fallback (< stuckNudgeS)
   },
   escape: {
-    sprintMul: 2.0, accelPxS2: 1800, maxAlive: 8, spawnIntervalS: 1.2, // maxAlive/interval FINAL (economy-3 §2.1)
+    sprintMul: 2.0, accelPxS2: 1800, maxAlive: 10, spawnIntervalS: 0.9, // playtest-tuning-1 §4 (supersedes economy-3 §2.1)
     spawnGapPx: [220, 340], despawnPx: 700,
-    rockWarnS: 1.0, rocksMax: 200, firstRockS: 1.5, firstSpawnS: 1.0, // rocksMax 200: economy-3 §3; firstSpawnS: R-147
+    spawnAheadTiles: [8, 14], spawnAheadP: 0.75, // playtest-tuning-1 §4: 75% of escape spawns block the exit route 8-14 tiles ahead
+    rockWarnS: 0.9, rocksMax: 260, firstRockS: 1.5, firstSpawnS: 1.0, // rocksMax 260: playtest-tuning-1 §4 (supersedes economy-3 §3); firstSpawnS: R-147
     quakeShakePx: 2, winRadiusTiles: 1,
     frictionMul: 2, attackSlots: 3, chaseMul: 1.3, interceptS: 0.3, recoverS: 0.4, // R-074
   },
   rocks: {
-    rateStart: 0.6, rateEnd: 1.6, rampS: 80, minIntervalS: 0.4, retryS: 0.25, // rampS 80: economy-3 §3
-    pendingMax: 4, p2Start: 0.15, p2End: 0.4, damageHp: 1,
-    lookahead: 28, routeModeP: 0.75, lateralTiles: 2, exitClearTiles: 5,
+    rateStart: 1.0, rateEnd: 2.4, rampS: 60, minIntervalS: 0.3, retryS: 0.25, // playtest-tuning-1 §4 (supersedes economy-3 §3)
+    pendingMax: 6, p2Start: 0.25, p2End: 0.5, damageHp: 1,
+    lookahead: 36, routeModeP: 0.9, lateralTiles: 1, exitClearTiles: 5,
     beaconClearTiles: 6, playerGapPx: 16, detourMaxTiles: 12, detourMaxFrac: 0.5,
-    bfsTestsMax: 3,
+    bfsTestsMax: 5,
   },
   hud: { exitLookTiles: 4 }, // R-061
   cave: { pocketDepth: 10, fallbackPocketDepth: 5 }, // R-163
