@@ -9,14 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - #97: updated cave atlas with non-blocking mushrooms, roots, ferns, stalagmites, leaves, branches, gravel and wall dressing; ten muddy puddle variants reflect nearby sprites and ripple when walked through.
-- Glowing vines on cave walls and ceilings near the cave start. They give off a soft pulsing green light and fade out with depth, so the deeper cave has none.
+- Glowing vines on cave walls and on the floor beside them near the cave start. They give off a soft pulsing green light and fade out with depth, so the deeper cave has none.
 - Falling dust and pebbles that get denser the deeper you go.
 - Drifting draft motes and a faint warm bleed of light toward the Beacon that quietly guide the player along the main route.
 - Dynamic puddles: the pool surface shimmers, ripples, drips and reflects the flame, the Beacon and nearby vines instead of showing a flat decal.
 - Sculpted cave terrain: open caverns, single pillars and short dead-end alcoves.
 
 ### Changed
-- Darkness and tint now deepen continuously with depth. The per-zone colour tints are removed from rendering.
+- Darkness and tint now deepen continuously with depth. The per-zone colour tints are removed from rendering (the plain fallback shown before the tileset decodes keeps flat per-zone floor fills).
 - More cracks and rubble the deeper you go.
 - Props are placed with a purpose instead of being scattered: route markers and landmarks along the way to the Beacon, decoys, water and lairs in dead ends, and rubble where the route runs close to a wall.
 - The HUD no longer shows the zone label. The depth class and Beacon path length stay.
