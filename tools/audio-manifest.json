@@ -11,10 +11,14 @@
       "lyrics": "[Instrumental]",
       "bpm": 66,
       "keyscale": "D minor",
-      "duration": 47.27,
+      "duration": 50,
       "fadeIn": 0.005,
       "fadeOut": 0.005,
-      "chosenSeed": null
+      "chosenSeed": 1011,
+      "trim": 34.73,
+      "loopFade": 2,
+      "peakDb": -3,
+      "selection": "metric-based pick, not verified by ear: hard gates (duration +-20 ms, peak -3 +-1 dB, no clip/NaN, |DC|<0.01, no per-second RMS gap below -55 dB, no first/last-3 s dip >15 dB below the median, wrap jump < -30 dB, wrap first-difference seam < 0 dB (-10 for amb/escape first pass), |tail-head 50 ms level| < 6 dB) then highest RMS; 24 seeds tried (1000-1023, 12 at ACE render 60 s trimmed to 49.27 s for a 47.27 s loop: none passed (quiet intro or silence in 7-12 s of 60 s content); 12 more at 50 s trimmed to 34.73 s for a 32.73 s loop + 12 more same recipe 1012-1023), only 1011 passed (RMS -23.6 dB, seam -24.3/-17.1 dB, jump -50.9/-56.8 dB ogg/mp3, tail-head level -5.2/-0.6 dB, peak -2.8/-3.0 dB, DC 1e-5/5e-4); title loop shortened 47.27 -> 32.73 s (R-140 fallback; loopFade 2 s baked into 34.73 s take). mono, peak-normalised -3 dBFS, no LUFS node in the workflow"
     },
     {
       "id": "mus_descent",
@@ -47,10 +51,14 @@
       "lyrics": "[Instrumental]",
       "bpm": 150,
       "keyscale": "D minor",
-      "duration": 48,
+      "duration": 60,
       "fadeIn": 0.005,
       "fadeOut": 0.005,
-      "chosenSeed": null
+      "chosenSeed": 1300,
+      "trim": 50,
+      "loopFade": 2,
+      "peakDb": -3,
+      "selection": "metric-based pick, not verified by ear: same hard gates; 12 seeds tried (1300-1311, ACE render 60 s trimmed to 50 s, 2 s equal-power loop crossfade baked in, final 48.000 s), passers 1300, 1307; picked highest RMS 1300: RMS -18.8 dB, seam -19.4/-18.7 dB, jump -56.5/-43.4 dB ogg/mp3, tail-head level -4.5 dB, peak -2.3/-2.7 dB, DC 7e-5/6e-4. mono, peak-normalised -3 dBFS, no LUFS node in the workflow"
     },
     {
       "id": "mus_sting-win",
@@ -89,10 +97,14 @@
       "lyrics": "[Instrumental]",
       "bpm": 60,
       "keyscale": "D minor",
-      "duration": 40,
+      "duration": 60,
       "fadeIn": 0.005,
       "fadeOut": 0.005,
-      "chosenSeed": null
+      "chosenSeed": 1605,
+      "trim": 42,
+      "loopFade": 2,
+      "peakDb": -3,
+      "selection": "metric-based pick, not verified by ear: same hard gates; 12 seeds tried (1600-1611, ACE render 60 s trimmed to 42 s, 2 s equal-power loop crossfade baked in, final 40.000 s), passers 1601, 1605; picked highest RMS 1605: RMS -22.6 dB, seam -14.5/-13.4 dB, jump -40.4/-37.3 dB ogg/mp3, tail-head level +1.5 dB, peak -3.3/-3.0 dB, DC 4e-5/8e-4. mono, peak-normalised -3 dBFS (ambience also not -20 LUFS: no LUFS node)"
     },
     {
       "id": "sfx_parry-perfect-ring",

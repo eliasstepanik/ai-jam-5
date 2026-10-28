@@ -323,5 +323,187 @@
     "_meta": {
       "title": "Save Opus"
     }
+  },
+  "21": {
+    "class_type": "TrimAudioDuration",
+    "inputs": {
+      "audio": [
+        "10",
+        0
+      ],
+      "start_index": 0,
+      "duration": 2
+    },
+    "_meta": {
+      "title": "Loop Head"
+    }
+  },
+  "22": {
+    "class_type": "TrimAudioDuration",
+    "inputs": {
+      "audio": [
+        "10",
+        0
+      ],
+      "start_index": 40,
+      "duration": 2
+    },
+    "_meta": {
+      "title": "Loop Tail"
+    }
+  },
+  "23": {
+    "class_type": "TrimAudioDuration",
+    "inputs": {
+      "audio": [
+        "10",
+        0
+      ],
+      "start_index": 2,
+      "duration": 38
+    },
+    "_meta": {
+      "title": "Loop Rest"
+    }
+  },
+  "24": {
+    "class_type": "SET_AudioTestSignalGenerator",
+    "inputs": {
+      "waveform_type": "sine",
+      "frequency": 0.125,
+      "frequency_end": 880,
+      "amplitude": 1,
+      "dc_offset": 0,
+      "phase": 0,
+      "duration": "2",
+      "sample_rate": 48000,
+      "batch_size": 1,
+      "channels": 1
+    },
+    "_meta": {
+      "title": "Loop Env In"
+    }
+  },
+  "25": {
+    "class_type": "SET_AudioTestSignalGenerator",
+    "inputs": {
+      "waveform_type": "sine",
+      "frequency": 0.125,
+      "frequency_end": 880,
+      "amplitude": 1,
+      "dc_offset": 0,
+      "phase": 90,
+      "duration": "2",
+      "sample_rate": 48000,
+      "batch_size": 1,
+      "channels": 1
+    },
+    "_meta": {
+      "title": "Loop Env Out"
+    }
+  },
+  "26": {
+    "class_type": "SET_AudioBlend",
+    "inputs": {
+      "audio1": [
+        "21",
+        0
+      ],
+      "gain1": 0,
+      "gain2": 1,
+      "audio2": [
+        "24",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Loop Env In To Device"
+    }
+  },
+  "27": {
+    "class_type": "SET_AudioBlend",
+    "inputs": {
+      "audio1": [
+        "22",
+        0
+      ],
+      "gain1": 0,
+      "gain2": 1,
+      "audio2": [
+        "25",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Loop Env Out To Device"
+    }
+  },
+  "28": {
+    "class_type": "AudioMerge",
+    "inputs": {
+      "audio1": [
+        "21",
+        0
+      ],
+      "audio2": [
+        "26",
+        0
+      ],
+      "merge_method": "multiply"
+    },
+    "_meta": {
+      "title": "Loop Head Gain"
+    }
+  },
+  "29": {
+    "class_type": "AudioMerge",
+    "inputs": {
+      "audio1": [
+        "22",
+        0
+      ],
+      "audio2": [
+        "27",
+        0
+      ],
+      "merge_method": "multiply"
+    },
+    "_meta": {
+      "title": "Loop Tail Gain"
+    }
+  },
+  "30": {
+    "class_type": "SET_AudioBlend",
+    "inputs": {
+      "audio1": [
+        "28",
+        0
+      ],
+      "gain1": 1,
+      "gain2": 1,
+      "audio2": [
+        "29",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Loop Mix"
+    }
+  },
+  "31": {
+    "class_type": "SET_AudioConcatenate",
+    "inputs": {
+      "audio1": [
+        "30",
+        0
+      ],
+      "audio2": [
+        "23",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Loop Join"
+    }
   }
 }

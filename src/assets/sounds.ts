@@ -8,7 +8,7 @@ export type SoundDef = {
 }
 
 export const SOUNDS = {
-  mus_title: { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_title', loop: [0, 47.27] },
+  mus_title: { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_title', loop: [0, 32.73] },
   mus_descent: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_descent', loop: [0, 72] },
   'mus_descent-danger': { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_descent-danger', loop: [0, 72] },
   mus_escape: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_escape', loop: [0, 48] },
@@ -56,5 +56,5 @@ export type SoundId = keyof typeof SOUNDS
 
 // Ids whose sample files are undelivered. Keep this explicit so delivery shrinks the allow-list.
 export const PENDING_AUDIO = [
-  'mus_title', 'mus_descent', 'mus_descent-danger', 'mus_escape', 'amb_cave',
+  'mus_descent', 'mus_descent-danger',
 ] as const satisfies readonly SoundId[]

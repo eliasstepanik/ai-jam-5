@@ -11,7 +11,7 @@ import { join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
-type Sound = { id: string; kind: 'music' | 'amb' | 'sfx'; tags: string; lyrics: string; bpm: number; keyscale: string; duration: number; trim?: number; peakDb?: number; fadeIn: number; fadeOut: number; chosenSeed: number | null }
+type Sound = { id: string; kind: 'music' | 'amb' | 'sfx'; tags: string; lyrics: string; bpm: number; keyscale: string; duration: number; trim?: number; loopFade?: number; peakDb?: number; fadeIn: number; fadeOut: number; chosenSeed: number | null }
 type Manifest = { version: 1; workflow: string; baseSeed: number; candidates: number; sounds: Sound[] }
 type Node = { class_type?: string; inputs: Record<string, unknown>; _meta?: { title?: string } }
 type Workflow = Record<string, Node>
@@ -85,7 +85,11 @@ export function buildPrompt(base: Workflow, s: Sound, seed: number): Workflow {
   // ACE cannot render under 1 s, so short SFX render s.duration and are cut to s.trim (default: s.duration).
   const trim = s.trim ?? s.duration
   if (!(trim > 0 && trim <= s.duration)) die(s.id + ': trim ' + trim + ' s must be in (0, duration]')
-  const hold = round3(trim - s.fadeIn - s.fadeOut)
+  // Loops: loopFade > 0 renders loopFade extra seconds and bakes an equal-power crossfade of that tail onto the head, so the file ends where the raw take continues into its start; final length = trim - loopFade.
+  const lf = s.loopFade ?? 0
+  if (lf < 0 || (lf > 0 && !(lf >= 0.5 && 2 * lf < trim))) die(s.id + ': loopFade ' + lf + ' s must be 0 or in [0.5, trim/2)')
+  const len = round3(trim - lf)
+  const hold = round3(len - s.fadeIn - s.fadeOut)
   if (s.fadeIn < 0 || s.fadeOut < 0 || hold < 0) die(s.id + ': fadeIn + fadeOut exceed ' + trim + ' s')
   const wf = structuredClone(base)
   const set = (title: string, inputs: Record<string, unknown>): void => { Object.assign(nodeByTitle(wf, title)[1].inputs, inputs) }
@@ -103,6 +107,15 @@ export function buildPrompt(base: Workflow, s: Sound, seed: number): Workflow {
     set(title, { duration: String(round3(d)), frequency: 1 / (2 * round3(d)) })
   }
   set('Hold Env', { duration: String(hold) })
+  if (lf > 0) {
+    set('Loop Head', { start_index: 0, duration: lf })
+    set('Loop Tail', { start_index: len, duration: lf })
+    set('Loop Rest', { start_index: lf, duration: round3(len - lf) })
+    // Quarter-period sines: frequency 1/(4*lf); phase 0 rises 0->1 over lf, phase 90 falls 1->0.
+    for (const t of ['Loop Env In', 'Loop Env Out']) set(t, { duration: String(lf), frequency: 1 / (4 * lf) })
+    // Loops skip the 5 ms edge envelopes (they would notch the seam): Normalize reads the joined loop directly, so the envelope nodes are never executed.
+    nodeByTitle(wf, 'Normalize')[1].inputs.audio = [nodeByTitle(wf, 'Loop Join')[0], 0]
+  } else for (const [k, n] of Object.entries(wf)) if (n._meta?.title?.startsWith('Loop ')) delete wf[k]
   const prefix = 'audio/lastember_' + s.id + '_s' + seed
   set('Save MP3', { filename_prefix: prefix + '_mp3' })
   set('Save Opus', { filename_prefix: prefix + '_opus' })
