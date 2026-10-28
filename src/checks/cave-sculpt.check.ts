@@ -1,9 +1,9 @@
 // Cave overhaul G6: sculpt() on synthetic grids (1 = wall, 0 = floor). The generator wiring and zero-stream-draw proof on real caves is G7.
 // Pins: purity and determinism, one connected component (r3), the exclusion zones, the cavern no-shortcut rule, the caps, the pillar
 // 5x5 rule with spacing >= 3, and that an alcove which cannot be completed leaves the grid byte-for-byte unchanged.
-// G7c (generated caves, section at the end): zero stream draws, r3 and the pillar 5x5 rule on real carveCore terrain.
+// G7c + F1 (generated caves, end): zero stream draws, r3, pillar 5x5; cavern discs never merge; alcoveTiles ascending/unique/wall->floor.
 import { EXCL_PAD, MARGIN, CAVERN_MAX, PILLAR_MAX, ALCOVE_MAX, carveAlcove, sculpt } from '../world/gen/sculpt.ts'
-import { hashSeed, makeRnd } from '../core/rng.ts'
+import { hashSeed } from '../core/rng.ts'
 import { carveCore, caveSeed } from '../world/generate.ts'
 import { PARAMS } from '../world/gen/params.ts'
 import { bfs4 } from '../world/bfs.ts'
@@ -190,13 +190,24 @@ function pairs(): Pair[] {
 }
 const wallGrid = (t: Uint8Array): Uint8Array => Uint8Array.from(t, (v) => v ? 0 : 1) // CaveCore.t (0 = wall) -> work grid (1 = wall)
 
-// Zero stream draws. A makeRnd state is a closure variable, so it cannot be read from outside carveCore (disclosed weaker form); what is
-// proven instead: (1) sculpt's arguments are (grid, w, h, entrance, salt), no Rnd, and its output is a function of those alone (twice-equal);
-// (2) a live stream read before and after a sculpt call has an unchanged state() and an unchanged continuation; (3) carveCore is
-// deterministic in both modes and the passes that run before sculpt (entrance, tunnels streams) give the same entrance and loop stats with and
-// without it; (4) Math.random, the only other entropy source, is never touched by the carve-plus-sculpt path.
+// No node: import in src/checks (R-039), no @types/node under tsc: fetch node:fs via process.getBuiltinModule (Node >= 22.3), local type.
+type Fs = { process: { getBuiltinModule(id: 'node:fs'): { readFileSync(path: URL, encoding: 'utf8'): string } } }
+const fs = (globalThis as unknown as Fs).process.getBuiltinModule('node:fs')
+
+// Static proof sculpt cannot draw from a stream (Function.length is fooled by defaulted params). Comments stripped; imports must be
+// exactly core/noise (hash2) and world/bfs (bfs4), so an added rng import fails; no dynamic import or require.
+function sourceStreamFree(): void {
+  const url = new URL('../world/gen/sculpt.ts', import.meta.url)
+  const src = fs.readFileSync(url, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+  const specs = [...src.matchAll(/\bimport\s*(?:[^'"();]*?\bfrom\s*)?'([^']+)'/g)].map((m) => m[1]).sort()
+  ok(JSON.stringify(specs) === JSON.stringify(['../../core/noise.ts', '../bfs.ts']), 'sculpt.ts imports changed: ' + specs.join(', '))
+  ok(/\bhash2\b/.test(src) && /\bbfs4\b/.test(src), 'sculpt.ts no longer uses hash2 and bfs4 (stale read or regex miss)')
+  ok(!/\bimport\s*\(|\brequire\s*\(|Math\s*\.\s*random|\bmakeRnd\b|\bRnd\b|\brng\b/.test(src), 'sculpt.ts: dynamic import/Math.random/rng')
+}
+
+// Zero stream draws: static source check, sculpt twice-equal, carveCore deterministic in both modes, Math.random never called.
 function zeroDraws(ps: Pair[]): void {
-  ok(sculpt.length === 5, 'sculpt takes exactly (g, w, h, entrance, salt): no stream parameter')
+  sourceStreamFree()
   const realRandom = Math.random
   Math.random = (): number => { throw new Error('cave sculpt: Math.random called inside carveCore') }
   try {
@@ -207,14 +218,6 @@ function zeroDraws(ps: Pair[]): void {
       ok(core.entrance === bare.entrance && core.stats.loops === bare.stats.loops && core.stats.tunnelTiles === bare.stats.tunnelTiles, 'cs ' + cs + ': passes before sculpt differ with and without it')
     }
   } finally { Math.random = realRandom }
-  for (const { cs, bare } of ps.slice(0, 5)) {
-    const live = makeRnd(hashSeed(cs, 'cave:tunnels')), twin = makeRnd(hashSeed(cs, 'cave:tunnels'))
-    for (let k = 0; k < 5; k++) { live.next(); twin.next() }
-    const before = live.state(), g = wallGrid(bare.t)
-    sculpt(g, bare.w, bare.h, bare.entrance, hashSeed(cs, SCULPT_TAG))
-    ok(live.state() === before && twin.state() === before, 'cs ' + cs + ': a live stream changed state across a sculpt call')
-    for (let k = 0; k < 5; k++) ok(live.next() === twin.next(), 'cs ' + cs + ': stream continuation changed across a sculpt call')
-  }
 }
 
 // r3 (validate.ts: reached === floor from the entrance) on the sculpted terrain, plus sculpt applied directly to the unsculpted terrain.
@@ -253,6 +256,36 @@ function generatedPillars(ps: Pair[]): void {
   ok(seen > 0, 'no pillar on any generated cave')
 }
 
+// F1 over all 62 SEEDS. Cavern tiles = wall before, floor after, not alcove. Component count vs stats.caverns cannot work (rim jitter and
+// pillars split one cavern). A disc has r <= 7: its tiles lie within sqrt(r^2+r) of the centre; touching caverns merge into one 4-connected
+// component with a farther tile pair. Conservative: catches merges with a big cavern, not every small pair.
+const DIAM2 = 4 * (7 * 7 + 7) // r = 3 + floor(4q) <= 7; max squared distance between two tiles of one disc
+function sculptGeneratedSeeds(): void {
+  let cavernTiles = 0, alcoveTiles = 0
+  for (const seed of SEEDS) {
+    const cs = caveSeed(seed, caveOf(seed).stats.attempts - 1), bare = carveCore(cs, PARAMS[3], ['sculpt'])
+    if (!bare) throw new Error('cave sculpt: seed ' + seed + ': skip-sculpt carveCore returned null')
+    const { w, h } = bare, g0 = wallGrid(bare.t), g = g0.slice(), t = sculpt(g, w, h, bare.entrance, hashSeed(cs, SCULPT_TAG)).alcoveTiles
+    for (let k = 0; k < t.length; k++) {
+      ok(k === 0 || t[k] > t[k - 1], 'seed ' + seed + ': alcoveTiles not strictly ascending (duplicate or unsorted at ' + k + ')')
+      ok(g0[t[k]] === 1 && g[t[k]] === 0, 'seed ' + seed + ': alcove tile ' + t[k] + ' is not wall before and floor after')
+    }
+    alcoveTiles += t.length
+    const alc = new Set(t), seen = new Uint8Array(w * h), isCav = (i: number): boolean => g0[i] === 1 && g[i] === 0 && !alc.has(i)
+    const d2 = (a: number, b: number): number => ((a % w) - (b % w)) ** 2 + (Math.floor(a / w) - Math.floor(b / w)) ** 2
+    for (let i = 0; i < g.length; i++) {
+      if (!isCav(i) || seen[i]) continue
+      const comp: number[] = [i] // flood fill: comp doubles as the queue
+      seen[i] = 1
+      for (let n = 0; n < comp.length; n++) for (const j of [comp[n] + 1, comp[n] - 1, comp[n] + w, comp[n] - w])
+        if (j >= 0 && j < g.length && isCav(j) && !seen[j]) { seen[j] = 1; comp.push(j) }
+      cavernTiles += comp.length
+      for (const a of comp) for (const b of comp) ok(d2(a, b) <= DIAM2, 'seed ' + seed + ': cavern tiles span more than one disc (merged)')
+    }
+  }
+  ok(cavernTiles > 0 && alcoveTiles > 0, 'no cavern or alcove tiles over ' + SEEDS.length + ' seeds: the F1 checks never reached a feature')
+}
+
 export function run(): void {
   exclusions()
   connectivityAndCaps()
@@ -261,7 +294,5 @@ export function run(): void {
   alcoveAbort()
   deterministic()
   const ps = pairs()
-  zeroDraws(ps)
-  generatedConnected(ps)
-  generatedPillars(ps)
+  zeroDraws(ps); generatedConnected(ps); generatedPillars(ps); sculptGeneratedSeeds()
 }
