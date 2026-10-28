@@ -35,7 +35,7 @@ function arrow(ctx: CanvasRenderingContext2D, s: State, v: View): void {
 }
 
 export function drawDebugNavigation(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
-  if (!s.world.tiles || s.meta.screen === 'title' || s.meta.screen === 'help' || (!s.debug.minimap && !s.debug.arrow)) return
+  if (!s.world.tiles || s.meta.screen === 'title' || s.meta.screen === 'help' || s.meta.screen === 'settings' || (!s.debug.minimap && !s.debug.arrow)) return
   const v = makeView(ctx, s, w, h)
   ctx.save(); screenXf(ctx, v)
   ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'

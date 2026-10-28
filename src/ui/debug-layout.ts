@@ -44,8 +44,7 @@ export function debugLayout(s: State, w: number, h: number, open: boolean, tab: 
     add('overlay', 'Collision shapes + wall grid', 106, x, width, true, s.debug.overlay)
     add('hurtboxes', 'Hurt volumes + attack reach', 140, x, width, true, s.debug.hurtboxes)
     add('stats', 'Performance statistics', 174, x, width, true, s.debug.stats)
-    add('pureDarkness', 'Pure darkness (hide explored view)', 208, x, width, true, s.debug.pureDarkness)
-    add('caveDetails', 'Cave detail overlays', 242, x, width, true, s.debug.caveDetails)
+    add('caveDetails', 'Cave detail overlays', 208, x, width, true, s.debug.caveDetails)
   }
   if (tab === 3) {
     for (let i = 0; i < 4; i++) add(('depth' + (i + 1)) as DebugControlId, DEPTH_NAMES[i], 72, x + i * (fourth + 6), fourth, true, debugDepthClass(s) === i + 1)

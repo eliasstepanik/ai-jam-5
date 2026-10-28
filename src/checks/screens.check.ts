@@ -79,8 +79,8 @@ export function run(): void {
     ok(s.ui.helpPage === HELP_PAGES - 2, 'ArrowLeft steps back one page')
   }
 
-  // S08: the menu cursor wraps in both directions on the column menus (title 6 rows, paused 5 rows) and on the end-screen row (4).
-  for (const [sc, n] of [['title', 6], ['paused', 5]] as const) {
+  // S08: the menu cursor wraps in both directions on the column menus (title 5 rows, paused 4 rows, settings 5 rows) and on the end-screen row (4).
+  for (const [sc, n] of [['title', 5], ['paused', 4], ['settings', 5]] as const) {
     const s = at(cave, sc)
     stepScreens(s, inp(['ArrowUp']))
     ok(s.ui.cursor === n - 1, 'ArrowUp at row 0 wraps to the last row on ' + sc + ' (got ' + s.ui.cursor + ')')
@@ -94,16 +94,16 @@ export function run(): void {
     ok(s.ui.cursor === 0, 'ArrowRight at the last button wraps to 0 on dead')
   }
 
-  // S13/S19: Space and a mouse click activate the focused item like Enter (Sound row cycles: 0.7 default -> 100, see volume-cycle.check.ts). Space types nowhere in the seed field.
+  // S13/S19: Space and a mouse click activate the focused item like Enter (Settings row opens the shared menu). Space types nowhere in the seed field.
   for (const sc of ['title', 'paused'] as const) {
     for (const [what, input] of [['Enter', inp(['Enter'])], ['Space', inp(['Space'])], ['click', inp([], 1)]] as const) {
       const s = at(cave, sc, 2)
       stepScreens(s, input)
-      ok(s.settings.volume === 1 && !s.settings.muted, what + ' cycles the focused Sound row on ' + sc)
+      ok(s.meta.screen === 'settings' && s.ui.settingsFrom === sc, what + ' opens Settings from ' + sc)
     }
   }
   {
-    const s = at(cave, 'title', 5); stepScreens(s, inp(['Space']))
+    const s = at(cave, 'title', 4); stepScreens(s, inp(['Space']))
     ok(s.ui.genPending === '' && s.meta.screen === 'title', 'Space does not start a run from the seed field')
   }
 
@@ -115,7 +115,7 @@ export function run(): void {
     ok(s.meta.screen === 'paused' && s.ui.confirmT > 0 && s.meta.steps === n && s.player.x === x && s.player.energy === e, 'first quit press leaves steps, player and flame untouched (steps ' + s.meta.steps + ')')
     step(s, inp(['KeyQ']), DT)
     ok(String(s.meta.screen) === 'title', 'second Q press confirms quit')
-    const q = at(cave, 'paused', 4), k = q.fx.events.length
+    const q = at(cave, 'paused', 3), k = q.fx.events.length
     stepScreens(q, inp(['Enter']))
     ok(q.ui.confirmT > 0 && q.fx.events.length === k + 1 && q.fx.events[k].kind === 'uiConfirm', 'first Quit press arms the confirm and emits one uiConfirm, not uiMove (ui.md §5 rule 7)')
   }
@@ -142,7 +142,7 @@ export function run(): void {
   }
 
   // S24: Escape inside the focused seed field clears it; with the focus elsewhere the text is kept.
-  for (const [row, want] of [[5, ''], [0, 'abc']] as const) {
+  for (const [row, want] of [[4, ''], [0, 'abc']] as const) {
     const s = at(cave, 'title', row, { seedInput: 'abc' })
     stepScreens(s, inp(['Escape']))
     ok(s.ui.seedInput === want, 'Escape on row ' + row + ' leaves the seed text "' + want + '" (got ' + s.ui.seedInput + ')')
@@ -243,22 +243,22 @@ export function run(): void {
     ok(s.ui.toasts.length === 0 && s.ui.copied === 0 && s.ui.copyMsg === '' && s.ui.denyT === 0, 'startRun resets toasts, copied, copyMsg, denyT')
   }
 
-  // N28: the volume step rounds (0.35 + 0.1 -> 0.5, 0.1 + 0.2 - 0.1 -> 0.2). Volume keys act only on title/paused: on dead/won they leave 0.5.
+  // N28: slider steps round to hundredths; end screens do not change audio levels.
   for (const [sc, row, v, key, want] of [
-    ['title', 2, 0.35, 'ArrowRight', 0.5], ['title', 2, 0.1 + 0.2, 'ArrowLeft', 0.2],
+    ['settings', 0, 0.35, 'ArrowRight', 0.45], ['settings', 0, 0.1 + 0.2, 'ArrowLeft', 0.2],
     ['dead', 1, 0.5, 'ArrowRight', 0.5], ['dead', 2, 0.5, 'Equal', 0.5], ['won', 2, 0.5, 'Minus', 0.5],
   ] as const) {
     const s = at(cave, sc, row)
-    s.settings.volume = v
+    s.settings.musicVolume = v
     stepScreens(s, inp([key]))
-    ok(s.settings.volume === want, key + ' from ' + v + ' gives ' + want + ' (got ' + s.settings.volume + ')')
+    ok(s.settings.musicVolume === want, key + ' from ' + v + ' gives ' + want + ' (got ' + s.settings.musicVolume + ')')
   }
 
   // N31-N33/N43-N45: the seed field types z, numpad digits, '-', w, h (not nav keys); Backspace deletes.
   {
-    const s = at(cave, 'title', 5)
+    const s = at(cave, 'title', 4)
     for (const k of [['KeyZ', 'Numpad7', 'Minus'], ['Backspace'], ['KeyW', 'KeyH']]) stepScreens(s, inp(k))
-    ok(s.ui.seedInput === 'z7wh' && s.ui.cursor === 5 && s.meta.screen === 'title', 'seed field types z7-, Backspace, wh: ' + s.ui.seedInput)
+    ok(s.ui.seedInput === 'z7wh' && s.ui.cursor === 4 && s.meta.screen === 'title', 'seed field types z7-, Backspace, wh: ' + s.ui.seedInput)
   }
 
   // N37-N40: KeyD pages help, reopened help starts on page 0, KeyD/KeyA walk the end-screen buttons; N30: Blur pauses only a run.
@@ -283,10 +283,10 @@ export function run(): void {
   Object.defineProperty(globalThis, 'localStorage', { value: { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => { mem.set(k, v) } }, configurable: true, writable: true })
   try {
     for (const [sc, row, from, key, want] of [
-      ['title', 4, 3, 'Enter', '4|4|-|uiConfirm|false'], ['title', 4, 4, 'Space', '1|1|7|uiConfirm|false'], ['title', 4, 1, 'click', '2|2|-|uiConfirm|false'], ['title', 4, 2, 'Enter', '3|3|-|uiConfirm|false'],
-      ['title', 4, 1, 'ArrowLeft', '1|-|7||false'], ['title', 4, 4, 'ArrowRight', '4|-|-||false'], ['title', 4, 3, 'ArrowLeft', '2|2|-|uiMove|false'], ['title', 4, 2, 'Minus', '1|1|7|uiMove|false'],
-      ['title', 4, 'random', 'Enter', '4|4|-|uiConfirm|false'], ['title', 3, 3, 'ArrowRight', '3|-|7||false'], ['paused', 4, 3, 'ArrowRight', '3|-|7||false'], ['help', 0, 3, 'ArrowRight', '3|-|7||false'],
-      ['title', 5, 3, 'Enter', '3|-|7|uiConfirm|true'], ['title', 5, 3, 'ArrowRight', '3|-|7||false'],
+      ['title', 3, 3, 'Enter', '4|4|-|uiConfirm|false'], ['title', 3, 4, 'Space', '1|1|7|uiConfirm|false'], ['title', 3, 1, 'click', '2|2|-|uiConfirm|false'], ['title', 3, 2, 'Enter', '3|3|-|uiConfirm|false'],
+      ['title', 3, 1, 'ArrowLeft', '1|-|7||false'], ['title', 3, 4, 'ArrowRight', '4|-|-||false'], ['title', 3, 3, 'ArrowLeft', '2|2|-|uiMove|false'], ['title', 3, 2, 'Minus', '1|1|7|uiMove|false'],
+      ['title', 3, 'random', 'Enter', '4|4|-|uiConfirm|false'], ['title', 2, 3, 'ArrowRight', '3|-|7||false'], ['paused', 3, 3, 'ArrowRight', '3|-|7||false'], ['help', 0, 3, 'ArrowRight', '3|-|7||false'],
+      ['title', 4, 3, 'Enter', '3|-|7|uiConfirm|true'], ['title', 4, 3, 'ArrowRight', '3|-|7||false'],
     ] as const) {
       const t = at(cave, sc, row), n = t.fx.events.length
       mem.clear(); mem.set('last-ember:best:1', b1)

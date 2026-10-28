@@ -26,7 +26,7 @@ function animationLabel(ctx: CanvasRenderingContext2D, label: string, x: number,
 
 export function drawDebugWorld(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
   const g = s.debug
-  if ((!g.overlay && !g.hurtboxes && !g.animations) || s.world.tiles === '' || s.meta.screen === 'title' || s.meta.screen === 'help') return
+  if ((!g.overlay && !g.hurtboxes && !g.animations) || s.world.tiles === '' || s.meta.screen === 'title' || s.meta.screen === 'help' || s.meta.screen === 'settings') return
   const v = makeView(ctx, s, w, h), p = s.player
   ctx.save(); worldXf(ctx, v); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.lineWidth = 1 / v.z
   if (g.overlay) {

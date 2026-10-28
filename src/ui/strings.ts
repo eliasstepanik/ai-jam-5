@@ -26,6 +26,12 @@ export const STR = {
   storageOff: 'Saving disabled in this browser',
   paused: 'PAUSED',
   // settings buttons: label text only, caller adds the value
+  back: 'Back',
+  settings: 'Settings',
+  music: 'Music',
+  soundEffects: 'Sound Effects',
+  fogOfWar: 'Fog of war',
+  pureDarkness: 'Pure darkness',
   soundOn: 'Sound: On',
   soundOff: 'Sound: Off',
   flashFull: 'Flashing: Full',

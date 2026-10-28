@@ -9,6 +9,7 @@
 import type { MusicRes, Resources } from '../assets/resources.ts'
 import { SOUNDS } from '../assets/sounds.ts'
 import type { SoundDef, SoundId } from '../assets/sounds.ts'
+import { pausedMenu } from '../core/settings.ts'
 import type { State } from '../core/types.ts'
 import { danger, musicFor } from './trigger.ts'
 
@@ -94,7 +95,7 @@ export function musicStep(res: Resources, s: State): void {
       m.danger = -1
     }
   }
-  if (m.srcs.length === 2 && s.meta.screen !== 'paused') { // paused: hold the layer where it is
+  if (m.srcs.length === 2 && !pausedMenu(s)) { // paused: hold the layer where it is
     const target = defOf(layer).gain * danger(s)
     if (target !== m.danger) {
       m.danger = target

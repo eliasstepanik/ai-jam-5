@@ -1,6 +1,7 @@
 // FxEvent -> sound trigger table + danger / music / ducking derivations (resources-2 §4, §5, §8).
 // Pure functions of (event, State). Layer L4: no engine/sfx/music imports, no module-level mutable state.
 import type { FlameKind, FxEvent, FxEventKind, MonsterKind, State } from '../core/types.ts'
+import { pausedMenu } from '../core/settings.ts'
 import { MINERALS } from '../core/state.ts'
 import { T } from '../core/tuning.ts'
 import { hash2 } from '../core/noise.ts'
@@ -159,6 +160,7 @@ function runMusic(s: State): SoundId | null {
 export function musicFor(s: State): SoundId | null {
   switch (s.meta.screen) {
     case 'title': return 'mus_title'
+    case 'settings': return s.ui.settingsFrom === 'paused' ? runMusic(s) : 'mus_title'
     // ponytail: help opened from pause keeps the run track (assumption); the engine holds it via the same id.
     case 'help': return s.ui.helpFrom === 'paused' ? runMusic(s) : 'mus_title'
     case 'playing':
@@ -179,7 +181,7 @@ export function duckFor(s: State): Duck {
     // Beacon lit: music silent (descent stops) and amb -9 only until mus_escape starts; once escapeLive the music duck lifts so it is audible.
     if (s.world.beaconLit && !escapeLive(s)) d.music = -Infinity
     if (phase === 'escape' && !escapeLive(s)) d.amb = Math.min(d.amb, -9)
-  } else if (screen === 'paused') {
+  } else if (pausedMenu(s)) {
     d.music = -10; d.amb = -10; d.sfx = -Infinity
   } else if (screen === 'dead' || screen === 'won') {
     d.amb = -12; d.sfx = -6

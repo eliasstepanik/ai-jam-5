@@ -252,7 +252,7 @@ function growlStep(res: Resources, s: State, now: number): void {
 /** amb_cave outlives 'playing': it runs on playing/paused/dead/won (duckFor sets the level) and restarts on a new runId. */
 function ambStep(a: AudioRes, s: State, now: number): void {
   if ((a.loops.amb_cave as LoopVoice | undefined)?.run !== s.meta.runId) stopLoop(a, 'amb_cave')
-  const amb = want(a, 'amb_cave', s.meta.screen !== 'title' && s.meta.screen !== 'help', { seq: 0 })
+  const amb = want(a, 'amb_cave', s.meta.screen !== 'title' && s.meta.screen !== 'help' && (s.meta.screen !== 'settings' || s.ui.settingsFrom === 'paused'), { seq: 0 })
   if (!amb) return
   amb.run = s.meta.runId
   ;(amb.nodes[0] as AudioBufferSourceNode | undefined)?.playbackRate?.setTargetAtTime(ZONE_RATE[s.meta.zone - 1] ?? 1, now, 2)

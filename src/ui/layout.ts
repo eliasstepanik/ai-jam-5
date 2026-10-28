@@ -1,7 +1,7 @@
 // UI rectangles for every screen (architecture-ui §2-3). Pure maths, no DOM, no module state.
 // Reference frame is 1280x720; every rect is anchored (ax, ay in 0..1) and scaled by uiScale. Update and render call the
 // same *Layout(w, h, s); hit() then maps a click on input.view.w/h to a button index. Button array order == focus order
-// in systems/screens.ts (title 0..5, paused 0..4, end 0..3), so ui.cursor/ui.hover indices line up (R-170).
+// in systems/screens.ts (title 0..4, paused 0..3, end 0..3), so ui.cursor/ui.hover indices line up (R-170).
 import type { State } from '../core/types.ts'
 import { HELP_PAGES } from '../core/state.ts'
 
@@ -45,7 +45,7 @@ const btn = (id: string, r: Rect, enabled = true): Button => ({ id, enabled, ...
 // --- title ---
 export type TitleLayout = {
   u: number
-  buttons: Button[] // play, help, sound, flashing, depth, seed
+  buttons: Button[] // play, help, settings, depth, seed
   bar: Rect // loading progress track
   logo: Rect
   seedLabel: Pt; seedHint: Pt
@@ -70,15 +70,14 @@ export function titleLayout(w: number, h: number, _s: State, ready = true): Titl
     buttons: [
       btn('play', play, ready),
       btn('help', c(520, 372, 240, 44)),
-      btn('sound', c(520, 428, 240, 44)),
-      btn('flashing', c(520, 484, 240, 44)),
-      btn('depth', c(520, 540, 240, 44)), // depth class selector (R-164); label drawn by menus.ts
-      btn('seed', c(520, 612, 240, 40)),
+      btn('settings', c(520, 428, 240, 44)),
+      btn('depth', c(520, 484, 240, 44)), // depth class selector (R-164); label drawn by menus.ts
+      btn('seed', c(520, 556, 240, 40)),
     ],
     bar: c(540, 364, 200, 2),
     logo,
-    seedLabel: pt(w, h, u, 0.5, 0.5, 520, 604),
-    seedHint: pt(w, h, u, 0.5, 0.5, 640, 668),
+    seedLabel: pt(w, h, u, 0.5, 0.5, 520, 548),
+    seedHint: pt(w, h, u, 0.5, 0.5, 640, 612),
     best: pt(w, h, u, 0, 1, MARGIN, 696),
     storage: pt(w, h, u, 0, 1, MARGIN, 676),
     soundHint: pt(w, h, u, 1, 1, REF_W - MARGIN, 696),
@@ -141,7 +140,7 @@ export type PauseLayout = { u: number; panel: Rect; title: Pt; buttons: Button[]
 export function pauseLayout(w: number, h: number, _s: State): PauseLayout {
   const u = uiScale(w, h)
   const c = (x: number, y: number, bw: number, bh: number): Rect => place(w, h, u, 0.5, 0.5, x, y, bw, bh)
-  const ids = ['resume', 'help', 'sound', 'flashing', 'quit']
+  const ids = ['resume', 'help', 'settings', 'quit']
   return {
     u,
     panel: c(440, 176, 400, 376),
