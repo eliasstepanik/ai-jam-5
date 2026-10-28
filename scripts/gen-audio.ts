@@ -11,7 +11,7 @@ import { join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 
-type Sound = { id: string; kind: 'music' | 'amb' | 'sfx'; tags: string; lyrics: string; bpm: number; keyscale: string; duration: number; fadeIn: number; fadeOut: number; chosenSeed: number | null }
+type Sound = { id: string; kind: 'music' | 'amb' | 'sfx'; tags: string; lyrics: string; bpm: number; keyscale: string; duration: number; trim?: number; peakDb?: number; fadeIn: number; fadeOut: number; chosenSeed: number | null }
 type Manifest = { version: 1; workflow: string; baseSeed: number; candidates: number; sounds: Sound[] }
 type Node = { class_type?: string; inputs: Record<string, unknown>; _meta?: { title?: string } }
 type Workflow = Record<string, Node>
@@ -67,6 +67,7 @@ function loadManifest(): Manifest {
     if (!['music', 'amb', 'sfx'].includes(s.kind)) bad('kind must be music|amb|sfx')
     if (typeof s.tags !== 'string' || typeof s.lyrics !== 'string' || typeof s.keyscale !== 'string') bad('tags, lyrics and keyscale must be strings')
     for (const k of ['bpm', 'duration', 'fadeIn', 'fadeOut'] as const) if (!Number.isFinite(s[k])) bad(k + ' must be a number')
+    for (const k of ['trim', 'peakDb'] as const) if (s[k] !== undefined && !Number.isFinite(s[k])) bad(k + ' must be a number when present')
     if (s.chosenSeed !== null && !Number.isInteger(s.chosenSeed)) bad('chosenSeed must be null or an integer')
   }
   return m
@@ -81,14 +82,18 @@ function nodeByTitle(wf: Workflow, title: string): [string, Node] {
 
 export function buildPrompt(base: Workflow, s: Sound, seed: number): Workflow {
   if (s.duration < 1) die(s.id + ': duration ' + s.duration + ' s is below the ACE minimum of 1 s')
-  const hold = round3(s.duration - s.fadeIn - s.fadeOut)
-  if (s.fadeIn < 0 || s.fadeOut < 0 || hold < 0) die(s.id + ': fadeIn + fadeOut exceed duration')
+  // ACE cannot render under 1 s, so short SFX render s.duration and are cut to s.trim (default: s.duration).
+  const trim = s.trim ?? s.duration
+  if (!(trim > 0 && trim <= s.duration)) die(s.id + ': trim ' + trim + ' s must be in (0, duration]')
+  const hold = round3(trim - s.fadeIn - s.fadeOut)
+  if (s.fadeIn < 0 || s.fadeOut < 0 || hold < 0) die(s.id + ': fadeIn + fadeOut exceed ' + trim + ' s')
   const wf = structuredClone(base)
   const set = (title: string, inputs: Record<string, unknown>): void => { Object.assign(nodeByTitle(wf, title)[1].inputs, inputs) }
   set('Prompt', { tags: s.tags, lyrics: s.lyrics, seed, bpm: s.bpm, duration: s.duration, keyscale: s.keyscale })
   set('Latent Seconds', { seconds: s.duration })
   set('Sampler', { seed })
-  set('Trim', { duration: s.duration })
+  set('Trim', { duration: trim })
+  if (s.peakDb !== undefined) set('Normalize', { peak_level: round3(10 ** (s.peakDb / 20)) })
   // The three envelopes must sum to the Trim duration; ComfyUI takes them as strings.
   // The fade nodes are fixed-phase sine envelopes (in: phase 270, out: phase 90, amp 0.5, dc 0.5). They are a clean
   // half-cosine 0->1 / 1->0 only when frequency = 1/(2*D) for their duration D, so set it with every duration.

@@ -108,9 +108,12 @@
       "bpm": 60,
       "keyscale": "D minor",
       "duration": 1,
-      "fadeIn": 0.005,
-      "fadeOut": 0.08,
-      "chosenSeed": null
+      "trim": 0.4,
+      "peakDb": -3,
+      "fadeIn": 0.008,
+      "fadeOut": 0.02,
+      "chosenSeed": 1801,
+      "selection": "metric-based pick, not verified by ear: hard gates (duration, peak -3 +-1 dB, no clip/NaN, |DC|<0.01, lead<50 ms, trail<50 ms) then highest RMS of 4 seeds; peak -3.04/-2.97 dB ogg/mp3, RMS -19.7/-19.6 dB, lead 3.5 ms, trail 10 ms, DC 6e-4"
     },
     {
       "id": "sfx_mon-growl",
@@ -120,9 +123,12 @@
       "bpm": 60,
       "keyscale": "D minor",
       "duration": 1.2,
-      "fadeIn": 0.02,
-      "fadeOut": 0.15,
-      "chosenSeed": null
+      "trim": 1.2,
+      "peakDb": -3,
+      "fadeIn": 0.008,
+      "fadeOut": 0.02,
+      "chosenSeed": 1900,
+      "selection": "metric-based pick, not verified by ear: hard gates (duration, peak -3 +-1 dB, no clip/NaN, |DC|<0.01, lead<50 ms, trail<50 ms) then highest RMS of 4 seeds; peak -2.06/-2.39 dB ogg/mp3, RMS -21.6 dB, lead 11 ms, trail 4 ms, DC 4e-5"
     },
     {
       "id": "sfx_mon-lunge",
@@ -132,9 +138,12 @@
       "bpm": 120,
       "keyscale": "D minor",
       "duration": 1,
-      "fadeIn": 0.005,
-      "fadeOut": 0.08,
-      "chosenSeed": null
+      "trim": 0.4,
+      "peakDb": -3,
+      "fadeIn": 0.008,
+      "fadeOut": 0.02,
+      "chosenSeed": 2003,
+      "selection": "metric-based pick, not verified by ear: hard gates (duration, peak -3 +-1 dB, no clip/NaN, |DC|<0.01, lead<50 ms, trail<50 ms) then highest RMS of 4 seeds; peak -3.14/-3.01 dB ogg/mp3, RMS -16.0 dB, lead 1 ms, trail 4 ms, DC 3e-5"
     },
     {
       "id": "sfx_mon-death",
@@ -144,9 +153,12 @@
       "bpm": 60,
       "keyscale": "D minor",
       "duration": 1,
-      "fadeIn": 0.01,
-      "fadeOut": 0.1,
-      "chosenSeed": null
+      "trim": 0.8,
+      "peakDb": -3,
+      "fadeIn": 0.008,
+      "fadeOut": 0.02,
+      "chosenSeed": 2101,
+      "selection": "metric-based pick, not verified by ear: hard gates (duration, peak -3 +-1 dB, no clip/NaN, |DC|<0.01, lead<50 ms, trail<50 ms) then highest RMS of 4 seeds; peak -2.93/-3.00 dB ogg/mp3, RMS -18.3 dB, lead 3.7 ms, trail 8 ms, DC 2e-5"
     },
     {
       "id": "sfx_beacon-horn",

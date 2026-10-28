@@ -54,8 +54,8 @@ export const SOUNDS = {
 } as const satisfies Record<string, SoundDef>
 export type SoundId = keyof typeof SOUNDS
 
-// All 14 sample files are undelivered. Keep this explicit so delivery shrinks the allow-list.
+// Ids whose sample files are undelivered. Keep this explicit so delivery shrinks the allow-list.
 export const PENDING_AUDIO = [
   'mus_title', 'mus_descent', 'mus_descent-danger', 'mus_escape', 'mus_sting-win', 'mus_sting-death', 'amb_cave',
-  'sfx_parry-perfect', 'sfx_eye-open', 'sfx_mon-growl', 'sfx_mon-lunge', 'sfx_mon-death', 'sfx_beacon-horn', 'sfx_rock-impact',
+  'sfx_parry-perfect', 'sfx_beacon-horn', 'sfx_rock-impact',
 ] as const satisfies readonly SoundId[]
