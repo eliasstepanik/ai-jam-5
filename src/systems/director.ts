@@ -11,6 +11,7 @@ import { spawnMonster } from '../entities/monster.ts'
 import { circleHitsSolid } from '../world/collide.ts'
 import { idx, inMap, TILE, worldToTile } from '../world/grid.ts'
 import { exitDistAt, pathDistAt } from '../world/caches.ts'
+import { lineOfSightPx } from '../world/los.ts'
 import { insideLight, lightRadius } from './light.ts'
 import { nearCount, startRetreat } from './ai-retreat.ts'
 
@@ -34,6 +35,7 @@ export function findSpawn(s: State, kind: MonsterKind): { x: number; y: number }
     const x = p.x + Math.cos(a) * r, y = p.y + Math.sin(a) * r
     const tx = worldToTile(x), ty = worldToTile(y)
     if (!inMap(s, tx, ty) || circleHitsSolid(s, x, y, K.radiusPx) || (!esc && insideLight(s, x, y, K.radiusPx))) continue
+    if (!esc && lineOfSightPx(s, p.x, p.y, x, y)) continue // D3: descent spawns must be out of the player's line of sight (escape unchanged)
     const d = fieldAt(s, idx(s, tx, ty))
     if (d < 0 || Math.abs(d - pDist) > Math.ceil(r / TILE) + 4) continue
     result = { x, y }
