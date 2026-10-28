@@ -178,6 +178,40 @@ function wetPurposed(): void {
   ok(total > 0, 'the generated seeds hold purposed water anchors')
 }
 
+// F10: wetField's memo key holds the vein tiles (element-wise) and the exit. Mining a vein (systems/mining.ts: splice + veinGen += 1) and moving
+// the exit must rebuild it; the rebuilt field must equal a fresh stamp of the purposed water anchors (waterAnchors reads s.veins and the exit).
+// ponytail: detailCtx (render/cave-details.ts) and dressingCache (render/dressing.ts) carry the same vein/exit keys but cannot be reached here: both
+// import render/tileset.ts (a JSON import without attribute) and assets/images.ts (import.meta.glob), which the node check runner cannot load.
+function wetVeins(): void {
+  const r = caveOf(1), w = MAP_W, h = MAP_H, e = r.entrance.ty * w + r.entrance.tx, b = r.beacon.ty * w + r.beacon.tx
+  const s = load(r.tiles, w, h, e, b, r.beaconDist, 1)
+  const stamp = (): Uint8Array => {
+    const v = new Uint8Array(w * h)
+    for (const [ax, ay] of waterAnchors(s)) for (let y = Math.max(0, ay - WET_R); y <= Math.min(h - 1, ay + WET_R); y++) for (let x = Math.max(0, ax - WET_R); x <= Math.min(w - 1, ax + WET_R); x++) v[y * w + x] = 1
+    return v
+  }
+  const same = (f: Uint8Array): boolean => { const want = stamp(); return f.every((v, i) => v === want[i]) }
+  const [[ax, ay], [bx, by]] = waterAnchors(s)
+  const vein = (tx: number, ty: number) => ({ id: 1, mineral: 'sodium' as const, tile: ty * w + tx, stand: ty * w + tx, pieces: 1 })
+  const f0 = wetField(s)
+  ok(wetField(s) === f0 && same(f0), 'wetField hit without change, equals the stamp')
+  s.veins.push(vein(ax, ay)) // a vein on a purposed water anchor suppresses that puddle
+  const f1 = wetField(s)
+  ok(f1 !== f0 && same(f1) && f1.some((v, i) => v !== f0[i]), 'a new vein rebuilds wetField with fewer wet tiles')
+  ok(wetField(s) === f1, 'wetField hit with the vein in place')
+  s.veins.splice(0, 1); s.world.veinGen += 1 // mining, as systems/mining.ts does
+  const f2 = wetField(s)
+  ok(f2 !== f1 && same(f2) && f2.every((v, i) => v === f0[i]), 'mining the vein rebuilds wetField back to the vein-free field')
+  s.veins.push(vein(ax, ay))
+  const f3 = wetField(s)
+  s.veins[0] = vein(bx, by) // same vein count, other tile: only the element-wise compare sees it
+  const f4 = wetField(s)
+  ok(f4 !== f3 && same(f4), 'a vein on another tile (same count) rebuilds wetField')
+  s.world.exit = { tx: s.world.exit.tx + 1, ty: s.world.exit.ty }
+  const f5 = wetField(s)
+  ok(f5 !== f4 && same(f5) && wetField(s) === f5, 'moving the exit one tile rebuilds wetField')
+}
+
 // Cave overhaul A9: descent dust and pebbles are stateless pure functions of time, density follows depth.
 function descent(): void {
   const per = (n: (d: number) => number): number[] => Array.from({ length: 101 }, (_, i) => n(i / 100))
@@ -250,6 +284,7 @@ export function run(): void {
   generated()
   wet()
   wetPurposed()
+  wetVeins()
   descent()
   clearCaches()
 }
