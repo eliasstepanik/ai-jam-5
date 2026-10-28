@@ -1,7 +1,9 @@
-// Cave overhaul G1: core/cave-guide.ts guide fields on synthetic grids. Later chunks (G2 purpose, G4 draft, G7b generated caves) append sections below.
+// Cave overhaul G1: core/cave-guide.ts guide fields on synthetic grids.
+// Later chunks append sections below (G2 purpose, G4 draft, G7b drift gate).
+// Sculpted-cave rules A3-A5 (alcoves, beacon clearance, A4 ratio, descent) live in cave-alcove.check.ts.
 import type { State } from '../core/types.ts'
 import { init } from '../core/state.ts'
-import { fnv1a, hashSeed } from '../core/rng.ts'
+import { fnv1a } from '../core/rng.ts'
 import { buildGuide, guideFields } from '../core/cave-guide.ts'
 import type { GuideFields } from '../core/cave-guide.ts'
 import { clearCaches, getDepthField } from '../world/caches.ts'
@@ -9,11 +11,10 @@ import { caveOf } from './caves.ts'
 import { SEEDS } from './cave.check.ts'
 import { CAVE_DRESSING, dressingAt, dressingWall } from '../core/cave-props.ts'
 import { POOL_NAMES, WALL_POOL_NAMES, classAt, onRoute, purposeDef, purposeWall } from '../core/cave-purpose.ts'
-import { BLEED_ALPHA, BLEED_RANGE, MOTE_ALPHA, MOTE_DRIFT, bleedAlpha, drawDraft, lowerNeighbour, moteAt, moteSite, moteTarget } from '../render/draft.ts'
+import {
+  BLEED_ALPHA, BLEED_RANGE, MOTE_ALPHA, MOTE_DRIFT, bleedAlpha, drawDraft, lowerNeighbour, moteAt, moteSite, moteTarget,
+} from '../render/draft.ts'
 import { QUALITY } from '../render/quality.ts'
-import { carveCore, caveSeed } from '../world/generate.ts'
-import { PARAMS } from '../world/gen/params.ts'
-import { sculpt } from '../world/gen/sculpt.ts'
 
 const ok = (c: boolean, why: string): void => { if (!c) throw new Error('cave guide: ' + why) }
 
@@ -242,48 +243,34 @@ function draft(): void { // G4 / A6: motes drift one step toward the beacon, onl
   ok(bleed > 0, 'draft: bleed tiles exist')
 }
 
-// ---- section 3 (G7b): sculpted caves (A3-A5) and draft constants (A6) ----
-function sculpted(): void {
-  let near = 99, alc = 0
-  for (const seed of SEEDS) {
-    const gen = caveOf(seed).stats, cs = caveSeed(seed, gen.attempts - 1), core = carveCore(cs), bare = carveCore(cs, PARAMS[3], ['sculpt'])
-    if (!core || !bare) { ok(!bare, 'seed ' + seed + ': sculpting lost a cave the unsculpted pass accepts'); continue }
-    ok(core.beaconDist >= 0.92 * bare.beaconDist, 'seed ' + seed + ': A4 beaconDist ' + core.beaconDist + ' < 0.92 * ' + bare.beaconDist)
-    const { w, h } = core, n = w * h, g = Uint8Array.from(bare.t, (v) => v ? 0 : 1), g0 = g.slice(), bx = core.beacon % w, by = Math.floor(core.beacon / w)
-    const st = sculpt(g, w, h, bare.entrance, hashSeed(cs, 'cave:sculpt')); ok(st.alcoves >= 4 && st.alcoves <= 14, 'seed ' + seed + ': A3 ' + st.alcoves + ' alcoves outside [4, 14]')
-    let floor = 0, added = 0; for (let i = 0; i < n; i++) { floor += 1 - g[i]; added += g0[i] & (1 - g[i]) }
-    ok(added <= 0.06 * floor, 'seed ' + seed + ': A3 sculpt-added floor ' + added + ' of ' + floor + ' exceeds 6 %') // ponytail: alcove tiles are not exported; all added floor (caverns too) bounds the alcove share
-    for (let i = 0; i < n; i++) { // alcove = new-floor component in a 5-wide box of 8..12 tiles with 3 * (len - 2) + 12 tiles (tunnel + bulb)
-      if (g[i] || !g0[i]) continue
-      const c = [i]; g0[i] = 0 // g0 doubles as the visited mark
-      for (let k = 0; k < c.length; k++) for (const j of [c[k] + 1, c[k] - 1, c[k] + w, c[k] - w]) if (!g[j] && g0[j]) { g0[j] = 0; c.push(j) }
-      const xs = c.map((t) => t % w), ys = c.map((t) => Math.floor(t / w)), a = Math.max(...xs) - Math.min(...xs) + 1, b = Math.max(...ys) - Math.min(...ys) + 1, len = Math.max(a, b)
-      if (Math.min(a, b) !== 5 || len < 8 || len > 12 || c.length !== 3 * (len - 2) + 12) continue
-      alc++; for (const t of c) near = Math.min(near, Math.max(Math.abs(t % w - bx), Math.abs(Math.floor(t / w) - by)))
-    }
-    const f = guideFields(Array.from(core.t, (v) => v ? '.' : '#').join(''), w, h, core.entrance, core.beacon) // A5 (plan row G7b): main is a valid descent, each step lowers depth by 1
-    for (let i = core.beacon, steps = 0; i !== core.entrance; steps++) {
-      const next = [i - w, i - 1, i + 1, i + w].filter((j) => f.main[j] === 1 && f.depth[j] === f.depth[i] - 1)
-      ok(steps < core.beaconDist && next.length === 1, 'seed ' + seed + ': A5 main is not a valid descent at tile ' + i)
-      i = next[0]
-    }
-  }
-  ok(alc > 0 && near > 3, 'A5: beacon ' + near + ' tiles from an alcove (' + alc + ' found), needs > 3')
-}
-
-function driftGate(): void { // A6: motes drift MOTE_DRIFT px/s toward the target; drawDraft returns before touching anything when !decor
+// ---- section 3 (G7b, A6) ----
+// Motes drift MOTE_DRIFT px/s toward the target; drawDraft returns before touching anything when !decor.
+function driftGate(): void {
   const g = { w: W } as GuideFields
   ok(MOTE_DRIFT === 8, 'draft: MOTE_DRIFT is 8 px/s, got ' + MOTE_DRIFT)
-  for (let k = 0, dt = 0.01; k < 400; k++) { // target = right neighbour of (10, 10)
-    const m = moteAt(g, 10, 10, 10 * W + 11, k * 0.05), n = moteAt(g, 10, 10, 10 * W + 11, k * 0.05 + dt)
-    if (n.x > m.x) ok(Math.abs((n.x - m.x) / dt - MOTE_DRIFT) < 1e-6 && n.y === m.y, 'draft: mote speed ' + (n.x - m.x) / dt + ' px/s, not 8') // else life restart
+  const dt = 0.01
+  for (let k = 0; k < 400; k++) { // target = right neighbour of (10, 10)
+    const target = 10 * W + 11
+    const m = moteAt(g, 10, 10, target, k * 0.05)
+    const n = moteAt(g, 10, 10, target, k * 0.05 + dt)
+    if (n.x <= m.x) continue // life restart
+    const speed = (n.x - m.x) / dt
+    ok(Math.abs(speed - MOTE_DRIFT) < 1e-6 && n.y === m.y, 'draft: mote speed ' + speed + ' px/s, not 8')
   }
-  const boom = (): never => { throw new Error('ctx touched') }, trap = new Proxy({}, { get: boom, set: boom }) as CanvasRenderingContext2D
-  for (const q of QUALITY) if (!q.decor) drawDraft(trap, undefined as never, undefined as never, q) // throws on any ctx/state/view access
+  const boom = (): never => { throw new Error('ctx touched') }
+  const trap = new Proxy({}, { get: boom, set: boom }) as CanvasRenderingContext2D
+  for (const q of QUALITY) {
+    if (!q.decor) drawDraft(trap, undefined as never, undefined as never, q) // throws on any ctx/state/view access
+  }
 }
 
 export function run(): void {
-  for (const g of GRIDS) { distances(g); route(g); wallDist(g); d01(g) }
+  for (const g of GRIDS) {
+    distances(g)
+    route(g)
+    wallDist(g)
+    d01(g)
+  }
   tips()
   room()
   memo()
@@ -294,7 +281,9 @@ export function run(): void {
   purpose()
   walls()
   draft()
-  sculpted()
   driftGate()
-  console.log('cave-guide: ok (' + GRIDS.length + ' synthetic grids + 1 generated cave + purpose on ' + PURPOSE_SEEDS.length + ' seeds + draft + sculpted)')
+  console.log(
+    'cave-guide: ok (' + GRIDS.length + ' synthetic grids + 1 generated cave + purpose on ' + PURPOSE_SEEDS.length +
+      ' seeds + draft + drift gate)',
+  )
 }
