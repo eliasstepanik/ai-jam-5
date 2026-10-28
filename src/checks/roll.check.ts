@@ -1,5 +1,5 @@
 // B8 checks, all through step(): escape roll (distance, i-frames, cooldown, direction), dodge vs rock, escape win / lose order,
-// escape director (interval, cap, devourer limit, spawn ring, exit field) and the unchanged descent director.
+// escape director (interval, cap, devourer limit, spawn ring, exit field) and the descent director on a real cave.
 // Spec: architecture-systems-3.md §6, architecture-systems-4.md §3.1, architecture-monsters-ai-2.md §5, R-127, R-169.
 // L0-L3 imports only; DOM-free; every scenario builds its own State.
 import type { Input } from '../main.ts'
@@ -187,19 +187,25 @@ function director(): void {
     for (let k = 0; k < 300; k++) step(s, inp(), DT)
     ok(s.monsters.length === 0, 'unreachable from the exit: no escape spawn (got ' + s.monsters.length + ')')
   }
-  // Descent unchanged: interval 4 s (zone 1), cap 3, spawn ring lightRadius + 60..140.
+  // Descent spawn on a real cave (D3p pre-baseline for the out-of-sight rule): at least one spawn within 3000 steps,
+  // spawn ring lightRadius + 60..140 kept. The old all-floor arena pinned first-at-once, a 240-step interval and cap 3;
+  // an out-of-sight reject would fail every spawn there, so the count/interval pins are dropped (D3, issue #113 step 4).
   {
-    const s = arena('descent')
+    const s = init()
+    startRun(s, '1', caveOf(parseSeed('1')))
+    s.settings.loaded = true
+    s.meta.phase = 'descent'
     s.debug.freezeAi = true
     s.debug.god = true
-    s.director.spawnT = 0
-    const R = lightRadius(s), at: number[] = []
-    for (let k = 1; k <= 20 * 60; k++) {
+    const R = lightRadius(s)
+    let first = -1
+    for (let k = 1; k <= 3000; k++) {
       const n = s.monsters.length
       step(s, inp(), DT)
-      if (s.monsters.length > n) at.push(k)
+      if (first < 0 && s.monsters.length > n) first = k
     }
-    ok(at[0] === 1 && at.slice(1).every((v, i) => v - at[i] === 240) && s.monsters.length === 3, 'descent zone 1: first at once, then 4 s, cap 3 (got ' + at.join(',') + ')')
+    ok(first >= 1 && 2 * first <= 3000, 'descent cave seed 1: first spawn early enough (step ' + first + ')')
+    ok(s.monsters.length >= 1, 'descent cave seed 1: at least one spawn (got ' + s.monsters.length + ')')
     for (const m of s.monsters) {
       const d = Math.hypot(m.x - s.player.x, m.y - s.player.y)
       ok(d >= R + T.director.spawnGapPx[0] - 1e-6 && d <= R + T.director.spawnGapPx[1] + 1e-6, 'descent ring R + 60..140 (got ' + d.toFixed(1) + ')')
