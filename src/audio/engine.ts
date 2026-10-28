@@ -11,6 +11,7 @@ import { pausedMenu } from '../core/settings.ts'
 import type { State } from '../core/types.ts'
 import type { Input } from '../main.ts'
 import { applyDucks, ensureMixer, setMaster, setBusVolumes } from './mixer.ts'
+import { unlockMusic } from './stream-music.ts'
 import { musicStep } from './music.ts'
 import { loopStep, pruneVoices, play } from './sfx.ts'
 import { noiseBuffers } from './synth.ts'
@@ -54,7 +55,7 @@ function sampleNames(): string[] {
   const pending: readonly string[] = PENDING_AUDIO
   const names = new Set<string>()
   for (const [id, def] of Object.entries(SOUNDS) as [SoundId, SoundDef][]) {
-    if (!def.file && !def.layers) continue
+    if (def.stream || (!def.file && !def.layers)) continue
     for (const n of [def.file ?? id, ...(def.layers ?? [])]) if (!pending.includes(n)) names.add(n)
   }
   return [...names].sort((x, y) => Number(FIRST_SAMPLES.includes(y)) - Number(FIRST_SAMPLES.includes(x)))
@@ -120,6 +121,7 @@ export function unlock(res: Resources): void {
   ctx.onstatechange = () => syncState(getResources().audio) // reads the live registry, not a captured one
   a.noise ??= noiseBuffers(ctx)
   ensureMixer(res)
+  unlockMusic(res)
   loadSamples(res)
   ctx.resume().then(() => {
     const live = getResources().audio
@@ -131,7 +133,7 @@ export function unlock(res: Resources): void {
 function onVisibility(a: AudioRes): void {
   const ctx = a.ctx
   if (!ctx || a.state === 'failed') return
-  if (document.hidden) ctx.suspend().catch(warnOnce)
+  if (document.hidden) { a.score?.element.pause(); ctx.suspend().catch(warnOnce) }
   else if (a.lastScreen !== 'paused') ctx.resume().catch(warnOnce)
 }
 
@@ -214,6 +216,7 @@ export function audioStep(s: State, _input: Input): void {
   resumeSoon(a, s)
   // iOS Safari may later drop the context to 'interrupted' (call, lock screen) and refuse a gesture-less resume():
   // bring the gesture listeners back (the visible, non-pause case only); syncState/unlock drop them once running again.
+  if (a.score?.blocked) armGestures(a)
   if (ctx.state !== 'running' && !document.hidden && !pausedMenu(s) && a.lastScreen !== 'paused') armGestures(a)
   ensureMixer(res)
   setMaster(res, 1, s.settings.muted)

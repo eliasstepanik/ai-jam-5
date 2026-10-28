@@ -60,19 +60,19 @@ export function run(): void {
   rejects(() => sheetAnimations('player_body', 'walk', 64, 512, { n: [[10, 20]] }), 'tips forbidden on no-torch set')
   ok(sheetAnimations('player_body-torch', 'walk', 64, 512, { n: [[10, 20]] })['walk-n'].torchTips?.[0][0] === 10, 'measured tip override')
 
-  ok(Object.keys(SOUNDS).length === 43, '43 sound ids')
+  ok(Object.keys(SOUNDS).length === 45, '45 sound ids')
   const pending = new Set<string>(PENDING_AUDIO), files = new Set<string>()
-  ok(pending.size === PENDING_AUDIO.length && pending.size === 14, 'explicit undelivered sample owners')
+  ok(pending.size === PENDING_AUDIO.length && pending.size === 11, 'explicit undelivered sample owners')
   for (const [id, raw] of Object.entries(SOUNDS)) {
     const s: SoundDef = raw
     ok(/^(mus|amb|sfx|ui)_[a-z0-9-]+$/.test(id), 'sound id spelling ' + id)
     ok(s.gain >= 0 && s.gain <= 1 && Number.isInteger(s.cap) && s.cap > 0, 'gain and voice cap ' + id)
     if (s.loop) ok(s.loop[0] >= 0 && s.loop[1] > s.loop[0], 'sample loop points ' + id)
-    if (s.file || s.layers) ok(pending.has(id), 'undelivered samples explicitly pending ' + id)
+    if (s.file || s.layers) ok(pending.has(id) || ['mus_title', 'mus_descent', 'mus_escape', 'sfx_flame-loop', 'sfx_player-walk', 'sfx_player-run'].includes(id), 'undelivered samples explicitly pending ' + id)
     if (s.file) files.add(s.file)
     for (const layer of s.layers ?? []) files.add(layer)
   }
-  ok(files.size === 14 && !('sfx_parry-perfect-ring' in SOUNDS), 'internal ring layer is a file, not a SoundId')
+  ok(files.size === 15 && !('sfx_parry-perfect-ring' in SOUNDS), 'internal ring layer is a file, not a SoundId')
   ok(!('sfx_step' in SOUNDS) && !('sfx_roll-ready' in SOUNDS) && !('ui_hover' in SOUNDS), 'orphan sounds removed')
-  ok(JSON.stringify(SOUNDS.mus_descent.loop) === JSON.stringify(SOUNDS['mus_descent-danger'].loop), 'synchronous descent loop points')
+  ok(SOUNDS.mus_descent.stream && SOUNDS.mus_descent.loop[1] === 480, 'full eight-minute owner score streams')
 }

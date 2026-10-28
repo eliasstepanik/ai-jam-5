@@ -11,6 +11,7 @@ import { SOUNDS } from '../assets/sounds.ts'
 import type { SoundDef, SoundId } from '../assets/sounds.ts'
 import { pausedMenu } from '../core/settings.ts'
 import type { State } from '../core/types.ts'
+import { streamMusicStep } from './stream-music.ts'
 import { danger, musicFor } from './trigger.ts'
 
 const START_DELAY = 0.05 // s between the decision and the scheduled start
@@ -68,6 +69,10 @@ export function musicStep(res: Resources, s: State): void {
   if (!ctx || !out) return
   const m = a.music
   const now = ctx.currentTime
+  if (streamMusicStep(res, s)) {
+    if (m.srcs.length) fadeOut(m, now)
+    m.cur = ''; return
+  }
   const want = musicFor(s)
   if ((want ?? '') !== m.cur) { // track change: old nodes fade out, `cur` follows even if nothing can start yet
     fadeOut(m, now)
