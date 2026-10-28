@@ -43,7 +43,54 @@ const VARIANTS: readonly (readonly [string, number, PlayParams, boolean])[] = [
   ['ring', 0.25, { seq: 3, mineral: 'sodium' }, true],
 ]
 
+// Static peak estimate (upper bound, envelopes' decay ignored): for each audio source (oscillator /
+// bufferSource, amplitude 1) sum the product of every gain node's max |automation value| along each
+// path to the destination. Filters, panners, delay feedback (cycles are cut) and param modulation
+// (LFO/constantSource into a gain param) are not modelled; the table ranks recipes, it is not dBFS.
+const AUDIO_SRC = new Set(['bufferSource', 'oscillator'])
+const gainMax = (n: FakeNode): number => {
+  if (n.kind !== 'gain' || !n.gain) return 1
+  const ev = n.gain.events.filter((e) => e.type !== 'cancelScheduledValues')
+  return ev.length ? Math.max(...ev.map((e) => Math.abs(e.value))) : 1
+}
+function pathGain(n: FakeNode, dest: FakeNode, seen: Set<FakeNode>): number {
+  if (n === dest) return 1
+  if (seen.has(n)) return 0
+  seen.add(n)
+  let sum = 0
+  for (const c of n.connections) sum += pathGain(c, dest, seen)
+  seen.delete(n)
+  return sum * gainMax(n)
+}
+const peakOf = (nodes: readonly FakeNode[], dest: FakeNode): number =>
+  nodes.filter((n) => AUDIO_SRC.has(n.kind)).reduce((a, n) => a + pathGain(n, dest, new Set()), 0)
+const db = (x: number): number => 20 * Math.log10(x)
+
+// Bounds measured 2026-10-28 over 37 recipes x 3 variants (max per id, dB re 1.0 after catalog gain):
+// range -31.1 (sfx_flame-loop) .. +10.8 (sfx_parry-perfect). Ceiling = measured max + ~1 dB headroom.
+// Spread is checked per group over the ids NOT in SPREAD_EXEMPT; measured 12.7 dB (sfx), 12.2 dB (ui), bound 13.
+const PEAK_CEIL_DB = 12
+const GROUP_SPREAD_DB = 13
+// Deliberate extremes: quiet beds/ticks (flame-loop, drip, cave-rumble) and loud events (critical flame/beacon/parry/rock/devourer).
+const SPREAD_EXEMPT = new Set<SoundId>([
+  'sfx_flame-loop', 'sfx_drip', 'sfx_cave-rumble',
+  'sfx_parry-perfect', 'sfx_beacon-horn', 'sfx_beacon-ignite', 'sfx_flame-out', 'sfx_rock-impact', 'sfx_devourer-beat',
+])
+
+function checkPeaks(peaks: ReadonlyMap<SoundId, number>): void {
+  const rows = [...peaks].map(([id, v]) => [id, db(v)] as const).sort((x, y) => y[1] - x[1])
+  const table = (): string => '\n' + rows.map(([id, d]) => `  ${SOUNDS[id].group.padEnd(3)} ${d.toFixed(1).padStart(6)} dB  ${id}`).join('\n')
+  for (const [id, d] of rows) ok(d <= PEAK_CEIL_DB, `${id} peak estimate ${d.toFixed(1)} dB > ceiling ${PEAK_CEIL_DB} dB${table()}`)
+  for (const g of ['sfx', 'ui', 'amb'] as const) {
+    const ds = rows.filter(([id]) => SOUNDS[id].group === g && !SPREAD_EXEMPT.has(id)).map(([, d]) => d)
+    if (ds.length < 2) continue
+    const spread = Math.max(...ds) - Math.min(...ds)
+    ok(spread <= GROUP_SPREAD_DB, `group ${g} spread ${spread.toFixed(1)} dB > ${GROUP_SPREAD_DB} dB${table()}`)
+  }
+}
+
 export function run(): void {
+  const peaks = new Map<SoundId, number>()
   const fake = makeFakeCtx()
   const noise = noiseBuffers(fake.ctx)
   // The fake buffer is duck-compatible at runtime (audio-fake.ts header); cast for the AudioBuffer-typed Map.
@@ -77,6 +124,7 @@ export function run(): void {
       ok(srcs.length >= 1, `${id} (${label}) returned no sources`)
       const sources = fake.nodes.filter((n) => SOURCE_KINDS.has(n.kind))
       ok(sources.length >= 1, `${id} (${label}) created no source node`)
+      peaks.set(id, Math.max(peaks.get(id) ?? 0, peakOf(fake.nodes, fake.destination) * SOUNDS[id].gain))
       const cap = NODE_CAPS[id] ?? NODE_CAP
       ok(fake.nodes.length <= cap, `${id} (${label}) used ${fake.nodes.length} nodes > cap ${cap}`)
       // Effective end: scheduled stop, or natural sample end for a non-loop buffer source started
@@ -99,4 +147,5 @@ export function run(): void {
       }
     }
   }
+  checkPeaks(peaks)
 }
