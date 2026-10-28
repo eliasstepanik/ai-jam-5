@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Escape drops more rocks on the way out, and shades now appear ahead of you on the route.
-- Resin is spread more evenly across the cave: more in the middle zones, no pile-up near the end.
+- Resin supply now rises with depth: the middle and deep zones get more resin, and the extra resin near the end is spread out instead of piling up at the start of the last zone.
 - Darkness and tint now deepen continuously with depth. The per-zone colour tints are removed from rendering (the plain fallback shown before the tileset decodes keeps flat per-zone floor fills).
 - More cracks and rubble the deeper you go.
 - Props are placed with a purpose instead of being scattered: route markers and landmarks along the way to the Beacon, decoys, water and lairs in dead ends, and rubble where the route runs close to a wall.
