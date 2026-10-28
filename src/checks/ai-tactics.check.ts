@@ -4,13 +4,17 @@
 // Later chunks append here (C6 retreat, D4, E3, F7); keep run() one small named function per rule.
 // ponytail: movement rules drive the full step() with a stationary idle player so meta.steps advances
 // (patrolBrain hashes on it; step.ts is the only steps writer). No timing budget here (env flake rule).
-import type { Monster, State } from '../core/types.ts'
+import type { Monster, MonsterKind, State } from '../core/types.ts'
 import { init } from '../core/state.ts'
 import { parseSeed } from '../core/seed.ts'
 import { T } from '../core/tuning.ts'
 import { spawnMonster } from '../entities/monster.ts'
 import { patrolBrain } from '../systems/ai-patrol.ts'
 import { insideLight, lightRadius } from '../systems/light.ts'
+import { nearCount } from '../systems/ai-retreat.ts'
+import { stepDirector } from '../systems/director.ts'
+import { stepMonsters } from '../systems/monsters.ts'
+import { clearCaches } from '../world/caches.ts'
 import { startRun } from '../systems/run.ts'
 import { step } from '../systems/step.ts'
 import { circleHitsSolid } from '../world/collide.ts'
@@ -169,10 +173,124 @@ function patrolRejectsLitPoints(): void {
   ok(picks > 20, 'AC7 fixture: patrolBrain chose points often enough (' + picks + '/60)')
 }
 
+// ---- C6 (issue #113 step 3): flame scatter, retreat after recover, near cap ----
+// C4(b)/AC7 flame trigger, probed through stepMonsters directly (step() burns energy before
+// stepMonsters, so a threshold probe must pin the energy itself). Strict > flameRetreat; devourers
+// exempt; escape never retreats (mutation: drop the energy gate -> the threshold loop goes red).
+function flameRetreatRules(): void {
+  const probe = (energy: number, kind: MonsterKind, esc: boolean): number => {
+    const s = field()
+    s.player.energy = energy
+    if (esc) s.meta.phase = 'escape'
+    const m = spawnMonster(s, kind, s.player.x + 200, s.player.y, lightRadius(s))
+    m.awareness = 'hunting'
+    m.lungeCd = 1e9
+    stepMonsters(s, DT)
+    return m.retreatT
+  }
+  ok(probe(100, 'lurker', false) >= T.ai.retreatT - DT, 'AC1: full flame scatters a hunting shade inside nearRadius')
+  ok(probe(100, 'devourer', false) === 0, 'AC1: devourers never flee the flame')
+  ok(probe(100, 'lurker', true) === 0, 'AC1: the escape phase never retreats')
+  const s = field()
+  s.player.energy = T.ai.flameRetreat // exactly the threshold; step() only burns it down from here
+  const m = place(s, 200, 'hunting')
+  for (let k = 0; k < 300; k++) { step(s, idle, DT); ok(m.retreatT === 0, 'AC7: energy <= flameRetreat never starts a retreat (step ' + k + ')') }
+}
+
+// C4(c): a forced recover exit starts the retreat at full retreatT and the shade grows distant
+// until it ends; devourer recover exits stay exempt.
+function recoverExitRetreat(): void {
+  const s = field()
+  s.player.energy = T.ai.flameRetreat // only the recover exit may start a retreat here
+  const m = place(s, 200, 'hunting')
+  m.ai = 'recover'
+  m.aiDur = 0 // the next pipeline step exits recover
+  stepMonsters(s, DT)
+  ok((m.ai as string) === 'ring' && m.retreatT === T.ai.retreatT, 'recover exit starts the retreat at full retreatT') // cast: stepMonsters mutates m.ai; narrowing cannot see through the call
+  const d0 = dist(s, m)
+  let k = 0
+  while (m.retreatT > 0 && k < 600) { stepMonsters(s, DT); k++ }
+  ok(m.retreatT === 0 && dist(s, m) > d0 + 40, 'the retreat ends with the shade clearly farther away')
+  const dv = spawnMonster(s, 'devourer', s.player.x + 200, s.player.y, lightRadius(s))
+  dv.awareness = 'hunting'; dv.ai = 'recover'; dv.aiDur = 0
+  stepMonsters(s, DT)
+  ok(dv.retreatT === 0, 'a devourer recover exit never retreats')
+}
+
+// C5 excess enforcement: with > nearCap hunting shades inside nearRadius (flame out) the extras in
+// array order start retreating and the near count falls to the cap; the cap never removes monsters.
+function nearCapExcess(): void {
+  const s = field()
+  s.player.energy = T.ai.flameRetreat // flame trigger out; only the C5 block may retreat anyone
+  const ms = [0, 1, 2, 3].map((i) => place(s, 200 + i * 20, 'hunting'))
+  ok(nearCount(s) === 4 && 4 > T.director.nearCap, 'C5 fixture: more than nearCap shades near')
+  stepDirector(s, DT)
+  ok(ms[0].retreatT === 0 && ms[1].retreatT === 0, 'C5: the first nearCap shades keep their orbit')
+  ok(ms[2].retreatT === T.ai.retreatT && ms[3].retreatT === T.ai.retreatT, 'C5: the excess shades start retreating')
+  let k = 0
+  while (nearCount(s) > T.director.nearCap && k < 180) { step(s, idle, DT); k++ }
+  ok(nearCount(s) <= T.director.nearCap, 'C5: near count falls to <= nearCap within ' + k + ' steps')
+  ok(s.monsters.length === 4, 'C5: the cap never removes monsters')
+}
+
+// C5 spawn refusal: descent refuses while nearCount >= nearCap; escape stays relentless
+// (mutation: drop the !esc gate on the refusal -> the escape assert goes red).
+function nearCapSpawnRefusal(): void {
+  const s = field()
+  place(s, 100, 'hunting'); place(s, 150, 'hunting')
+  s.director.spawnT = 0
+  const n = s.monsters.length
+  stepDirector(s, DT)
+  ok(nearCount(s) >= T.director.nearCap && s.monsters.length === n, 'descent: no director spawn while nearCount >= nearCap')
+  const e = field()
+  e.meta.phase = 'escape'
+  e.world.exit = { tx: 5, ty: 5 }
+  clearCaches()
+  spawnMonster(e, 'lurker', e.player.x + 100, e.player.y, 0); spawnMonster(e, 'lurker', e.player.x + 150, e.player.y, 0)
+  e.director.spawnT = 0
+  const n0 = e.monsters.length
+  stepDirector(e, DT)
+  ok(nearCount(e) >= T.director.nearCap && e.monsters.length > n0, 'escape: the near-cap refusal is inert, a spawn happened')
+}
+
+// AC1 + AC4 on a real cave (seed 1, director live, no spawnT silencing): full flame held at 100 for
+// 4000 steps with a walking player (turn left every 60 steps - "a normal run"; the idle player
+// never breaks the parked-shade ring). Reports the measured first-spawn step N.
+function caveFullFlameRun(): string {
+  const s = init()
+  startRun(s, '1', caveOf(parseSeed('1')))
+  s.settings.loaded = true; s.meta.phase = 'descent'; s.debug.god = true
+  let first = -1, gap = 0, maxGap = 0, over = 0, maxOver = 0, sum = 0
+  for (let k = 1; k <= 4000; k++) {
+    s.player.energy = 100 // full flame held (stepFlame burns it back down each step)
+    step(s, { ...idle, keys: new Set([['KeyD', 'KeyS', 'KeyA', 'KeyW'][Math.floor(k / 60) % 4]]) }, DT)
+    if (first < 0 && s.monsters.length > 0) first = k
+    const n = nearCount(s)
+    sum = (sum * 31 + n * 8 + s.monsters.length) | 0
+    if (n === 0) {
+      if (first > 0) gap++
+    } else if (gap > maxGap) { maxGap = gap; gap = 0 }
+    if (n > T.director.nearCap) over++
+    else if (over > maxOver) { maxOver = over; over = 0 }
+  }
+  if (gap > maxGap) maxGap = gap
+  if (over > maxOver) maxOver = over
+  ok(first >= 1 && 2 * first <= 4000, 'AC1 cave seed 1: first director spawn at step ' + first + ' (2N <= 4000)')
+  ok(maxGap >= 120, 'AC1: full flame keeps a >= 120-step stretch with nobody within nearRadius (max ' + maxGap + ')')
+  ok(maxOver <= 120, 'AC4: nearCount never stays above nearCap for > 120 steps (max over-run ' + maxOver + ')')
+  return sum + '|' + s.monsters.map((m) => m.x.toFixed(1) + ',' + m.y.toFixed(1)).join(';')
+}
+
 export function run(): void {
   patrolBasics()
   patrolDeterminism()
   patrolRejectsLitPoints()
   patrolLight()
   fleeLight()
+  flameRetreatRules()
+  recoverExitRetreat()
+  nearCapExcess()
+  nearCapSpawnRefusal()
+  const t1 = caveFullFlameRun()
+  ok(t1 === caveFullFlameRun(), 'C6: two identical cave runs produce identical traces')
 }
