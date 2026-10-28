@@ -56,6 +56,5 @@ export type SoundId = keyof typeof SOUNDS
 
 // Ids whose sample files are undelivered. Keep this explicit so delivery shrinks the allow-list.
 export const PENDING_AUDIO = [
-  'mus_title', 'mus_descent', 'mus_descent-danger', 'mus_escape', 'mus_sting-win', 'mus_sting-death', 'amb_cave',
-  'sfx_parry-perfect', 'sfx_beacon-horn', 'sfx_rock-impact',
+  'mus_title', 'mus_descent', 'mus_descent-danger', 'mus_escape', 'amb_cave',
 ] as const satisfies readonly SoundId[]
