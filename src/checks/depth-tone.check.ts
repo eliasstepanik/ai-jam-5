@@ -3,7 +3,9 @@ import type { State } from '../core/types.ts'
 import { init, MAP_H, MAP_W } from '../core/state.ts'
 import { fnv1a } from '../core/rng.ts'
 import { CAVE_DRESSING, dressingAt } from '../core/cave-props.ts'
-import { clearCaches, getDepthField } from '../world/caches.ts'
+import { purposedCave } from '../core/cave-water.ts'
+import type { CaveIn } from '../core/cave-water.ts'
+import { clearCaches, getBeaconRoom, getDepthField } from '../world/caches.ts'
 import { crackMul, depth01Field, playerDepth01, toneOf, vineDensity, wetField } from '../render/depth-tone.ts'
 import { drawDescentFx, moteAt, moteCount, pebbleAt, pebbleCount, pebbleList } from '../render/descent-fx.ts'
 import type { View } from '../render/view.ts'
@@ -12,6 +14,16 @@ import { caveOf } from './caves.ts'
 const ok = (c: boolean, why: string): void => { if (!c) throw new Error('depth tone: ' + why) }
 const near = (a: number, b: number): boolean => Math.abs(a - b) < 1e-9
 let runId = 9000
+const WET_R = 3 // the Chebyshev radius wetField marks around each purposed water anchor
+const cheb = (ax: number, ay: number, x: number, y: number): number => Math.max(Math.abs(ax - x), Math.abs(ay - y))
+
+// Purposed water anchors as [tx, ty], built exactly as render/dressing.ts feeds the drawn puddles (same CaveIn fields).
+function waterAnchors(s: State): number[][] {
+  const { w, h, tiles, entrance, beacon, exit } = s.world
+  const c: CaveIn = { tiles, w, h, seed: s.meta.seed, entrance: entrance.ty * w + entrance.tx, beacon: beacon.ty * w + beacon.tx,
+    exitTx: exit.tx, exitTy: exit.ty, room: getBeaconRoom(s), veins: s.veins.map(v => v.tile) }
+  return purposedCave(c).water.map(p => [p.tile % w, Math.floor(p.tile / w)])
+}
 
 function load(tiles: string, w: number, h: number, entrance: number, beacon: number, beaconDist: number, seed = 5): State {
   const s = init()
@@ -117,23 +129,53 @@ function wet(): void {
   const f = wetField(s)
   ok(f instanceof Uint8Array && f.length === w * h, 'wetField is a Uint8Array of w*h')
   ok(wetField(s) === f, 'wetField cached by identity')
-  const anchors: number[][] = []
+  // Raw lattice water anchors (the A1 oracle): purposed water is a subset of them, so wet tiles must stay inside the raw-anchor wet area.
+  const raw: number[][] = []
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const n = dressingAt(s.world.tiles, w, h, x, y, 11)
-    if (n >= 0 && CAVE_DRESSING[n].water) anchors.push([x, y])
+    if (n >= 0 && CAVE_DRESSING[n].water) raw.push([x, y])
   }
-  ok(anchors.length > 3, 'fixture has water anchors')
+  ok(raw.length > 3, 'fixture has raw water anchors')
+  const anchors = waterAnchors(s)
+  // the open fixture has no guide-led water, so it may hold zero purposed anchors; generated seeds are covered by wetPurposed()
+  ok(anchors.length <= raw.length, 'purposed water anchors are a subset of the raw ones')
   let wetN = 0
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const want = anchors.some(([ax, ay]) => Math.max(Math.abs(ax - x), Math.abs(ay - y)) <= 3) ? 1 : 0
-    ok(f[y * w + x] === want, 'wetField = Chebyshev 3 of a water anchor at ' + x + ',' + y)
+    const want = anchors.some(([ax, ay]) => cheb(ax, ay, x, y) <= WET_R) ? 1 : 0
+    ok(f[y * w + x] === want, 'wetField = Chebyshev ' + WET_R + ' of a purposed water anchor at ' + x + ',' + y)
+    if (want) ok(raw.some(([ax, ay]) => cheb(ax, ay, x, y) <= WET_R), 'wet tile is within reach of a raw anchor at ' + x + ',' + y)
     wetN += want
   }
-  ok(wetN > 0 && wetN < w * h, 'wet and dry tiles both exist')
+  ok(wetN < w * h && (wetN === 0) === (anchors.length === 0), 'dry tiles exist; wet tiles exist iff purposed anchors exist')
   const other = load('.'.repeat(w * h), w, h, 0, w * h - 1, 2 * w, 12)
   ok(wetField(other) !== f, 'a new base field or seed rebuilds wetField')
   const solid = load('#'.repeat(9), 3, 3, 4, 4, 1)
   ok(wetField(solid).every(v => v === 0), 'no floor: no wet tiles')
+}
+
+// W1b: wet tiles mirror the purposed puddles on generated caves, both directions, plus the identity cache.
+function wetPurposed(): void {
+  let total = 0
+  for (const seed of [1, 7, 42, 3, 19]) {
+    const r = caveOf(seed), w = MAP_W, h = MAP_H, e = r.entrance.ty * w + r.entrance.tx, b = r.beacon.ty * w + r.beacon.tx
+    const s = load(r.tiles, w, h, e, b, r.beaconDist, seed), f = wetField(s), anchors = waterAnchors(s)
+    total += anchors.length
+    ok(f.includes(1) && f.includes(0), 'seed ' + seed + ': wet and dry tiles both exist')
+    ok(wetField(s) === f, 'seed ' + seed + ': wetField identity cache')
+    for (let i = 0; i < f.length; i++) {
+      if (f[i] !== 1) continue
+      const x = i % w, y = (i - x) / w
+      ok(anchors.some(([ax, ay]) => cheb(ax, ay, x, y) <= WET_R), 'seed ' + seed + ': wet tile ' + i + ' has a purposed water anchor within ' + WET_R)
+    }
+    for (const [ax, ay] of anchors) {
+      let hit = false
+      for (let y = Math.max(0, ay - WET_R); !hit && y <= Math.min(h - 1, ay + WET_R); y++) {
+        for (let x = Math.max(0, ax - WET_R); x <= Math.min(w - 1, ax + WET_R); x++) if (f[y * w + x] === 1) { hit = true; break }
+      }
+      ok(hit, 'seed ' + seed + ': purposed water anchor ' + ax + ',' + ay + ' has a wet tile within ' + WET_R)
+    }
+  }
+  ok(total > 0, 'the generated seeds hold purposed water anchors')
 }
 
 // Cave overhaul A9: descent dust and pebbles are stateless pure functions of time, density follows depth.
@@ -207,6 +249,7 @@ export function run(): void {
   fixture()
   generated()
   wet()
+  wetPurposed()
   descent()
   clearCaches()
 }

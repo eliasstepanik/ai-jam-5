@@ -3,8 +3,9 @@
 // Module-level caches below are derived data only (rebuilt when the world cache field changes identity), same precedent as world/caches.ts.
 import type { State } from '../core/types.ts'
 import { TILE } from '../core/state.ts'
-import { CAVE_DRESSING, dressingAt } from '../core/cave-props.ts'
-import { getDepthField } from '../world/caches.ts'
+import { purposedCave } from '../core/cave-water.ts'
+import type { CaveIn } from '../core/cave-water.ts'
+import { getBeaconRoom, getDepthField } from '../world/caches.ts'
 
 export type Tone = { r: number; g: number; b: number; amb: number }
 
@@ -22,7 +23,7 @@ const STOPS: readonly (readonly [number, number, number, number, number])[] = [
 const clamp01 = (v: number): number => v > 0 ? (v < 1 ? v : 1) : 0 // NaN -> 0
 
 let depthSrc: Int32Array | null = null, depthBd = -1, depthV = new Float32Array(0)
-let wetSrc: Int32Array | null = null, wetSeed = -1, wetV = new Uint8Array(0)
+let wetSrc: Int32Array | null = null, wetSeed = -1, wetExit = -1, wetV = new Uint8Array(0)
 
 // Floor and reachable cells: d / beaconDist. Walls and unreachable cells: value of the nearest such cell (4-neighbour multi-source BFS,
 // same algorithm as zoneMap in render/tiles.ts).
@@ -75,21 +76,29 @@ export const crackMul = (d: number): number => 0.5 + clamp01(d)
 
 export const vineDensity = (d: number, wet: boolean): number => clamp01(1 - clamp01(d) / (wet ? 0.7 : 0.55)) ** 1.5
 
-// 1 within Chebyshev 3 of a water dressing anchor. Only the 3x3-block anchors (x % 3 === 1, y % 3 === 1) can hold a dressing.
-// ponytail: raw dressingAt water anchors; chunk W1 re-points this to the purposed water anchors once generation decides them.
+// The pure derivation input of core/cave-water.ts, same fields render/dressing.ts builds for the drawn props, so purposedCave's size-1 memo
+// serves both and the wet flags mirror the drawn puddles.
+// ponytail: duplicated from dressing.ts caveIn(s) because dressing.ts pulls tileset.ts (JSON import) and cracks.ts, which the node check
+// runner cannot load. Upgrade path: one shared builder in world/ (outside this chunk) that both files call.
+const caveIn = (s: State): CaveIn => {
+  const { w, h, tiles, entrance, beacon, exit } = s.world
+  return { tiles, w, h, seed: s.meta.seed, entrance: entrance.ty * w + entrance.tx, beacon: beacon.ty * w + beacon.tx, exitTx: exit.tx, exitTy: exit.ty, room: getBeaconRoom(s), veins: s.veins.map(v => v.tile) }
+}
+
+// 1 within Chebyshev 3 of a PURPOSED water anchor (purposedCave(...).water), i.e. exactly where puddles are drawn.
+// Cache key: the depth field identity (tiles, endpoints), the seed and the exit (the cleanSkip box), like the dressing cache key.
 export function wetField(s: State): Uint8Array {
-  const src = getDepthField(s), seed = s.meta.seed
-  if (wetSrc === src && wetSeed === seed) return wetV
-  const { w, h, tiles } = s.world, v = new Uint8Array(w * h)
+  const src = getDepthField(s), seed = s.meta.seed, { w, h, tiles, exit } = s.world, ek = exit.ty * w + exit.tx
+  if (wetSrc === src && wetSeed === seed && wetExit === ek) return wetV
+  const v = new Uint8Array(w * h)
   if (tiles.length === w * h) {
-    for (let y = 1; y < h; y += 3) for (let x = 1; x < w; x += 3) {
-      const n = dressingAt(tiles, w, h, x, y, seed)
-      if (n < 0 || !CAVE_DRESSING[n].water) continue
+    for (const p of purposedCave(caveIn(s)).water) {
+      const x = p.tile % w, y = (p.tile - x) / w
       for (let yy = Math.max(0, y - WET_RADIUS); yy <= Math.min(h - 1, y + WET_RADIUS); yy++) {
         for (let xx = Math.max(0, x - WET_RADIUS); xx <= Math.min(w - 1, x + WET_RADIUS); xx++) v[yy * w + xx] = 1
       }
     }
   }
-  wetSrc = src; wetSeed = seed; wetV = v
+  wetSrc = src; wetSeed = seed; wetExit = ek; wetV = v
   return v
 }
