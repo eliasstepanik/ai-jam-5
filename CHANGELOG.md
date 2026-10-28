@@ -9,14 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Automated audio checks closing the #101-#103 acceptance gaps: `src/checks/audio-fake.ts` (a recording fake `AudioContext`), `audio-engine.check.ts` (24-voice pool, priority stealing, 30 ms retrigger guard, mixer constants), `audio-wiring.check.ts` (all 28 `FxEventKind` mapped, the null set, sound ids exist, ducking/danger/music ranges), `audio-recipes.check.ts` (every synth recipe renders without throwing, node-count caps, static peak/level spread).
-- 14 AI-generated audio samples (7 SFX, 2 music stingers, cave ambience, 4 music tracks) produced via ComfyUI, and ComfyUI pipeline additions (`gen-audio` trim/peakDb/loopFade options, loop-seam nodes in the graph). 12 ship in `src/assets/audio/`; the generated `mus_title`, `mus_descent` and `mus_escape` were superseded by the owner-supplied Beacon Run stream and removed from the bundle.
+- 14 AI-generated audio samples (7 SFX, 2 music stingers, cave ambience, 4 music tracks) produced via ComfyUI, and ComfyUI pipeline additions (`gen-audio` trim/peakDb/loopFade options, loop-seam nodes in the graph). 11 ship in `src/assets/audio/`; the generated `mus_title`, `mus_descent` and `mus_escape` were superseded by the owner-supplied Beacon Run stream and removed from the bundle.
 
 ### Changed
 - Master compressor threshold -18 -> -14 dB and attack 5 -> 15 ms (fewer click artefacts); heartbeat voice cap 1 -> 2.
 - Ducking now merges per cause: the deepest cause wins and the release comes from the last cause.
 - The assets check now asserts a sound is pending exactly when its `.ogg` or `.mp3` file is missing (`PENDING_AUDIO` is now empty).
 - `mus_descent-danger` loop is 30 s (was a 72 s placeholder).
-- Raised the total audio budget in `scripts/check-assets.ts` from 3.3 MB to 4.6 MB per format (the shipped set needs 4,091,024 B ogg / 4,360,305 B mp3); the earlier "14 generated samples" text now means 12 shipped (see Added).
+- Raised the total audio budget in `scripts/check-assets.ts` from 3.3 MB to 4.6 MB per format (all 30 audio files together need 4,091,024 B ogg / 4,360,305 B mp3); the earlier "14 generated samples" text now means 11 shipped (see Added).
 
 ### Fixed
 - `danger()` could return NaN when `energyMax <= 0`.
