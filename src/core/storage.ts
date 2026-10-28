@@ -11,7 +11,7 @@ import { fill } from './migrate.ts'
 
 export type Store = Pick<Storage, 'getItem' | 'setItem'>
 
-// Depth classes (R-164): 1..4, default 3. The setting is 1..4 or 'random'.
+// Depth classes (R-164): 1..4. The setting is 1..4 or 'random'; missing/invalid settings fall back to 1 (Shallow).
 // Settings.depthClass is declared in types.ts; SettingsRecord still lacks it, so RecordWithClass adds it for the saved JSON.
 // Best.depthClass is not stored: the class is part of the storage key.
 export type DepthSetting = number | 'random'
@@ -23,14 +23,15 @@ const SETTINGS_KEY = 'last-ember:settings'
 const bestKey = (c: number): string => (c === 3 ? BEST_KEY : BEST_KEY + ':' + c)
 const QUALITY: readonly Settings['quality'][] = ['auto', 'q0', 'q1', 'q2', 'q3']
 
-// Same rule as paramsOf (world/gen/params.ts): round, clamp to 1..4, anything not finite is 3. Local copy: core (L0) must not import world (L1).
-function clampClass(c: unknown): number {
-  if (typeof c !== 'number' || !Number.isFinite(c)) return 3
+// Same rule as paramsOf (world/gen/params.ts): round, clamp to 1..4, anything not finite is `fallback`. Local copy: core (L0) must not import world (L1).
+// fallback stays 3 for Best paths (legacy/no explicit class); only the settings path passes 1 (Shallow default).
+function clampClass(c: unknown, fallback = 3): number {
+  if (typeof c !== 'number' || !Number.isFinite(c)) return fallback
   return Math.min(4, Math.max(1, Math.round(c)))
 }
 
-// 'random' stays 'random'; everything else is clamped to 1..4.
-const settingClass = (c: unknown): DepthSetting => (c === 'random' ? c : clampClass(c))
+// 'random' stays 'random'; everything else is clamped to 1..4; missing/invalid -> 1 (Shallow default).
+const settingClass = (c: unknown): DepthSetting => (c === 'random' ? c : clampClass(c, 1))
 
 // First failure only: later failures are silent (rule 1 of scoring-and-save §6).
 function fail(s: State): void {
@@ -98,7 +99,7 @@ export function loadSettings(s: State, store?: Store): void {
   set.lastSeed = f.lastSeed
   set.reducedFlash = f.reducedFlash
   set.quality = QUALITY.includes(f.quality) ? f.quality : 'auto'
-  set.depthClass = settingClass(r.depthClass) // outside fill(): fill would reject the string 'random' against a numeric default; missing -> 3
+  set.depthClass = settingClass(r.depthClass) // outside fill(): fill would reject the string 'random' against a numeric default; missing -> 1
 }
 
 export function saveSettings(s: State, store?: Store): void {

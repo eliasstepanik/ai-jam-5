@@ -1,5 +1,5 @@
 // migrate() settings.depthClass repair check. Spec: src/core/migrate.ts fixSettings (R-164, R-022): 'random' and integers 1..4
-// are kept, anything else (missing, wrong type, out of range, NaN) becomes 3; other settings fields are untouched; idempotent.
+// are kept, anything else (missing, wrong type, out of range, NaN) becomes 1 (Shallow default); other settings fields are untouched; idempotent.
 // Covers both paths: same-version migrate() and the version-mismatch resetKeep() path. Exports run(); DOM-free; no node: imports.
 import { init, STATE_VERSION } from '../core/state.ts'
 import { migrate } from '../core/migrate.ts'
@@ -23,9 +23,9 @@ const MISSING = Symbol('missing') // marks "no depthClass key at all"
 // [label, stored depthClass, expected depthClass after migrate]
 const ROWS: [string, unknown, unknown][] = [
   ['random', 'random', 'random'], ['1', 1, 1], ['2', 2, 2], ['3', 3, 3], ['4', 4, 4],
-  ['0', 0, 3], ['5', 5, 3], ['-1', -1, 3], ['2.5', 2.5, 3], ['"2"', '2', 3], ['"Random"', 'Random', 3],
-  ['null', null, 3], ['NaN', NaN, 3], ['Infinity', Infinity, 3], ['true', true, 3], ['object', { v: 2 }, 3],
-  ['undefined', undefined, 3], ['missing key', MISSING, 3],
+  ['0', 0, 1], ['5', 5, 1], ['-1', -1, 1], ['2.5', 2.5, 1], ['"2"', '2', 1], ['"Random"', 'Random', 1],
+  ['null', null, 1], ['NaN', NaN, 1], ['Infinity', Infinity, 1], ['true', true, 1], ['object', { v: 2 }, 1],
+  ['undefined', undefined, 1], ['missing key', MISSING, 1],
 ]
 
 // Stored settings with non-default values everywhere, so an altered neighbour field is visible.
@@ -59,11 +59,11 @@ export function run(): void {
       pass('migrate ' + label, oldState(dc, STATE_VERSION), want)
       pass('reset ' + label, oldState(dc, STATE_VERSION + 1000), want) // version mismatch -> resetKeep path
     }
-    // settings is not an object at all: default settings, depthClass 3, on both paths.
+    // settings is not an object at all: default settings, depthClass 1, on both paths.
     for (const v of [STATE_VERSION, STATE_VERSION + 1000]) {
       const old = { ...init(), version: v, settings: 5 }
       const a: State = migrate(old)
-      ok(a.settings.depthClass === 3, `non-object settings (v${v}): depthClass 3`)
+      ok(a.settings.depthClass === 1, `non-object settings (v${v}): depthClass 1`)
       ok(a.settings.volume === init().settings.volume, `non-object settings (v${v}): default volume`)
       ok(deepEq(migrate(a), a), `non-object settings (v${v}): idempotent`)
     }
