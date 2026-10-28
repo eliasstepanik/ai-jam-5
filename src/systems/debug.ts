@@ -15,7 +15,7 @@ import { flameRadius, insideLight } from './light.ts'
 import { endRun } from './run.ts'
 import { begin, setDepth, shownClass } from './screens.ts'
 
-export const DEBUG_TOGGLES = ['caveDetails', 'pureDarkness', 'noclip', 'infiniteHp', 'freezeTorch', 'noFog', 'freezeAi', 'overlay', 'hurtboxes', 'animations', 'stats', 'minimap', 'arrow', 'showPaths', 'mapOres', 'mapResin', 'mapPlants', 'mapEntrance', 'mapBeacon', 'aiViz', 'wispViz'] as const
+export const DEBUG_TOGGLES = ['caveDetails', 'noclip', 'infiniteHp', 'freezeTorch', 'noFog', 'freezeAi', 'overlay', 'hurtboxes', 'animations', 'stats', 'minimap', 'arrow', 'showPaths', 'mapOres', 'mapResin', 'mapPlants', 'mapEntrance', 'mapBeacon', 'aiViz', 'wispViz'] as const
 export type DebugToggle = typeof DEBUG_TOGGLES[number]
 export type DebugAction = DebugToggle | MonsterKind | 'extinguish' | 'refill' | 'kill' | 'teleportEntrance' | 'teleportBeacon' | 'arrowBeacon' | 'arrowExit' | 'forceLeap' | DebugDepth | 'mapPlain' | 'mapZones' | 'mapDistance'
 export type DebugDepth = 'depth1' | 'depth2' | 'depth3' | 'depth4'

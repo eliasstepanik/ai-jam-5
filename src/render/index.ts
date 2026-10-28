@@ -40,7 +40,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   frameBegin() // pass 0
   const sc = s.meta.screen
   // Pass 1: title and help draw their own backdrop. An empty world (title, generation pending) has nothing for the world passes.
-  if (sc === 'title' || sc === 'help' || s.world.tiles === '') {
+  if (sc === 'title' || sc === 'help' || sc === 'settings' || s.world.tiles === '') {
     drawScreen(ctx, s, w, h)
     return
   }

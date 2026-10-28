@@ -11,6 +11,8 @@ import { platformStep } from './ui/platform.ts'
 import { render as renderFrame } from './render/index.ts'
 import { drawCommit, pollCommit } from './ui/commit.ts'
 import { audioStep, warnOnce } from './audio/engine.ts'
+import { settingsLayout } from './ui/settings.ts'
+import { setAudioLevel } from './systems/settings.ts'
 import { beginDebugUpdate, debugAvailable, debugInput, drawDebug, endDebugUpdate } from './ui/debug.ts'
 
 export type { State } from './core/types.ts'
@@ -42,6 +44,7 @@ function buttons(s: State, w: number, h: number): Button[] | null {
     case 'title': {
       return titleLayout(w, h, s, titleReady(s, getResources().images)).buttons // same `ready` as drawScreen (ui/menus.ts)
     }
+    case 'settings': return settingsLayout(w, h).buttons
     case 'paused': return pauseLayout(w, h, s).buttons
     case 'dead':
     case 'won': return endLayout(w, h, s).buttons
@@ -67,6 +70,21 @@ function pointer(s: State, input: Input): Input {
     }
     return back ? { ...input, pressed: new Set(input.pressed).add('Escape') } : input
   }
+  if (s.meta.screen === 'settings') {
+    const l = settingsLayout(w, h), bs = l.buttons
+    if (input.pressed.has('Blur')) u.settingsDrag = -1
+    if (s.meta.time - u.screenAt >= .25) {
+      for (const c of input.clicks) { const i = hit(bs, c.x, c.y); if (i === 0 || i === 1) u.settingsDrag = i }
+      const i = u.settingsDrag
+      if (i >= 0 && i < 2) {
+        const track = l.tracks[i], click = input.clicks[0]
+        setAudioLevel(s, i, ((click?.x ?? x) - track.x) / track.w)
+        if (!input.mouse.down) u.settingsDrag = -1
+        u.cursor = i; u.hover = i
+        return { ...input, clicks: [] }
+      }
+    }
+  }
   const bs = buttons(s, w, h)
   if (bs === null) return input // playing: clicks belong to combat
   const over = hit(bs, x, y)
@@ -76,7 +94,7 @@ function pointer(s: State, input: Input): Input {
   const clicks = input.clicks.filter((c) => {
     const i = hit(bs, c.x, c.y)
     if (i >= 0) u.cursor = i
-    return i >= 0 && !(s.meta.screen === 'title' && i === 5)
+    return i >= 0 && !(s.meta.screen === 'title' && i === 4)
   })
   return clicks.length === input.clicks.length ? input : { ...input, clicks }
 }

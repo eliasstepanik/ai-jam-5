@@ -1,5 +1,6 @@
 // Runs every pure-logic check (R-040). Add one import + one call per new *.check.ts file; the list is kept in sync by hand.
 import { run as telegraph } from './telegraph.check.ts'
+import { run as suppliedAudio } from './supplied-audio.check.ts'
 import { run as puddleDressing } from './puddle-dressing.check.ts'
 import { run as heartUi } from './heart-ui.check.ts'
 import { run as worldVisualFixes } from './world-visual-fixes.check.ts'
@@ -75,7 +76,8 @@ import { run as caveGuide } from './cave-guide.check.ts'
 import { run as puddleSurface } from './puddle-surface.check.ts'
 import { run as caveSculpt } from './cave-sculpt.check.ts'
 import { run as caveAlcove } from './cave-alcove.check.ts'
-import { run as volumeCycle } from './volume-cycle.check.ts'
+import { run as titleSettings } from './settings.check.ts'
+suppliedAudio()
 puddleDressing()
 heartUi()
 state()
@@ -135,7 +137,7 @@ depthTone()
 vineGlow()
 caveGuide()
 puddleSurface()
-volumeCycle()
+titleSettings()
 
 reportedBugs()
 publishedBugs()

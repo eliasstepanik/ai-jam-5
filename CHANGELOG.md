@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Copper flame leaves faint sparks that lead toward the Beacon.
+- Supplied eight-minute Beacon Run music, burning-torch sample and walking footsteps; post-Beacon sprinting uses double-cadence footsteps without raising pitch.
+- Title and pause Settings menu with independent saved Music and Sound Effects sliders, flashing controls, and Fog of war / Pure darkness selection.
 - Dev panel: 'AI behaviors' overlay (awareness rings, view and hearing ranges, detection meter, patrol, retreat and stalker-latch markers, near-spawn ring, flow window) and 'Wisp guide' overlay (route, seek target, lead/leash/reseed rings, velocity). Both toggles are on the Enemies tab and exist only in dev builds or with `?debug=1`.
 - #97: updated cave atlas with non-blocking mushrooms, roots, ferns, stalagmites, leaves, branches, gravel and wall dressing; ten muddy puddle variants reflect nearby sprites and ripple when walked through.
 - Glowing vines on cave walls and on the floor beside them near the cave start. They give off a soft pulsing green light and fade out with depth, so the deeper cave has none.
@@ -41,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - #99: delivered UI hearts, nine-slice menu/HUD panels, selection markers, material-colored animated torch/fuel meter and local Hollow Sigil font.
 
 ### Fixed
+- Corrected reversed source labels for torch and walking audio; rebuilt double-cadence sprint audio from the actual footstep recording.
 - #84: position the enlarged title logo just above Play, lower on tall windows, and remove its tagline.
 - #98: resin refills the torch without triggering the player pickup animation; healing-plant and ore animations are retained.
 - #127: restore pure-black creature particles at the user’s request; blending into black terrain is intentional. Retain lifetime fading and foreground-wall occlusion.

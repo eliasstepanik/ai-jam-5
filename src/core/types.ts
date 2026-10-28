@@ -12,7 +12,7 @@ export type MineralId = 'sodium' | 'copper' | 'strontium'
 export type FlameKind = 'none' | MineralId // 'none' = plain orange flame
 export type PickupKind = 'resin' | 'plant'
 export type Phase = 'descent' | 'escape'
-export type Screen = 'title' | 'help' | 'playing' | 'paused' | 'dead' | 'won'
+export type Screen = 'title' | 'settings' | 'help' | 'playing' | 'paused' | 'dead' | 'won'
 export type Zone = 1 | 2 | 3 | 4
 export type TileCh = '#' | '.' | ',' // wall, floor, side-room floor
 export type ParryGrade = 'none' | 'perfect' | 'good' | 'poor'
@@ -196,6 +196,8 @@ export type Ui = {
   copied: number // s left of the "link copied" label
   hover: number // int, hovered button; -1 = none
   screenAt: number // meta.time of the last screen change
+  settingsFrom: 'title' | 'paused'
+  settingsDrag: number // -1 or the captured volume slider
   helpFrom: 'title' | 'paused' // Help is reachable from two screens
   confirmT: number // s left of the quit-to-title confirm window
   denyT: number // s left of the hotbar deny shake
@@ -205,7 +207,8 @@ export type Ui = {
   bestClass: number // depth class the mirrored Best was loaded for (3 = Standard); lets screens reload Best after a hot swap
 }
 export type Settings = {
-  volume: number // 0..1
+  musicVolume: number; sfxVolume: number; pureDarkness: boolean
+  volume: number // legacy saved master level, retained for compatibility
   muted: boolean
   lastSeed: string
   loaded: boolean // loadSettings() ran this page session
@@ -254,6 +257,7 @@ export type Best = {
 }
 export type SettingsRecord = {
   v: 1; volume: number; muted: boolean; lastSeed: string; reducedFlash: boolean
+  musicVolume?: number; sfxVolume?: number; pureDarkness?: boolean
   quality: 'auto' | 'q0' | 'q1' | 'q2' | 'q3' // any other stored value loads as 'auto'
 }
 

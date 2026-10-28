@@ -8,6 +8,7 @@ import type { Best, Settings, SettingsRecord, State } from './types.ts'
 import { toast } from './state.ts'
 import { DEFAULT_BEST } from './score.ts'
 import { fill } from './migrate.ts'
+import { audioLevel } from './settings.ts'
 
 export type Store = Pick<Storage, 'getItem' | 'setItem'>
 
@@ -95,6 +96,9 @@ export function loadSettings(s: State, store?: Store): void {
   const d: SettingsRecord = { v: 1, volume: set.volume, muted: set.muted, lastSeed: set.lastSeed, reducedFlash: set.reducedFlash, quality: set.quality }
   const f = fill(d, r) as SettingsRecord
   set.volume = Math.min(1, Math.max(0, f.volume))
+  set.musicVolume = audioLevel(r.musicVolume, set.volume)
+  set.sfxVolume = audioLevel(r.sfxVolume, set.volume)
+  set.pureDarkness = r.pureDarkness === true
   set.muted = f.muted
   set.lastSeed = f.lastSeed
   set.reducedFlash = f.reducedFlash
@@ -106,6 +110,7 @@ export function saveSettings(s: State, store?: Store): void {
   const set = s.settings
   const rec: RecordWithClass = {
     v: 1, volume: set.volume, muted: set.muted, lastSeed: set.lastSeed, reducedFlash: set.reducedFlash, quality: set.quality,
+    musicVolume: set.musicVolume, sfxVolume: set.sfxVolume, pureDarkness: set.pureDarkness,
     depthClass: settingClass(set.depthClass),
   }
   write(s, SETTINGS_KEY, rec, store)

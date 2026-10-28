@@ -1,0 +1,39 @@
+Title Settings verification - 2026-10-28
+Explicit owner feature request; not a newly discovered defect or a completion
+claim for a broader GitHub issue. Related menu/audio issues reviewed first.
+Based on latest origin/master (1994a5e), unrelated owner notes stashed.
+
+Title and pause menus now expose Settings rather than Sound and Flashing rows.
+Settings contains Music, Sound Effects, Flashing, Fog of war / Pure darkness,
+and Back. Fog of war is the first/default mode and retains dim explored memory.
+Pure darkness suppresses explored memory in the renderer. Its developer-only
+control moved here; old hot-reload preference carries over once.
+
+Sliders support click/drag, keyboard arrows and -/=, independent 0..100 levels,
+clamped endpoints, persisted localStorage and M master mute. Adjusting a slider
+unmutes sound. Music affects the music bus; Sound Effects affects effects,
+ambience and UI buses, retaining catalog balance and dynamic ducking. Legacy
+master volume migrates to both levels. No sample/music content is added.
+
+Back/Escape returns to the originating title/pause screen. A paused run stays
+frozen; pause audio suspension/ducking and the current run track are retained.
+Title Settings uses title music and excludes cave ambience. New screen and
+settings fields are additive; idempotent migration shifts legacy menu focus.
+
+Verification:
+- npm run check passes full suite, assets, UI assets and architecture guards.
+- npm run build passes TypeScript and production bundling.
+- Pure checks cover old saves, independent levels, clamping, all option saves,
+  both return routes, idempotent migration, legacy seed focus/darkness choice.
+- Real main host: mouse drag/click, keyboard focus and slider adjustment,
+  reload persistence, frozen paused steps, actual bus targets and clean HMR.
+- Observed targets at Music 75%, Effects 25%: music .309375, ambience .028125,
+  effects .05625, UI .04375 (perceptual squared curve + catalog balance).
+- Browser sizes: 320x240, 640x360, 960x540, 1280x720, 1920x1080.
+- Production export: Settings works, Music 0 leaves Effects 70 intact, no dev UI
+  without opt-in. Memory canvas available in Fog of war, absent in Pure darkness.
+- Browser consoles clean; native UI panel/button/font styling retained.
+
+Owner override supersedes old sound-cycle / single-master menu specifications.
+No docs snapshot edits; owner knowledge-base resync is needed for this UI change.
+IN PROGRESS / awaiting owner visual confirmation of the requested settings.
