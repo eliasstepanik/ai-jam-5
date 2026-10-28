@@ -14,9 +14,13 @@ import { moveCircle } from '../world/collide.ts'
 import { lineOfSightPx } from '../world/los.ts'
 import type { Brain } from './ai-lurker.ts'
 import { escapeAim, escapeBrain, escapeStrike } from './ai-escape.ts'
+import { flowSeek } from './ai-flow.ts'
+import { patrolBrain } from './ai-patrol.ts'
+import { retreatBrain, startRetreat } from './ai-retreat.ts'
 import { devourerBrain } from './ai-devourer.ts'
 import { lurkerBrain } from './ai-lurker.ts'
 import { RING_BAND_PX, STALKER_BEHIND_S, stalkerBrain } from './ai-stalker.ts'
+import { searchVelocity, stepAwareness } from './awareness.ts'
 import { findSpawn } from './director.ts'
 import { emit } from './fx.ts'
 import { insideLight } from './light.ts'
@@ -58,6 +62,7 @@ function eligible(s: State, m: Monster): boolean {
   const p = s.player, K = T.monsters[m.kind]
   const d = Math.hypot(m.x - p.x, m.y - p.y)
   if (m.lungeCd > EPS || m.fleeing || m.stunned > EPS || d > K.lungeRangePx) return false
+  if (m.awareness !== 'hunting') return false // #113 C4 retrospect: only shades that have noticed the player may lunge (escape forces hunting)
   if (m.kind !== 'devourer' && Math.abs(d - m.ringRadius) > RING_BAND_PX) return false
   if (m.kind === 'stalker' && m.behindT + EPS < STALKER_BEHIND_S) return false
   let used = 0
@@ -173,9 +178,10 @@ function pipeline(s: State, m: Monster, desired: readonly [number, number], dt: 
 
 const pushable = (m: Monster): boolean => m.ai !== 'windup' && m.ai !== 'lunge' && m.ai !== 'dying'
 
-// §3.4. ponytail: O(n^2) pair loop (n <= T.director.monstersMax = 24); a spatial hash is pointless below ~100 entities.
+// §3.4. ponytail: O(n^2) pair loop (n <= T.director.monstersMax = 24), pushes summed per monster and collided once (moveCircle is O(n)). Ceiling: moveCircle clamps a large summed push, thin walls can leak; upgrade: per-pair sub-steps.
 function separate(s: State, dt: number): void {
   const ms = s.monsters
+  const px = new Float64Array(ms.length), py = new Float64Array(ms.length)
   for (let i = 0; i < ms.length; i++) {
     const a = ms[i]
     if (!pushable(a)) continue
@@ -187,12 +193,18 @@ function separate(s: State, dt: number): void {
       if (L >= gap || L < 1e-6) continue
       const push = T.ai.separationPxS * (1 - L / gap) * dt
       const ux = dx / L * push * 0.5, uy = dy / L * push * 0.5
-      const ma = moveCircle(s, a.x, a.y, -ux, -uy, ra), mb = moveCircle(s, b.x, b.y, ux, uy, rb)
-      a.x = ma.x
-      a.y = ma.y
-      b.x = mb.x
-      b.y = mb.y
+      px[i] -= ux
+      py[i] -= uy
+      px[j] += ux
+      py[j] += uy
     }
+  }
+  for (let i = 0; i < ms.length; i++) {
+    if (px[i] === 0 && py[i] === 0) continue
+    const m = ms[i]
+    const r = moveCircle(s, m.x, m.y, px[i], py[i], T.monsters[m.kind].radiusPx)
+    m.x = r.x
+    m.y = r.y
   }
 }
 
@@ -231,13 +243,47 @@ export function stepMonsters(s: State, dt: number): void {
   for (const m of s.monsters) {
     m.lastX = m.x
     m.lastY = m.y
+    const newlyDying = m.ai === 'dying' && m.aiT === 0 // setDying zeroes aiT (combat D13/D14 land after this loop) -> read before the increment
     m.aiT += dt
     m.lungeCd = Math.max(0, m.lungeCd - dt)
     m.stunned = Math.max(0, m.stunned - dt)
+    stepAwareness(s, m, dt) // issue #113 step 1: perception first, it picks which desired velocity the pipeline gets
     // §2: the flee latch runs in ring / stalk / recover; the brain also steers ring / stalk, a fleeing recover takes its velocity
     const thinks = m.ai === 'ring' || m.ai === 'stalk' || m.ai === 'recover'
-    const brain = s.meta.phase === 'escape' ? escapeBrain : (BRAINS[m.kind] ?? lurkerBrain)
-    pipeline(s, m, thinks ? brain(s, m) : NO_VELOCITY, dt)
+    const esc = s.meta.phase === 'escape', brain = esc ? escapeBrain : (BRAINS[m.kind] ?? lurkerBrain)
+    // C4 (b): full flame scatters near hunting shades (strict >; devourers never flee; the escape phase stays relentless)
+    if (!esc && m.kind !== 'devourer' && m.awareness === 'hunting' && m.retreatT <= 0
+      && (m.ai === 'ring' || m.ai === 'stalk') && s.player.energy > T.ai.flameRetreat
+      && Math.hypot(m.x - s.player.x, m.y - s.player.y) < T.director.nearRadius) startRetreat(m)
+    // hunting (and the relentless escape phase) = kind brain; searching = walk to lastKnown (or flee the light);
+    // unaware = patrol (B4), suspicious = hold. AC7: a lit unaware/suspicious monster flees the light -
+    // ponytail: reuse searchVelocity's light branch as the flee vector (identical math, gated on the monster itself
+    // being lit so a stale lastKnown never triggers it); upgrade: export a fleeLight helper from awareness.ts if a third caller appears.
+    // C4 (a): a hunting shade with retreatT > 0 flees instead of orbiting (in this branch !esc implies hunting)
+    const retreating = !esc && m.kind !== 'devourer' && m.retreatT > 0 && (m.ai === 'ring' || m.ai === 'stalk')
+    let want = !thinks ? NO_VELOCITY : esc || m.awareness === 'hunting'
+      ? retreating ? retreatBrain(s, m) : brain(s, m)
+      : m.awareness === 'searching' || insideLight(s, m.x, m.y) ? searchVelocity(s, m)
+      : m.awareness === 'unaware' ? patrolBrain(s, m) : NO_VELOCITY
+    // F6 (#113 step 6): a stuck hunting/searching shade follows the windowed flow field instead of
+    // straight seek (retreat keeps retreatBrain; field rooted at player tile - ponytail in ai-flow.ts).
+    if (!esc && !retreating && (m.ai === 'ring' || m.ai === 'stalk') && m.stuckT > T.ai.flowStuckT
+      && (m.awareness === 'hunting' || m.awareness === 'searching')
+      // AC7: light-flee outranks flow. Hunting: the brain's flee latch ran this frame in the want ternary above
+      // (devourerBrain pins fleeing false, so it is never skipped). Searching: mirrors searchVelocity's flee predicate.
+      && !(m.awareness === 'hunting' ? m.fleeing
+        : insideLight(s, m.x, m.y) || insideLight(s, m.lastKnownX, m.lastKnownY))) {
+      const K = T.monsters[m.kind], hunt = m.awareness === 'hunting'
+      want = flowSeek(s, m, hunt ? s.player.x : m.lastKnownX, hunt ? s.player.y : m.lastKnownY,
+        hunt ? K.chaseSpeedPxS : K.ringSpeedPxS)
+    }
+    const prevAi = m.ai
+    pipeline(s, m, want, dt)
+    // C4 (c)/(d): encounter end in descent (recover exit, or newly dying) -> retreat + calm spawn floor (no new Director field)
+    if (!esc && (newlyDying || (m.kind !== 'devourer' && prevAi === 'recover' && m.ai !== 'recover' && m.ai !== 'dying'))) {
+      if (prevAi === 'recover' && m.ai !== 'recover' && m.ai !== 'dying') startRetreat(m)
+      s.director.spawnT = Math.max(s.director.spawnT, T.director.calmS)
+    }
   }
   separate(s, dt)
   for (const m of s.monsters) {

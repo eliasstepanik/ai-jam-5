@@ -58,6 +58,14 @@ import { run as escapeWispEdge } from './escape-wisp-edge.check.ts'
 import { run as animSpeed } from './anim-speed.check.ts'
 import { run as shadowMist } from './shadow-mist.check.ts'
 import { run as depthLabel } from './depth-label.check.ts'
+import { run as stuckProbe } from './stuck-probe.check.ts'
+import { run as awarenessChecks } from './ai-awareness.check.ts'
+import { run as aiTactics } from './ai-tactics.check.ts'
+import { run as aiTactics2 } from './ai-tactics-2.check.ts'
+import { run as aiTactics3 } from './ai-tactics-3.check.ts'
+import { run as flowfieldChecks } from './flowfield.check.ts'
+import { run as aiBudget } from './ai-budget.check.ts'
+import { run as separation } from './separation.check.ts'
 import { run as depthTone } from './depth-tone.check.ts'
 import { run as caveGuide } from './cave-guide.check.ts'
 import { run as puddleSurface } from './puddle-surface.check.ts'
@@ -130,4 +138,12 @@ pixelParticles()
 caveDetail()
 caveSculpt()
 caveAlcove()
+stuckProbe()
+awarenessChecks()
+aiTactics()
+aiTactics2()
+aiTactics3()
+flowfieldChecks()
+separation()
+aiBudget()
 console.log('checks ok')

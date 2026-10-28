@@ -1,4 +1,4 @@
-// A31 ai check: lurker state machine, capsule bite latch, wrapPi facing examples, the 24-shade step budget.
+// A31 ai check: lurker state machine, capsule bite latch, wrapPi facing examples (the 24-shade step budget lives in ai-budget.check.ts; devourerMul is gone from master).
 // Spec: docs/architecture-modules-systems-2.md §1 (ai.check row), architecture-monsters-ai.md §2/§5/§5.1/§7, monsters-ai-2.md §1/§8, R-073/R-075.
 // R-039/R-040: local ok(), `export function run(): void`, no import-time work, no DOM, no node: imports, no L4 imports (R-043).
 // B3 adds the stalker rows (behind predicate, ring speed, behindT, windup gate) and the escape rows (intercept, strike gate, aim lead).
@@ -13,26 +13,19 @@ import { escapeAim, escapeBrain, escapeStrike } from '../systems/ai-escape.ts'
 import { lurkerBrain } from '../systems/ai-lurker.ts'
 import { isBehind, stalkerBrain, STALKER_BEHIND_S } from '../systems/ai-stalker.ts'
 import { resolveBites } from '../systems/combat.ts'
-import { findSpawn } from '../systems/director.ts'
 import { lightRadius } from '../systems/light.ts'
 import { setDying, stepMonsters } from '../systems/monsters.ts'
 import { startRun } from '../systems/run.ts'
-import { step } from '../systems/step.ts'
 import { caveOf } from './caves.ts'
 
 const DT = 1 / 60
 const K = T.monsters.lurker
-// monsters-ai-2 §8: 3 600 steps with 24 shades, generous for CI noise. The wall-clock timer (performance.now) runs in a
-// check, which check-guard does not scan and determinism §6 (clock ban in simulation code) does not cover.
-const BUDGET_MS = 1000
 
 function ok(cond: boolean, msg: string): void {
   if (!cond) throw new Error('check failed: ' + msg)
 }
 
 const near = (a: number, b: number, eps: number): boolean => Math.abs(a - b) <= eps
-
-const idle = { keys: new Set<string>(), pressed: new Set<string>(), mouse: { x: 0, y: 0, down: false }, clicks: [], view: { w: 640, h: 360, dpr: 1 } }
 
 // Open arena: every tile floor (only the map edge is solid), player mid-map, shades frozen out of the director's hands.
 // ponytail: swaps tiles + tilesHash so the solid cache rebuilds; the cave is not needed, only the walkable plane.
@@ -154,10 +147,30 @@ function stalker(): void {
   r.player.facing = 0 // target angle PI, the ring angle starts at PI/2 (south): +PI/2 away, so it turns counter-clockwise
   mr.ringAngle = Math.PI / 2
   stalkerBrain(r, mr)
-  ok(near(mr.ringAngle - Math.PI / 2, KS.ringSpeedPxS / mr.ringRadius / 60, 1e-9), 'stalker ring angle advances ringSpeed / ringRadius per step toward facing + PI')
+  ok(near(mr.ringAngle - Math.PI / 2, KS.ringSpeedPxS / mr.ringRadius / 60, 1e-9), 'stalker ring angle advances ringSpeed / ringRadius per step toward the committed angle (facing + PI at latch time)')
   mr.ringAngle = Math.PI - 0.001 // 0.001 rad from the target: snaps onto it instead of overshooting
   stalkerBrain(r, mr)
-  ok(near(wrapPi(mr.ringAngle - Math.PI), 0, 1e-9), 'stalker ring angle never overshoots facing + PI')
+  ok(near(wrapPi(mr.ringAngle - Math.PI), 0, 1e-9), 'stalker ring angle never overshoots the committed angle')
+
+  // E2 latch: the committed angle holds for stalkCommitT while the facing changes, then re-picks (no per-frame re-orient)
+  const l = arena(), ml = stalkerAt(l, 0, 300)
+  l.player.facing = 0
+  stalkerBrain(l, ml)
+  ok(near(ml.stalkAngle, -Math.PI, 1e-12) && ml.stalkT > 0, 'stalker latch: the first call commits facing + PI (wrapPi: -PI)')
+  l.player.facing = 1
+  for (let k = 0; k < 47; k++) stalkerBrain(l, ml) // calls 2..48 consume the 0.8 s window
+  ok(near(ml.stalkAngle, -Math.PI, 1e-12), 'stalker latch: the angle is held for the whole window while the facing changes')
+  for (let k = 0; k < 3; k++) stalkerBrain(l, ml) // past the window: the latch re-picks
+  ok(near(ml.stalkAngle, wrapPi(1 + Math.PI), 1e-12), 'stalker latch: re-picks the new facing + PI after the window expires')
+
+  // E3a: holds position while the player looks at it (not behind); approaches the ring point from behind
+  const h = arena(), mh = stalkerAt(h, 0, 300) // theta PI/2: facing 0 looks at it (off 90 deg), facing -PI/2 leaves it behind
+  h.player.facing = 0
+  const hv = stalkerBrain(h, mh)
+  ok(hv[0] === 0 && hv[1] === 0, 'stalker holds position while the player looks at it')
+  h.player.facing = -Math.PI / 2
+  const hb = stalkerBrain(h, mh)
+  ok(Math.hypot(hb[0], hb[1]) > 0, 'stalker approaches the ring point when behind')
 
   // behindT: +dt only when behind AND on the ring band; any other step resets it
   const b = arena(), mb = stalkerAt(b, 0, 0)
@@ -184,6 +197,7 @@ function stalker(): void {
   // windup gate: zone 4 hazard 0.7/s, shade held behind on the ring; the first windup must come after the 0.25 s dwell
   const w = arena(), mw = stalkerAt(w, 0, 0)
   w.meta.zone = 4
+  w.player.energy = T.ai.flameRetreat // exactly at the C4 flame-retreat threshold (strict >), so retreat never triggers here
   w.player.facing = 0
   stalkerBrain(w, mw)
   Object.assign(mw, { x: w.player.x - mw.ringRadius, y: w.player.y, lungeCd: 0, behindT: 0 })
@@ -249,31 +263,9 @@ function facing(): void {
   ok(Math.abs(wrapPi(0 - 2.2)) > lim, 'theta 2.2 with facing 0 is BEHIND')
 }
 
-// 24 forced shades in the real cave, topped up every step; god mode so bites never end the run.
-function budget(): void {
-  const s = init()
-  startRun(s, '1', caveOf(parseSeed('1')))
-  s.settings.loaded = true
-  s.director.spawnT = 1e9
-  s.debug.god = true
-  const n = T.director.monstersMax
-  const t0 = performance.now()
-  for (let k = 0; k < 3600; k++) {
-    while (s.monsters.length < n) {
-      const pos = findSpawn(s, 'lurker') ?? { x: s.player.x + 30, y: s.player.y }
-      spawnMonster(s, 'lurker', pos.x, pos.y, lightRadius(s))
-    }
-    step(s, idle, DT)
-  }
-  const ms = performance.now() - t0
-  ok(s.meta.steps === 3600 && s.meta.screen === 'playing' && s.monsters.length > 0, '3 600 steps simulated with shades alive')
-  ok(ms < BUDGET_MS, '3 600 steps with ' + n + ' shades in ' + ms + ' ms (budget ' + BUDGET_MS + ' ms)')
-}
-
 export function run(): void {
   stateMachine()
   facing()
   stalker()
   escape()
-  budget()
 }

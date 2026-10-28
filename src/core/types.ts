@@ -1,7 +1,10 @@
-// L0 core: all State, entity, id, score, save and generator TYPES. No runtime code, no imports.
+// L0 core: all State, entity, id, score, save and generator TYPES. No runtime code; only type-only import/re-export of the monster types.
 // Spec: docs/architecture-modules-core.md §3.1 (state §5-§8, state-2 §1-§9, scoring-and-save §2/§5/§6; R-067/068/082/128/130/142/150).
 // State is JSON-only (no undefined, NaN, Map, Set, typed arrays); unions stay all-string (migrate's fill() compares typeof).
 // A new field also needs its default in init()/initPlayer()/spawn code and its DEFAULT_* template in migrate.ts.
+// Monster and MonsterAi live in types-monster.ts (300-line cap) and are re-exported here, so existing imports keep working.
+import type { Monster } from './types-monster.ts'
+export type { Monster, MonsterAi } from './types-monster.ts'
 
 // --- ids (state §5) ---
 export type MonsterKind = 'lurker' | 'stalker' | 'devourer'
@@ -126,30 +129,6 @@ export type World = {
   depthClass?: number // 1..4 (R-164), undefined means 3
 }
 
-export type MonsterAi = 'ring' | 'stalk' | 'windup' | 'lunge' | 'recover' | 'stunned' | 'dying'
-export type Monster = {
-  id: number
-  kind: MonsterKind
-  x: number; y: number // world px, centre
-  vx: number; vy: number // px/s
-  hp: number // int, 1 for all kinds
-  ai: MonsterAi
-  aiT: number // s ELAPSED in the current ai state
-  aiDur: number // s planned length of the state (0 = open-ended)
-  beat: number // int, 0-based beat INDEX during windup (R-130)
-  ringAngle: number // rad
-  ringRadius: number // px, current preferred distance from the player
-  orbitDir: number // +1 or -1
-  lungeDir: number // rad, locked at lunge start (R-069)
-  lungeCd: number // s until this shade may start another windup
-  stunned: number // s of stun left
-  seen: boolean // inside the light this step
-  contactT: number // s, lunge time of the bite latch; -1 = none
-  stuckT: number // s blocked by a wall
-  behindT: number // s a stalker has spent behind the player
-  lastX: number; lastY: number // px, position at the previous step (swept bite test, R-066)
-  fleeing: boolean // latched between trigger and exit of the light
-}
 export type Pickup = {
   id: number
   kind: PickupKind

@@ -96,14 +96,33 @@ export const T = {
       stalker: [0, 0.4, 0.4, 0.35],
       devourer: [0, 0, 0.15, 0.3],
     },
-    devourerMax: 1, spawnGapPx: [60, 140], spawnTries: 8,
+    devourerMax: 1, spawnGapPx: [135, 280], spawnTries: 48, // floor 135 = light radius 170 + gap keeps full-flame descent spawns outside nearRadius 300; ceiling 280 keeps first spawn early
     despawnPx: 560, flameOutSpawnMul: 1.5, attackSlots: [1, 1, 2, 2], firstSpawnS: 3,
+    nearCap: 2, // max monsters allowed inside nearRadius of the player (count)
+    nearRadius: 300, // px, distance from player that counts as "near"
+    calmS: 6, // s, calm-down window after a retreat before spawning near again
   },
   ai: {
     separationPx: 8, separationPxS: 60, stuckFrac: 0.3, stuckNudgeS: 0.5,
     stuckRelocateS: 2.5, fleeMul: 1.4, eyeRangeExtraPx: 220, darkLungeMul: 1.0,
     flameOutLungeMul: 2.5, stalkerBehindDeg: 110, stalkerArcPx: 0, bonkS: 0.25,
     recoverBackPx: 40, stalkerRetreatPx: 60, // R-074
+    viewRange: 260, // px, sight range (> max ring)
+    viewHalfAngle: 1.2, // rad, sight cone half angle (~69 deg)
+    noticeT: 0.6, // s, detection fill time
+    hearRadius: 90, // px, hearing radius
+    hearSpeed: 60, // px/s, player speed needed to be heard
+    loseT: 1.0, // s, hunting without sensing before searching
+    searchT: 6, // s, total search budget (walk + wait)
+    patrolRadius: 160, // px, patrol range around home
+    patrolSpeedMul: 0.5, // x K.ringSpeedPxS while patrolling
+    patrolPauseT: 1.5, // s, pause at each patrol point
+    retreatT: 5, // s, retreat duration
+    retreatSpeedMul: 1, // x K.ringSpeedPxS while retreating
+    flameRetreat: 80, // flame energy (0-100) above which near monsters retreat
+    stalkCommitT: 0.8, // s, stalker commits to a chosen angle
+    flowWindow: 40, // tiles, Chebyshev half-width of the flow field window
+    flowStuckT: 0.25, // s, stuck time before flow-field fallback (< stuckNudgeS)
   },
   escape: {
     sprintMul: 2.0, accelPxS2: 1800, maxAlive: 8, spawnIntervalS: 1.2, // maxAlive/interval FINAL (economy-3 §2.1)

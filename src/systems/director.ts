@@ -11,7 +11,9 @@ import { spawnMonster } from '../entities/monster.ts'
 import { circleHitsSolid } from '../world/collide.ts'
 import { idx, inMap, TILE, worldToTile } from '../world/grid.ts'
 import { exitDistAt, pathDistAt } from '../world/caches.ts'
+import { lineOfSightPx } from '../world/los.ts'
 import { insideLight, lightRadius } from './light.ts'
+import { nearCount, startRetreat } from './ai-retreat.ts'
 
 const KINDS: readonly MonsterKind[] = ['lurker', 'stalker', 'devourer'] // fixed pick order (spec §5)
 const EPS = 1e-9 // R-127: accumulated-time thresholds compare x + EPS >= limit
@@ -33,6 +35,7 @@ export function findSpawn(s: State, kind: MonsterKind): { x: number; y: number }
     const x = p.x + Math.cos(a) * r, y = p.y + Math.sin(a) * r
     const tx = worldToTile(x), ty = worldToTile(y)
     if (!inMap(s, tx, ty) || circleHitsSolid(s, x, y, K.radiusPx) || (!esc && insideLight(s, x, y, K.radiusPx))) continue
+    if (!esc && lineOfSightPx(s, p.x, p.y, x, y)) continue // D3: descent spawns must be out of the player's line of sight (escape unchanged)
     const d = fieldAt(s, idx(s, tx, ty))
     if (d < 0 || Math.abs(d - pDist) > Math.ceil(r / TILE) + 4) continue
     result = { x, y }
@@ -53,10 +56,19 @@ export function stepDirector(s: State, dt: number): void {
   dir.alive.lurker = dir.alive.stalker = dir.alive.devourer = 0
   let live = 0
   for (const m of s.monsters) if (m.ai !== 'dying') { dir.alive[m.kind] += 1; live += 1 }
+  if (!esc) { // C5: near-cap enforcement every director step — the k-th near monster past the cap retreats (never splice visible monsters)
+    let near = 0
+    for (const m of s.monsters) {
+      if (m.ai === 'dying' || Math.hypot(m.x - p.x, m.y - p.y) > T.director.nearRadius) continue
+      near += 1
+      if (near > T.director.nearCap && (m.ai === 'ring' || m.ai === 'stalk') && m.retreatT <= 0 && m.kind !== 'devourer') startRetreat(m)
+    }
+  }
   dir.spawnT -= dt
   if (dir.spawnT > EPS) return // R-127: <= EPS counts as elapsed
   dir.spawnT = esc ? T.escape.spawnIntervalS : zt(T.director.spawnIntervalS, z) / (A * (p.energy <= 0 ? T.director.flameOutSpawnMul : 1))
   if (live >= (esc ? T.escape.maxAlive : clamp(Math.round(zt(T.director.maxAlive, z) * A), 1, T.director.monstersMax))) return
+  if (!esc && nearCount(s) >= T.director.nearCap) return // C5: no new shade while the near radius is full (before the pick draw, so a refusal consumes no RNG; timer already re-armed above)
   const w = KINDS.map(k => k === 'devourer' && dir.alive.devourer >= T.director.devourerMax ? 0 : zt(T.director.weights[k], z))
   let u = rand(s, 'gameplay') * w.reduce((a, b) => a + b, 0), pick = -1
   for (let i = 0; i < KINDS.length; i++) {
@@ -68,6 +80,7 @@ export function stepDirector(s: State, dt: number): void {
   if (pick < 0) return
   const pos = findSpawn(s, KINDS[pick])
   if (!pos) return
-  spawnMonster(s, KINDS[pick], pos.x, pos.y, esc ? 0 : lightRadius(s))
+  const m = spawnMonster(s, KINDS[pick], pos.x, pos.y, esc ? 0 : lightRadius(s))
+  if (!esc) m.awareness = 'unaware' // A5: descent spawns start unaware (escape stays relentless; stepAwareness forces hunting in escape anyway)
   dir.alive[KINDS[pick]] += 1
 }

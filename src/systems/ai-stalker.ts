@@ -1,4 +1,4 @@
-// L3 systems: stalker brain (circle toward the spot behind the player, flee from the light, count the time spent behind).
+// L3 systems: stalker brain (circle toward the spot behind the player, commit-latched, hold while looked at, flee from the light, count the time spent behind).
 // Spec: docs/architecture-monsters-ai.md §7 (behind predicate, FSM table, worked ring speed), §2 (flee latch), §3.3 (seek, chase band).
 // Like every brain it only returns the desired velocity and updates ring / flee / behindT bookkeeping. The windup, lunge and recover
 // numbers (0.55 / 0.24 / 0.54 s, retreat to ringRadius + 100 at 102 px/s, 1.2 s recover, lungeCd 2.5-4, start cd 3-5) are table values
@@ -34,9 +34,15 @@ export const stalkerBrain: Brain = (s, m) => {
     const v = K.ringSpeedPxS * T.ai.fleeMul
     return [Math.cos(m.ringAngle) * v, Math.sin(m.ringAngle) * v]
   }
-  // chase the angle behind the player the short way round, at most ringSpeed / ringRadius rad/s
-  const delta = wrapPi(p.facing + Math.PI - m.ringAngle), step = K.ringSpeedPxS / Math.max(m.ringRadius, 1) * STEP_S
+  // E2 latch: commit the angle behind the player for T.ai.stalkCommitT s, re-pick only when the commit expires (no per-frame re-orient).
+  // ponytail: latch ceiling = one fixed commit window for all zones, upgrade path = per-zone commit time.
+  if (m.stalkT <= 0) { m.stalkAngle = wrapPi(p.facing + Math.PI); m.stalkT = T.ai.stalkCommitT }
+  m.stalkT = Math.max(0, m.stalkT - STEP_S)
+  // chase the committed angle the short way round, at most ringSpeed / ringRadius rad/s
+  const delta = wrapPi(m.stalkAngle - m.ringAngle), step = K.ringSpeedPxS / Math.max(m.ringRadius, 1) * STEP_S
   m.ringAngle = wrapPi(m.ringAngle + Math.sign(delta) * Math.min(Math.abs(delta), step))
+  // E3a: the player looks at the shade (not behind) -> hold position, no approach; the ring bookkeeping above stays live
+  if (!isBehind(s, m)) return [0, 0]
   return seek(m.x, m.y, p.x + Math.cos(m.ringAngle) * m.ringRadius, p.y + Math.sin(m.ringAngle) * m.ringRadius,
     Math.abs(d - m.ringRadius) > CHASE_BAND_PX ? K.chaseSpeedPxS : K.ringSpeedPxS)
 }

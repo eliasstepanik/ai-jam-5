@@ -5,6 +5,7 @@ import type { Input } from '../main.ts'
 import type { CaveResult, Monster, Rock, State } from '../core/types.ts'
 import { init } from '../core/state.ts'
 import { hashSeed } from '../core/rng.ts'
+import { DEFAULT_MONSTER } from '../core/migrate.ts'
 import { parseSeed } from '../core/seed.ts'
 import { T } from '../core/tuning.ts'
 import { finalizeCave, generateCave, MAX_ATTEMPTS } from '../world/generate.ts'
@@ -48,7 +49,7 @@ function warned(f: () => void): string[] {
 }
 
 const monster = (id: number): Monster => ({
-  id, kind: 'lurker', x: 100, y: 100, vx: 0, vy: 0, hp: 1, ai: 'ring', aiT: 0, aiDur: 0, beat: 0, ringAngle: 0, ringRadius: 0,
+  ...DEFAULT_MONSTER, id, kind: 'lurker', x: 100, y: 100, vx: 0, vy: 0, hp: 1, ai: 'ring', aiT: 0, aiDur: 0, beat: 0, ringAngle: 0, ringRadius: 0,
   orbitDir: 1, lungeDir: 0, lungeCd: 0, stunned: 0, seen: false, contactT: -1, stuckT: 0, behindT: 0, lastX: 100, lastY: 100, fleeing: false,
 })
 

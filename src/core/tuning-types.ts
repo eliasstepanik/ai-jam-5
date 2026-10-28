@@ -58,12 +58,33 @@ export type Tuning = {
     monstersMax: number; maxAlive: Z4; spawnIntervalS: Z4; weights: Record<MonsterKind, Z4>
     devourerMax: number; spawnGapPx: [number, number]; spawnTries: number
     despawnPx: number; flameOutSpawnMul: number; attackSlots: Z4; firstSpawnS: number
+    // Issue #113 keys (values in tuning.ts).
+    nearCap: number // max monsters allowed within nearRadius of the player (descent only)
+    nearRadius: number // px, distance counted as "near" for nearCap
+    calmS: number // s, calm-down window after a retreat before the director may spawn near again
   }
   ai: {
     separationPx: number; separationPxS: number; stuckFrac: number; stuckNudgeS: number
     stuckRelocateS: number; fleeMul: number; eyeRangeExtraPx: number; darkLungeMul: number
     flameOutLungeMul: number; stalkerBehindDeg: number; stalkerArcPx: number; bonkS: number
     recoverBackPx: number; stalkerRetreatPx: number
+    // Issue #113 keys (values in tuning.ts).
+    viewRange: number // px, sight range of the vision cone
+    viewHalfAngle: number // rad, half angle of the vision cone
+    noticeT: number // s, time in view to fill the detection meter
+    hearRadius: number // px, radius within which a fast player is heard
+    hearSpeed: number // px/s, player speed above which hearing triggers
+    loseT: number // s, hunting without sensing the player before switching to searching
+    searchT: number // s, total search budget (walk to last known position plus wait)
+    patrolRadius: number // px, patrol wander radius around the monster's home
+    patrolSpeedMul: number // x ringSpeedPxS, patrol walk speed
+    patrolPauseT: number // s, pause at each patrol point
+    retreatT: number // s, retreat duration
+    retreatSpeedMul: number // x ringSpeedPxS, retreat speed
+    flameRetreat: number // flame energy (0-100) above which near monsters retreat
+    stalkCommitT: number // s, stalker commits to its chosen approach angle
+    flowWindow: number // tiles, Chebyshev half-width of the flow-field window
+    flowStuckT: number // s, stuck time before the flow field takes over (< stuckNudgeS)
   }
   escape: {
     sprintMul: number; accelPxS2: number; maxAlive: number; spawnIntervalS: number

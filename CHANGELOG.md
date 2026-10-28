@@ -55,6 +55,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added 33 confirmed Blender source scenes under `blender/`, grouped by character, with their source and SHA-256 manifest.
 
+- Shades are now aware. Each has a state: unaware, suspicious, hunting or searching. A shade notices the player by sight (a view cone with line of sight) or by sound (movement nearby), remembers the last place it saw you, searches there, then gives up and returns to its patrol (issue #113).
+- Unaware shades idle and patrol around their home point and keep out of the light.
+- Shades retreat after a lunge and when the flame is full, and at most a few shades crowd within about 300 px of the player in the descent (near cap).
+- A windowed BFS flow field: a hunting shade that gets stuck on walls follows the corridors toward the player instead of seeking straight through them.
+- The debug overlay (the existing path-debug toggle) now shows each shade's awareness state, its view cone, its last known player position and its flow direction.
 - Dev mode shows the commit the checkout is running (7-char short sha as on GitHub, small label at the top centre). A dev-only Vite endpoint `/__commit` reads `git rev-parse --short=7 HEAD` per request, and the game re-fetches it every 30 s, so the label follows a server-side `git reset --hard` without a restart. Absent from `vite build`.
 - Shadow mist around the three shadow creatures: soft dark wisps drift off each Lurker, Stalker and Devourer (small and quick, long thin trail, big and dense), trail behind them while they move, thicken during windup and lunge, spread out and fade as they die, and idle when the enemy AI is frozen in the dev panel. Purely visual: drawn procedurally in the particle pass under the darkness, capped per enemy and for the whole screen, thinned by the render quality tier and by Reduced flash, and it never touches gameplay state or the seeded random streams. A new check covers the per-type emission, state response, caps and the read-only guarantee.
 - Crack decor from the tileset: sparse deterministic ground cracks (about 5% of floor tiles, small and large) and wall-face cracks (about 8% of visible faces), chosen from a per-tile seed hash and baked into the chunk cache. Entrance, Beacon chamber and vein walls stay clean. A new check covers determinism, density, placement and the tileset frame names; floor variants are checked to be evenly spread over all 10.
@@ -145,6 +150,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Descent spawns are placed out of the player's line of sight and farther out: 135-280 px beyond the light edge, with up to 48 placement attempts, and a cooldown follows an encounter before the next spawn. Escape-phase spawns are unchanged and stay relentless.
+- Stalkers commit to an approach angle for a short time and hold still while the player is looking at them.
+- Shade separation now sums the pushes and moves each shade once per step: same spacing, less work per frame.
+- New AI tuning values live in `src/core/tuning.ts`.
 - Audio sample pair is Ogg Opus + MP3 (the plan said Ogg + m4a). Audio assets live in `src/assets/audio`, and `scripts/check-assets.ts` validates the new pair.
 - `game.ts` calls `audioStep` after `platformStep`.
 - Title screen: the layout moved to make room for the Depth row.

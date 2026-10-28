@@ -1,6 +1,10 @@
 import type { State, TilePt, Zone } from '../core/types.ts'
 import { depthOf, zoneOfDepth } from '../core/score.ts'
+import { TILE } from '../core/state.ts'
+import { T } from '../core/tuning.ts'
 import { bfs4 } from './bfs.ts'
+import { buildFlow } from './flowfield.ts'
+import type { FlowField } from './flowfield.ts'
 import { beaconRoomMask } from './gen/places.ts'
 
 type Entry<T> = { key: string; v: T }
@@ -13,6 +17,9 @@ let zoneE: Entry<Uint8Array> | null = null
 let beaconE: Entry<Uint8Array> | null = null
 let exitBufs: [Int32Array, Int32Array] | null = null
 let exitFlip = 0
+let flowE: Entry<FlowField | null> | null = null
+let flowBufs: [Int16Array, Int16Array] | null = null
+let flowFlip = 0
 let work = new Uint8Array(0)
 
 const baseKey = (s: State): string => s.meta.runId + ':' + s.world.tilesHash + ':' + s.world.w + 'x' + s.world.h
@@ -90,6 +97,24 @@ export function getExitDist(s: State): Int32Array {
   return v
 }
 
+// Windowed flow field rooted at the player tile (issue #113 F4). Key has solidSig, not pendingSig, like getSolid.
+export function getFlowField(s: State): FlowField | null {
+  const { w, h } = s.world, win = T.ai.flowWindow
+  const ptx = Math.floor(s.player.x / TILE), pty = Math.floor(s.player.y / TILE)
+  const key = baseKey(s) + ':' + s.world.solidSig + ':' + ptx + ',' + pty + ':' + win
+  if (flowE?.key === key) return flowE.v
+  const solid = getSolid(s), inMap = ptx >= 0 && pty >= 0 && ptx < w && pty < h
+  if (!inMap || solid[pty * w + ptx] === 1) { flowE = { key, v: null }; return null }
+  const n = (2 * win + 1) * (2 * win + 1)
+  if (!flowBufs || flowBufs[0].length !== n) { flowBufs = [new Int16Array(n), new Int16Array(n)]; flowFlip = 0 }
+  // ponytail: two ping-pong buffers, not a pool; a reader may hold the previous field for one rebuild only.
+  const dist = flowBufs[flowFlip]
+  buildFlow(solid, w, h, ptx, pty, win, dist)
+  flowFlip = 1 - flowFlip
+  flowE = { key, v: { dist, ptx, pty, win } }
+  return flowE.v
+}
+
 export function getZoneField(s: State): Uint8Array {
   const key = baseKey(s)
   if (zoneE?.key === key) return zoneE.v
@@ -120,5 +145,8 @@ export function clearCaches(): void {
   depthE = exitE = null
   exitBufs = null
   exitFlip = 0
+  flowE = null
+  flowBufs = null
+  flowFlip = 0
   work = new Uint8Array(0)
 }

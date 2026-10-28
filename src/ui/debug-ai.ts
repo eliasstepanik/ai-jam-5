@@ -3,8 +3,10 @@
 // Smoke-tested by hand in `npm run dev` only: checks import L0-L3 and cannot reach src/ui. Pure draw: never writes State.
 // ponytail: dev-only, allocates a few strings and a label list per frame; no pooling.
 import type { Monster, MonsterKind, State } from '../core/types.ts'
+import type { Awareness } from '../core/types-monster.ts'
 import { clamp } from '../core/math.ts'
 import { deg, T, zt } from '../core/tuning.ts'
+import { flowDir } from '../systems/ai-flow.ts'
 import { STALKER_BEHIND_S } from '../systems/ai-stalker.ts'
 import { lightRadius } from '../systems/light.ts'
 import { lungeHazard } from '../systems/monsters.ts'
@@ -14,6 +16,8 @@ import type { View } from '../render/view.ts'
 import { FONT } from './draw.ts'
 
 const KIND_COL: Record<MonsterKind, string> = { lurker: '#00e5ff', stalker: '#ffe600', devourer: '#ff2bd6' }
+const AWARE_COL: Record<Awareness, string> = { unaware: '#9e9e9e', suspicious: '#ffe600', hunting: '#ff3030', searching: '#ff9800' }
+const FLOW_COL = '#00ff88'
 const KINDS: readonly MonsterKind[] = ['lurker', 'stalker', 'devourer']
 const BAR_PX = 24 // behindT bar width, world px
 
@@ -75,9 +79,39 @@ function monsterLayer(ctx: CanvasRenderingContext2D, s: State, one: number, labe
       ctx.fillStyle = m.behindT + 1e-9 >= STALKER_BEHIND_S ? '#ff3030' : '#ffe600'
       ctx.fillRect(m.x - BAR_PX / 2, m.y - K.radiusPx - 6 * one, BAR_PX * clamp(m.behindT / STALKER_BEHIND_S, 0, 1), 3 * one)
     }
+    // Awareness state (issue #113 G1). ponytail: cone drawn for every non-hunting state
+    // (hunting already shows the ring); flow arrow only when flow would actually engage (stuckT > flowStuckT).
+    const acol = AWARE_COL[m.awareness]
+    if (m.awareness !== 'hunting') { // view cone: T.ai.viewRange / viewHalfAngle around m.facing
+      ctx.globalAlpha = 0.12
+      ctx.fillStyle = acol
+      ctx.beginPath()
+      ctx.moveTo(m.x, m.y)
+      ctx.arc(m.x, m.y, T.ai.viewRange, m.facing - T.ai.viewHalfAngle, m.facing + T.ai.viewHalfAngle)
+      ctx.closePath()
+      ctx.fill()
+      ctx.globalAlpha = 1
+    }
+    if (m.awareness === 'searching') { // last-known-position cross
+      const c = 6 * one
+      line(ctx, m.lastKnownX - c, m.lastKnownY, m.lastKnownX + c, m.lastKnownY, acol)
+      line(ctx, m.lastKnownX, m.lastKnownY - c, m.lastKnownX, m.lastKnownY + c, acol)
+    }
+    if (m.stuckT > T.ai.flowStuckT) { // flow direction arrow (mirrors when flowSeek engages)
+      const fd = flowDir(s, m)
+      if (fd) {
+        const len = 40 * one, fx = m.x + fd[0] * len, fy = m.y + fd[1] * len
+        const a = Math.atan2(fd[1], fd[0])
+        line(ctx, m.x, m.y, fx, fy, FLOW_COL)
+        line(ctx, fx, fy, fx - Math.cos(a - 0.5) * 8 * one, fy - Math.sin(a - 0.5) * 8 * one, FLOW_COL)
+        line(ctx, fx, fy, fx - Math.cos(a + 0.5) * 8 * one, fy - Math.sin(a + 0.5) * 8 * one, FLOW_COL)
+      }
+    }
     const str = `${m.ai} ${m.aiT.toFixed(2)}/${m.aiDur.toFixed(2)} ${m.lungeCd.toFixed(2)} ${lungeHazard(s, m).toFixed(3)}`
       + (m.fleeing ? ' F' : '') + (m.stuckT > 0 ? ' S' + m.stuckT.toFixed(2) : '') + (m.contactT >= 0 ? ' L' + m.contactT.toFixed(2) : '')
     labels.push({ x: m.x, y: m.y + K.radiusPx + 4 * one, str, col })
+    const tags = m.awareness + (m.retreatT > 0 ? ' RET' : '') + (m.awareness === 'unaware' && m.patrolT !== 0 ? ' PAT' : '')
+    labels.push({ x: m.x, y: m.y + K.radiusPx + 16 * one, str: tags, col: acol })
   }
 }
 
@@ -97,7 +131,6 @@ function worldLayer(ctx: CanvasRenderingContext2D, s: State, v: View): Label[] {
     ctx.closePath()
     ctx.fill()
   }
-
   ctx.setLineDash([])
   monsterLayer(ctx, s, one, labels)
   return labels
