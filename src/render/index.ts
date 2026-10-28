@@ -21,6 +21,7 @@ import { drawMist } from './mist.ts'
 import { drawPixelFire } from './pixel-fire.ts'
 import { vineSites } from './vine-sites.ts'
 import { drawEscapeWisp } from './wisp.ts'
+import { drawCopperTrail } from './copper-trail.ts'
 import { drawOreEmission } from './ore-emission.ts'
 import { drawZonePalette } from './zone-palette.ts'
 import { drawBeaconMode, drawFlashes, drawVignettes } from './overlay.ts'
@@ -85,6 +86,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   drawParticles(ctx, s, v, 'add') // pass 18: sparks above the darkness
   drawPixelFire(ctx, s, v)
   drawEscapeWisp(ctx, s, v)
+  drawCopperTrail(ctx, s, v)
   ctx.globalCompositeOperation = 'source-over'
   ctx.globalAlpha = 1
   passMark('glow')
