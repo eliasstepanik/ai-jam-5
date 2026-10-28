@@ -51,6 +51,7 @@ export type AudioRes = {
   lastSeq: number; lastScreen: string
   unlock: { el: EventTarget; type: string; fn: EventListener }[]
   duck: Record<Group, GainNode> | null; masterLp: BiquadFilterNode | null
+  score?: { element: HTMLAudioElement; source: MediaElementAudioSourceNode; gain: GainNode; bus: GainNode; level: number; pending: boolean; blocked: boolean }
   lastMaster: number; pauseAt: number
   nextCrackle: number; nextBeat: number; crackleN: number; growlAt: number
   broken: Set<SoundId>; synthGen: number
@@ -137,6 +138,11 @@ function releaseRes(r: Resources): void {
   if (r.debug?.map) canvases.add(r.debug.map.canvas)
   for (const canvas of canvases) canvas.width = canvas.height = 0
   r.images.tints.clear(); r.images.rects.clear(); r.light.clear(); r.swapped?.clear(); r.tiles?.chunks.clear()
+  if (r.audio.score) {
+    const stream = r.audio.score
+    stream.element.pause(); stream.element.removeAttribute('src'); stream.element.load()
+    stream.source.disconnect(); stream.gain.disconnect()
+  }
   const sources = new Set<AudioScheduledSourceNode>(r.audio.music.srcs)
   const outputs = new Set<AudioNode>(r.audio.music.gains)
   for (const v of new Set([...r.audio.voices, ...Object.values(r.audio.loops)])) {

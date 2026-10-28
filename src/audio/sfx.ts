@@ -8,11 +8,13 @@ import { hash2 } from '../core/noise.ts'
 import type { MonsterKind, State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
 import { SYNTH } from './synth-2.ts'
+import { wantLoop, stopLoop } from './loop-voice.ts'
+import type { LoopVoice } from './loop-voice.ts'
+import { footstepMode } from '../core/footsteps.ts'
 import type { PlayParams } from './trigger.ts'
 
 const MAX_ONESHOTS = 24
 const RETRIGGER_S = 0.03
-const LOOP_MAX = 890 // recipes build 900 s of source (synth-2/3 LOOP_S); a loop is rebuilt before it runs dry
 const TAIL_S = 5.5 // sfx_beacon-horn echo tail outlives its sources (R3 §2)
 const ZONE_RATE = [1, 0.96, 0.92, 0.88] as const
 const GROWL: Record<MonsterKind, { rate: number; gain: number }> = {
@@ -22,7 +24,6 @@ const GROWL: Record<MonsterKind, { rate: number; gain: number }> = {
 // Camera mirror: play() has no State (PlayParams carry WORLD px), so loopStep writes the camera here every step
 // (engine runs it before consuming events). ponytail: one step of camera lag, fine for 0.6 max pan.
 type CamRes = AudioRes & { cam?: { x: number; y: number } }
-type LoopVoice = Voice & { lp?: BiquadFilterNode; run?: number } // run: meta.runId an ambience bed belongs to
 type ShotVoice = Voice & { pan?: StereoPannerNode } // positional one-shots: out -> pan -> group
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v))
 const def = (id: SoundId): SoundDef => SOUNDS[id]
@@ -158,65 +159,13 @@ export function pruneVoices(a: AudioRes): void {
 }
 
 // ---------- loops ----------
-function startLoop(a: AudioRes, id: SoundId, p: PlayParams): LoopVoice | null {
-  const ctx = a.ctx!
-  if (a.broken.has(id)) return null
-  const d = def(id)
-  const t = ctx.currentTime
-  const out = ctx.createGain()
-  out.gain.setValueAtTime(0, t).linearRampToValueAtTime(d.gain, t + 0.05) // 50 ms fade-in: sources start at full level
-  out.connect(a.groups![d.group])
-  const v: LoopVoice = { id, pri: d.pri, t0: t, stopAt: t + LOOP_MAX, out, nodes: [] }
-  const buf = a.buffers.get(d.file ?? id)
-  try {
-    if (buf) { // sample loop (amb_cave): lowpass in front, loop points from SOUNDS
-      const src = ctx.createBufferSource()
-      src.buffer = buf
-      src.loop = true
-      if (d.loop) [src.loopStart, src.loopEnd] = d.loop
-      v.lp = ctx.createBiquadFilter()
-      v.lp.frequency.value = 8000
-      src.connect(v.lp).connect(out)
-      src.start(t)
-      v.nodes = [src]
-      v.stopAt = Infinity
-    } else {
-      const r = SYNTH[id]
-      if (!r) throw new Error('no recipe')
-      v.nodes = r(a, out, t, p)
-    }
-  } catch (e) {
-    out.disconnect()
-    warnBroken(a, id, e)
-    return null
-  }
-  a.loops[id] = v
-  return v
-}
-
-function stopLoop(a: AudioRes, id: SoundId): void {
-  const v = a.loops[id]
-  if (!v) return
-  delete a.loops[id]
-  silence(v, a.ctx!.currentTime, 0.05, 0.25)
-}
-
-/** Keep loop `id` running iff `on`; returns the live voice (started this call if needed). */
-function want(a: AudioRes, id: SoundId, on: boolean, p: PlayParams): LoopVoice | null {
-  if (!on) return stopLoop(a, id), null
-  const v = a.loops[id] as LoopVoice | undefined
-  if (v && v.stopAt > a.ctx!.currentTime) return v
-  if (v) stopLoop(a, id) // ran out of source: rebuild
-  return startLoop(a, id, p)
-}
-
 const param = (n: AudioScheduledSourceNode | undefined): AudioParam | null => (n as ConstantSourceNode | undefined)?.offset ?? null
 
 // Node order required of SYNTH['sfx_flame-loop'] (synth-2.ts LOOP CONTRACT): [0] brown, [1] lp Hz, [2] body gain,
 // [3] copper bp gain, [4] ember pop gate, [5] pink, [6] flicker LFO. [1..4] are ConstantSourceNodes whose .offset loopStep drives.
 function flameStep(a: AudioRes, s: State, now: number): void {
   const pl = s.player
-  const v = want(a, 'sfx_flame-loop', s.meta.phase === 'descent' && pl.energy > 0, { seq: 0, q: 1, mineral: pl.activeMineral })
+  const v = wantLoop(a, 'sfx_flame-loop', s.meta.phase === 'descent' && pl.energy > 0, { seq: 0, q: 1, mineral: pl.activeMineral })
   if (!v) return
   const e = clamp(pl.energy / pl.energyMax, 0, 1)
   const k = pl.activeMineral === 'sodium' ? 1.25 : pl.activeMineral === 'strontium' ? 0.7 : 1
@@ -252,7 +201,7 @@ function growlStep(res: Resources, s: State, now: number): void {
 /** amb_cave outlives 'playing': it runs on playing/paused/dead/won (duckFor sets the level) and restarts on a new runId. */
 function ambStep(a: AudioRes, s: State, now: number): void {
   if ((a.loops.amb_cave as LoopVoice | undefined)?.run !== s.meta.runId) stopLoop(a, 'amb_cave')
-  const amb = want(a, 'amb_cave', s.meta.screen !== 'title' && s.meta.screen !== 'help' && (s.meta.screen !== 'settings' || s.ui.settingsFrom === 'paused'), { seq: 0 })
+  const amb = wantLoop(a, 'amb_cave', s.meta.screen !== 'title' && s.meta.screen !== 'help' && (s.meta.screen !== 'settings' || s.ui.settingsFrom === 'paused'), { seq: 0 })
   if (!amb) return
   amb.run = s.meta.runId
   ;(amb.nodes[0] as AudioBufferSourceNode | undefined)?.playbackRate?.setTargetAtTime(ZONE_RATE[s.meta.zone - 1] ?? 1, now, 2)
@@ -277,6 +226,9 @@ export function loopStep(res: Resources, s: State): void {
     return
   }
   const pl = s.player
+  const footsteps = footstepMode(s)
+  wantLoop(a, 'sfx_player-walk', footsteps === 'walk', { seq: 0 })
+  wantLoop(a, 'sfx_player-run', footsteps === 'run', { seq: 0 })
   flameStep(a, s, now)
   // heartbeat: lub-dub recipe scheduled ahead, one beat per 0.857 s while hp === 1
   if (pl.hp === 1) {
@@ -287,8 +239,8 @@ export function loopStep(res: Resources, s: State): void {
     }
   } else a.nextBeat = 0
   const charging = pl.beaconHold > 0 && !s.world.beaconLit
-  want(a, 'sfx_beacon-charge', charging, { seq: 0, q: clamp(pl.beaconHold / T.beacon.holdS, 0, 1) })
-  const rumble = want(a, 'sfx_cave-rumble', s.meta.phase === 'escape', { seq: 0 })
+  wantLoop(a, 'sfx_beacon-charge', charging, { seq: 0, q: clamp(pl.beaconHold / T.beacon.holdS, 0, 1) })
+  const rumble = wantLoop(a, 'sfx_cave-rumble', s.meta.phase === 'escape', { seq: 0 })
   if (rumble && a.lastSeq >= 0 && s.fx.events.some((e) => e.kind === 'rockLand' && e.seq > a.lastSeq)) {
     const base = def('sfx_cave-rumble').gain
     rumble.out.gain.cancelScheduledValues(now)

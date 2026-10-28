@@ -1,0 +1,55 @@
+Supplied audio delivery - 2026-10-28
+Owner request: Beacon_Run_8min for music; TorchSFX while burning; playerstep
+for walking, double cadence during sprinting after the Beacon is lit.
+Related #105 (eliasstepanik), partial implementation, awaiting confirmation.
+
+Source WAVs read unchanged (not shipped):
+Beacon_Run_8min.wav: 480s stereo 48kHz, SHA256
+23cc630379978b6ca582c31240081a76f6994c1e797c87011943b885f8e1881a
+TorchSFX.wav: 1.48s stereo 48kHz, SHA256
+895a203911dd4a27550411cf2c609b9b2d717dfd6a0ada1e5da21d2d8ab3c41c
+playerstep.wav: 3.2s stereo 48kHz, SHA256
+3e48cc10876d92aeff927fcf8a747e260b58d3a6cad44828bb61befd735baef4
+
+FFmpeg 7.1: music -18 LUFS, -1.5dBTP, 30ms edge fades; effects mono,
+peak normalised to .8 with 5ms edge fades. Running uses atempo=2,
+pad/trim to 1.6s, preserving pitch. Export Opus/Ogg and MP3 at 48kbps;
+music Opus CBR, effects Opus VBR. No source WAV modifications.
+
+The full 8-minute score streams through the music bus using one persistent
+media element, keeping it out of the decoded AudioBuffer cache. Title,
+Help/Settings and descent/escape share that track without restarting it on
+phase changes. Pause/hidden tabs freeze playback. Existing Music slider,
+effects slider, M mute and ducking still control the existing graph.
+
+Footsteps use real movement, not held keys. No footsteps while idle,
+blocked, rolling, paused or in hitstop. Post-Beacon sprint uses the 1.6s loop,
+ordinary walking the 3.2s loop. Supplied torch loop replaces the synth once
+decoded; extinction stops it, relighting restarts it. Missing footstep buffers
+wait without disabling their id. Loop stop releases nodes after the short fade.
+
+Budgets: 8 runtime files. Music 2917244-byte Opus / 2880524-byte MP3;
+whole per-format audio totals 2955261 / 2919968 bytes, below unchanged 3.3MiB
+limits. The supplied eight-minute score gets a named 3.1MiB per-file exception;
+all other sound files keep the 900KiB limit. Native source lengths supersede
+older short bar-loop lengths. No docs snapshot edits; owner KB resync needed.
+
+Verification:
+- Full npm run check passes; production TypeScript/Vite build passes.
+- Pure movement tests: walking/sprinting, Beacon gate, wall/idle, roll,
+  hitstop and every non-playing screen. Catalog covers 45 ids; 11 still pending.
+- Real browser: music 480.0065s (Opus) / 480s (MP3); footsteps 3.2s/1.6s;
+  torch 1.48s. Only the 3 short samples enter the decoded buffer cache.
+- Actual source loops follow walking, double cadence, collision/idle/roll,
+  torch out/relight and pause. Music wraps from end to ~0.5s as expected.
+- Actual main host HMR preserves the sole media element, current position and
+  live running loop, with no duplicate music or nodes.
+- Late sample delivery replaces synth fallback; missing footstep sample waits
+  safely and starts once ready. Stream analyser RMS >0 confirms audio signal.
+- Production MP3 fallback plays, decodes all short samples and hides developer
+  UI without opt-in. Browser console: no errors or warnings.
+
+#105 is NOT complete: separate danger layer, cave ambience, win/death stingers
+are still undelivered. The three main music situations intentionally share the
+owner-selected full score. Leave broader issue open awaiting remaining work.
+IN PROGRESS / awaiting owner audition and gameplay confirmation.
