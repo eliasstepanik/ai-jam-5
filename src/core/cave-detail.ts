@@ -1,5 +1,6 @@
 // Pure deterministic decoration choices. All details are non-blocking overlays.
 import { hash2 } from './noise.ts'
+import type { PurposeClass } from './cave-purpose.ts'
 const series = (prefix: string, n: number) => Array.from({ length: n }, (_, i) => prefix + '0' + (i + 1))
 export const GROUND_DETAILS = [...series('ground_pebbles_', 3), ...series('ground_rubble_', 3), ...series('ground_moss_', 2), ...series('ground_vine_', 2)]
 export const WALL_DETAILS = [...series('wall_vine_', 4), ...series('wall_roots_', 2), ...series('wall_moss_', 3)]
@@ -15,8 +16,16 @@ function pickFamily(weights: readonly number[], u: number): number {
   return weights.length - 1
 }
 const frame = (names: readonly string[], from: number, n: number, u: number): string => names[from + Math.floor(u * n)]
-// depth01 in [0,1] (0 = entrance, 1 = Beacon); wet = near water. Replaces the old zone integer.
-export function floorDetail(tiles: string, w: number, h: number, x: number, y: number, seed: number, depth01: number, wet = false): string | null {
+// Purpose-class bonus weights (G9). cls is the class of the tile (cave-purpose.ts classAt); undefined adds exactly 0 = the A4 result.
+// Only rubble, pebble and moss weights grow; the vine term never reads cls. Floor: collapse -> rubble, wall-adjacent -> pebbles
+// (floorDetail only fires with floor on all 4 sides, so wd >= 2 and a wall within 2 is the closest "near a wd == 1 wall" it can see),
+// wet/life -> moss. Wall: wet/life -> moss only (walls have no pebble or rubble frames).
+// ponytail: bonuses are flat constants tuned by eye; per-class tables if more classes need detail.
+const pebbleBonus = (cls: PurposeClass | undefined, wallAdj: boolean): number => cls !== undefined && cls !== 'none' && wallAdj ? 0.5 : 0
+const rubbleBonus = (cls: PurposeClass | undefined): number => cls === 'collapse' ? 1.2 : 0
+const mossBonus = (cls: PurposeClass | undefined): number => cls === 'wet' ? 0.7 : cls === 'life' ? 0.5 : 0
+// depth01 in [0,1] (0 = entrance, 1 = Beacon); wet = near water. Replaces the old zone integer. cls: optional purpose class (G9).
+export function floorDetail(tiles: string, w: number, h: number, x: number, y: number, seed: number, depth01: number, wet = false, cls?: PurposeClass): string | null {
   const floor = (tx: number, ty: number) => tx >= 0 && tx < w && ty >= 0 && ty < h && tiles[ty * w + tx] !== '#'
   if (!floor(x, y) || !floor(x - 1, y) || !floor(x + 1, y) || !floor(x, y - 1) || !floor(x, y + 1)) return null
   const d = unit(depth01)
@@ -27,15 +36,15 @@ export function floorDetail(tiles: string, w: number, h: number, x: number, y: n
     if (tx >= 0 && tx < w && ty >= 0 && ty < h && tiles[ty * w + tx] === '#') { wallAdj = true; break }
   }
   // families in GROUND_DETAILS order: pebbles(3), rubble(3), moss(2), vine(2)
-  const fam = pickFamily([0.5, 0.2 + 1.6 * d + (wallAdj ? 0.6 : 0), 0.6 * (1 - d) + (wet ? 0.8 : 0), wallAdj ? 2.5 * vineDensity(d, wet) : 0], hash2(x, y, seed ^ 0xdec1))
+  const fam = pickFamily([0.5 + pebbleBonus(cls, wallAdj), 0.2 + 1.6 * d + (wallAdj ? 0.6 : 0) + rubbleBonus(cls), 0.6 * (1 - d) + (wet ? 0.8 : 0) + mossBonus(cls), wallAdj ? 2.5 * vineDensity(d, wet) : 0], hash2(x, y, seed ^ 0xdec1))
   const u = hash2(x, y, seed ^ 0xdec4)
   return fam === 0 ? frame(GROUND_DETAILS, 0, 3, u) : fam === 1 ? frame(GROUND_DETAILS, 3, 3, u) : fam === 2 ? frame(GROUND_DETAILS, 6, 2, u) : frame(GROUND_DETAILS, 8, 2, u)
 }
-export function wallDetail(x: number, y: number, seed: number, depth01 = 1, wet = false): string | null {
+export function wallDetail(x: number, y: number, seed: number, depth01 = 1, wet = false, cls?: PurposeClass): string | null {
   const d = unit(depth01), vd = vineDensity(d, wet)
   if (hash2(x, y, seed ^ 0xdec2) >= 0.1 + 0.12 * vd) return null
   // families in WALL_DETAILS order: vine(4), roots(2), moss(3)
-  const fam = pickFamily([3 * vd, 0.3 + 0.5 * (1 - d), 0.4 + (wet ? 0.6 : 0)], hash2(x, y, seed ^ 0xdec3))
+  const fam = pickFamily([3 * vd, 0.3 + 0.5 * (1 - d), 0.4 + (wet ? 0.6 : 0) + mossBonus(cls)], hash2(x, y, seed ^ 0xdec3))
   const u = hash2(x, y, seed ^ 0xdec5)
   return fam === 0 ? frame(WALL_DETAILS, 0, 4, u) : fam === 1 ? frame(WALL_DETAILS, 4, 2, u) : frame(WALL_DETAILS, 6, 3, u)
 }
