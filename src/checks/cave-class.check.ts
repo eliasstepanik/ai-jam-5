@@ -34,7 +34,7 @@ function paramRows(): void {
   const p3 = PARAMS[3]
   ok(p3.eccMin === 12 && p3.eccMax === 14, 'class 3 ecc 12-14')
   ok(p3.bdLo === 510 && p3.bdHi === 690 && p3.fbLo === 459, 'class 3 band 510-690, fallback floor 459')
-  ok(p3.cols === 8 && p3.rows === 6 && p3.rampS === 80, 'class 3 grid 8x6, rampS 80')
+  ok(p3.cols === 8 && p3.rows === 6 && p3.rampS === 60, 'class 3 grid 8x6, rampS 60')
   const bands: Record<DepthClass, number[]> = { 1: [220, 340, 198], 2: [340, 460, 306], 3: [510, 690, 459], 4: [690, 860, 459] } // R-164: bdLo, bdHi, fbLo
   for (const c of CLASSES) ok([PARAMS[c].bdLo, PARAMS[c].bdHi, PARAMS[c].fbLo].join() === bands[c].join(), `class ${c} band / fallback floor row ${bands[c]}`)
   for (const c of CLASSES) ok(PARAMS[c].depthClass === c && paramsOf(c) === PARAMS[c], `PARAMS[${c}] keyed by its own class`)

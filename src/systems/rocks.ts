@@ -38,7 +38,7 @@ function rectOf(s: State, r: Rock): [number, number, number, number] {
   return [x0, y0, x0 + r.size * TILE, y0 + r.size * TILE]
 }
 
-// Escape ramp fraction 0..1; ramp length is per depth class (R-164; class 3 = T.rocks.rampS = 80). Shared with quake.ts.
+// Escape ramp fraction 0..1; ramp length is per depth class (R-164; class 3 = 60 from the PARAMS table, matching T.rocks.rampS, which only checks read). Shared with quake.ts.
 export function rampOf(escapeT: number, cls: number | undefined): number {
   return Math.min(1, escapeT / paramsOf(cls).rampS)
 }

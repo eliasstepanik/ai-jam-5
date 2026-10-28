@@ -12,7 +12,7 @@ export type CaveParams = {
   readonly fbLo: number // fallback-ring floor of the band: min(floor(0.9 * bdLo), 459) (validate.ts bandOf)
   readonly cols: number // active top-left macro sub-grid (macro.ts MW x MH is the full 8 x 6 grid)
   readonly rows: number
-  readonly rampS: number // rocks escape ramp seconds (T.rocks.rampS is the class-3 value)
+  readonly rampS: number // rocks escape ramp seconds; class 3 is 60, the literal twin of T.rocks.rampS (the tuning key itself is not read by rampOf)
 }
 
 export const BD_BASE = 510 // class-3 band floor: the scale basis of the rule-11 minima, min(abs, floor(abs * bd / 510))
@@ -23,7 +23,7 @@ export const BD_BASE = 510 // class-3 band floor: the scale basis of the rule-11
 export const PARAMS: Record<DepthClass, CaveParams> = {
   1: { depthClass: 1, eccMin: 5, eccMax: 6, bdLo: 220, bdHi: 340, fbLo: 198, cols: 4, rows: 3, rampS: 40 },
   2: { depthClass: 2, eccMin: 8, eccMax: 9, bdLo: 340, bdHi: 460, fbLo: 306, cols: 6, rows: 4, rampS: 55 },
-  3: { depthClass: 3, eccMin: 12, eccMax: 14, bdLo: 510, bdHi: 690, fbLo: 459, cols: 8, rows: 6, rampS: 80 },
+  3: { depthClass: 3, eccMin: 12, eccMax: 14, bdLo: 510, bdHi: 690, fbLo: 459, cols: 8, rows: 6, rampS: 60 },
   4: { depthClass: 4, eccMin: 17, eccMax: 20, bdLo: 690, bdHi: 860, fbLo: 459, cols: 8, rows: 6, rampS: 105 },
 }
 
