@@ -26,10 +26,11 @@ export function ensureMixer(res: Resources): void {
   const startMaster = Math.max(0, a.lastMaster)
   disconnectAll(res)
   const comp = ctx.createDynamicsCompressor()
-  comp.threshold.value = -18
+  comp.threshold.value = -14
   comp.knee.value = 12
   comp.ratio.value = 4
-  comp.attack.value = 0.005
+  // Attack longer than one period of the 55-140 Hz thuds: a shorter attack modulates gain inside the cycle and crunches.
+  comp.attack.value = 0.015
   comp.release.value = 0.2
   comp.connect(ctx.destination)
   const masterLp = ctx.createBiquadFilter()

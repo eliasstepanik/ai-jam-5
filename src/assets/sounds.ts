@@ -39,7 +39,7 @@ export const SOUNDS = {
   'sfx_mon-death': { group: 'sfx', gain: 0.6, pri: 1, cap: 4, file: 'sfx_mon-death' },
   'sfx_devourer-beat': { group: 'sfx', gain: 1, pri: 2, cap: 1 },
   sfx_hurt: { group: 'sfx', gain: 0.9, pri: 3, cap: 1 },
-  sfx_heartbeat: { group: 'sfx', gain: 0.7, pri: 3, cap: 1 },
+  sfx_heartbeat: { group: 'sfx', gain: 0.7, pri: 3, cap: 2 },
   'sfx_player-death': { group: 'sfx', gain: 0.8, pri: 3, cap: 1 },
   'sfx_beacon-charge': { group: 'sfx', gain: 0.8, pri: 3, cap: 1 },
   'sfx_beacon-ignite': { group: 'sfx', gain: 1, pri: 3, cap: 1 },

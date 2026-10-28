@@ -11,6 +11,15 @@ function rejects(f: () => unknown, msg: string): void {
   ok(threw, msg)
 }
 
+// No node: import in src/checks (R-039, no @types/node under tsc): fetch node:fs via process.getBuiltinModule (Node >= 22.3), local type.
+type Fs = { process: { getBuiltinModule(id: 'node:fs'): { existsSync(p: URL): boolean, readdirSync(p: URL): string[] } } }
+const AUDIO_EXT = ['ogg', 'mp3']
+// File names in src/assets/audio (same dir the engine globs and scripts/check-assets.ts scans); an absent dir means no files.
+function audioDir(): string[] {
+  const fs = (globalThis as unknown as Fs).process.getBuiltinModule('node:fs'), dir = new URL('../assets/audio/', import.meta.url)
+  return fs.existsSync(dir) ? fs.readdirSync(dir) : []
+}
+
 export function run(): void {
   ok(Object.keys(SPRITES).length === 45, '45 catalog sprite ids after orphan removals')
   let frames = 0
@@ -62,16 +71,27 @@ export function run(): void {
 
   ok(Object.keys(SOUNDS).length === 43, '43 sound ids')
   const pending = new Set<string>(PENDING_AUDIO), files = new Set<string>()
-  ok(pending.size === PENDING_AUDIO.length && pending.size === 14, 'explicit undelivered sample owners')
+  ok(pending.size === PENDING_AUDIO.length, 'duplicate PENDING_AUDIO id')
+  const onDisk = new Set(audioDir())
+  const owned = new Set<string>()
   for (const [id, raw] of Object.entries(SOUNDS)) {
     const s: SoundDef = raw
     ok(/^(mus|amb|sfx|ui)_[a-z0-9-]+$/.test(id), 'sound id spelling ' + id)
     ok(s.gain >= 0 && s.gain <= 1 && Number.isInteger(s.cap) && s.cap > 0, 'gain and voice cap ' + id)
     if (s.loop) ok(s.loop[0] >= 0 && s.loop[1] > s.loop[0], 'sample loop points ' + id)
-    if (s.file || s.layers) ok(pending.has(id), 'undelivered samples explicitly pending ' + id)
-    if (s.file) files.add(s.file)
-    for (const layer of s.layers ?? []) files.add(layer)
+    const own = [...s.file ? [s.file] : [], ...s.layers ?? []]
+    // Pending iff at least one of its .ogg/.mp3 files is missing: delivery must shrink PENDING_AUDIO, a missing file must be listed.
+    const missing = own.flatMap((f) => AUDIO_EXT.map((e) => f + '.' + e)).filter((n) => !onDisk.has(n))
+    if (own.length > 0) ok(pending.has(id) === missing.length > 0, pending.has(id)
+      ? 'sample ' + id + ' is in PENDING_AUDIO but all its files exist; remove it from PENDING_AUDIO'
+      : 'sample ' + id + ' is missing ' + missing.join(', ') + '; add it to PENDING_AUDIO')
+    for (const f of own) { files.add(f); for (const e of AUDIO_EXT) owned.add(f + '.' + e) }
   }
+  for (const id of pending) {
+    const s = (SOUNDS as Record<string, SoundDef>)[id]
+    ok(!!s && !!(s.file || s.layers), 'PENDING_AUDIO id is not a known sample sound ' + id)
+  }
+  for (const n of onDisk) ok(owned.has(n), 'orphan audio file ' + n + ' (no SOUNDS id owns it)')
   ok(files.size === 14 && !('sfx_parry-perfect-ring' in SOUNDS), 'internal ring layer is a file, not a SoundId')
   ok(!('sfx_step' in SOUNDS) && !('sfx_roll-ready' in SOUNDS) && !('ui_hover' in SOUNDS), 'orphan sounds removed')
   ok(JSON.stringify(SOUNDS.mus_descent.loop) === JSON.stringify(SOUNDS['mus_descent-danger'].loop), 'synchronous descent loop points')
