@@ -1,7 +1,6 @@
-// L3 systems: shadow mist of the three monsters (issue #83). Soft dark wisps that drift off the body, trail behind movement and thicken
-// during windup and lunge. Cosmetic and analytic: every wisp is a pure function of (monster id, slot, meta.time, monster state), so there
-// is no pool, no history and nothing to hot-swap. It reads State and writes nothing: no rng stream, no clock, no gameplay field. The
-// pure parts live here (not in render/) so src/checks can run them; render/mist.ts only paints what eachMist hands over.
+// L3 cosmetic schedules, profiles and reference trajectories for shadow pixels.
+// The painter uses the slot/cycle/age metadata to retain births inside actual sprite pixels.
+// Pure: reads simulation time and AI mode, never writes gameplay state or consumes its RNG.
 import type { Monster, MonsterKind, State } from '../core/types.ts'
 import { hash2 } from '../core/noise.ts'
 
@@ -12,9 +11,9 @@ export type MistProfile = { n: number; cap: number; r: number; spread: number; r
 
 // Per-kind tuning (DEFAULT, architect): lurker = small and quick, stalker = long thin trail, devourer = big and dense.
 export const MIST: Record<MonsterKind, MistProfile> = {
-  lurker: { n: 4, cap: 9, r: 7, spread: 8, rise: 10, life: 1.6, trail: 0.18, alpha: 0.22 },
-  stalker: { n: 5, cap: 11, r: 9, spread: 11, rise: 8, life: 1.9, trail: 0.3, alpha: 0.2 },
-  devourer: { n: 10, cap: 22, r: 16, spread: 22, rise: 12, life: 2.4, trail: 0.2, alpha: 0.28 },
+  lurker: { n: 10, cap: 24, r: 7, spread: 8, rise: 4, life: 0.65, trail: 0.18, alpha: 0.22 },
+  stalker: { n: 12, cap: 28, r: 9, spread: 11, rise: 5, life: 0.75, trail: 0.3, alpha: 0.2 },
+  devourer: { n: 22, cap: 44, r: 16, spread: 22, rise: 6, life: 0.9, trail: 0.2, alpha: 0.28 },
 }
 export const MIST_GLOBAL_CAP = 96 // wisps drawn per frame over all monsters (the pool of particles.ts holds 512)
 const DENSITY: Record<MistMode, number> = { idle: 1, move: 1.25, windup: 1.8, lunge: 2.2, dying: 1 } // x profile.n
@@ -40,8 +39,8 @@ export function mistCount(s: State, m: Monster, qMul: number): number {
   return Math.min(P.cap, Math.max(0, Math.round(P.n * mul * qMul)))
 }
 
-// emit(kind, x, y, radius, alpha): x/y are world px with the BODY CENTRE at (m.x, m.y); the painter lifts them to the sprite centre.
-export type MistEmit = (kind: MonsterKind, x: number, y: number, r: number, a: number) => void
+// Reference x/y are relative to the body centre. Sprite painters use m/slot/cycle/age for precise retained birth sites.
+export type MistEmit = (kind: MonsterKind, x: number, y: number, r: number, a: number, m: Monster, slot: number, cycle: number, age: number) => void
 
 function wisp(s: State, m: Monster, k: number, mode: MistMode, emit: MistEmit): void {
   const P = MIST[m.kind], key = m.id * 64 + k
@@ -49,7 +48,7 @@ function wisp(s: State, m: Monster, k: number, mode: MistMode, emit: MistEmit): 
   const ang = hash2(key, cycle, S_ANG) * Math.PI * 2, rad = P.spread * Math.sqrt(hash2(key, cycle, S_RAD))
   const calm = s.settings.reducedFlash
   let x = m.x + Math.cos(ang) * rad, y = m.y + Math.sin(ang) * rad * FLAT - P.rise * f
-  let r = P.r * (0.6 + 0.8 * f), a = P.alpha * (calm ? 1 : OPACITY[mode]) * Math.sin(Math.PI * f) // fades in and out over its life
+  let r = P.r * (1 - 0.8 * f), a = P.alpha * (calm ? 1 : OPACITY[mode]) * Math.sin(Math.PI * f) // fades in and out over its life
   if (mode === 'move' || mode === 'lunge') { // lags behind the body: the older the wisp, the further back along the velocity
     const sp = Math.hypot(m.vx, m.vy), g = sp > TRAIL_V ? TRAIL_V / sp : 1
     x -= m.vx * g * P.trail * f
@@ -58,10 +57,10 @@ function wisp(s: State, m: Monster, k: number, mode: MistMode, emit: MistEmit): 
     const d = m.aiDur > 0 ? Math.min(1, Math.max(0, m.aiT / m.aiDur)) : 1
     x += Math.cos(ang) * P.spread * BURST * d
     y += Math.sin(ang) * P.spread * BURST * d * FLAT
-    r *= 1 + d
+    r *= 1 - d
     a *= 1 - d
   }
-  emit(m.kind, x, y, r, a)
+  emit(m.kind, x, y, r, a, m, k, cycle, f)
 }
 
 // Calls emit for every wisp of the monsters `visible` accepts, up to MIST_GLOBAL_CAP in s.monsters order; returns how many.

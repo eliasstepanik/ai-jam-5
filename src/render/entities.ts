@@ -6,15 +6,11 @@
 import type { Monster, MonsterKind, State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
 import { clamp } from '../core/math.ts'
-import { hash2 } from '../core/noise.ts'
 import { dirIndex, footRow } from '../core/grid.ts'
 import type { Dir8 } from '../core/grid.ts'
-import { lightRadius } from '../systems/light.ts'
 import { lineOfSightPx } from '../world/los.ts'
 import { getResources } from '../assets/resources.ts'
 import type { Resources } from '../assets/resources.ts'
-import { SPRITES } from '../assets/sprites.ts'
-import type { ActorId, Anim } from '../assets/sprites.ts'
 import type { View } from './view.ts'
 import { charFrame, animLen, drawAtlas } from './charatlas.ts'
 import { propActors, drawProp } from './props.ts'
@@ -23,33 +19,17 @@ import { directionOf, drawPlayerBody, fitFrame, frameAt, snap } from './entities
 
 export { torchTip } from './entities-player.ts'
 
-export const EYES_ID: Record<MonsterKind, ActorId> = { lurker: 'mon_lurker_eyes', stalker: 'mon_stalker_eyes', devourer: 'mon_devourer_eyes' }
-export const MON_SCALE: Record<MonsterKind, number> = { lurker: 0.5, stalker: 0.75, devourer: 1.5 } // eyes layer only (OD-D7, DEFAULT: unchanged)
 export const MON_FOOT: Record<MonsterKind, number> = { lurker: 25, stalker: 30, devourer: 24 } // R-180: px below the pivot
 const PIVOT = 32 // source px of the 64x64 actor frame pivot
 const CULL_MARGIN = 48 // render-2 §2.3: half the devourer canvas, added to the View rect (which already holds one tile)
 const MON_MOVE_SPEED = 5 // render-2 §3.2: faces its velocity above this speed (px/s), else the player
 const IDLE_PHASE_MS = 370 // render-2 §3.2: loop offset per monster id
-const BLINK_EVERY_S = 3, BLINK_OPEN_S = 0.25, BLINK_CHANCE = 0.25, BLINK_SALT = 7 // render-2 §3.2 (stateless blink)
 const DEATH_FADE_FRAMES = 3 // assets-sprites §5: eyes fade out over the first 3 death frames
 const EYE_IDLE_A = 0.55 // render-3 §1 eye halo alpha (idle), telegraph is 1
 
 // Cull on [x0 - 48, x1 + 48] x [y0 - 48, y1 + 48]; view.ts inView has no entity margin and is left as is.
 export const entityInView = (v: View, x: number, y: number): boolean =>
   x >= v.x0 - CULL_MARGIN && x <= v.x1 + CULL_MARGIN && y >= v.y0 - CULL_MARGIN && y <= v.y1 + CULL_MARGIN
-
-// --- eyes layer draw path (pass 16, glow.ts): still the old actor sheets, the eyes art is not in the character atlas (OD-D7) ---
-// res.images.rects holds the resolved atlas rects 'id|anim|frame' -> [sheet, x, y, w, h] (resources.ts); images.ts fills it.
-// ponytail: no fallback chain and no tint path; the eyes layer needs neither. Upgrade: drawSprite once images.ts owns it.
-export function drawFrame(ctx: CanvasRenderingContext2D, id: ActorId, anim: string, frame: number,
-  x: number, y: number, scale: number, alpha: number): void {
-  const im = getResources().images, r = im.rects.get(id + '|' + anim + '|' + frame), sheet = r ? im.sheets[r[0]] : null
-  if (!r || !sheet) return
-  const z = ctx.getTransform().a, sx = snap(x, z), sy = snap(y, z)
-  ctx.globalAlpha = alpha
-  ctx.drawImage(sheet, r[1], r[2], r[3], r[4], sx - PIVOT * scale, sy - PIVOT * scale, r[3] * scale, r[4] * scale)
-  ctx.globalAlpha = 1
-}
 
 // --- monsters ---
 // Direction input: windup, lunge and dying use lungeDir (dying keeps the value it had, so death holds its direction), otherwise
@@ -80,26 +60,14 @@ export function monsterFrame(s: State, m: Monster): [string, number] {
   }
 }
 
-export const monsterLit = (s: State, m: Monster): boolean => s.meta.phase === 'escape' || s.debug.noFog || s.debug.reveal || m.seen // body shown: cave lit, or m.seen (stored inLight)
 
 function drawMonster(ctx: CanvasRenderingContext2D, s: State, v: View, m: Monster): void {
-  if (!monsterLit(s, m) || !entityInView(v, m.x, m.y)) return
+  if (!entityInView(v, m.x, m.y)) return
   const [anim, frame] = monsterFrame(s, m)
   drawAtlas(ctx, charFrame(m.kind, anim, dirIndex(monsterDirection(s, m)), frame), snap(m.x, v.z) - PIVOT, snap(m.y - MON_FOOT[m.kind], v.z) - PIVOT)
 }
 
-// --- eyes helpers for pass 16 ---
-const onceFrame = (a: Anim, elapsed: number): number => clamp(Math.floor(elapsed * a.fps), 0, a.n - 1)
 export const eyeAnim = (m: Monster): 'idle' | 'telegraph' => (m.ai === 'windup' || m.ai === 'lunge' ? 'telegraph' : 'idle')
-
-// [action, frame] of the eyes sprite: telegraph frame 0 while attacking, else the 3-frame blink for 0.25 s of some 3 s windows.
-export function eyeFrame(s: State, m: Monster): [string, number] {
-  const act = eyeAnim(m), t = s.meta.time
-  if (act === 'idle' && t % BLINK_EVERY_S < BLINK_OPEN_S && hash2(Math.floor(t / BLINK_EVERY_S), m.id, BLINK_SALT) < BLINK_CHANCE) {
-    return ['blink', onceFrame(SPRITES[EYES_ID[m.kind]].anims['blink-e'], t % BLINK_EVERY_S)]
-  }
-  return [act, 0]
-}
 
 // Dying eyes fade out over the first 3 death frames (assets-sprites §5). The atlas death anim is stretched over dyingS, so the
 // fade lasts dyingS * 3 / frameCount. ponytail: assumes equal frame spacing; upgrade: sum the real frame durations.
@@ -114,13 +82,9 @@ export function eyeAlpha(_s: State, m: Monster): number {
   return eyeAnim(m) === 'telegraph' ? 1 : EYE_IDLE_A
 }
 
-// Pass 16 predicate (monsters-ai-2 §6): only unseen shades. Windup/lunge need only tile LOS (a telegraph is never invisible),
-// everything else (idle, dying fade) needs LOS and d <= R + eyeRangeExtraPx. Remembered tiles add nothing: no LOS or range = hidden.
+// Atlas emission is independent of torch range. Walls still block line of sight, preventing eye glow through solid rock.
 export function eyeVisible(s: State, m: Monster): boolean {
-  if (monsterLit(s, m)) return false
-  const p = s.player
-  if (m.ai !== 'windup' && m.ai !== 'lunge' && Math.hypot(m.x - p.x, m.y - p.y) > lightRadius(s) + T.ai.eyeRangeExtraPx) return false
-  return lineOfSightPx(s, p.x, p.y, m.x, m.y)
+  return lineOfSightPx(s, s.player.x, s.player.y, m.x, m.y)
 }
 
 // --- actor row buckets (R-180) ---

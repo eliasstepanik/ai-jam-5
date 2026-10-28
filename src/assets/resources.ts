@@ -1,4 +1,8 @@
 // Non-State resources: lazy data only, retained in Vite hot.data. No DOM work on import.
+import type { DressingCache } from '../core/cave-props.ts'
+import type { WaterFx } from '../core/puddle-fx.ts'
+import type { HeartUi } from '../core/heart-ui.ts'
+import type { PixelPool } from '../core/pixel-particles.ts'
 import type { SoundId, Group } from './sounds.ts'
 
 export type Canvas2D = { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D; w: number; h: number }
@@ -8,9 +12,10 @@ export type ImageStore = {
   screens: Record<string, HTMLImageElement | null>
   rects: Map<string, readonly number[] | null>
   tints: Map<string, HTMLCanvasElement>
+  sourceKey?: string // delivered tileset hash; changes reload pixels and metadata together during HMR
   gen: number; loaded: number; total: number; started: boolean
 }
-// Per 8x8 chunk: floor 256x256 + walls 256x640, eight separate 80 px cap+face strips sorted by ground row.
+// Per 8x8 chunk: floor 256x256 + walls 256x896, eight padded 112px wall strips sorted by ground row.
 export type Chunk = { floor: HTMLCanvasElement; walls: HTMLCanvasElement }
 export type TileCache = {
   key: string
@@ -55,10 +60,18 @@ export type Resources = {
   images: ImageStore; tiles: TileCache | null; memory: MemoryCache; light: LightCache
   dark: Canvas2D | null; scratch: Scratch | null
   swapped: Map<string, HTMLCanvasElement> // flame palette-swap frames (R-185): 64x64, key 'x|y|material' (sheet rect of the frame + material, see render/charatlas.ts swappedFrame), LRU 256; slot name is a DEFAULT (D7)
+  emitterPixels?: { gen: number; frames: Map<string, Uint16Array> }
+  shadowFx?: { runId: number; at: number; slots: Map<number, { cycle: number; x: number; y: number }> }
+  dressing?: DressingCache
+  waterFx?: WaterFx
+  waterSurfaceMasks?: { key: string; entries: Map<number, { canvas: HTMLCanvasElement; bits: Uint8Array; w: number; h: number }> }
+  waterMasks?: { gen: number; entries: Map<string, { canvas: HTMLCanvasElement; bits: Uint8Array; w: number; h: number }> }
+  uiHearts?: HeartUi
+  pixelFx?: PixelPool
   particles: Particles; perf: Perf; audio: AudioRes
   debug: { on: boolean; available: boolean | null; tab: number; drag: 'none' | 'torch' | 'speed'
     aimX: number; aimY: number; mouseX: number; mouseY: number; updateAt: number; updateMs: number; map: { key: string; canvas: HTMLCanvasElement } | null }
-  ui: { copyResult: 'none' | 'ok' | 'failed'; urlRead: boolean }
+  ui: { fontUrl?: string; font?: FontFace; fontReady?: boolean; copyResult: 'none' | 'ok' | 'failed'; urlRead: boolean }
   hud: { exitA: number; lastT: number; runId: number; dist: number; distT: number } | null
 }
 
@@ -98,6 +111,7 @@ function fillRes(r: Resources): Resources {
   r.debug.tab ??= 0; r.debug.drag ??= 'none'
   r.debug.aimX ??= 0; r.debug.aimY ??= 0; r.debug.mouseX ??= 0; r.debug.mouseY ??= 0
   r.debug.updateAt ??= 0; r.debug.updateMs ??= 0; r.debug.map ??= null
+  r.images.sourceKey ??= ''
   r.scratch ??= null
   r.swapped ??= new Map()
   r.ui ??= { copyResult: 'none', urlRead: false }

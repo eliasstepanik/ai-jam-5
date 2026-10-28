@@ -1,11 +1,11 @@
-// Shared draw/hit geometry for the canvas developer panel. Four tabs fit a 360 px-high game window.
+// Shared draw/hit geometry for the canvas developer panel. Five tabs fit a 360 px-high game window.
 import type { State } from '../core/types.ts'
 import { debugDepthClass, debugRunActive, torchSeconds } from '../systems/debug.ts'
 import type { DebugAction } from '../systems/debug.ts'
 import type { Rect } from './layout.ts'
 import { DEPTH_NAMES } from './strings.ts'
 
-export type DebugControlId = DebugAction | 'open' | 'tab0' | 'tab1' | 'tab2' | 'tab3' | 'speed' | 'torch'
+export type DebugControlId = DebugAction | 'open' | 'tab0' | 'tab1' | 'tab2' | 'tab3' | 'tab4' | 'speed' | 'torch'
 export type DebugControl = Rect & { id: DebugControlId; label: string; enabled: boolean; on?: boolean; slider?: number }
 export const contains = (r: Rect, x: number, y: number): boolean => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h
 
@@ -19,7 +19,8 @@ export function debugLayout(s: State, w: number, h: number, open: boolean, tab: 
     controls.push({ id, label, x: left, y: panel.y + y, w: size, h: slider === undefined ? 26 : 36, enabled, on, slider })
   }
   const fourth = (width - 18) / 4
-  for (let i = 0; i < 4; i++) add(('tab' + i) as DebugControlId, ['Player', 'Enemies', 'Inspect', 'Navigate'][i], 36, x + i * (fourth + 6), fourth, true, tab === i)
+  const tabWidth = (width - 24) / 5
+  for (let i = 0; i < 5; i++) add(('tab' + i) as DebugControlId, ['Player', 'Enemies', 'Inspect', 'Navigate', 'Map'][i], 36, x + i * (tabWidth + 6), tabWidth, true, tab === i)
   if (tab === 0) {
     add('noclip', 'Noclip: ' + (s.debug.noclip ? 'ON' : 'OFF'), 72, x, half, true, s.debug.noclip)
     add('infiniteHp', 'Infinite HP', 72, x + half + 6, half, true, s.debug.infiniteHp)
@@ -41,15 +42,28 @@ export function debugLayout(s: State, w: number, h: number, open: boolean, tab: 
     add('overlay', 'Collision shapes + wall grid', 106, x, width, true, s.debug.overlay)
     add('hurtboxes', 'Hurt volumes + attack reach', 140, x, width, true, s.debug.hurtboxes)
     add('stats', 'Performance statistics', 174, x, width, true, s.debug.stats)
+    add('pureDarkness', 'Pure darkness (hide explored view)', 208, x, width, true, s.debug.pureDarkness)
+    add('caveDetails', 'Cave detail overlays', 242, x, width, true, s.debug.caveDetails)
   }
   if (tab === 3) {
     for (let i = 0; i < 4; i++) add(('depth' + (i + 1)) as DebugControlId, DEPTH_NAMES[i], 72, x + i * (fourth + 6), fourth, true, debugDepthClass(s) === i + 1)
     add('teleportEntrance', 'To entrance', 106, x, half, active)
     add('teleportBeacon', 'To Beacon', 106, x + half + 6, half, active)
-    add('minimap', 'Black/white minimap', 140, x, width, true, s.debug.minimap)
+    add('minimap', 'Minimap (options in Map tab)', 140, x, width, true, s.debug.minimap)
     add('arrow', 'Destination arrow', 174, x, width, true, s.debug.arrow)
     add('arrowBeacon', 'Beacon', 208, x, half, true, s.debug.arrowTarget === 'beacon')
     add('arrowExit', 'Cave exit', 208, x + half + 6, half, true, s.debug.arrowTarget === 'exit')
+  }
+  if (tab === 4) {
+    add('minimap', 'Show minimap', 72, x, width, true, s.debug.minimap)
+    add('mapOres', 'Ore locations', 106, x, half, true, s.debug.mapOres)
+    add('mapResin', 'Resin locations', 106, x + half + 6, half, true, s.debug.mapResin)
+    add('mapPlants', 'Healing plants', 140, x, half, true, s.debug.mapPlants)
+    add('mapBeacon', 'Beacon', 140, x + half + 6, half, true, s.debug.mapBeacon)
+    add('mapEntrance', 'Entrance / exit (E)', 174, x, width, true, s.debug.mapEntrance)
+    for (const [i, id] of (['mapPlain', 'mapZones', 'mapDistance'] as const).entries()) {
+      add(id, ['Floor', 'Zones', 'Distance'][i], 208, x + i * (third + 6), third, true, s.debug.mapMode === ['plain', 'zones', 'distance'][i])
+    }
   }
   return { panel, controls }
 }

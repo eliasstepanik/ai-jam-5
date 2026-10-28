@@ -1,6 +1,7 @@
 // L4 render: player body from the character atlas (pass 11), torch tip, hit flash and the atlas frame-timing helpers shared with
 // entities.ts. Spec: docs/architecture-render-2.md §3.3, R-180 (foot offset 24), R-184 (64x64, pivot 32,32, scale 1.0, never
 // rotated or mirrored), R-185 (flame palette swap). Reads State and the image registry only; writes registry caches (swapped, tints).
+import { MATERIAL_CHANGE_S } from '../core/player-actions.ts'
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
 import { clamp } from '../core/math.ts'
@@ -57,7 +58,7 @@ type TorchSet = { idle: string; hurt: string; death: string; walk: string; run: 
 const SETS: Record<'escape' | 'lit' | 'unlit', TorchSet> = {
   escape: { idle: 'idle_no_torch', hurt: 'hurt_no_torch', death: 'death_without_torch', walk: 'run_without_torch', run: 'run_without_torch', swing: null, mine: null },
   lit: { idle: 'idle_lit_torch_base', hurt: 'hurt_lit_torch_base', death: 'death_with_unlit_torch', walk: 'walk_lit_torch_base', run: 'run_lit_torch_base',
-    swing: 'swing_lit_torch_base', mine: 'material_change_lit_torch_base' },
+    swing: 'swing_lit_torch_base', mine: 'pickup_lit_torch_base' },
   // BUG-003: derive an unlit walk from the delivered lit walk, removing only reserved flame pixels at draw time.
   unlit: { idle: 'idle_unlit_torch', hurt: 'hurt_unlit_torch', death: 'death_with_unlit_torch', walk: 'walk_unlit_torch', run: 'walk_unlit_torch',
     swing: null, mine: null },
@@ -67,11 +68,11 @@ const SETS: Record<'escape' | 'lit' | 'unlit', TorchSet> = {
 const gaitClipFrame = (anim: string, phase: number): number =>
   gaitFrame(phase, Array.from({ length: animLen('player', anim) }, (_, i) => charFrame('player', anim, 0, i).dur))
 
-// Animation, frame index and atlas direction of the player body. Priority death > roll > hurt > swing > mining > walk > idle.
+// Animation, frame index and atlas direction of the player body. Priority death > roll > hurt > swing > material change > mining/pickup > walk > idle.
 // DEFAULT: swing and mining have art for the lit torch only; in the escape or with an unlit torch they fall through to walk/idle.
 // DEFAULT: death uses the retained facing (State keeps no start-of-death velocity), so the direction holds from the first frame.
 export function playerPose(s: State): { anim: string; frame: number; dir: number } {
-  const p = s.player, esc = s.meta.phase === 'escape', ms = s.meta.time * 1000, speed = Math.hypot(p.vx, p.vy)
+  const p = s.player, esc = s.meta.phase === 'escape', ms = s.meta.time * 1000, speed = p.gaitSpeed
   const set = SETS[gaitSetOf(esc, p.energy)]
   const dir = dirIndex(directionOf(esc && speed > WALK_MIN_SPEED ? Math.atan2(p.vy, p.vx) : p.facing))
   const pose = (anim: string, frame: number) => ({ anim, frame, dir })
@@ -81,7 +82,15 @@ export function playerPose(s: State): { anim: string; frame: number; dir: number
   if (p.roll.t > 0) return pose('dodge_roll_no_torch', fitFrame('player', 'dodge_roll_no_torch', 1 - p.roll.t / T.roll.durationS))
   if (p.hitFlash > 0) return pose(set.hurt, frameAt('player', set.hurt, (T.hurt.flashS - p.hitFlash) * 1000))
   if (p.swing.active && set.swing) return pose(set.swing, fitFrame('player', set.swing, p.swing.t / T.swing.activeS))
+  const changeMs = (s.meta.time - p.materialChangeAt) * 1000
+  if (!esc && p.pendingMaterial !== null && p.energy > 0 && p.materialChangeAt >= 0 && changeMs < MATERIAL_CHANGE_S * 1000) {
+    return pose('material_change_lit_torch_base', frameAt('player', 'material_change_lit_torch_base', changeMs))
+  }
   if (p.mining.targetTile >= 0 && set.mine) return pose(set.mine, fitFrame('player', set.mine, p.mining.progress / T.mining.holdS))
+  const pickupMs = (s.meta.time - p.pickupAt) * 1000
+  if (!esc && p.pickupAt >= 0 && pickupMs < animMs('player', 'pickup_lit_torch_base')) {
+    return pose('pickup_lit_torch_base', frameAt('player', 'pickup_lit_torch_base', pickupMs))
+  }
   if (speed > WALK_MIN_SPEED) {
     const anim = gaitRuns(speed) ? set.run : set.walk
     return pose(anim, gaitClipFrame(anim, p.gaitPhase))

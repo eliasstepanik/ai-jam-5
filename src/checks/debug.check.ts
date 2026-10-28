@@ -1,8 +1,10 @@
 // Developer tools regression checks: independent cheats, grounded collision recovery, actual spawns, and kill override.
 // L0-L3 only; UI pointer capture, overlays, statistics and exported-build access are browser-verified.
+import { entranceExit } from '../world/entrance-art.ts'
 import type { State } from '../core/types.ts'
 import { init } from '../core/state.ts'
 import { migrate } from '../core/migrate.ts'
+import { mapColor, MAP_ZONES } from '../core/debug-map.ts'
 import { fnv1a } from '../core/rng.ts'
 import { T } from '../core/tuning.ts'
 import { clearCaches } from '../world/caches.ts'
@@ -140,13 +142,14 @@ function navigation(): void {
   ok(p.vx === 0 && p.vy === 0 && !p.roll.t && !p.roll.invuln && !p.swing.active && !p.swing.buffer && !p.beaconHold && p.mining.targetTile === -1, 'teleport cancels transient movement and interactions')
   s.meta.screen = 'paused'
   debugAction(s, 'teleportEntrance', input.view)
-  const cam = clampCam(80, 80, s.world.w, s.world.h, input.view)
-  ok(p.x === 80 && p.y === 80 && s.cam.x === cam.x && s.cam.y === cam.y && s.meta.screen === 'paused', 'paused entrance teleport clamps camera immediately')
+  const doorway = entranceExit(s), ex = doorway.tx * 32 + 16, ey = doorway.ty * 32 + 16
+  const cam = clampCam(ex, ey, s.world.w, s.world.h, input.view)
+  ok(p.x === ex && p.y === ey && s.cam.x === cam.x && s.cam.y === cam.y && s.meta.screen === 'paused', 'paused entrance teleport clamps camera immediately')
   s.world.beacon = { tx: 12, ty: 6 }
   ok(debugTeleport(s, 'beacon') && !circleHitsSolid(s, p.x, p.y, T.player.radiusPx), 'blocked landmark falls back to clear floor')
-  s.rocks = [{ id: 900, x: 80, y: 80, size: 1, tiles: [2 * 24 + 2], t: 2, landed: true, hit: true, shrunk: false }]
+  s.rocks = [{ id: 900, x: ex, y: ey, size: 1, tiles: [doorway.ty * s.world.w + doorway.tx], t: 2, landed: true, hit: true, shrunk: false }]
   s.world.solidSig++
-  ok(debugTeleport(s, 'entrance') && !circleHitsSolid(s, p.x, p.y, T.player.radiusPx) && (p.x !== 80 || p.y !== 80), 'teleport avoids a landed rock')
+  ok(debugTeleport(s, 'entrance') && !circleHitsSolid(s, p.x, p.y, T.player.radiusPx) && (p.x !== ex || p.y !== ey), 'teleport avoids a landed rock')
   const oldX = p.x
   s.meta.screen = 'title'
   ok(!debugTeleport(s, 'beacon') && p.x === oldX, 'teleport disabled outside a run')
@@ -167,7 +170,26 @@ function navigation(): void {
   ok(!restored.debug.arrow && restored.debug.arrowTarget === 'beacon' && restored.debug.minimap, 'new navigation defaults fill without resetting map preference')
 }
 
-export function run(): void {
+function mapLayers(): void {
+  const s = room(), before = JSON.stringify({ world: s.world, rng: s.rng, player: s.player })
+  for (const key of ['mapOres', 'mapResin', 'mapPlants', 'mapEntrance', 'mapBeacon'] as const) {
+    const was = s.debug[key]; debugAction(s, key); ok(s.debug[key] !== was, key + ' toggles independently')
+  }
+  debugAction(s, 'mapZones'); ok(s.debug.mapMode === 'zones' && s.debug.minimap, 'zones selects one enabled map mode')
+  debugAction(s, 'mapDistance'); ok(String(s.debug.mapMode) === 'distance', 'distance replaces zones')
+  debugAction(s, 'mapPlain'); ok(String(s.debug.mapMode) === 'plain', 'plain terrain can be restored')
+  ok(JSON.stringify({ world: s.world, rng: s.rng, player: s.player }) === before, 'map options cannot change gameplay')
+  const old = JSON.parse(JSON.stringify(s)); delete old.debug.mapMode; delete old.debug.mapOres
+  ok(migrate(old).debug.mapMode === 'plain' && !migrate(old).debug.mapOres && migrate(old).debug.minimap, 'HMR fills map defaults and keeps map visibility')
+  for (const mode of ['plain', 'zones', 'distance'] as const) ok(mapColor(mode, true, 25, 100).join() === '0,0,0', 'walls stay black in ' + mode)
+  ok(mapColor('plain', false, -1, 100).join() === '255,255,255', 'plain floor stays white')
+  for (const [d, zone] of [[0, 0], [24, 0], [25, 1], [50, 2], [75, 3], [100, 3]]) ok(mapColor('zones', false, d, 100).join() === MAP_ZONES[zone].join(), 'map zones match depth boundaries')
+  ok(mapColor('distance', false, 0, 100).join() === '35,90,255' && mapColor('distance', false, 100, 100).join() === '240,45,35', 'heatmap spans entrance blue to Beacon red')
+  ok(mapColor('distance', false, 200, 100).join() === mapColor('distance', false, 100, 100).join(), 'branch distances clamp at Beacon heat')
+  ok(mapColor('distance', false, -1, 100).join() === '45,45,55', 'unreachable floor is distinct')
+}
+
+export function run(): void { mapLayers();
   cheats(); movementAndSpawn(); navigation(); forcedLeap()
   const s = room()
   setDebugValue(s, 'torch', 0.5)

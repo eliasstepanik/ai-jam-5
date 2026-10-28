@@ -11,6 +11,18 @@ import { actorRows, drawRowEntities } from './entities.ts'
 import { drawEyes, drawGlow } from './glow.ts'
 import { drawDarkness } from './light.ts'
 import { memoryCanvas } from './memory.ts'
+import { drawPuddles } from './puddles.ts'
+import { drawDescentFx } from './descent-fx.ts'
+import { drawVineGlow } from './vine-glow.ts'
+import { drawDraft } from './draft.ts'
+import { drawFallbackDressing } from './dressing.ts'
+import { drawQuakeScars } from './cave-details.ts'
+import { drawMist } from './mist.ts'
+import { drawPixelFire } from './pixel-fire.ts'
+import { vineSites } from './vine-sites.ts'
+import { drawEscapeWisp } from './wisp.ts'
+import { drawOreEmission } from './ore-emission.ts'
+import { drawZonePalette } from './zone-palette.ts'
 import { drawBeaconMode, drawFlashes, drawVignettes } from './overlay.ts'
 import { consumeEvents, drawParticles } from './particles.ts'
 import { drawRocks } from './props.ts'
@@ -22,7 +34,7 @@ import { makeView, screenXf, worldXf } from './view.ts'
 // Re-exported by game.ts (A30), which calls drawDebug after it returns (R-096).
 export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
   const res = getResources()
-  if (!res.images.started) startPreload(res) // R-095: idempotent, begins loading sheets and screen art on the first frame
+  startPreload(res) // R-095: idempotent, begins loading sheets and screen art on the first frame
   frameBegin() // pass 0
   const sc = s.meta.screen
   // Pass 1: title and help draw their own backdrop. An empty world (title, generation pending) has nothing for the world passes.
@@ -43,6 +55,9 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   ctx.imageSmoothingEnabled = false
   passMark('view')
   drawFloor(ctx, s, v, q) // pass 5a. Pass 6 (decor) is closed: ground overlays are part of the floor chunks (G6).
+  drawPuddles(ctx, s, v)
+  drawFallbackDressing(ctx, s, v)
+  drawQuakeScars(ctx, s, v)
   passMark('tiles')
   actorRows(s, v) // buckets monsters, player, pickups, landmarks, landed rocks and non-south veins by foot row (R-180)
   for (let ty = v.ty0; ty <= v.ty1; ty++) { // pass 5b with 7-11: one wall row, then the actors whose foot row is ty
@@ -51,17 +66,25 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   }
   drawRocks(ctx, s, v) // pass 12: telegraph shadows and falling boulders above every row; landed rocks sit in the buckets
   drawParticles(ctx, s, v, 'normal') // pass 13: dust and grit under the darkness
+  drawDescentFx(ctx, s, v) // pass 13b: depth motes and falling pebbles, under the darkness (saves and restores its own state)
+  drawZonePalette(ctx, s, v)
   passMark('ents')
   // Pass 14. memoryCanvas runs once per frame, before the darkness, and hands over the up-to-date explored-tile canvas (C4).
   // drawDarkness leaves identity transform, source-over, alpha 1 and smoothing off on every path.
-  drawDarkness(ctx, s, v, q, memoryCanvas(s))
+  drawDarkness(ctx, s, v, q, memoryCanvas(s), vineSites(s, v))
   drawBeaconMode(ctx, s, v) // pass 15: warm multiply once the Beacon is lit; sets its own identity transform and resets composite and alpha
   passMark('dark')
   worldXf(ctx, v)
+  drawMist(ctx, s, v) // Shadow pixels stay visible over explored memory outside torch range.
   ctx.globalCompositeOperation = 'lighter' // 16-17: additive only, never reveals bodies the darkness hid
+  drawOreEmission(ctx, s, v)
+  drawVineGlow(ctx, s, v, q) // pass 16b: vine halos and cores (own save/restore)
+  drawDraft(ctx, s, v, q) // pass 16c: guide motes and warm bleed toward the Beacon (own save/restore)
   drawEyes(ctx, s, v)
   drawGlow(ctx, s, v, q)
   drawParticles(ctx, s, v, 'add') // pass 18: sparks above the darkness
+  drawPixelFire(ctx, s, v)
+  drawEscapeWisp(ctx, s, v)
   ctx.globalCompositeOperation = 'source-over'
   ctx.globalAlpha = 1
   passMark('glow')

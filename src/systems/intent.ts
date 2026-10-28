@@ -33,9 +33,8 @@ export function resolveIntent(s: State, input: Input): Intent {
   const aimX = s.cam.x + (mouse.x - view.w / 2) / zoom
   const aimY = s.cam.y + (mouse.y - view.h / 2) / zoom
 
-  if (s.meta.phase === 'escape') {
-    if (moving) p.facing = Math.atan2(my, mx)
-  } else if (Math.hypot(aimX - p.x, aimY - p.y) >= 4) {
+  if (moving) p.facing = Math.atan2(my, mx)
+  else if (s.meta.phase !== 'escape' && Math.hypot(aimX - p.x, aimY - p.y) >= 4) {
     p.facing = Math.atan2(aimY - p.y, aimX - p.x) // else keep: no jitter with the cursor on the player
   }
 

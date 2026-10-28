@@ -88,7 +88,7 @@ function classBand(): void {
   const cut = (seed: number, p: number, q: number, bd: number): CaveResult => exactly(carve(caveOf(seed), p, q, false), bd)
   const wall = (seed: number, k: number, bd: number): CaveResult => exactly(detour(caveOf(seed), k, 16), bd)
   const lo = cut(6, 209, 288, 509), lo2 = cut(25, 162, 204, 509), a510 = cut(11, 39, 107, 510), b510 = cut(30, 185, 264, 510)
-  const hi = wall(22, 411, 691), a690 = wall(44, 264, 690)
+  const hi = wall(22, 411, 691), a690 = wall(44, 263, 690)
   for (const v of [lo, lo2, a510, b510, hi, a690]) ok(!v.stats.fallback, 'rule 5 band: fixture is a non-fallback cave')
   ok(why(lo) === 'r5 band' && why(lo2) === 'r5 band', 'rule 5: non-fallback beaconDist 509 (real geometry) is rejected as r5 band')
   ok(validateCave(a510).ok && validateCave(b510).ok, 'rule 5: non-fallback beaconDist 510 (real geometry) is accepted')
@@ -210,11 +210,11 @@ function spacing(): void {
 }
 
 // Rule 13 (CG4 §3 / §5 row 13): the cluster is pickups[0..2], each within Chebyshev 10 of a main tile (CG4 §3 'relax once to Chebyshev <= 10').
-// Seed 3: pickups[1] moved to a wide2 tile 10 (accepted) / 11 (rejected) tiles from the nearest main tile, dist inside [bd - 40, bd - 8]. The tile is
+// Seed 5: pickups[1] moved to a wide2 tile 10 (accepted) / 11 (rejected) tiles from the nearest main tile, dist inside [bd - 40, bd - 8]. The tile is
 // selected by geometry alone, the first match in scan order; its gap is asserted before validateCave is.
 function clusterRules(): void {
-  const r = caveOf(3), I = info(r), mask = new Set(r.chamber)
-  ok(validateCave(r).ok && r.pickups[0].size === 'large' && r.pickups[1].size === 'small', 'rule 13: seed 3 is valid with a large-first cluster (control)')
+  const r = caveOf(5), I = info(r), mask = new Set(r.chamber)
+  ok(validateCave(r).ok && r.pickups[0].size === 'large' && r.pickups[1].size === 'small', 'rule 13: seed 5 is valid with a large-first cluster (control)')
   const sw = copy(r), a = sw.pickups[0]
   sw.pickups[0] = sw.pickups[1]; sw.pickups[1] = a
   // Implementation coupling, not spec wording: validate.ts treats pickups[0..2] as the Beacon cluster with the large one first (CG4 §3 'cluster placed FIRST').

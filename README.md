@@ -22,7 +22,7 @@ Theme: TORCH. You carry the last flame of a dying torch down a seeded cave. The 
 | Input | Action |
 |---|---|
 | `W` `A` `S` `D` or arrow keys | Move |
-| Mouse | Aim (during the escape you face the way you move) |
+| Mouse | Face while standing; moving faces the travel direction |
 | Left click | Swing the torch / parry a lunging shade (click as its eyes flare) |
 | `E` (hold) | Mine an ore vein, or light the Beacon |
 | `1` `2` `3` | Pick a mineral (changes the flame colour and its effect) |
@@ -30,7 +30,7 @@ Theme: TORCH. You carry the last flame of a dying torch down a seeded cave. The 
 | `Space` | Roll (escape only) |
 | `Esc` or `P` | Pause |
 | `M` | Mute toggle |
-| `Enter`, `T`, `C` | Menus and end screen: confirm or new run, retry seed, copy a share link |
+| `Enter`, `T`, `C` | Confirm selected button, retry seed, copy a share link |
 
 The title screen has a seed field. The same seed gives the same cave, and the end screen can copy a `?seed=` link. Your best score (with its seed) is stored in the browser (localStorage). The in-game Help screen explains parrying and minerals.
 
@@ -194,7 +194,15 @@ The plan lives in [`docs/`](docs/). Start at [`docs/index.md`](docs/index.md). T
 - **`erasableSyntaxOnly` is on.** No `enum`, `namespace` or constructor parameter properties. Use union types, plain objects and normal fields.
 - **Long error lines clip** in the overlay (no wrapping). The full text is in the browser console.
 
+Developer minimap options are in **DEV → Map**: toggle resource/landmark markers and choose Floor, Zones or Distance. Distance uses cave path length from the entrance, normalized to the Beacon distance (blue to red); walls and landed rocks remain black. The purple player marker stays on top. E marks the shared entrance/exit; B marks the Beacon.
+
 ## AI process
+
+- Cave dressing/water update (2026-10-26): integrated the owner-supplied 304-frame cave atlas unchanged, including 50 decorative overlays and ten muddy puddle shapes. Codex authored deterministic non-blocking scatter, native water masks, mirrored sprite reflections and bounded footstep ripples. Source pixels remain untouched; rendering does not change terrain, routes or gameplay RNG.
+
+- Integrated the owner-supplied UI pack (2026-10-26): original CC0 pixel sprites, themed palettes and Hollow Sigil font authored with Codex/Python/Pillow/FontTools. PNGs and WOFF2 are copied unchanged and imported locally through Vite; runtime code applies nine-slice panels, native heart states, tiled fuel meters and the supplied font. No third-party font data or external runtime dependency.
+
+- Integrated the owner-provided complete cave atlas from `spritesheets/cave_tileset.png` and its matching JSON: 254 native frames, exact metadata rectangles/anchors, all 47 corner neighborhoods, directional ore, resource icons, wall entrance, resin/plants, matching rockfall art, and six 100 ms beacon frames. The source pixels are copied unchanged; structural and browser pixel checks verify the mapping and cache seams.
 
 - Unlit walking reuses the delivered lit walking poses at runtime and removes only the three reserved flame colours. Body/torch pixels, atlas files and timing remain unchanged.
 
@@ -226,7 +234,11 @@ The jam requires that the majority of the game is AI-generated. This section say
 - `scripts/check-assets.ts` (part of `npm run check`) validates both sheets: frame counts, size limits and the frame names the renderer uses.
 - Asset foundations (the sprite and sound catalogs, the resource registry and the actor-sheet helpers: one animation per sheet, 64×64 cells, direction rows N, NE, E, SE, S, SW, W, NW) were implemented with Codex from the catalog and Kittingsl's sheet layout. The sound catalog (`src/assets/sounds.ts`) lists every sound id; the audio engine and samples came later, see Audio above.
 
+- Pixel VFX and cave-detail integration (2026-10-26): code authored with Codex; fixed-size historical particles replace the rigid guide trail, and deterministic overlay placement uses the existing owner-supplied atlas without changing gameplay RNG or terrain. The owner supplied `spritesheets/last-ember-logo-native-160x80.png`; it is copied unchanged to the Vite-imported `src/assets/art/logo.png` and displayed at its native 2:1 aspect with nearest-neighbor scaling. No third-party assets were introduced.
+
 ## Credits and licences
+
+- Supplied UI sprites, palettes and Hollow Sigil font: original CC0 1.0 Universal artwork; bundled license in `src/assets/ui/LICENSE.txt`.
 
 - Game code, procedural art, and the tileset and character atlas: AI-generated or written by AI agents for this jam; repo owner Elias Stepanik (eliasstepanik), with contributions from Kittingsl.
 - No third-party art, music, sound effects or fonts are used.
@@ -234,3 +246,9 @@ The jam requires that the majority of the game is AI-generated. This section say
 - Audio tooling only, not shipped: [ComfyUI](https://github.com/comfyanonymous/ComfyUI) (GPL-3.0) and the community node packs `audio-batch` and `DJZ-Pedalboard`.
 - Runtime dependencies: none (`package.json` has no `dependencies`). The game is plain TypeScript on canvas 2D.
 - Build tools only, not shipped as assets: [Vite](https://vite.dev/) (MIT) and [TypeScript](https://www.typescriptlang.org/) (Apache-2.0).
+
+## Blender source scenes
+
+`blender/` contains 33 confirmed editable source scenes for the Player, Lurker, Stalker and Devourer. `blender/confirmed_sources.json` records their animation names, original delivery locations and SHA-256 checksums. These source files are for asset editing and are not part of the browser build.
+
+Character atlas update (2026-10-26): owner-supplied `all_characters_atlas_v1` includes the authored 32px wisp (12 frames at 20fps, center/left/right eye looks). Existing character frames are preserved. Runtime metadata is trimmed from the delivered source; the native sprite replaces the procedural orb.

@@ -15,15 +15,15 @@ function ok(cond: boolean, msg: string): void {
 type Row = { name: string; d: number; kind: MonsterKind; mineral: FlameKind; grade: ParryGrade; loss: number }
 const ROWS: Row[] = [
   { name: 'perfect, 2 steps early', d: -2 / 60, kind: 'lurker', mineral: 'none', grade: 'perfect', loss: 0 },
-  { name: 'early 80 ms plain', d: -0.08, kind: 'lurker', mineral: 'none', grade: 'good', loss: 3.99 },
-  { name: 'late 80 ms plain', d: 0.08, kind: 'lurker', mineral: 'none', grade: 'poor', loss: 7.57 },
-  { name: 'early 80 ms copper', d: -0.08, kind: 'lurker', mineral: 'copper', grade: 'good', loss: 1.80 },
-  { name: 'late 80 ms copper', d: 0.08, kind: 'lurker', mineral: 'copper', grade: 'poor', loss: 3.86 },
+  { name: 'early 80 ms plain', d: -0.08, kind: 'lurker', mineral: 'none', grade: 'good', loss: 2.50 },
+  { name: 'late 80 ms plain', d: 0.08, kind: 'lurker', mineral: 'none', grade: 'good', loss: 3.66 },
+  { name: 'early 80 ms copper', d: -0.08, kind: 'lurker', mineral: 'copper', grade: 'perfect', loss: 0 },
+  { name: 'late 80 ms copper', d: 0.08, kind: 'lurker', mineral: 'copper', grade: 'perfect', loss: 0 },
   { name: 'copper -0.050 (inside its wider perfect band)', d: -0.05, kind: 'lurker', mineral: 'copper', grade: 'perfect', loss: 0 },
-  { name: 'early 80 ms devourer', d: -0.08, kind: 'devourer', mineral: 'none', grade: 'good', loss: 11.63 },
-  { name: 'edge early plain', d: -0.14, kind: 'lurker', mineral: 'none', grade: 'poor', loss: 9.60 },
-  { name: 'in-game early 5 steps', d: -5 / 60, kind: 'lurker', mineral: 'none', grade: 'good', loss: 4.24 },
-  { name: 'in-game late 5 steps', d: 5 / 60, kind: 'lurker', mineral: 'none', grade: 'poor', loss: 8.22 },
+  { name: 'early 80 ms devourer', d: -0.08, kind: 'devourer', mineral: 'none', grade: 'good', loss: 7.28 },
+  { name: 'edge early plain', d: -0.18, kind: 'lurker', mineral: 'none', grade: 'poor', loss: 9.60 },
+  { name: 'in-game early 5 steps', d: -5 / 60, kind: 'lurker', mineral: 'none', grade: 'good', loss: 2.64 },
+  { name: 'in-game late 5 steps', d: 5 / 60, kind: 'lurker', mineral: 'none', grade: 'good', loss: 4.04 },
 ]
 
 // A descent run state with a swing just started facing +x (sw.t = 0) and one lurker in the lunge 30 px ahead, aiT set so
@@ -57,14 +57,14 @@ export function run(): void {
   // 3. Monotonic loss outside the perfect band, both directions; late is punished harder than early at the same |d|.
   for (const sign of [-1, 1]) {
     let prev = -1
-    for (let k = 3; k <= (sign < 0 ? 8 : 5); k++) { // beyond lateMaxS (5 steps = 0.083 < 0.09 < 6 steps) the loss saturates at lossMaxFrac
+    for (let k = 3; k <= (sign < 0 ? 10 : 7); k++) { // beyond lateMaxS (7 steps = 0.117 < 0.12 < 8 steps) the loss saturates at lossMaxFrac
       const l = parryLoss(sign * k / 60, 'lurker', 'none').loss
       ok(l > prev, 'loss grows with |d| (sign ' + sign + ', k=' + k + ')')
       prev = l
     }
   }
   ok(parryLoss(0.08, 'lurker', 'none').loss > parryLoss(-0.08, 'lurker', 'none').loss, 'late loses more than early at the same |d|')
-  for (const d of [-0.14, -0.08, -0.04, 0.04, 0.08, 0.09]) {
+  for (const d of [-0.14, -0.10, -0.08, 0.08, 0.09, 0.10]) {
     ok(parryLoss(d, 'lurker', 'copper').loss < parryLoss(d, 'lurker', 'none').loss, 'copper loss < plain loss at d=' + d)
   }
   ok(parryLoss(-0.14, 'lurker', 'none').loss <= T.monsters.lurker.energyHitE * T.parry.lossMaxFrac + 1e-9, 'loss never exceeds energyHitE * lossMaxFrac')
@@ -86,27 +86,27 @@ export function run(): void {
     const { s, m } = lunging(-0.08)
     resolveParries(s)
     ok(m.ai === 'dying', 'good parry kills')
-    ok(Math.abs(s.player.energy - (100 - 3.99)) <= 0.01, 'good parry costs ~3.99 E (got ' + s.player.energy + ')')
+    ok(Math.abs(s.player.energy - (100 - 2.50)) <= 0.01, 'good parry costs ~2.50 E (got ' + s.player.energy + ')')
     ok(s.player.stats.kills === 1 && s.player.stats.parries === 1 && s.player.stats.perfectParries === 0, 'good parry: kill and parry, not perfect')
-    ok(Math.abs(s.player.stats.energyLostToHits - 3.99) <= 0.01 && s.player.parry.lastGrade === 'good', 'good parry record and energyLostToHits')
+    ok(Math.abs(s.player.stats.energyLostToHits - 2.50) <= 0.01 && s.player.parry.lastGrade === 'good', 'good parry record and energyLostToHits')
     ok(s.fx.events.some(e => e.kind === 'parryGood') && s.fx.hitstop === 0, 'parryGood emitted, no hitstop')
   }
   {
-    const { s, m } = lunging(0.08)
+    const { s, m } = lunging(0.09)
     resolveParries(s)
     ok(m.ai === 'dying' && s.player.parry.lastGrade === 'poor' && s.fx.events.some(e => e.kind === 'parryPoor'), 'poor parry kills and emits parryPoor')
   }
   {
-    const { s, m } = lunging(-0.08, 'lurker', 'copper')
+    const { s, m } = lunging(-0.12, 'lurker', 'copper')
     resolveParries(s)
-    ok(m.ai === 'dying' && Math.abs(s.player.energy - (100 - 1.80)) <= 0.01, 'copper early parry costs ~1.80 E (got ' + s.player.energy + ')')
+    ok(m.ai === 'dying' && Math.abs(s.player.energy - (100 - 2.04)) <= 0.01, 'copper early parry costs ~2.04 E (got ' + s.player.energy + ')')
   }
 
   // 5. Whiff boundary: delta < -earlyMaxS skips the shade (it stays in the lunge); exactly -earlyMaxS is still graded (R-127).
   {
-    const { s, m } = lunging(-0.15)
+    const { s, m } = lunging(-0.19)
     resolveParries(s)
-    ok(m.ai === 'lunge' && s.player.energy === 100 && s.player.stats.parries === 0, 'delta -0.15 whiffs: no kill, no cost')
+    ok(m.ai === 'lunge' && s.player.energy === 100 && s.player.stats.parries === 0, 'delta -0.19 whiffs: no kill, no cost')
     ok(s.player.parry.lastGrade === 'none', 'whiff leaves the parry record untouched')
   }
   {
@@ -150,11 +150,11 @@ export function run(): void {
     const { s, m } = lunging(-0.08)
     const m2 = spawnMonster(s, 'lurker', 530, 510, 100)
     Object.assign(m2, { ai: 'lunge' as const, aiT: T.monsters.lurker.contactS - 0.08 })
-    s.player.energy = 5 // first loses 3.99, second is capped at the 1.01 left
+    s.player.energy = 4 // first loses ~2.50, second is capped at the ~1.50 left
     resolveParries(s)
     ok(m.ai === 'dying' && m2.ai === 'dying', 'both shades die')
     ok(s.player.energy === 0 && s.player.stats.kills === 2 && s.player.stats.parries === 2, 'energy 0, kills 2, parries 2')
     ok(s.fx.events.filter(e => e.kind === 'flameOut').length === 1, 'flameOut fires once (lit -> out edge only)')
-    ok(Math.abs(s.player.stats.energyLostToHits - 5) <= 1e-9, 'energyLostToHits counts the applied loss, capped at the energy left')
+    ok(Math.abs(s.player.stats.energyLostToHits - 4) <= 1e-9, 'energyLostToHits counts the applied loss, capped at the energy left')
   }
 }

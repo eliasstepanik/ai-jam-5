@@ -1,0 +1,63 @@
+Delivered UI integration, 2026-10-26
+Related issue: #99, submitter eliasstepanik. Expanded user request covers the
+new UI pack under spritesheets/UI, including menu art and Hollow Sigil font.
+
+Implementation
+- Copied eight 128x64 precolored atlases, metadata, CC0 license and WOFF2
+  unchanged from the delivery. Runtime PNG/font payload: 11,239 bytes.
+- Vite imports inline these small assets into the hashed game bundle. No CDN
+  or external runtime service. Source sheets and character slots remain 0/1;
+  new UI slots follow, legacy packed sheets follow all external sheets.
+- Native five-heart full/lost/empty states; 180ms loss frame, per-slot tracking
+  preserves previously empty slots, supports multi-heart loss and healing.
+  All tracking lives in optional render resources, not serialized State.
+- Stone frames for hotbar, HUD and keycaps; Candlelit Menu frames/selection
+  overlays and pointer cues for buttons and panels. Corners keep source size.
+- Three torch frames at 6fps, normal/copper/sodium/strontium themes in HUD and
+  Help, tiled fuel fill clipped to whole source pixels and bright leading tip.
+- Supplied pointer reused for depth and opt-in developer navigation. No normal
+  exit arrow is re-enabled; guide wisp navigation remains unchanged.
+- Local Hollow Sigil WOFF2 loaded lazily, retained through HMR, with a system
+  fallback on load failure. Browser font rasterization may apply antialiasing;
+  the delivery's optional bitmap-font rendering path is not required here.
+- Menu/in-game text colors and menu eye/spark accents use delivered palette.
+- No dedicated depth/exit/keycap sheet is present in this delivery. Reuse the
+  supplied pointer/panel rather than inventing replacement art. This user
+  pack supersedes the older sprite dimensions/art direction in issue #99.
+
+Verification
+- Full npm check passed with 64MB Node nursery; build passed. Added heart-UI
+  regression and structural UI asset/font/license/bundle check to the suite.
+- 88 browser native sprite comparisons (all 11 shapes x eight palettes):
+  exact pixel matches against the decoded source atlas rectangles.
+- 400 nine-slice corner pixels checked at 24x24, 121x41, 320x140 and 16x16.
+- Fuel clipping at 0/25/50/100% yielded 0/120/240/480 nontransparent pixels.
+- Recorded all three heart states and all three torch frames in four themes.
+- 20 screen/viewport combinations: title, Help, pause, death and win at
+  360x640, 640x360, 1280x800, 1920x1080; all three Help pages rendered.
+- Actual native title/HUD/Help/win screenshots inspected. Local font loaded,
+  no browser exceptions, HUD State JSON unchanged, ?ph=1 fallback works.
+- Real main.ts host HMR preserves run/developer choices and live resources.
+- README provenance/license and changelog included; owner docs snapshot
+  unchanged and may be re-synced to reflect this replacement asset pack.
+
+Acceptance
+Implemented and verified for the delivered pack. Await user visual confirmation;
+keep #99 OPEN / IN PROGRESS rather than treating automated proof as approval.
+
+#99 bar placement follow-up, 2026-10-26 (submitter eliasstepanik)
+- User clarified that duration stays in the upper-left torch info box.
+- Removed the active-mineral underline. Raised duration fill/track by 4u
+  inside its existing box so it clears the lower nine-slice rim. Hotbar slots,
+  selection frame, control hint, material label and fuel behavior unchanged.
+- Full checks and build passed; actual-host HMR passed. Four browser sizes
+  verified fuel bounds remain above the bottom rim, no active underline is
+  drawn, hint position and serialized State remain unchanged. No errors.
+- Await user confirmation; #99 remains open.
+
+#99 additional offset, 2026-10-26 (eliasstepanik)
+- User requested another two pixels up inside the torch info box. Duration
+  strip now starts at reference y87 (previous y89); all other HUD layout stays.
+- Build and four-size browser bounds/underline/State checks passed. Local full
+  suite hit the unchanged AI timing limit (1018/1000ms); require complete CI
+  check/build before merge. No AI code or threshold changes.

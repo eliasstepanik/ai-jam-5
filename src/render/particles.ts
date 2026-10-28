@@ -9,11 +9,9 @@ import { drawSprite } from '../assets/images.ts'
 import { MINERALS } from '../core/state.ts'
 import { hash2 } from '../core/noise.ts'
 import { currentQuality } from './quality.ts'
-import { drawMist } from './mist.ts'
 import type { View } from './view.ts'
 import { inView } from './view.ts'
-import { WISP_LEAD_MIN_PX, wispAt } from '../systems/escape-wisp.ts'
-import { C_EMBER, C_FLAME, C_HOT, C_SPARK, COL_ARG, COL_SPARK, PAL, TABLE, TAU } from './particles-table.ts'
+import { C_FLAME, C_SPARK, COL_ARG, COL_SPARK, PAL, TABLE, TAU } from './particles-table.ts'
 import type { Spec, SpawnKind } from './particles-table.ts'
 
 const P_MAX = 512 // matches the registry arrays in assets/resources.ts
@@ -82,48 +80,9 @@ export function consumeEvents(s: State): void {
   }
 }
 
-// Escape guide wisp (#81), drawn in the additive pass so it glows through the darkness. Analytic like the pool: a pure function of
-// (State.wisp, meta.time). A hot orb at the lead distance plus sparkles trailing back along the route; reducedFlash holds the pulse
-// and the sparkle jitter still, and the quality tier thins the trail. The scratch point is reused so a frame allocates nothing.
-const WISP_PT = { x: 0, y: 0 }
-const WISP_TRAIL = 6 // sparkles behind the orb at full quality
-const WISP_GAP_PX = 14 // route distance between sparkles
-const WISP_ORB = [[11, 0.18, C_EMBER], [6, 0.4, C_EMBER], [3, 0.95, C_HOT]] as const // [radius px, alpha, palette index] halo to core
-function drawWisp(ctx: CanvasRenderingContext2D, s: State, v: View): void {
-  const w = s.wisp
-  if (!w.on || s.meta.screen !== 'playing' || s.meta.phase !== 'escape' || w.path.length < 2) return
-  const t = s.meta.time, calm = s.settings.reducedFlash, fade = Math.min(1, w.d / WISP_LEAD_MIN_PX)
-  const pulse = calm ? 1 : 0.8 + 0.2 * Math.sin(t * TAU * 1.5)
-  const n = Math.round(WISP_TRAIL * currentQuality(s).particles)
-  for (let k = n; k >= 0; k--) { // back to front, the orb (k = 0) is painted last
-    if (k > 0 && w.d - k * WISP_GAP_PX < 0) continue // the trail never piles up on the player
-    wispAt(s, w.d - k * WISP_GAP_PX, WISP_PT)
-    const j = calm ? 0 : Math.floor(t * 10), jx = (hash2(j, k, 11) - 0.5) * 4, jy = (hash2(j, k, 12) - 0.5) * 4
-    const x = WISP_PT.x + (k > 0 ? jx : 0), y = WISP_PT.y + (k > 0 ? jy : 0)
-    if (!inView(v, x, y)) continue
-    const a = fade * (1 - k / (n + 1))
-    if (k > 0) {
-      ctx.globalAlpha = 0.7 * a
-      ctx.fillStyle = PAL[k & 1 ? C_EMBER : C_HOT]
-      ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2)
-      continue
-    }
-    for (let L = 0; L < WISP_ORB.length; L++) {
-      ctx.globalAlpha = WISP_ORB[L][1] * a * pulse
-      ctx.fillStyle = PAL[WISP_ORB[L][2]]
-      ctx.beginPath()
-      ctx.arc(x, y, WISP_ORB[L][0], 0, TAU)
-      ctx.fill()
-    }
-  }
-  ctx.globalAlpha = 1
-}
-
 // Passes 13 ('normal', world transform, source-over) and 18 ('add', world transform, 'lighter'). Analytic: nothing is integrated,
 // every particle is a pure function of (spawn data, meta.time). One fillStyle per palette bucket.
 export function drawParticles(ctx: CanvasRenderingContext2D, s: State, v: View, pass: 'normal' | 'add'): void {
-  if (pass === 'add') drawWisp(ctx, s, v)
-  else drawMist(ctx, s, v) // #83: shadow mist of the monsters, first so sparks and dust lie on top of it
   const p = getResources().particles, want = pass === 'add' ? 1 : 0, now = s.meta.time
   for (let c = 0; c < PAL.length; c++) {
     const col = PAL[c]

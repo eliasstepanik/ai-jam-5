@@ -62,11 +62,11 @@ function roll(): void {
     ok(s.player.roll.t === 0 && s.player.roll.invuln === 0, 'step 19: roll and i-frames over')
     ok(Math.abs(s.player.x - x18 - T.player.walkPxS * T.escape.sprintMul * DT) < 1e-6, 'exit at sprint speed (240 px/s), no stall')
   }
-  // 2. Cooldown 1.5 s counts from the roll start: held Space re-rolls on step 91, not 90.
+  // 2. Cooldown 1.0 s counts from the roll start: held Space re-rolls on step 61, not 60.
   {
     const s = arena(), starts: number[] = []
-    for (let k = 1; k <= 92; k++) { step(s, inp([], ROLL), DT); if (count(s, 'roll') > 0) starts.push(k) }
-    ok(starts.length === 2 && starts[0] === 1 && starts[1] === 91, 'second roll exactly at 1.5 s (got ' + starts.join(',') + ')')
+    for (let k = 1; k <= 62; k++) { step(s, inp([], ROLL), DT); if (count(s, 'roll') > 0) starts.push(k) }
+    ok(starts.length === 2 && starts[0] === 1 && starts[1] === 61, 'second roll exactly at 1.0 s (got ' + starts.join(',') + ')')
   }
   // 3. Direction: movement keys give the move direction (normalised), no keys give the facing; descent never rolls.
   {

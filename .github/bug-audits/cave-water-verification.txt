@@ -1,0 +1,35 @@
+Cave dressing and water verification - 2026-10-26
+Issue #97, submitted by eliasstepanik. IN PROGRESS, awaiting visual confirmation.
+
+Imported owner's supplied PNG/JSON unchanged: 304 frames, 1024x1536,
+106305 bytes (previous 94807). Asset budget raised from 100 to 128 KiB
+for the expanded source atlas. All 254 previous frame rectangles, anchors,
+and RGBA crops remain identical. 50 added dressing frames, 10 puddles.
+
+Deterministic render-only placement below 1 per 12 floor cells, wide-floor
+clearance, entrance/exit/Beacon/ore exclusions. Non-blocking per R-054 and
+source collision:false; older solid-stalagmite request is superseded.
+Surface and actor-row depth ordering; wall decor only on south faces.
+
+Pure checks: every variant reachable, sparse/corridor placement, dominant
+water mask, bounded ripples, stationary/dry suppression, pause, teleport
+and run reset. Build, asset, UI-asset and architecture guards pass.
+Local full check hits preexisting AI benchmark: 1033 ms, 1000 ms budget;
+no AI code or timing thresholds changed. Full CI must pass before merge.
+
+Browser: all 50 native frames used; 10 water masks, 4255 interior pixels;
+185 reflection pixels follow actors; walking creates 2 ripples / 60 pixels.
+Effects stay inside water and under actors/walls/cracks/vines (637 water
+pixels protected beneath static foreground dressing). No gameplay State
+writes. Cold/warm floor comparison: 6291456 bytes identical. Previous
+wall/corner comparison: 47 states / 12320768 bytes, 48 ore frames and 6
+Beacon frames pass. Cached dynamic water mean CPU ~0.055 ms (240 samples).
+Quality q2/q3 and cave-details toggle disable decorative effects. Maximum
+16 dynamic pools, 32 ripples, 64 cached surface masks. Browser console clean.
+Real main-host HMR retains run, dev choices, darkness and effect resources.
+Placeholder mode also renders without errors.
+
+Acceptance still incomplete: no bones art supplied. Keep #97 open, preserve
+missing-art fallback. New native dimensions intentionally follow owner
+metadata rather than old placeholder sizes. No docs snapshot edits; owner
+knowledge-base resync needed for native art dimensions and water behavior.

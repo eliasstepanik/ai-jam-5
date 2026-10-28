@@ -8,6 +8,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- #97: updated cave atlas with non-blocking mushrooms, roots, ferns, stalagmites, leaves, branches, gravel and wall dressing; ten muddy puddle variants reflect nearby sprites and ripple when walked through.
+- Glowing vines on cave walls and on the floor beside them near the cave start. They give off a soft pulsing green light and fade out with depth, so the deeper cave has none.
+- Falling dust and pebbles that get denser the deeper you go.
+- Drifting draft motes and a faint warm bleed of light toward the Beacon that quietly guide the player along the main route.
+- Dynamic puddles: the pool surface shimmers, ripples, drips and reflects the flame, the Beacon and nearby vines instead of showing a flat decal.
+- Sculpted cave terrain: open caverns, single pillars and short dead-end alcoves.
+
+### Changed
+- Darkness and tint now deepen continuously with depth. The per-zone colour tints are removed from rendering (the plain fallback shown before the tileset decodes keeps flat per-zone floor fills).
+- More cracks and rubble the deeper you go.
+- Props are placed with a purpose instead of being scattered: route markers and landmarks along the way to the Beacon, decoys, water and lairs in dead ends, and rubble where the route runs close to a wall.
+- The HUD no longer shows the zone label. The depth class and Beacon path length stay.
+- Caves regenerate with new layouts: the same seed now gives a different cave than before.
+- The default cave depth is now Shallow (class 1) instead of Standard. Saved player choices are kept; Best records keep their per-class keys.
+- Make parry and dodge more forgiving: wider parry window (perfect ±55 ms, early 180 ms, late 120 ms), longer lurker and stalker telegraph (0.55 s), shorter escape roll cooldown (1.0 s).
+- Clicking (or Enter/Space on) the Sound button now cycles volume Off → 33 % → 66 % → 100 % → Off. Left/Right, -/= and M behave as before.
+- #99: raise the torch-duration bar another two reference pixels inside its info box.
+- #99: remove the active-mineral underline and raise the duration bar inside the torch info box so it clears the bottom frame.
+
+### Added
+- #99: delivered UI hearts, nine-slice menu/HUD panels, selection markers, material-colored animated torch/fuel meter and local Hollow Sigil font.
+
+### Fixed
+- #84: position the enlarged title logo just above Play, lower on tall windows, and remove its tagline.
+- #98: resin refills the torch without triggering the player pickup animation; healing-plant and ore animations are retained.
+- #127: restore pure-black creature particles at the user’s request; blending into black terrain is intentional. Retain lifetime fading and foreground-wall occlusion.
+- #127: mix sparse native dark-gray pixels into creature trails so they remain readable against unexplored/pure-black darkness. Stable colors cross the light boundary without popping, fade at life end, and respect foreground walls.
+- #127: on-screen creature particles continue outside torch range and draw over the explored-memory layer instead of disappearing at the light boundary.
+- #127: golden-yellow guide trail; Beacon sparks begin inside the flame, and shadow pixels begin inside creature silhouettes, shrink and rise only 4–6 pixels. Torch particles retain their existing appearance.
+
+### Removed
+
+- Removed the redundant minimap X marker and separate Exit toggle. E represents the shared entrance/exit.
+
+### Added
+
+- Native 160x80 title logo, crisp torch/Beacon fire particles and a wisp particle trail that retains historical positions through turns.
+- Cave moss, vines, roots, pebbles and rubble overlays, a developer comparison toggle, progressive escape cracks and local fracture scars around rockfalls.
+
+- Developer Inspect option: Pure darkness hides explored-area memory without clearing exploration.
+
+- Developer Map tab: independent ore, resin, healing plant, entrance, exit and Beacon markers, plus floor, gameplay-zone and entrance-path-distance heatmap modes. Ore uses copper green, sodium yellow and strontium red; the player is purple. Resource markers update immediately when mined or collected.
+
+- Integrated the 254-frame cave tileset: authored ore in four directions with three variants, raw-resource HUD/help icons, a wall-mounted entrance/exit, healing plant/resin art, matching falling/landed boulders, and the six-frame animated Beacon. The large Beacon uses a clear chamber floor anchor, shared by interaction and developer navigation; its original interaction point remains valid.
+
+- Added 33 confirmed Blender source scenes under `blender/`, grouped by character, with their source and SHA-256 manifest.
 
 - Shades are now aware. Each has a state: unaware, suspicious, hunting or searching. A shade notices the player by sight (a view cone with line of sight) or by sound (movement nearby), remembers the last place it saw you, searches there, then gives up and returns to its patrol (issue #113).
 - Unaware shades idle and patrol around their home point and keep out of the light.
@@ -18,7 +64,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shadow mist around the three shadow creatures: soft dark wisps drift off each Lurker, Stalker and Devourer (small and quick, long thin trail, big and dense), trail behind them while they move, thicken during windup and lunge, spread out and fade as they die, and idle when the enemy AI is frozen in the dev panel. Purely visual: drawn procedurally in the particle pass under the darkness, capped per enemy and for the whole screen, thinned by the render quality tier and by Reduced flash, and it never touches gameplay state or the seeded random streams. A new check covers the per-type emission, state response, caps and the read-only guarantee.
 - Crack decor from the tileset: sparse deterministic ground cracks (about 5% of floor tiles, small and large) and wall-face cracks (about 8% of visible faces), chosen from a per-tile seed hash and baked into the chunk cache. Entrance, Beacon chamber and vein walls stay clean. A new check covers determinism, density, placement and the tileset frame names; floor variants are checked to be evenly spread over all 10.
 
+### Changed
+
+- The escape wisp now glides: it is a steered orb with its own velocity that eases toward the guide route, so it no longer snaps when the route changes (#81).
+
 ### Fixed
+
+- Resin and healing plants stay grounded; shadow creatures shed opaque black pixels instead of soft coloured mist.
+
+- Keep the wisp body visible independently of trail fade and quality, remove the escape exit ring/arrow, and use one fading palette for the explored-memory view.
+- Remove Devourer proximity suppression/death restoration so being hit cannot enlarge torch light.
+
+- Clip inner-corner wall faces to their open neighbors; align the exit trigger and three-tile spawn spacing with the doorway.
+- Replace ore glow dots with crystal-pixel emission, fade the whole cave palette on zone entry, and ease Devourer light release on death.
+- Use the updated native 32px, 20fps wisp atlas animation after Beacon ignition.
+
+- Torch material/color and inventory cost now apply only after the material-change animation finishes. Walking cancels the action without spending a mineral; shake-off follows the same timing (#87).
+
+- Corrected player action clips: mining and collected materials use the pickup animation; successful mineral tosses and shake-off use the material-change animation. Combat priorities, effect timing and movement are unchanged (#87).
+
+- Inner corners use the supplied 47-state lookup and complete wall composites, with padded row/chunk clipping and matching cold/cache rendering. Solid northern joins no longer expose stray floor pixels.
+- Atlas hot reload refreshes pixels and frame metadata together while preserving the current run.
+- Replaced all old atlas coordinates with the new frame metadata and extended asset checks for the 1024x1280 sheet, frame overlap, directional ore and beacon animation.
+
+- Enemy grey pixels stay visible outside torch range alongside purple eyes. Both layers now respect the actual foreground wall alpha, including raised walls covering walkable tiles (#121).
+
+- Moving players face their travel direction; stationary descent aiming still follows the mouse (#124).
+- Walk/run animation uses measured displacement, including partial collision and noclip map clamping (#79).
+- Ore placement uses solid south-facing vein walls and their visible interaction tiles, including teaching veins (#120).
+- On-screen enemies remain rendered beyond torch range; purple atlas eyes emit in darkness while walls still block sight (#121).
+- Corrected menu control/audio/end-screen hints, made the quit shortcut honor confirmation, and prevented small help-page text overlaps. The menu audit is recorded in .github/bug-audits/menu-content.txt (#78).
 
 - The depth readout no longer looks the same for every depth class. The HUD zone line, the end screen depth class row and the title Best line now show the class name, and the HUD and end screen also show the real Beacon path length in tiles (for example `Shallow · 262 tiles` against `Deep · 768 tiles`). The 0..40 depth metric and every score number are unchanged. A new check pins the text per class.
 - Audio: removed clicking sounds. The flame loop is now a warm flame with a soft flicker and gentle ember pops instead of sharp crackle bursts. Softer attacks on mine hit, UI click, eye open, roll, relight, hurt, heartbeat and drip. Seamless noise loops (no thump every 2 s).

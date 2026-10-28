@@ -2,8 +2,10 @@
 // (layer table) and §4 (flare), architecture-render-2.md §3.3 (swing arc), §5.6 (flame-out ember), R-088 (drawGlowSprite
 // signature). Glow sprites are coloured radial gradients cached in the registry (res.light, key glowKey); this module keeps no
 // state and never writes State. Eyes (drawEyes, pass 16) use the entities.ts helpers. Rocks have no glow layer (render-3 §1 table); their telegraph is in props.ts.
-import type { MonsterKind, State } from '../core/types.ts'
+import { beaconPosition } from '../world/beacon-position.ts'
+import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
+import { entranceWall } from '../world/entrance-art.ts'
 import { TILE } from '../core/state.ts'
 import { clamp } from '../core/math.ts'
 import { hash2, vnoise } from '../core/noise.ts'
@@ -12,25 +14,20 @@ import { getResources } from '../assets/resources.ts'
 import type { Quality } from './quality.ts'
 import type { View } from './view.ts'
 import { FLAME_COL } from './flame.ts'
-import { FACE_H } from './tiles-paint.ts'
 import { PLAYER_FOOT } from './entities-player.ts'
 import { GLOW_BUCKETS, bucketOf, glowKey } from './keys.ts'
+import { drawAtlasEyes } from './eyes.ts'
 import { ctx2d, newCanvas } from './light.ts'
-import { EYES_ID, MON_SCALE, MON_FOOT, drawFrame, entityInView, eyeAlpha, eyeAnim, eyeFrame, eyeVisible, monsterDirection, torchTip } from './entities.ts'
+import { entityInView, eyeAlpha, eyeVisible, torchTip } from './entities.ts'
 
 export type TipFn = (s: State) => { x: number; y: number }
 
 const RESIN = '#d9861c', PLANT = '#b6ff8a' // pickup glow colours (render-3 §1)
-const CRYSTAL = { sodium: '#ffe14a', copper: '#1fd6b8', strontium: '#e0182d' } as const // style §4.4 "Crystal light"
 const BEACON_COL = '#ffb347', BEACON_CORE = '#fff4d6', SHAFT_COL = '#cfe3ff', FLARE_COL = '#fff4d6'
 const REDUCED_FLASH = 0.3 // settings.reducedFlash scales every flash layer (ui-2 §6, render-3 §4)
-const VEIN_R = 10 // vein glint radius
 const SHAFT_R = 48 // entrance shaft radius (its dust motes stay within 40 px of the centre)
-const VEIN_PAD = 32 // vein glints show only within R + 32 (render-3 §1)
 const MOTES = 6, MOTE_SALT = 31 // entrance dust motes
 const SPARK_ARC_R = 22, SPARK_ARC_W = 6 // swing arc (render-2 §3.3)
-const EYE_IDLE = '#6b4fb8', EYE_TELEGRAPH = '#b48cff' // eye halo colours (render-2 §3.2, style §4)
-const EYE_HALO_R: Record<MonsterKind, number> = { lurker: 4, stalker: 6, devourer: 9 } // render-3 §1: 4 / 6 / 9
 
 function glowSprite(hex: string, b: number): HTMLCanvasElement {
   const cache = getResources().light
@@ -65,8 +62,6 @@ export function drawGlowSprite(ctx: CanvasRenderingContext2D, hex: string, x: nu
 // ponytail: square, not circle, so a glow just past a rect corner may still draw; harmless (additive, off-screen) and cheaper.
 const glowInView = (v: View, x: number, y: number, r: number): boolean => x + r >= v.x0 && x - r <= v.x1 && y + r >= v.y0 && y - r <= v.y1
 
-const tileCenter = (i: number, w: number): [number, number] => [(i % w + 0.5) * TILE, (Math.floor(i / w) + 0.5) * TILE]
-
 // Pass 17. Sets 'lighter' and leaves it (the orchestrator resets to source-over); resets globalAlpha to 1.
 // `tipOf` defaults to torchTip(s) from entities.ts (tests may inject another); core flame, flare, ember, Beacon and shaft are drawn at every quality.
 export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Quality, tipOf: TipFn = torchTip): void {
@@ -83,18 +78,13 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
       if (glowInView(v, k.x, k.y, T.pickup.radiusPx)) drawGlowSprite(ctx, k.kind === 'resin' ? RESIN : PLANT, k.x, k.y, T.pickup.radiusPx,
         0.25 + 0.2 * (0.5 + 0.5 * Math.sin(t * 1.5 * 2 * Math.PI)))
     }
-    if (!escape) {
-      for (const vein of s.veins) {
-        const [x, y] = tileCenter(vein.tile, s.world.w)
-        const drawY = y - (vein.stand === vein.tile + s.world.w ? 8 : FACE_H)
-        if (Math.hypot(x - p.x, y - p.y) <= R + VEIN_PAD && glowInView(v, x, drawY, VEIN_R)) drawGlowSprite(ctx, CRYSTAL[vein.mineral], x, drawY, VEIN_R, 0.3)
-      }
-    }
+
   }
 
   // Entrance shaft with a few rising dust motes.
   const en = s.world.entrance
-  const ex = (en.tx + 0.5) * TILE, ey = (en.ty + 0.5) * TILE
+  const door = entranceWall(s)
+  const ex = ((door?.tx ?? en.tx) + 0.5) * TILE, ey = door ? (door.ty + 1) * TILE - 31 : (en.ty + 0.5) * TILE
   if (glowInView(v, ex, ey, SHAFT_R)) {
     drawGlowSprite(ctx, SHAFT_COL, ex, ey, SHAFT_R, 0.25)
     for (let i = 0; i < MOTES; i++) {
@@ -105,10 +95,10 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
   }
 
   // Beacon fire: brighter while held, full and steady once lit. beaconFlash adds a short white burst (rf for reducedFlash).
-  const bc = s.world.beacon
-  const bx = (bc.tx + 0.5) * TILE, by = (bc.ty + 0.5) * TILE
+  const { x: bx, y: groundY } = beaconPosition(s)
+  const by = groundY - 32
   const hold = clamp(p.beaconHold / T.beacon.holdS, 0, 1)
-  const fireA = s.world.beaconLit ? 0.8 : 0.4 + 0.3 * hold
+  const fireA = s.world.beaconLit ? 0.8 : 0.7 * hold
   const fireR = s.world.beaconLit ? 64 : 40
   if (glowInView(v, bx, by, fireR)) { // the 16 px core lies inside the fire glow
     drawGlowSprite(ctx, BEACON_COL, bx, by, fireR, fireA)
@@ -148,19 +138,13 @@ export function drawGlow(ctx: CanvasRenderingContext2D, s: State, v: View, q: Qu
   ctx.globalAlpha = 1
 }
 
-// Pass 16. Eyes of shades outside the light: additive halo plus the eyes sprite, same direction and scale as the body.
-// Sets 'lighter' and leaves it (like drawGlow; the orchestrator resets), resets globalAlpha; drawn at every quality (eyes are never dropped).
-// ponytail: the halo sits on the monster centre; the spec's per-kind, per-direction authored eye centres (render-2 §3.2) arrive
-// with the art. Upgrade: add (ex, ey) = centre * MON_SCALE to the halo position once the delivered eye anchors exist.
+// Pass 16: grey and purple atlas pixels survive darkness; foreground wall pixels still occlude them.
 export function drawEyes(ctx: CanvasRenderingContext2D, s: State, v: View): void {
   ctx.globalCompositeOperation = 'lighter'
   for (const m of s.monsters) {
     if (!entityInView(v, m.x, m.y) || !eyeVisible(s, m)) continue
     const a = eyeAlpha(s, m)
-    if (a <= 0) continue // dying eyes are fully faded
-    const [act, f] = eyeFrame(s, m), y = m.y - MON_FOOT[m.kind]
-    drawGlowSprite(ctx, eyeAnim(m) === 'telegraph' ? EYE_TELEGRAPH : EYE_IDLE, m.x, y, EYE_HALO_R[m.kind], a)
-    drawFrame(ctx, EYES_ID[m.kind], act + '-' + monsterDirection(s, m), f, m.x, y, MON_SCALE[m.kind], a)
+    drawAtlasEyes(ctx, s, m, v, a)
   }
   ctx.globalAlpha = 1
 }

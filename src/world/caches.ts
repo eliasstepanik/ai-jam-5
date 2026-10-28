@@ -86,7 +86,7 @@ export function getDepthField(s: State): Int32Array {
 }
 
 export function getExitDist(s: State): Int32Array {
-  const key = baseKey(s) + ':' + s.world.solidSig + ':' + s.world.pendingSig
+  const key = baseKey(s) + ':' + s.world.exit.tx + ',' + s.world.exit.ty + ':' + s.world.solidSig + ':' + s.world.pendingSig
   if (exitE?.key === key) return exitE.v
   const solid = getSolid(s), pending = getPendingMask(s), n = solid.length
   if (!exitBufs || exitBufs[0].length !== n) { exitBufs = [new Int32Array(n), new Int32Array(n)]; exitFlip = 0 }

@@ -1,9 +1,13 @@
+import { CAVE_DRESSING } from '../src/core/cave-props.ts'
 // Asset gate: the two external atlases, atlas.json, screens, audio and budgets. Spec: docs/architecture-assets-pipeline-2.md §2-§3 (checks #1-#11), architecture-assets-pipeline §4, ai-jam-5-asset-formats-25d, R-183, R-184.
 // Run from the repo root: `node scripts/check-assets.ts`. Node built-ins only; no image or audio decoding (PNG header bytes, sizes and one sha256).
 // Every failure prints one `check failed: ...` line; any failure exits 1. Missing folders (src/assets/art, src/assets/audio) are skipped.
 // Wired into `npm run check` (the `check` script in package.json runs this file).
+import { GROUND_DETAILS, WALL_DETAILS } from '../src/core/cave-detail.ts'
+import { MATERIAL_CHANGE_S } from '../src/core/player-actions.ts'
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { verifyTileAssembly } from './check-tileset.ts'
 import { SPRITES } from '../src/assets/sprites.ts'
 import type { SpriteId } from '../src/assets/sprites.ts'
 import { PENDING_AUDIO, SOUNDS } from '../src/assets/sounds.ts'
@@ -106,7 +110,7 @@ for (const p of sheetPaths) {
 // Sheet sizes are fixed by the spec (R-183/R-184), never taken from the JSON itself: both the PNG header and the JSON `size` must equal them.
 type Size = { w: number; h: number }
 const isSize = (s: unknown): s is Size => !!s && Number.isInteger((s as Size).w) && Number.isInteger((s as Size).h)
-const TS_SIZE: Size = { w: 512, h: 512 }, CH_SIZE: Size = { w: 4096, h: 2048 }
+const TS_SIZE: Size = { w: 1024, h: 1536 }, CH_SIZE: Size = { w: 4096, h: 2048 }
 function sheet(pngPath: string, want: Size, maxBytes: number): void {
   if (!existsSync(pngPath)) { fail(pngPath + ' is missing'); return }
   const bytes = readFileSync(pngPath), h = png(pngPath, bytes)
@@ -122,11 +126,12 @@ const jsonSize = (p: string, max: number): void => { if (existsSync(p) && sizeOf
 const pad2 = (n: number): string => String(n).padStart(2, '0')
 const range = (n: number, f: (i: number) => string): string[] => Array.from({ length: n }, (_, i) => f(i))
 const TILESET_NAMES = [
+  ...GROUND_DETAILS, ...WALL_DETAILS,
   ...range(16, i => 'cap_' + pad2(i)), 'face_pillar', 'face_left', 'face_right', ...range(4, i => 'face_fill_' + i),
   ...['copper', 'sodium', 'strontium', 'resin'].flatMap(m => range(3, i => 'wall_' + m + '_' + pad2(i + 1))), ...range(10, i => 'floor_' + i),
   ...range(4, i => 'ground_crack_' + pad2(i + 1)), ...range(6, i => 'ground_crack_large_' + pad2(i + 1)), ...range(3, i => 'wall_crack_' + pad2(i + 1)), // src/render/cracks.ts
 ]
-const TILESET_CATEGORIES: Record<string, number> = { floor: 10, wall_cap: 19, wall_face: 7, corner_cutout: 4, corner_rim: 4, wall_composite: 4, overlay_ground: 22, overlay_wall: 24 }
+const TILESET_CATEGORIES: Record<string, number> = { floor: 10, wall_cap: 19, wall_face: 7, wall_corner_composite: 93, wall_composite: 4, overlay_ground: 94, overlay_wall: 73, ui_resource: 4 }
 type Tileset = { frames: Record<string, { frame: Rect; category: string }>; meta: { size: { w: number; h: number }; frame_count: number; png_sha256?: string } }
 const TS_PNG = ASSETS + '/cave_tileset.png', TS_JSON = ASSETS + '/cave_tileset.json'
 const ts = readJson<Tileset>(TS_JSON)
@@ -138,7 +143,7 @@ if (ts) {
     const names = Object.keys(ts.frames)
     tileFrames = names.length
     if (ts.meta.size.w !== TS_SIZE.w || ts.meta.size.h !== TS_SIZE.h) fail('cave_tileset.json meta.size is ' + ts.meta.size.w + 'x' + ts.meta.size.h + ', must be ' + TS_SIZE.w + 'x' + TS_SIZE.h)
-    if (ts.meta.frame_count !== 94 || names.length !== 94) fail('cave_tileset.json must hold 94 frames (meta.frame_count ' + ts.meta.frame_count + ', actual ' + names.length + ')')
+    if (ts.meta.frame_count !== 304 || names.length !== 304) fail('cave_tileset.json must hold 304 frames (meta.frame_count ' + ts.meta.frame_count + ', actual ' + names.length + ')')
     const counts: Record<string, number> = {}
     for (const [name, f] of Object.entries(ts.frames)) {
       counts[f.category] = (counts[f.category] ?? 0) + 1
@@ -146,13 +151,22 @@ if (ts) {
     }
     for (const [c, n] of Object.entries(TILESET_CATEGORIES)) if (counts[c] !== n) fail('cave_tileset.json category ' + c + ' must have ' + n + ' frames, has ' + (counts[c] ?? 0))
     for (const c of Object.keys(counts)) if (!(c in TILESET_CATEGORIES)) fail('cave_tileset.json has unknown category ' + c)
+    for (const d of CAVE_DRESSING) {
+      const f = ts.frames[d.name] as { frame?: Rect; anchor?: number[]; category?: string; collision?: boolean; water?: boolean; draw_layer?: string } | undefined
+      const r = f?.frame, layer = f?.category === 'overlay_wall' ? 'wall' : f?.draw_layer?.includes('sorted') ? 'actor' : 'surface'
+      if (!r || r.w !== d.w || r.h !== d.h || f?.anchor?.[0] !== d.ax || f?.anchor?.[1] !== d.ay || layer !== d.layer)
+        fail('cave dressing metadata mismatch: ' + d.name)
+      if (f?.collision !== false || Boolean(f?.water) !== d.water) fail('cave dressing collision/water flags: ' + d.name)
+    }
     for (const n of TILESET_NAMES) if (!(n in ts.frames)) fail('cave_tileset.json lacks frame ' + n + ' (needed by src/render/tileset.ts)')
     if (!ts.meta.png_sha256) fail('cave_tileset.json meta.png_sha256 is missing')
     else if (existsSync(TS_PNG) && createHash('sha256').update(readFileSync(TS_PNG)).digest('hex') !== ts.meta.png_sha256) {
       fail('cave_tileset.png sha256 does not match cave_tileset.json meta.png_sha256')
     }
   }
-  sheet(TS_PNG, TS_SIZE, 100 * KB)
+  verifyTileAssembly(ts, fail)
+  sheet(TS_PNG, TS_SIZE, 128 * KB)
+  jsonSize(TS_JSON, 250 * KB)
 }
 
 // ---- characters (#11, R-184) ----
@@ -161,12 +175,13 @@ const DIRECTIONS = ['north', 'northeast', 'east', 'southeast', 'south', 'southwe
 // ponytail: mirrors the render code by hand; upgrade by exporting the table from a DOM-free module if the mapping grows.
 const MAPPED = [
   ...['death_with_unlit_torch', 'death_without_torch', 'dodge_roll_no_torch', 'hurt_lit_torch_base', 'hurt_no_torch', 'hurt_unlit_torch', 'idle_lit_torch_base',
-    'idle_no_torch', 'idle_unlit_torch', 'material_change_lit_torch_base', 'run_lit_torch_base', 'run_without_torch', 'swing_lit_torch_base', 'walk_lit_torch_base'].map(a => 'player/' + a),
+    'idle_no_torch', 'idle_unlit_torch', 'material_change_lit_torch_base', 'pickup_lit_torch_base', 'run_lit_torch_base', 'run_without_torch', 'swing_lit_torch_base', 'walk_lit_torch_base'].map(a => 'player/' + a),
   ...['idle', 'walk_forward', 'sprint', 'death'].map(a => 'lurker/' + a),
   ...['idle', 'walk_forward', 'leap', 'death', 'hit'].map(a => 'stalker/' + a),
   ...['idle', 'walk_forward', 'attack', 'death', 'hurt'].map(a => 'devourer/' + a),
+  'wisp/fire_loop',
 ]
-type CharFrame = { rect: Rect; anchor: { x: number; y: number } }
+type CharFrame = { duration_ms: number; rect: Rect; anchor: { x: number; y: number } }
 type Chars = {
   format: string; size: { w: number; h: number }; frame_size: { w: number; h: number }; direction_order: string[]; counts: { frames: number }
   palette_panel_rect: Rect; animations: { id: string; frame_count_per_direction: number; directions: Record<string, CharFrame[]> }[]
@@ -186,20 +201,24 @@ else if (ch) {
   const ids = new Set<string>()
   for (const a of ch.animations) {
     ids.add(a.id)
-    if (Object.keys(a.directions).join() !== DIRECTIONS.join()) fail('characters.json ' + a.id + ' must have directions ' + DIRECTIONS.join(',') + ' in order')
+    const directions = a.id === 'wisp/fire_loop' ? ['center', 'left', 'right'] : DIRECTIONS
+    const size = a.id === 'wisp/fire_loop' ? 32 : 64
+    if (Object.keys(a.directions).join() !== directions.join()) fail('characters.json ' + a.id + ' must have directions ' + DIRECTIONS.join(',') + ' in order')
     for (const [dir, list] of Object.entries(a.directions)) {
       if (list.length !== a.frame_count_per_direction) fail('characters.json ' + a.id + '/' + dir + ' has ' + list.length + ' frames, expected ' + a.frame_count_per_direction)
       for (const f of list) {
         charFrames++
         const where = 'characters.json ' + a.id + '/' + dir
         if (!isRect(f.rect) || !inside(f.rect, CH_SIZE.w, CH_SIZE.h)) fail(where + ' rect is outside ' + CH_SIZE.w + 'x' + CH_SIZE.h)
-        else if (f.rect.w !== 64 || f.rect.h !== 64) fail(where + ' frame must be 64x64')
+        else if (f.rect.w !== size || f.rect.h !== size) fail(where + ' frame must be ' + size + 'x' + size)
         else if (overlaps(f.rect, ch.palette_panel_rect)) fail(where + ' rect overlaps palette_panel_rect')
-        if (f.anchor?.x !== 32 || f.anchor?.y !== 32) fail(where + ' pivot must be (32,32)')
+        if (f.anchor?.x !== size / 2 || f.anchor?.y !== size / 2) fail(where + ' pivot must be centred at ' + size / 2)
       }
     }
   }
-  if (charFrames !== 1232 || ch.counts.frames !== 1232) fail('characters.json must hold 1232 frames (counts.frames ' + ch.counts.frames + ', actual ' + charFrames + ')')
+  const materialFrames = ch.animations.find(a => a.id === 'player/material_change_lit_torch_base')?.directions.south
+  if (!materialFrames || Math.abs(materialFrames.reduce((ms, f) => ms + f.duration_ms, 0) / 1000 - MATERIAL_CHANGE_S) > 1e-6) fail('material-change gameplay duration differs from atlas playback')
+  if (charFrames !== 1268 || ch.counts.frames !== 1268) fail('characters.json must hold 1268 frames (counts.frames ' + ch.counts.frames + ', actual ' + charFrames + ')')
   for (const id of MAPPED) if (!ids.has(id)) fail('characters.json lacks animation ' + id + ' (used by the animation mapping)')
 }
 if (ch) {

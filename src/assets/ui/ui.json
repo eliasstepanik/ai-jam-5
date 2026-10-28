@@ -1,0 +1,174 @@
+{
+  "atlas_size": [
+    128,
+    64
+  ],
+  "sprites": {
+    "panel_9slice": {
+      "rect": [
+        2,
+        2,
+        24,
+        24
+      ],
+      "slice_margins": [
+        5,
+        5,
+        5,
+        5
+      ]
+    },
+    "selection_9slice": {
+      "rect": [
+        30,
+        2,
+        24,
+        24
+      ],
+      "slice_margins": [
+        5,
+        5,
+        5,
+        5
+      ]
+    },
+    "heart_empty": {
+      "rect": [
+        58,
+        2,
+        12,
+        12
+      ]
+    },
+    "heart_full": {
+      "rect": [
+        74,
+        2,
+        12,
+        12
+      ]
+    },
+    "torch_0": {
+      "rect": [
+        90,
+        2,
+        12,
+        18
+      ]
+    },
+    "torch_1": {
+      "rect": [
+        106,
+        2,
+        12,
+        18
+      ]
+    },
+    "torch_2": {
+      "rect": [
+        2,
+        30,
+        12,
+        18
+      ]
+    },
+    "meter_fill_tile": {
+      "rect": [
+        18,
+        30,
+        4,
+        4
+      ]
+    },
+    "meter_tip": {
+      "rect": [
+        26,
+        30,
+        3,
+        6
+      ]
+    },
+    "selection_pointer": {
+      "rect": [
+        33,
+        30,
+        7,
+        4
+      ]
+    },
+    "heart_lost": {
+      "rect": [
+        44,
+        30,
+        12,
+        12
+      ],
+      "anchor": [
+        6,
+        6
+      ]
+    }
+  },
+  "palette_rows": {
+    "stone": 0,
+    "ember": 1,
+    "spectral": 2,
+    "normal": 3,
+    "copper": 4,
+    "sodium": 5,
+    "strontium": 6
+  },
+  "torch_types": [
+    "normal",
+    "copper",
+    "sodium",
+    "strontium"
+  ],
+  "max_hearts": 5,
+  "health_steps": "whole hearts only",
+  "sampling": "nearest; no mipmaps; index texture is linear DATA",
+  "health_animation": {
+    "max_hearts": 5,
+    "units": "whole hearts",
+    "on_damage": [
+      {
+        "sprite": "heart_lost",
+        "duration_ms": 180
+      },
+      {
+        "sprite": "heart_empty",
+        "duration_ms": "until healed"
+      }
+    ],
+    "note": "Animate only newly lost slots; no half-heart states. A single broken-frame display needs no flashing."
+  },
+  "torch_animation": {
+    "frames": [
+      "torch_0",
+      "torch_1",
+      "torch_2"
+    ],
+    "suggested_fps": 6,
+    "loop": true
+  },
+  "coordinate_system": "top-left origin; source pixels; rect = x,y,width,height",
+  "palette_index_roles": [
+    "transparent",
+    "outline",
+    "surface",
+    "recess",
+    "rim shadow",
+    "rim highlight",
+    "accent shadow",
+    "accent",
+    "accent highlight"
+  ],
+  "menu_palette_row": 0,
+  "text_colors": {
+    "ingame": {
+      "normal": "#D8CCAA",
+      "secondary": "#A19C85"
+    },
+    "menu": "See palettes/menu.json state_roles"
+  }
+}

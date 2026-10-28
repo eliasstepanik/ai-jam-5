@@ -3,9 +3,9 @@
 // R-077 (no ui.urlSeed: platformStep writes ui.seedInput and consumes copyLink), R-078 (settings/best load once per session via
 // the settings.loaded guard; saveSettings after every Sound/Flashing/volume change, R-168).
 // Clicks activate the focused item: hit-testing needs src/ui/layout.ts (L4), which an L3 file must not import.
-// ponytail: Sound-row volume (ArrowLeft/Right, Minus/Equal, 0.1 steps) and mute are changed here; each change saves at once (rare events, no debounce).
+// ponytail: Sound-row volume (ArrowLeft/Right, Minus/Equal, 0.1 steps), the click cycle and mute are changed here; each change saves at once (rare events, no debounce).
 import type { Input } from '../main.ts'
-import type { FxEventKind, Screen, State } from '../core/types.ts'
+import type { FxEventKind, Screen, Settings, State } from '../core/types.ts'
 import { HELP_PAGES, toast } from '../core/state.ts'
 import { hashSeed } from '../core/rng.ts'
 import { parseSeed, SEED_MAX_LEN } from '../core/seed.ts'
@@ -89,10 +89,22 @@ function tick(s: State): void {
   u.confirmT = Math.max(0, u.confirmT - DT)
 }
 
+// Sound-row activation cycles the volume Off -> 33 -> 66 -> 100 -> Off (owner override of R-025/R-174, KB notes/ai-jam-5-audio-button-off-or-70.md).
+// A muted row is Off (cur 0); a between-step volume (the 0.7 default) jumps to the next step above; 100 -> Off keeps the volume, mute is the Off state.
+// ponytail: fixed step list; upgrade path: move VOL_STEPS to tuning if the steps ever become configurable.
+const VOL_STEPS = [33, 66, 100]
+
+export function cycleVolume(set: Settings): void {
+  const cur = set.muted ? 0 : Math.round(set.volume * 100)
+  const next = VOL_STEPS.find((n) => n > cur)
+  if (next !== undefined) { set.volume = next / 100; set.muted = false }
+  else set.muted = true
+}
+
 function activate(s: State, item: number): void {
   const sc = s.meta.screen, set = s.settings
   if (sc === 'title' || sc === 'paused') {
-    if (item === 2) { set.muted = !set.muted; saveSettings(s); ui(s, 'uiConfirm'); return }
+    if (item === 2) { cycleVolume(set); saveSettings(s); ui(s, 'uiConfirm'); return }
     if (item === 3) { set.reducedFlash = !set.reducedFlash; saveSettings(s); ui(s, 'uiConfirm'); return }
     if (item === 1) { ui(s, 'uiConfirm'); go(s, 'help'); return }
   }
@@ -165,7 +177,7 @@ export function stepScreens(s: State, input: Input): boolean {
   if (sc === 'title' && !seedFocus && k.has('KeyH')) { ui(s, 'uiConfirm'); go(s, 'help'); return false }
   if (sc === 'paused') {
     if (k.has('Escape') || k.has('KeyP')) { ui(s, 'uiConfirm'); go(s, 'playing'); return true }
-    if (k.has('KeyQ')) { ui(s, 'uiBack'); go(s, 'title'); return false }
+    if (k.has('KeyQ')) { u.cursor = 4; activate(s, 4); return false }
   }
   if (sc === 'dead' || sc === 'won') {
     if (k.has('KeyT')) { activate(s, 1); return false }

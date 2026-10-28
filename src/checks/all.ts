@@ -1,5 +1,11 @@
 // Runs every pure-logic check (R-040). Add one import + one call per new *.check.ts file; the list is kept in sync by hand.
+import { run as puddleDressing } from './puddle-dressing.check.ts'
+import { run as heartUi } from './heart-ui.check.ts'
+import { run as worldVisualFixes } from './world-visual-fixes.check.ts'
+import { run as pixelParticles } from './pixel-particles.check.ts'
+import { run as caveDetail } from './cave-detail.check.ts'
 import { run as state } from './state.check.ts'
+import { run as publishedBugs } from './published-bugs.check.ts'
 import { run as reportedBugs } from './reported-bugs.check.ts'
 import { run as debug } from './debug.check.ts'
 import { run as runCheck } from './run.check.ts'
@@ -47,6 +53,8 @@ import { run as cracks } from './cracks.check.ts'
 import { run as devDepth } from './dev-depth.check.ts'
 import { run as commitCheck } from './commit.check.ts'
 import { run as escapeWisp } from './escape-wisp.check.ts'
+import { run as escapeWispGlide } from './escape-wisp-glide.check.ts'
+import { run as escapeWispEdge } from './escape-wisp-edge.check.ts'
 import { run as animSpeed } from './anim-speed.check.ts'
 import { run as shadowMist } from './shadow-mist.check.ts'
 import { run as depthLabel } from './depth-label.check.ts'
@@ -58,6 +66,14 @@ import { run as aiTactics3 } from './ai-tactics-3.check.ts'
 import { run as flowfieldChecks } from './flowfield.check.ts'
 import { run as aiBudget } from './ai-budget.check.ts'
 import { run as separation } from './separation.check.ts'
+import { run as depthTone } from './depth-tone.check.ts'
+import { run as caveGuide } from './cave-guide.check.ts'
+import { run as puddleSurface } from './puddle-surface.check.ts'
+import { run as caveSculpt } from './cave-sculpt.check.ts'
+import { run as caveAlcove } from './cave-alcove.check.ts'
+import { run as volumeCycle } from './volume-cycle.check.ts'
+puddleDressing()
+heartUi()
 state()
 runCheck()
 stepCheck()
@@ -106,10 +122,22 @@ commitCheck()
 animSpeed()
 debug()
 escapeWisp()
+escapeWispGlide()
+escapeWispEdge()
 shadowMist()
 depthLabel()
+depthTone()
+caveGuide()
+puddleSurface()
+volumeCycle()
 
 reportedBugs()
+publishedBugs()
+worldVisualFixes()
+pixelParticles()
+caveDetail()
+caveSculpt()
+caveAlcove()
 stuckProbe()
 awarenessChecks()
 aiTactics()

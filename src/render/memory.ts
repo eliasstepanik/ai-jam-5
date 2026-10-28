@@ -4,31 +4,17 @@
 // Per frame: compare world.explored words with the copy, repaint only changed words, upload one dirty rect.
 import type { State } from '../core/types.ts'
 import { getResources } from '../assets/resources.ts'
-import { tileCache } from './tiles.ts'
 import { ctx2d, newCanvas } from './light.ts'
 
 const HASH = 35 // '#'
-const FLOOR_MIX = 0.35, WALL_MIX = 0.12 // render-2 §5.2: weight of the memory tint over the zone darkness fill
-// Zone darkness fill and memory tint, index = zone - 1 (render-2 §5.2).
-const DARK: readonly number[] = [0x0a0806, 0x06080b, 0x050906, 0x0a050c]
-const TINT: readonly number[] = [0x4a4236, 0x3b4a5c, 0x3a5244, 0x4a3a5c]
-
-// mix(dark, tint, k) as r, g, b integers. COLORS per zone: [dark r,g,b, floor r,g,b, wall r,g,b] (offsets 0, 3, 6).
-function ramp(dark: number, tint: number, k: number): [number, number, number] {
-  const ch = (sh: number): number => Math.round(((dark >> sh) & 255) * (1 - k) + ((tint >> sh) & 255) * k)
-  return [ch(16), ch(8), ch(0)]
-}
-const COLORS: readonly (readonly number[])[] = DARK.map((d, i) => [
-  (d >> 16) & 255, (d >> 8) & 255, d & 255, ...ramp(d, TINT[i], FLOOR_MIX), ...ramp(d, TINT[i], WALL_MIX),
-])
+const COLORS = [10, 8, 6, 32, 28, 23, 18, 15, 12] as const // dark / explored floor / explored wall; zone colour is applied by light.ts
 
 // Memory canvas for the current world, brought up to date with world.explored; null for a title/empty world.
 // ponytail: created on the first world frame and never disposed (resources §2). A same-size new run keeps the canvas and repaints in
 // full (key = tilesHash; a changed hash or size forces the full rebuild, an equal hash on a new run is caught by the word diff).
 export function memoryCanvas(s: State): HTMLCanvasElement | null {
   const { w, h, explored, tiles, tilesHash } = s.world
-  const t = tileCache(s)
-  if (!t) return null
+  if (s.debug.pureDarkness || !w || !h || tiles.length !== w * h) return null
   const m = getResources().memory, n = w * h, nWords = Math.ceil(n / 32)
   if (!m.canvas || m.canvas.w !== w || m.canvas.h !== h || !m.img || m.words.length !== nWords) {
     const cv = newCanvas(w, h)
@@ -37,7 +23,8 @@ export function memoryCanvas(s: State): HTMLCanvasElement | null {
     m.words = new Int32Array(nWords)
     m.key = -1
   }
-  const full = m.key !== tilesHash
+  const key = tilesHash ^ 0x4d454d32 // invalidate old per-zone memory after HMR
+  const full = m.key !== key
   const data = m.img.data
   let dx0 = w, dy0 = h, dx1 = -1, dy1 = -1
   for (let k = 0; k < nWords; k++) {
@@ -45,7 +32,7 @@ export function memoryCanvas(s: State): HTMLCanvasElement | null {
     if (!full && word === m.words[k]) continue
     m.words[k] = word
     for (let i = k * 32, end = Math.min(n, i + 32); i < end; i++) {
-      const c = COLORS[t.zone[i] - 1] ?? COLORS[0]
+      const c = COLORS
       const wall = tiles.charCodeAt(i) === HASH
       const lit = ((word >>> (i & 31)) & 1) === 1
       const o = lit ? (wall ? 6 : 3) : 0
@@ -57,7 +44,7 @@ export function memoryCanvas(s: State): HTMLCanvasElement | null {
     dx0 = Math.min(dx0, wraps ? 0 : x0); dx1 = Math.max(dx1, wraps ? w - 1 : x0 + 31)
     dy0 = Math.min(dy0, y0); dy1 = Math.max(dy1, y1)
   }
-  m.key = tilesHash
+  m.key = key
   if (dx1 >= 0) m.canvas.ctx.putImageData(m.img, 0, 0, dx0, dy0, Math.min(w - 1, dx1) - dx0 + 1, dy1 - dy0 + 1)
   return m.canvas.canvas
 }

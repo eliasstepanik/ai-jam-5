@@ -26,7 +26,7 @@ import type { PopCtx } from './resin.ts'
 
 export { SAFE_START, pickSpaced } from './resin.ts'
 
-const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]] as const // E, S, W, N
+const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]] as const // E, S, W, N: all have authored ore overlays
 const BLOCKS = [[0, 0], [-1, 0], [0, -1], [-1, -1]] as const // 2x2 blocks containing a tile
 const PLANT_GAP = 12, VEIN_GAP = 4, WIDEN_ROUNDS = 3
 const DENS = { plants: [1.33, 1.33, 2.0, 2.0], veins: [6.67, 6.0, 5.33, 4.67] } as const // CG4 §1, per 100 path tiles

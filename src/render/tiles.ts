@@ -1,10 +1,10 @@
 // L4 render: tile passes 5a/5b (2.5D, ADR-123). Derived per-run maps (zone, wall mask, inner corners, face variant) and the 8x8-tile
-// chunk cache of TWO canvases per chunk: `floor` 256x256 and `walls` 256x640 (eight independent complete wall rows).
+// chunk cache of TWO canvases per chunk: `floor` 256x256 and `walls` 256x896 (eight independent complete wall rows).
 // Spec: docs/architecture-render-2.md §2.1-2.2, architecture-modules-render.md (tiles.ts row). Paint helpers: tiles-paint.ts.
 // Maps and chunk canvases live in res.tiles (resources.ts); this module keeps no state and never writes State. No rng, no random calls.
 // The caller (render/index.ts) sets worldXf. Pass 5 is `drawFloor` + `drawWallRow` per row (the plan's `drawTileRow`).
-// Ground and wall decor overlays are NOT drawn (GAP, as before: no task or file owns decor; `_q.decor` is reserved for that gate).
-import type { State, Zone } from '../core/types.ts'
+// Available floor/wall detail overlays are cached by the quality/debug gate and collapse damage stage.
+import type { State } from '../core/types.ts'
 import { depthOf, zoneOfDepth } from '../core/score.ts'
 import { getDepthField } from '../world/caches.ts'
 import { getResources } from '../assets/resources.ts'
@@ -13,14 +13,13 @@ import type { Quality } from './quality.ts'
 import type { View } from './view.ts'
 import { ctx2d, newCanvas } from './light.ts'
 import { CHUNK_TILES, chunkKey, tileKey } from './keys.ts'
+import { damageStage, detailsOn } from './cave-details.ts'
 import { tilesetOf } from './tileset.ts'
 import type { Tileset } from './tileset.ts'
-import { CHUNK_PX, FACE_H, HASH, WALL_ROW_H, WALLS_H, faceVariant, paintFloor, paintWalls } from './tiles-paint.ts'
+import { CHUNK_PX, FACE_H, WALL_PAD, HASH, WALL_ROW_H, WALLS_H, faceVariant, paintFloor, paintWalls } from './tiles-paint.ts'
 
-const LRU_CAP = 24 // 24 x (256 + 640) x 256 x 4 B = 22 MB; complete row strips preserve the cache budget
+const LRU_CAP = 24 // 24 x (256 + 896) x 256 x 4 B = 28 MB; complete row strips preserve the cache budget
 const BUILD_QUOTA = 4 // chunks built per frame; the rest are painted straight into the main context
-const TINT: readonly (string | null)[] = [null, null, '#b8c4d6', '#b4d0b0', '#c4b0d8'] // OD-D1 DEFAULT on: zone 1 none; index = zone
-const TINT_ALPHA = 0.25
 // Neighbour offsets: wall mask bits N=1 E=2 S=4 W=8; inner bits NE=1 SE=2 SW=4 NW=8 (render-2 §2.1).
 const ORTHO: readonly (readonly [number, number, number])[] = [[0, -1, 1], [1, 0, 2], [0, 1, 4], [-1, 0, 8]]
 const DIAG: readonly (readonly [number, number])[] = [[1, -1], [1, 1], [-1, 1], [-1, -1]] // NE, SE, SW, NW
@@ -76,7 +75,7 @@ function buildMaps(s: State, key: string): TileCache {
 export function tileCache(s: State): TileCache | null {
   const { w, h, tiles, tilesHash } = s.world
   if (tiles.length !== w * h || w === 0) return null
-  const res = getResources(), key = tileKey(tilesHash, res.images.gen, s.world.veinGen)
+  const res = getResources(), key = tileKey(tilesHash, res.images.gen, s.world.veinGen) + ':' + damageStage(s) + ':' + Number(detailsOn(s))
   let t = res.tiles
   if (!t || !t.key.startsWith(tilesHash + ':')) {
     t = buildMaps(s, key)
@@ -87,26 +86,6 @@ export function tileCache(s: State): TileCache | null {
     t.key = key
   }
   return t
-}
-
-// Zone tint (OD-D1): the chunk's majority zone colour at alpha 0.25 over what is already painted. ponytail: 'source-atop' (a plain blend
-// toward the colour that leaves the transparent walls canvas alone) instead of the spec's multiply, which would colour transparent
-// pixels. Ceiling: lighter than a true multiply. Upgrade: multiply on the floor canvas only.
-function tint(g: CanvasRenderingContext2D, s: State, t: TileCache, cx: number, cy: number): void {
-  const { w, h } = s.world, n = [0, 0, 0, 0, 0]
-  for (let ty = cy * CHUNK_TILES; ty < Math.min(h, (cy + 1) * CHUNK_TILES); ty++) {
-    for (let tx = cx * CHUNK_TILES; tx < Math.min(w, (cx + 1) * CHUNK_TILES); tx++) n[t.zone[ty * w + tx]]++
-  }
-  let z = 1
-  for (let k = 2; k <= 4; k++) if (n[k] > n[z]) z = k
-  const col = TINT[z as Zone]
-  if (!col) return
-  g.globalCompositeOperation = 'source-atop'
-  g.globalAlpha = TINT_ALPHA
-  g.fillStyle = col
-  g.fillRect(0, 0, g.canvas.width, g.canvas.height)
-  g.globalAlpha = 1
-  g.globalCompositeOperation = 'source-over'
 }
 
 function reset(cv: HTMLCanvasElement, w: number, h: number): CanvasRenderingContext2D {
@@ -135,10 +114,10 @@ function buildChunk(s: State, t: TileCache, ts: Tileset | null, cx: number, cy: 
   paintFloor(gf, s, t, ts, cx, cy, ox, oy)
   for (let row = 0; row < CHUNK_TILES; row++) {
     const ty = cy * CHUNK_TILES + row
-    paintWalls(gw, s, t, ts, cx * CHUNK_TILES, (cx + 1) * CHUNK_TILES, ty, ty + 1, ox, ty * 32 - FACE_H - row * WALL_ROW_H, true)
+    gw.save(); gw.beginPath(); gw.rect(0, row * WALL_ROW_H, CHUNK_PX, WALL_ROW_H); gw.clip()
+    paintWalls(gw, s, t, ts, cx * CHUNK_TILES - 2, (cx + 1) * CHUNK_TILES + 2, ty, ty + 1, ox, ty * 32 - FACE_H - WALL_PAD - row * WALL_ROW_H)
+    gw.restore()
   }
-  tint(gf, s, t, cx, cy)
-  tint(gw, s, t, cx, cy)
   const made = { floor, walls }
   t.chunks.set(k, made)
   t.lru.push(k)
@@ -166,14 +145,18 @@ export function drawFloor(ctx: CanvasRenderingContext2D, s: State, v: View, _q: 
         ch = buildChunk(s, t, ts, cx, cy, k)
       }
       if (ch) ctx.drawImage(ch.floor, cx * CHUNK_PX, cy * CHUNK_PX)
-      else paintFloor(ctx, s, t, ts, cx, cy, 0, 0)
+      else {
+        ctx.save(); ctx.beginPath(); ctx.rect(cx * CHUNK_PX, cy * CHUNK_PX, CHUNK_PX, CHUNK_PX); ctx.clip()
+        paintFloor(ctx, s, t, ts, cx, cy, 0, 0)
+        ctx.restore()
+      }
     }
   }
 }
 
 // Pass 5b: draw the complete wall of ground row ty before that row's actors. Raising the wall by FACE_H aligns
 // its south base with collision; drawing its full height here lets the next ground row's caps occlude actors to the north.
-// ponytail: uncached rows skip corner cutouts because destination-out would erase the main canvas floor. Upgrade: a row scratch canvas.
+// Cold rows use the same padded strip as cached rows, including cross-chunk overhang.
 export function drawWallRow(ctx: CanvasRenderingContext2D, s: State, v: View, ty: number): void {
   const t = tileCache(s)
   if (!t || ty < 0 || ty >= s.world.h) return
@@ -182,9 +165,14 @@ export function drawWallRow(ctx: CanvasRenderingContext2D, s: State, v: View, ty
   for (let cx = v.tx0 >> 3; cx <= v.tx1 >> 3; cx++) {
     const ch = t.chunks.get(chunkKey(cx, cy))
     if (ch) {
-      ctx.drawImage(ch.walls, 0, sy, CHUNK_PX, WALL_ROW_H, cx * CHUNK_PX, ty * 32 - FACE_H, CHUNK_PX, WALL_ROW_H)
+      ctx.drawImage(ch.walls, 0, sy, CHUNK_PX, WALL_ROW_H, cx * CHUNK_PX, ty * 32 - FACE_H - WALL_PAD, CHUNK_PX, WALL_ROW_H)
     } else {
-      paintWalls(ctx, s, t, ts, cx * CHUNK_TILES, (cx + 1) * CHUNK_TILES, ty, ty + 1, 0, 0, false)
+      const res = getResources(), key = 'wall-row-v5'
+      let canvas = res.light.get(key)
+      if (!canvas) { canvas = newCanvas(CHUNK_PX, WALL_ROW_H); res.light.set(key, canvas) }
+      const g = reset(canvas, CHUNK_PX, WALL_ROW_H), y = ty * 32 - FACE_H - WALL_PAD
+      paintWalls(g, s, t, ts, cx * CHUNK_TILES - 2, (cx + 1) * CHUNK_TILES + 2, ty, ty + 1, cx * CHUNK_PX, y)
+      ctx.drawImage(canvas, cx * CHUNK_PX, y)
     }
   }
 }

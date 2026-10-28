@@ -3,7 +3,6 @@
 // Flicker is render-only and lives in src/render. No LOS here (R-013: lineOfSight in world/los.ts is the only LOS).
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
-import { devourerMul } from '../entities/monster.ts'
 
 export const LIGHT_ALL = 1e6
 
@@ -18,7 +17,7 @@ export function baseRadius(e: number, eMax = T.flame.energyMax): number {
 export function flameRadius(s: State): number {
   const p = s.player
   const r = p.energy <= 0 ? T.flame.radiusOutPx : baseRadius(p.energy, p.energyMax) * T.minerals.table[p.activeMineral].radiusMul
-  return r * devourerMul(s)
+  return r // enemy approach, hit and death never enlarge the light
 }
 
 export const lightRadius = (s: State): number =>

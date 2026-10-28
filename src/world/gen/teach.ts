@@ -44,7 +44,7 @@ function t2Candidates(c: Terrain, f: Fields): VeinSpot[] {
     if (!inWin(dist[m], T2_WIN)) continue
     for (const [dx, dy] of DIRS) {
       const j = nb(w, h, m, dx, dy)
-      if (j < 0 || t[j] !== 0 || isEdge(j % w, Math.floor(j / w), w, h) || seen.has(j)) continue
+      if (dy !== -1 || j < 0 || t[j] !== 0 || isEdge(j % w, Math.floor(j / w), w, h) || seen.has(j)) continue
       seen.add(j)
       out.push({ tile: j, stand: m })
     }
@@ -52,7 +52,7 @@ function t2Candidates(c: Terrain, f: Fields): VeinSpot[] {
   if (out.length > 0) return out
   for (let i = 0; i < t.length; i++) { // fallback: any wall with a zone-1 floor stand
     if (t[i] !== 0 || isEdge(i % w, Math.floor(i / w), w, h)) continue
-    const stand = DIRS.map(([dx, dy]) => nb(w, h, i, dx, dy)).find((j) => j >= 0 && t[j] > 0 && inWin(dist[j], T2_WIDE) && zoneOfDepth(depthOf(dist[j], c.beaconDist)) === 1)
+    const stand = [nb(w, h, i, 0, 1)].find((j) => j >= 0 && t[j] > 0 && inWin(dist[j], T2_WIDE) && zoneOfDepth(depthOf(dist[j], c.beaconDist)) === 1)
     if (stand !== undefined) out.push({ tile: i, stand })
   }
   return out

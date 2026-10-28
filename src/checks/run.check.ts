@@ -1,5 +1,6 @@
 // A29 run lifecycle checks: startRun / endRun / checkEnd / genStep / stepScreens / step. Spec: architecture-systems.md §1-§3,
 // architecture-state-2.md §10, architecture-systems-4.md §3.1, R-038/R-040. Exports run(); no side effect on import; DOM-free.
+import { entranceSpawn } from '../world/entrance-art.ts'
 import type { Input } from '../main.ts'
 import type { CaveResult, Monster, Rock, State } from '../core/types.ts'
 import { init } from '../core/state.ts'
@@ -79,12 +80,13 @@ export function run(): void {
     const s = init()
     startRun(s, seed, cave(seed))
     s.settings.loaded = true
+    s.settings.depthClass = 3 // the memo cave is built at class 3 (generateCave default); retry resolves the class from settings (screens.ts depthOf), so keep them equal
     return s
   }
   for (const seed of ['1', '42', 'Ember', '4294967295']) {
-    const s = fresh(seed), p = s.player, w = s.world, m = s.meta
+    const s = fresh(seed), p = s.player, m = s.meta
     ok(m.screen === 'playing' && m.steps === 0 && m.runId === 1 && m.seed === parseSeed(seed), seed + ' meta')
-    ok(p.x === w.entrance.tx * 32 + 16 && p.y === w.entrance.ty * 32 + 16, seed + ' player on entrance tile centre')
+    ok(p.x === entranceSpawn(s).tx * 32 + 16 && p.y === entranceSpawn(s).ty * 32 + 16, seed + ' player three tiles before doorway')
     ok(s.rng.gameplay === hashSeed(m.seed, 'gameplay') && s.rng.cosmetic === hashSeed(m.seed, 'cosmetic'), seed + ' rng seeded')
     ok(s.settings.lastSeed === m.seedText && s.cam.x === p.x, seed + ' lastSeed/cam')
   }
@@ -242,7 +244,7 @@ export function run(): void {
   ok(re.monsters.length === 0 && re.rocks.length === 0 && re.result === null, 'reused: monsters, rocks, result cleared')
   ok(re.fx.hitstop === 0 && re.fx.shake === 0 && re.fx.flare === 0 && re.fx.seq >= seq, 'reused: fx reset, seq kept')
   ok(re.player.facing === T.player.facingStart && re.player.hp === T.player.hpMax && re.player.energy === T.flame.energyMax, 'reused: player reset')
-  ok(re.player.x === ent.tx * 32 + 16 && re.player.y === ent.ty * 32 + 16, 'reused: player on entrance')
+  ok(re.player.x === entranceSpawn(re).tx * 32 + 16 && re.player.y === entranceSpawn(re).ty * 32 + 16, 'reused: player on entrance')
   ok(!re.world.beaconLit && re.director.alive.lurker === 0 && re.director.relocates === 0, 'reused: world/director reset')
   ok(isExplored(re.world.explored, ei), 'reused: entrance tile revealed')
   ok(re.meta.time === 7 && re.ui.screenAt === 7 && re.ui.cursor === 0, 'reused: time kept, screenAt = time')

@@ -23,6 +23,7 @@ export function stepPickups(s: State): void {
       if (p.hp >= p.hpMax) continue // cannot be stored; stays
       p.hp = Math.min(p.hpMax, p.hp + T.plant.healHp)
       p.stats.plantsEaten += 1
+      p.pickupAt = s.meta.time
       s.pickups.splice(i, 1)
       emit(s, 'heal', k.x, k.y)
     }

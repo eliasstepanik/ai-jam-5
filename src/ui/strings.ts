@@ -5,7 +5,6 @@
 import { T } from '../core/tuning.ts'
 
 export const STR = {
-  tagline: 'Carry the last flame down. Light the Beacon. Get out.',
   loading: 'Carving the cave…',
   loadingBtn: 'Loading', // Play button while assets load; caller appends pct(progress) (architecture-ui §7)
   logoFallback: 'LAST EMBER', // text logo when art_logo is missing (architecture-ui §7)
@@ -20,7 +19,9 @@ export const STR = {
   seedPlaceholder: 'random',
   seedHint: 'Type letters/digits · Backspace · empty = random seed',
   noBest: 'No best yet',
-  soundHint: 'Click for sound',
+  soundHint: 'Click to enable sound',
+  soundMuted: 'Sound muted [M]',
+  soundFailed: 'Audio unavailable',
   version: 'v0.1 · jam build',
   storageOff: 'Saving disabled in this browser',
   paused: 'PAUSED',
@@ -57,10 +58,9 @@ export const STR = {
   title: 'Title',
   copyLink: 'Copy link',
   copied: 'Copied!',
-  endHint: 'Enter new run · T retry seed · C copy · Esc title',
+  endHint: '← → select · Enter confirm · T retry · C copy · Esc title',
   // hud
   depth: 'DEPTH',
-  zone: 'ZONE',
   flameOut: 'FLAME OUT',
   flame: { plain: 'PLAIN', sodium: 'SODIUM', copper: 'COPPER', strontium: 'STRONTIUM' },
   hotbarHint: 'F toss · G shake off',
@@ -87,9 +87,9 @@ export const HELP = [
       'Deeper is worth more. Dying still scores.',
     ],
     controls: [
-      ['WASD', 'Move'], ['Mouse', 'Aim'], ['Click', 'Swing / parry'], ['E (hold)', 'Mine / light Beacon'],
+      ['WASD', 'Move / face (arrows also)'], ['Mouse', 'Face while standing'], ['Click', 'Swing / parry'], ['E (hold)', 'Mine / light Beacon'],
       ['1 2 3', 'Pick mineral'], ['F', 'Toss mineral into the flame'], ['G', 'Shake off (plain flame)'],
-      ['Space', 'Roll (escape only)'], ['Esc / P', 'Pause'], ['M', 'Mute'], ['Enter', 'Confirm / restart'],
+      ['Space', 'Roll (escape only)'], ['Esc / P', 'Pause'], ['M', 'Mute'], ['Enter', 'Confirm selected button'],
     ],
   },
   {

@@ -6,7 +6,6 @@ import type { Monster, MonsterKind, State } from '../core/types.ts'
 import type { Awareness } from '../core/types-monster.ts'
 import { clamp } from '../core/math.ts'
 import { deg, T, zt } from '../core/tuning.ts'
-import { devourerMul } from '../entities/monster.ts'
 import { flowDir } from '../systems/ai-flow.ts'
 import { STALKER_BEHIND_S } from '../systems/ai-stalker.ts'
 import { lightRadius } from '../systems/light.ts'
@@ -131,11 +130,6 @@ function worldLayer(ctx: CanvasRenderingContext2D, s: State, v: View): Label[] {
     ctx.arc(p.x, p.y, R + 100, mid - half, mid + half)
     ctx.closePath()
     ctx.fill()
-  }
-  if (s.monsters.some(m => m.kind === 'devourer' && m.ai !== 'dying')) { // light-push rings of devourerMul
-    circle(ctx, p.x, p.y, T.devourerLight.nearPx, KIND_COL.devourer, [2 * one, 2 * one])
-    circle(ctx, p.x, p.y, T.devourerLight.farPx, KIND_COL.devourer, [2 * one, 2 * one])
-    labels.push({ x: p.x, y: p.y - T.devourerLight.nearPx - 4 * one, str: 'mul ' + devourerMul(s).toFixed(3), col: KIND_COL.devourer })
   }
   ctx.setLineDash([])
   monsterLayer(ctx, s, one, labels)

@@ -1,0 +1,140 @@
+Pixel polish verification, 2026-10-26
+Scope: #98, #127 (expanded to torch, guide trail and Beacon), #84 and #85.
+
+Automated checks
+- pixel-particles.check.ts: historical spawn positions survive a turn, pause stops
+  the cosmetic clock, teleport clears old trail, extinguish clears torch sparks,
+  fixed 256-slot recycling, quality count reduction and new-run reset.
+- cave-detail.check.ts: all 19 supplied detail names reachable; deterministic
+  choices, sparse density, exclusion from one-tile corridors, 4 damage stages.
+- Existing shadow-mist checks retain per-kind/state/density/cap/read-only proof.
+- Existing crack, cave-hash and rock-route checks remain required.
+- Asset gate now checks every detail name against the delivered atlas.
+
+Browser verification (headless Edge, 1280x800)
+- Plant/large-resin draw coordinates match at 4 times: 8 recorded draws.
+- 41 black shadow squares from 3 enemy kinds; every fill is #000000, alpha 1,
+  with integer position and size; no circles/blur used by the shadow painter.
+- Continuous emission recorded 14 torch, 31 guide and 21 Beacon particles.
+  Extinguishing removes source-0 particles immediately. Old guide particles
+  retain the first leg after a right-angle turn instead of rotating with it.
+- All 19 existing ground/wall detail source rectangles hit by real painters.
+- Crack-anchor sets grow 61 -> 120 -> 195 -> 259 as escape damage progresses;
+  every prior mark keeps its frame. Local rockfall scars are capped at 48.
+- Compared 2,359,296 cold/warm floor bytes including chunk-crossing overlays;
+  no differences after clipping direct fallback floor painting to chunk bounds.
+- Detail toggle changes the cache key; quality 2/3 skips optional decals.
+- First-pass synthetic floor/chunk workload measured about 0.8-0.95 ms per
+  built chunk on this Windows browser. This is NOT proof of the 0.5ms target
+  in broader #112, which remains open. No gameplay tiles/hashes/RNG modified.
+- Isolated shadow/fire work: about 0.03 ms/frame over 360 repetitions with
+  24 enemies; fixed fire pool 256; State serialized identically before/after.
+  CPU-only measurement; canvas/GPU and device performance can vary.
+- Native logo is 160x80, 4.60KB, copied unchanged from the owner.
+  Enlarged 50% after user feedback: display sizes 240x120 (360x640, 640x360),
+  480x240 (1280x800), 720x360 (1920x1080); no tagline overlap or distortion.
+- Actual title and playing views inspected. ?ph=1 reaches the world pickup
+  stand-ins; default reaches delivered art. No browser exceptions.
+- Real main.ts host HMR preserves run/debug choices AND the same live pixel
+  pool object with continuing emission. Export debug hidden unless opted in.
+
+Remaining acceptance work
+- This batch awaits in-game confirmation; #84/#85/#98/#127 remain OPEN.
+- Reopened #93/#110/#112/#101/#102/#103 retain the exact missing criteria in
+  acceptance-2026-10-26.txt. Confirmed sub-fixes remain recorded as solved.
+- #97's separate stalagmite/bones/mushroom/puddle prop art/spawner remains OPEN.
+
+#127 follow-up, 2026-10-26 (submitter Kittingsl)
+- Golden trail colors: #ffe394, #f9cd60, #d8ab35 at early/mid/late ages.
+- Body births: 48 cases (three types, eight directions, idle/moving), sampled
+  from opaque dark sprite pixels with a four-pixel inset square. Birth sites
+  remain fixed in world coordinates while creatures move or animate.
+- All six Beacon frames have hot flame birth sites; fresh source-2 particles
+  match those sites, replacing the previous origin above the fire.
+- Shadow radii shrink from 1.0 to 0.2, including death; rising limited to
+  4/5/6px over 0.65/0.75/0.9s. Global shadow cap remains 96.
+- Required check/build pass. The initial simultaneous build/check run missed
+  the AI CPU budget by 0.68ms; the full check passed without concurrent build
+  and with a larger Node GC nursery. No threshold changes.
+- Browser has no errors; actual-host HMR retains debug choices and live pool.
+- Existing pixel-pool checks cover history, pause, reset, quality and teleport;
+  added exact origin override and unchanged torch trajectory/lifetime checks.
+- Acceptance implemented and verified; visual confirmation still pending.
+- Follow-up CPU check: 24 enemies, 360 repetitions, 0.044ms/frame average;
+  State unchanged, 256 fire slots, no browser errors (CPU-only measurement).
+
+#127 screen visibility follow-up, 2026-10-26 (submitter Kittingsl)
+- User confirmed golden wisp trail and Beacon effects; those subparts solved.
+- Removed light/seen gating from shadow emission; draw explicitly after the
+  darkness/memory overlay in source-over, independent of torch radius.
+- Actual full-frame browser check: lurker/stalker/devourer at radius +70px,
+  normal descent, fog enabled, no reveal, m.seen=false. Emitted 10/12/22
+  particles; 4/10/9 final black pixels outside sprite bounds survived the
+  explored-memory overlay (23 total). Torch radius in the scene: 170px.
+- Switching seen false/true preserves count and birth history. Moving each
+  emitter offscreen clears its emission/history. No browser exceptions.
+- Full checks passed with larger Node nursery and single-CPU/high scheduling
+  priority after two Windows AI timing misses (1049/1032ms vs 1000ms budget).
+  No gameplay, AI code or timing thresholds changed. Build passed.
+- Actual-host HMR preserved state/debug choices/live pixel pool. Prior sprite
+  origin/golden-color checks passed. No changes to wisp/Beacon/torch painter.
+- This targeted visibility fix awaits user confirmation; keep #127 OPEN.
+
+#127 black-background contrast correction, 2026-10-26 (Kittingsl)
+- Reproduced the remaining failure with Pure Darkness enabled: prior emission
+  continued, but pure-black particles had zero contrast against black terrain.
+  The earlier explored-memory-only pixel test missed this case.
+- Keep 3/4 of slots black; 1/4 use #4a4a4a, the exact gray already present in
+  the creature atlas. Colors do not depend on light distance or seen state.
+  Gray pixels continue over unexplored/pure-black areas; all pixels shrink,
+  rise only 4/5/6px and fade over the final 20% of their life.
+- Shared actual foreground-wall alpha masks clip both eyes and particles.
+  Cold/warm wall tests passed for all three kinds, including transparent
+  cutouts and same-row walls. Existing gray/purple eye masks unchanged.
+- Actual final-frame contrast passed for all three kinds, normal unexplored
+  terrain AND Pure Darkness, at radius +70px with fog enabled/seen=false.
+  Setting torch energy from 100 to zero at fixed time preserves exact particle
+  pixel/color output. Offscreen emission/history is still culled.
+- 48 sprite-birth cases, six Beacon frames, gold trail palette, live-host HMR,
+  bounded pools and unchanged State checks passed; no browser exceptions.
+- Particle CPU work with 24 enemies averaged 0.239ms/frame over 360 samples
+  on this Windows browser, including new wall clipping. CPU-only measurement.
+- Build, check.ts, asset gate, guard and targeted mist/pool/render/assets
+  checks passed. Local full suite hit the pre-existing AI 1000ms benchmark
+  (1018-1079ms), including after explicit warm-up; AI code/threshold untouched.
+  Required CI must pass its standard complete npm check/build before merge.
+- Visual confirmation pending; wisp/Beacon subparts remain confirmed solved.
+
+#127 black-only restoration, 2026-10-26 (Kittingsl)
+- User explicitly clarified black-on-black blending is an intended feature;
+  remove gray particles. Supersedes the prior contrast interpretation.
+- Removed gray slot/color data. All creature particle RGB is #000000.
+  Lifetime fade, shrinking, short rise and foreground-wall alpha preserved.
+- Browser verified black-only output over 48 creature birth cases, six Beacon
+  frames and unchanged golden wisp colors, with no errors. Cold/warm wall
+  occlusion and same-row preservation passed. Actual-host HMR passed.
+- Build, asset/guard and targeted mist/pool/render/assets checks passed.
+  Local full suite again hit the unchanged AI timing budget (1027/1000ms);
+  standard full CI check/build remains required before merge.
+- Await user visual confirmation; no future black-background contrast change
+  is planned. Existing creature gray body accents/eyes are unaffected.
+
+#84/#98 follow-up, 2026-10-26 (submitter eliasstepanik)
+- #85 user confirmed working; closed completed. Other cave/terrain issues
+  remain separate and were not closed by that confirmation.
+- Title logo now sits 32 reference pixels above Play, lowering it into the
+  available space on tall windows. Native size/aspect preserved, tagline
+  removed from rendering, strings and layout data.
+- Browser title layouts: 360x640, 640x360, 1280x720, 1280x800, 1187 square,
+  1920x1080. Positive top margin, no overlap with Play, 2:1 aspect retained;
+  no tagline text rendered. Native title screenshot visually inspected.
+- Resin no longer writes pickupAt; fuel gain, cap, relight event and stats
+  preserved. Existing pickup animations are not restarted or cancelled.
+- Eight browser cases: small/large resin, lit/extinguished torch, idle/walk.
+  Every case retained normal locomotion/idle pose, consumed resin and gained
+  fuel without pickup/material animation. Plant pickup animation preserved.
+- Added focused regression to minerals.check.ts for no resin animation,
+  preservation of existing timestamp, and healing-plant animation.
+- Full npm check passed (Node nursery 64MB), build passed; real-host HMR keeps
+  gameplay/debug choices/live pool. No browser exceptions.
+- Both #84/#98 remain IN PROGRESS awaiting user confirmation.

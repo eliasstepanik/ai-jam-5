@@ -1,5 +1,8 @@
 // Full-screen overlays: title, help, paused, dead, won (architecture-ui §7-8, ui-2 §2-3, scoring §7). Stateless: reads State and
 // the resource registry, draws, keeps nothing between calls. Hit-testing and focus live in layout.ts / systems/screens.ts.
+import { skinSprite } from './skin.ts'
+import { UI_FPS, UI_TORCH_FRAMES } from '../assets/ui-data.ts'
+import { resourceIcon } from '../render/tileset.ts'
 import { drawSprite } from '../assets/images.ts'
 import { getResources } from '../assets/resources.ts'
 import { hash2 } from '../core/noise.ts'
@@ -10,7 +13,7 @@ import type { State } from '../core/types.ts'
 import { MAX_ATTEMPTS } from '../world/generate.ts'
 import { logoGlow } from './anim.ts'
 import { COL, button, keycap, panel, text, textWidth } from './draw.ts'
-import { helpLayout, pauseLayout, titleLayout, titleReady } from './layout.ts'
+import { helpLayout, pauseLayout, titleLayout, titleReady, uiScale } from './layout.ts'
 import { drawEnd } from './menus-end.ts'
 import { TAU, fadeIn, fill, focus } from './menu-kit.ts'
 import type { Ctx } from './menu-kit.ts'
@@ -48,8 +51,8 @@ function backdrop(ctx: Ctx, s: State, w: number, h: number, u: number, alpha: nu
     for (let i = 0; i < 12; i++) {
       const a = hash2(i, 0, 1) * TAU, x = w / 2 + Math.cos(a) * 260 * u, y = h / 2 + Math.sin(a) * 260 * u
       ctx.globalAlpha = alpha * (s.settings.reducedFlash ? 0.7 : 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(s.meta.time * 0.8 + hash2(i, 0, 2) * TAU)))
-      fill(ctx, '#cbb8ff', x - 5 * u, y, 3 * u, 3 * u)
-      fill(ctx, '#cbb8ff', x + 2 * u, y, 3 * u, 3 * u)
+      fill(ctx, '#a495cf', x - 5 * u, y, 3 * u, 3 * u)
+      fill(ctx, '#a495cf', x + 2 * u, y, 3 * u, 3 * u)
     }
   }
   ctx.restore()
@@ -91,7 +94,6 @@ function drawTitle(ctx: Ctx, s: State, w: number, h: number): void {
     text(ctx, STR.logoFallback, x, y, 64, u, COL.accent, { align: 'center', bold: true, shadow: false })
     ctx.restore()
   }
-  text(ctx, STR.tagline, l.tagline.x, l.tagline.y, 16, u, COL.dim, { align: 'center' })
   const prog = im.total > 0 ? im.loaded / im.total : 0
   const labels = [ready ? STR.play : `${STR.loadingBtn} ${pct(prog)}`, STR.help, soundLabel(s), flashLabel(s), depthLabel(s)]
   for (let i = 0; i < labels.length; i++) button(ctx, l.buttons[i], labels[i], { focused: focus(s, i), enabled: l.buttons[i].enabled }, u, t, red)
@@ -111,8 +113,8 @@ function drawTitle(ctx: Ctx, s: State, w: number, h: number): void {
   const best = b ? `${STR.best} ${b.score} · ${depthName(s.ui.bestClass)} · ${STR.depthWord} ${b.depth}/${DEPTH_MAX} · ${clock(b.seconds)}${b.won ? ' · ' + STR.bestEscaped : ''}` : STR.noBest
   text(ctx, best, l.best.x, l.best.y, 14, u, COL.dim)
   if (!s.ui.storageOk) text(ctx, STR.storageOff, l.storage.x, l.storage.y, 12, u, COL.accent)
-  const muted = res.audio.state !== 'running' // browsers keep audio locked until the first click
-  text(ctx, muted ? STR.soundHint : STR.version, l.soundHint.x, l.soundHint.y, 12, u, muted ? COL.accent : COL.dim, { align: 'right' })
+  const hint = res.audio.state === 'failed' ? STR.soundFailed : s.settings.muted ? STR.soundMuted : res.audio.state !== 'running' ? STR.soundHint : STR.version
+  text(ctx, hint, l.soundHint.x, l.soundHint.y, 12, u, hint === STR.version ? COL.dim : COL.accent, { align: 'right' })
   ctx.restore()
 }
 
@@ -164,7 +166,7 @@ function timingRing(ctx: Ctx, s: State, cx: number, cy: number, r: number, u: nu
   ctx.moveTo(cx, cy)
   ctx.lineTo(cx + Math.cos(a) * (r + 8 * u), cy + Math.sin(a) * (r + 8 * u))
   ctx.stroke()
-  const eye = ph < m.telegraphS ? '#ffffff' : '#cbb8ff' // the eyes flare during the telegraph
+  const eye = ph < m.telegraphS ? '#ffffff' : '#a495cf' // the eyes flare during the telegraph
   fill(ctx, eye, cx - 12 * u, cy - 6 * u, 8 * u, 6 * u)
   fill(ctx, eye, cx + 4 * u, cy - 6 * u, 8 * u, 6 * u)
   ctx.restore()
@@ -216,13 +218,15 @@ function drawHelp(ctx: Ctx, s: State, w: number, h: number): void {
         ctx.beginPath()
         ctx.arc(c.icon + 16 * u, cy, 8 * u, 0, TAU)
         ctx.fill()
-      } else drawSprite(ctx, `item_mineral-${MINERALS[i - 1]}`, 'idle', 0, c.icon + 16 * u, cy, 0, 2 * u) // placeholder art ignores scale, atlas art honours it
+      } else if (!resourceIcon(ctx, MINERALS[i - 1], c.icon + 16 * u, cy, u)) drawSprite(ctx, `item_mineral-${MINERALS[i - 1]}`, 'idle', 0, c.icon + 16 * u, cy, 0, 2 * u) // placeholder art ignores scale, atlas art honours it
       text(ctx, m.name, c.name, cy + 6 * u, 16, u, COL.text, { bold: true })
-      for (const [r, col] of [[12, m.mantle], [5, m.core]] as const) { // flame swatch: mantle disc, core disc
-        ctx.fillStyle = col
-        ctx.beginPath()
-        ctx.arc(c.flame + 12 * u, cy, r * u, 0, TAU)
-        ctx.fill()
+      if (!skinSprite(ctx, UI_TORCH_FRAMES[Math.floor(s.meta.time * UI_FPS) % 3], i === 0 ? 'normal' : MINERALS[i - 1], c.flame, cy - 18 * u, 24 * u, 36 * u)) {
+        for (const [r, col] of [[12, m.mantle], [5, m.core]] as const) { // flame swatch: mantle disc, core disc
+          ctx.fillStyle = col
+          ctx.beginPath()
+          ctx.arc(c.flame + 12 * u, cy, r * u, 0, TAU)
+          ctx.fill()
+        }
       }
       text(ctx, m.effect, c.effect, cy + 6 * u, 16, u, COL.text)
       keycap(ctx, m.key, c.key - 16 * u, cy, u)
@@ -236,7 +240,14 @@ function drawHelp(ctx: Ctx, s: State, w: number, h: number): void {
 export function drawScreen(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
   const sc = s.meta.screen
   if (sc === 'title') drawTitle(ctx, s, w, h)
-  else if (sc === 'help') drawHelp(ctx, s, w, h)
+  else if (sc === 'help') {
+    // Scale the whole help page together: clamped individual font sizes overlap its columns on small screens.
+    const scale = Math.min(1, uiScale(w, h))
+    ctx.save()
+    ctx.scale(scale, scale)
+    drawHelp(ctx, s, w / scale, h / scale)
+    ctx.restore()
+  }
   else if (sc === 'paused') drawPause(ctx, s, w, h)
   else if (sc === 'dead' || sc === 'won') drawEnd(ctx, s, w, h)
 }

@@ -41,7 +41,7 @@ function quiet(cave: CaveResult): State {
 // A shade in the lunge, latched on the player (contactT) long enough ago that this step's bite fires, 24 px ahead (dir 0).
 function latched(s: State): Monster {
   const m = spawnMonster(s, 'lurker', s.player.x + 24, s.player.y, 100)
-  return Object.assign(m, { ai: 'lunge' as const, aiT: T.monsters.lurker.contactS, contactT: 0.1 })
+  return Object.assign(m, { ai: 'lunge' as const, aiT: T.monsters.lurker.contactS, contactT: T.monsters.lurker.contactS - T.parry.lateMaxS })
 }
 
 // A quiet run paused by Blur and waited out past the 0.25 s screen lock (18 steps = 0.3 s), cursor on `row`.
@@ -193,9 +193,10 @@ export function run(): void {
     ok(e.meta.screen === 'paused', 'Escape at exactly 0.25 s pauses')
   }
 
-  // C12/C13: no world step while ui.genPending is set (nor on the update that starts the run); Escape cancels it. Seed '4' needs 2 attempts.
+  // C12/C13: no world step while ui.genPending is set (nor on the update that starts the run); Escape cancels it. Seed '4' needs 2 attempts at class 3.
   {
     const s = init()
+    s.settings.depthClass = 3 // pinned: the settings default is class 1 now, where seed '4' accepts attempt 0
     s.ui.genPending = '4'
     step(s, inp(), DT)
     ok(s.ui.genPending === '4' && s.ui.genAttempt === 1 && s.meta.screen === 'title' && s.meta.steps === 0, 'rejected attempt: pending, no run, no step')

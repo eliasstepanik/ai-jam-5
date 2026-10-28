@@ -4,6 +4,7 @@
 // each owning task adds its call at the index marked inline.
 import type { Input } from '../main.ts'
 import type { State } from '../core/types.ts'
+import { fadePalette } from '../core/zone-palette.ts'
 import { T } from '../core/tuning.ts'
 import { stepBeacon } from './beacon.ts'
 import { stepCamera } from './camera.ts'
@@ -38,6 +39,7 @@ export function step(s: State, input: Input, dt: number): void {
   if (esc) stepRoll(s, it, dt) // X3 (R-169): before stepMovement, which skips its velocity block while roll.t > 0
   stepMovement(s, it, dt) // D3
   trackDepth(s) // D4
+  fadePalette(s.meta.palette, s.meta.zone, dt)
   if (!esc) stepExplore(s) // D4
   const eStart = s.player.energy // D5: snapshot before the burn, for the Beacon START GATE (R-125)
   stepFlame(s, dt) // D5

@@ -79,7 +79,7 @@ function midRunState(): State {
   const s = init()
   const n = MAP_W * MAP_H
   const row = 10 * MAP_W
-  s.meta = { seed: 12345, seedText: '12345', screen: 'playing', phase: 'escape', time: 10.2, steps: 600, zone: 2, runId: 1, nextId: 8 }
+  s.meta = { seed: 12345, seedText: '12345', screen: 'playing', phase: 'escape', time: 10.2, steps: 600, palette: [1, 1, 1], zone: 2, runId: 1, nextId: 8 }
   s.world.tiles = '#'.repeat(row) + '.'.repeat(MAP_W) + '#'.repeat(n - row - MAP_W)
   s.world.tilesHash = 123456789
   s.world.entrance = { tx: 5, ty: 10 }

@@ -1,31 +1,47 @@
-// L4 render: shadow mist painter (issue #83). A thin caller: which wisps exist, where, how big and how opaque is decided by
-// systems/mist.ts (eachMist, covered by checks/shadow-mist.check.ts). Pass 13 (source-over, world transform, under the darkness): the
-// darkness pass dims the mist with everything else, so it shows at the edge of the light and is never lit up like the flame. Only
-// monsters whose body is drawn get mist (an unseen shade stays eyes only). Nothing is stored: every wisp is analytic in meta.time.
-// ponytail: one layer after the actors, so wisps overlap the sprite instead of sitting partly behind it, and a wisp is two stacked discs
-// instead of a gradient. Upgrade: a back layer between the floor and the wall rows, and a baked radial-gradient sprite.
-import type { MonsterKind, State } from '../core/types.ts'
+// Pixel shadows born inside the sprite, retaining their birth site through animation/movement.
+// Draw after darkness: screen visibility, rather than torch range, controls emission.
+import type { Monster, State } from '../core/types.ts'
+import { dirIndex } from '../core/grid.ts'
+import { getResources } from '../assets/resources.ts'
 import { currentQuality } from './quality.ts'
-import { MON_FOOT, entityInView, monsterLit } from './entities.ts'
+import { MON_FOOT, entityInView, monsterFrame, monsterDirection } from './entities.ts'
+import { charFrame } from './charatlas.ts'
+import { emitterPixels, emitterPoint } from './emitter-pixels.ts'
 import type { View } from './view.ts'
-import { eachMist } from '../systems/mist.ts'
-
-const TAU = Math.PI * 2
-const MIST_COL: Record<MonsterKind, string> = { lurker: '#2c2540', stalker: '#1f2d3d', devourer: '#1b1726' } // purple, steel blue, near black
-const CORE = 0.55 // radius share of the denser inner disc
+import { paintShadowPixels } from './shadow-pixels.ts'
+import type { ShadowPixel } from './shadow-pixels.ts'
+import { eachMist, MIST } from '../systems/mist.ts'
 
 export function drawMist(ctx: CanvasRenderingContext2D, s: State, v: View): void {
-  eachMist(s, currentQuality(s).particles, m => monsterLit(s, m) && entityInView(v, m.x, m.y), (kind, x, y, r, a) => {
-    const cy = y - MON_FOOT[kind] // the sprite centre sits MON_FOOT px above the ground contact point (R-180)
-    ctx.fillStyle = MIST_COL[kind]
-    ctx.globalAlpha = a * 0.5
-    ctx.beginPath()
-    ctx.arc(x, cy, r, 0, TAU)
-    ctx.fill()
-    ctx.globalAlpha = a
-    ctx.beginPath()
-    ctx.arc(x, cy, r * CORE, 0, TAU)
-    ctx.fill()
-  })
+  const res = getResources(), fx = res.shadowFx ??= { runId: -1, at: -1, slots: new Map() }
+  if (fx.runId !== s.meta.runId || s.meta.time < fx.at) fx.slots.clear()
+  fx.runId = s.meta.runId; fx.at = s.meta.time
+  const seen = new Set<number>()
+  let actor: Monster | null = null, pixels: ShadowPixel[] = []
+  const flush = (): void => { if (actor) paintShadowPixels(ctx, s, v, actor.y, pixels) }
+  ctx.save()
+  ctx.globalCompositeOperation = 'source-over'
   ctx.globalAlpha = 1
+  eachMist(s, currentQuality(s).particles, m => entityInView(v, m.x, m.y),
+    (kind, _x, _y, r, a, m, slot, cycle, age) => {
+      if (actor !== m) { flush(); actor = m; pixels = [] }
+      const key = m.id * 64 + slot, profile = MIST[kind]
+      seen.add(key)
+      let birth = fx.slots.get(key)
+      if (!birth || birth.cycle !== cycle) {
+        const [anim, index] = monsterFrame(s, m), f = charFrame(kind, anim, dirIndex(monsterDirection(s, m)), index)
+        const points = emitterPixels(1, f.x, f.y, 64, 64)
+        if (!points.length) return
+        const [x, y] = emitterPoint(points, 64, key, cycle)
+        birth = { cycle, x: Math.round(m.x) - 32 + x, y: Math.round(m.y - MON_FOOT[kind]) - 32 + y }
+        fx.slots.set(key, birth)
+      }
+      if (a <= 0) return
+      const size = Math.max(1, Math.ceil((kind === 'devourer' ? 4 : 3) * r / profile.r))
+      pixels.push({ x: birth.x, y: Math.round(birth.y - profile.rise * age), size,
+        alpha: Math.min(1, (1 - age) * 5) })
+    })
+  flush()
+  for (const key of fx.slots.keys()) if (!seen.has(key)) fx.slots.delete(key)
+  ctx.restore()
 }

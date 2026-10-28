@@ -1,6 +1,6 @@
 // L3 systems: escape-phase brain (no torch, no ring, shades hunt and lunge constantly) and its strike / aim helpers.
 // Spec: docs/architecture-monsters-ai-2.md §2 (escapeBrain table), R-074 (T.escape.{chaseMul,interceptS,attackSlots}).
-// Windup (0.4 / 0.4 / 0.8 s), lunge, no-delay bite and the 0.4 s recover are the shared pipeline in monsters.ts / combat.ts;
+// Windup (0.55 / 0.55 / 0.8 s), lunge, no-delay bite and the 0.4 s recover are the shared pipeline in monsters.ts / combat.ts;
 // this file owns only what is different: the intercept chase, the strike test and the lunge aim point.
 import type { Monster, State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'

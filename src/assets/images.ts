@@ -1,7 +1,11 @@
 // L4 assets: atlas + screen loading, per-frame rect resolution, tint cache and drawSprite.
 // Spec: docs/architecture-assets-pipeline.md §5-§8, architecture-render-3 §5, architecture-modules-ui-assets row `images.ts`, R-019, R-154/R-155.
 // Every cache lives in getResources().images (hot-swap safe). Nothing here throws into update/render; missing art falls back to PLACEHOLDERS.
+import { UI_THEMES } from './ui-data.ts'
+import { loadUiFont, UI_FONT_URL } from './ui-font.ts'
 import atlas from './atlas.json'
+import characterMeta from './characters.json'
+import tilesetMeta from './cave_tileset.json'
 import { quantAngle } from '../core/noise.ts'
 import { PLACEHOLDERS } from './placeholders-ui.ts'
 import { getResources } from './resources.ts'
@@ -20,8 +24,8 @@ const ATLAS = atlas as AtlasFile
 // Missing files are not errors: an empty glob just means placeholders (pipeline §5).
 const SHEET_URLS = import.meta.glob('./atlas-*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
 // Pipeline §5: the two delivered sheets. Slot order is a contract: 0 = cave_tileset.png (render/tiles.ts), 1 = characters.png (render/charatlas.ts).
-const EXTERNAL = ['cave_tileset.png', 'characters.png'] as const
-const SHEETS = import.meta.glob(['./cave_tileset.png', './characters.png'], { eager: true, query: '?url', import: 'default' }) as Record<string, string>
+const EXTERNAL = ['cave_tileset.png', 'characters.png', ...UI_THEMES.map(t => 'ui/ui-' + t + '.png')] as const
+const SHEETS = import.meta.glob(['./cave_tileset.png', './characters.png', './ui/ui-*.png'], { eager: true, query: '?url', import: 'default' }) as Record<string, string>
 // Hand-packed legacy sheets (atlas.json `sheets`, empty at the pivot) follow the external slots so they never collide with 0/1. ponytail: the legacy atlas.json path stays for the old actor eye sheets (mon_*_eyes) and UI art; remove it once those sheets are replaced.
 const LEGACY_BASE = EXTERNAL.length
 const SCREEN_URLS = import.meta.glob('./art/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
@@ -31,7 +35,7 @@ const TINT_CAP = 64
 
 // ponytail: URL-derived flag read once per module evaluation (re-read on every hot swap, not game state). Ceiling: a `?ph=` change needs a reload.
 let forced: boolean | null = null
-function forcePlaceholders(): boolean {
+export function forcePlaceholders(): boolean {
   forced ??= typeof location !== 'undefined' && new URLSearchParams(location.search).get('ph') === '1'
   return forced
 }
@@ -163,20 +167,27 @@ function loadImage(url: string | undefined): Promise<HTMLImageElement | null> {
   return Promise.race([img.decode().then(() => img, () => null), timeout]).finally(() => window.clearTimeout(timer))
 }
 
-// Pipeline §8: sheets in parallel, then the four screens one at a time. Idempotent; call from the render host once.
+// Pipeline §8: sheets in parallel, then screens one at a time. Per-frame calls return immediately while the atlas hash is unchanged.
 // Slots 0/1 are the external sheets (tileset, characters), legacy atlas sheets follow. A failure sets 'failed' + one warning, never throws.
 export function startPreload(res: Resources): void {
+  loadUiFont(res)
   const im = res.images
-  if (im.started) return
+  const sourceKey = tilesetMeta.meta.png_sha256 + ':' + characterMeta.png_sha256 + ':' + SHEETS['./characters.png'] + ':' + Object.values(SCREEN_URLS).join('|') + ':' + Object.values(SHEETS).join('|') + ':' + UI_FONT_URL
+  if (im.started && im.sourceKey === sourceKey) return
+  im.sourceKey = sourceKey
+  im.gen += 1 // invalidate old coordinates immediately; the loading slots use safe placeholders
+  im.rects.clear()
   im.started = true
   const slots = LEGACY_BASE + ATLAS.sheets.length
   im.total = slots + SCREEN_KEYS.length
   im.loaded = 0
   im.sheets = Array.from({ length: slots }, () => null)
   im.sheetState = Array.from({ length: slots }, () => 'loading')
+  const sheets = im.sheets // discard asynchronous results from an atlas superseded during hot reload
   const settle = (): void => { im.loaded += 1; im.gen += 1 }
   const sheetJob = async (slot: number, file: string, url: string | undefined, legacy: boolean): Promise<void> => {
     const img = await loadImage(url)
+    if (im.sheets !== sheets) return
     im.sheets[slot] = img
     im.sheetState[slot] = img ? 'ok' : 'failed'
     if (!img) console.warn('[assets] ' + file + ' failed, using placeholders')
@@ -190,7 +201,9 @@ export function startPreload(res: Resources): void {
   void (async () => {
     await Promise.all(sheetJobs)
     for (const k of SCREEN_KEYS) {
-      im.screens[k] = await loadImage(SCREEN_URLS['./art/' + SCREENS[k] + '.png'])
+      const img = await loadImage(SCREEN_URLS['./art/' + SCREENS[k] + '.png'])
+      if (im.sheets !== sheets) return
+      im.screens[k] = img
       settle()
     }
   })()

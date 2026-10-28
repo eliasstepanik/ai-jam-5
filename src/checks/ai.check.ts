@@ -1,4 +1,4 @@
-// A31 ai check: lurker state machine, capsule bite latch, wrapPi facing examples and the devourerMul table (the 24-shade step budget moved to ai-budget.check.ts).
+// A31 ai check: lurker state machine, capsule bite latch, wrapPi facing examples (the 24-shade step budget lives in ai-budget.check.ts; devourerMul is gone from master).
 // Spec: docs/architecture-modules-systems-2.md §1 (ai.check row), architecture-monsters-ai.md §2/§5/§5.1/§7, monsters-ai-2.md §1/§8, R-073/R-075.
 // R-039/R-040: local ok(), `export function run(): void`, no import-time work, no DOM, no node: imports, no L4 imports (R-043).
 // B3 adds the stalker rows (behind predicate, ring speed, behindT, windup gate) and the escape rows (intercept, strike gate, aim lead).
@@ -8,7 +8,7 @@ import { wrapPi } from '../core/math.ts'
 import { init } from '../core/state.ts'
 import { parseSeed } from '../core/seed.ts'
 import { deg, T } from '../core/tuning.ts'
-import { devourerMul, spawnMonster } from '../entities/monster.ts'
+import { spawnMonster } from '../entities/monster.ts'
 import { escapeAim, escapeBrain, escapeStrike } from '../systems/ai-escape.ts'
 import { lurkerBrain } from '../systems/ai-lurker.ts'
 import { isBehind, stalkerBrain, STALKER_BEHIND_S } from '../systems/ai-stalker.ts'
@@ -66,12 +66,12 @@ function stateMachine(): void {
   lurkerBrain(s, m)
   ok(near(wrapPi(m.ringAngle - a0), m.orbitDir * K.orbitRadS / 60, 1e-9), 'ring angle orbits by orbitDir * orbitRadS / 60')
 
-  // windup -> lunge: 0.4 s telegraph, then the lunge locks onto the player and starts at (d0 - radii) / contactS
+  // windup -> lunge: 0.55 s telegraph, then the lunge locks onto the player and starts at (d0 - radii) / contactS
   const w = arena(), d0 = 163
   const mw = place(w, d0, 0)
   Object.assign(mw, { ai: 'windup', aiT: 0, aiDur: K.telegraphS })
-  spin(w, 23)
-  ok(mw.ai === 'windup', 'still winding up after 23 steps')
+  spin(w, Math.round(K.telegraphS * 60) - 1)
+  ok(mw.ai === 'windup', 'still winding up one step before the telegraph ends')
   spin(w, 1)
   const vL = (d0 - T.player.radiusPx - K.radiusPx) / K.contactS
   ok(mw.ai === 'lunge' && mw.contactT === -1 && near(Math.hypot(mw.vx, mw.vy), vL, 1e-6) && near(vL, 720, 1e-6), 'windup -> lunge at 720 px/s (got ' + mw.ai + ')')
@@ -204,7 +204,7 @@ function stalker(): void {
   let first = -1
   for (let k = 1; k <= 1200 && first < 0; k++) { spin(w, 1); if (mw.ai === 'windup') first = k }
   ok(first > 0 && mw.behindT + 1e-9 >= STALKER_BEHIND_S, 'stalker winds up only after 0.25 s behind (step ' + first + ', behindT ' + mw.behindT + ')')
-  ok(near(mw.aiDur, KS.telegraphS, 1e-12) && KS.telegraphS === 0.4, 'stalker windup lasts 0.40 s')
+  ok(near(mw.aiDur, KS.telegraphS, 1e-12) && KS.telegraphS === 0.55, 'stalker windup lasts 0.55 s')
 }
 
 function escape(): void {
@@ -244,8 +244,8 @@ function escape(): void {
   mw.lungeCd = 0
   spin(w, 1)
   ok(mw.ai === 'windup' && mw.aiDur === KL.telegraphS, 'escape: windup starts the first step the strike test passes')
-  spin(w, 23)
-  ok(mw.ai === 'windup', 'escape: 23 steps still winding up')
+  spin(w, Math.round(KL.telegraphS * 60) - 1)
+  ok(mw.ai === 'windup', 'escape: still winding up one step before the telegraph ends')
   spin(w, 1)
   const want = Math.atan2(w.player.y + 0 * 240 - mw.y, w.player.x + 36 - mw.x)
   ok(mw.ai === 'lunge' && near(wrapPi(mw.lungeDir - want), 0, 1e-9), 'escape: lunge direction locks on p + v * leadS')
@@ -263,27 +263,9 @@ function facing(): void {
   ok(Math.abs(wrapPi(0 - 2.2)) > lim, 'theta 2.2 with facing 0 is BEHIND')
 }
 
-function devourer(): void {
-  // monsters-ai-2 §1 table: distance -> light multiplier, within 0.001; nearest live devourer counts, dying ones do not
-  const s = arena()
-  ok(devourerMul(s) === 1, 'no devourer: multiplier 1')
-  const dm = spawnMonster(s, 'devourer', s.player.x + 260, s.player.y, 100)
-  const table: [number, number][] = [[260, 1], [300, 1], [200, 0.909], [170, 0.825], [120, 0.694], [80, 0.65], [40, 0.65]]
-  for (const [d, want] of table) {
-    dm.x = s.player.x + d
-    ok(near(devourerMul(s), want, 0.001), 'devourerMul at ' + d + ' px is ' + want + ' (got ' + devourerMul(s).toFixed(4) + ')')
-  }
-  dm.x = s.player.x + 120
-  const far = spawnMonster(s, 'devourer', s.player.x + 400, s.player.y, 100)
-  ok(near(devourerMul(s), 0.694, 0.001), 'nearest devourer wins')
-  dm.ai = 'dying'
-  ok(devourerMul(s) === 1 && far.ai === 'ring', 'a dying devourer no longer pushes the light')
-}
-
 export function run(): void {
   stateMachine()
   facing()
   stalker()
   escape()
-  devourer()
 }

@@ -48,7 +48,7 @@ export type TitleLayout = {
   buttons: Button[] // play, help, sound, flashing, depth, seed
   bar: Rect // loading progress track
   logo: Rect
-  tagline: Pt; seedLabel: Pt; seedHint: Pt
+  seedLabel: Pt; seedHint: Pt
   best: Pt; storage: Pt // bottom-left baselines
   soundHint: Pt // bottom-right baseline, right-aligned
 }
@@ -63,10 +63,12 @@ export const titleReady = (s: State, im: { started: boolean; loaded: number; tot
 export function titleLayout(w: number, h: number, _s: State, ready = true): TitleLayout {
   const u = uiScale(w, h)
   const c = (x: number, y: number, bw: number, bh: number): Rect => place(w, h, u, 0.5, 0.5, x, y, bw, bh)
+  const play = c(520, 316, 240, 44), logo = place(w, h, u, 0.5, 0, 400, 0, 480, 240)
+  logo.y = Math.max(8 * u, play.y - logo.h - 32 * u)
   return {
     u,
     buttons: [
-      btn('play', c(520, 316, 240, 44), ready),
+      btn('play', play, ready),
       btn('help', c(520, 372, 240, 44)),
       btn('sound', c(520, 428, 240, 44)),
       btn('flashing', c(520, 484, 240, 44)),
@@ -74,8 +76,7 @@ export function titleLayout(w: number, h: number, _s: State, ready = true): Titl
       btn('seed', c(520, 612, 240, 40)),
     ],
     bar: c(540, 364, 200, 2),
-    logo: place(w, h, u, 0.5, 0, 400, 96, 480, 120),
-    tagline: pt(w, h, u, 0.5, 0, 640, 244),
+    logo,
     seedLabel: pt(w, h, u, 0.5, 0.5, 520, 604),
     seedHint: pt(w, h, u, 0.5, 0.5, 640, 668),
     best: pt(w, h, u, 0, 1, MARGIN, 696),
@@ -216,9 +217,9 @@ export function hudLayout(w: number, h: number, s: State): HudLayout {
   return {
     u,
     pips: Array.from({ length: s.player.hpMax }, (_, i) => tl(36 + i * 28, 36)),
-    flame: place(w, h, u, 0, 0, MARGIN, 60, 160, 24),
-    flameSwatch: tl(36, 72),
-    flameText: tl(52, 72),
+    flame: place(w, h, u, 0, 0, MARGIN, 60, 160, 40),
+    flameSwatch: tl(36, 80),
+    flameText: tl(52, 76),
     depth: tr(REF_W - MARGIN, 44),
     zone: tr(REF_W - MARGIN, 64),
     clock: tr(REF_W - MARGIN, 84),

@@ -39,10 +39,12 @@ export function initPlayer(): Player {
     parry: { lastGrade: 'none', lastDelta: 0, lastAt: -1, energyLost: 0 },
     roll: { t: 0, cooldown: 0, dirX: 1, dirY: 0, invuln: 0 },
     mining: { targetTile: -1, progress: 0 },
+    pendingMaterial: null,
+    pickupAt: -1, materialChangeAt: -1,
     beaconHold: 0,
     hurtT: 0,
     hitFlash: 0,
-    gaitPhase: 0,
+    gaitPhase: 0, gaitSpeed: 0,
     stats: {
       mineralsUsed: 0, mineralsMined: 0, kills: 0, parries: 0, perfectParries: 0,
       damageTaken: 0, energyLostToHits: 0, resinUsed: 0, plantsEaten: 0,
@@ -54,7 +56,7 @@ export function initPlayer(): Player {
 export function init(): State {
   return {
     version: STATE_VERSION,
-    meta: { seed: 0, seedText: '', screen: 'title', phase: 'descent', time: 0, steps: 0, zone: 1, runId: 0, nextId: 1 },
+    meta: { seed: 0, seedText: '', screen: 'title', phase: 'descent', time: 0, steps: 0, palette: [1, 1, 1], zone: 1, runId: 0, nextId: 1 },
     player: initPlayer(),
     world: {
       w: MAP_W, h: MAP_H, tiles: '', tilesHash: 0,
@@ -75,12 +77,13 @@ export function init(): State {
       hover: -1, screenAt: 0, helpFrom: 'title', confirmT: 0, denyT: 0, copyMsg: '',
       genPending: '', genAttempt: 0, bestClass: 3,
     },
-    settings: { volume: 0.7, muted: false, lastSeed: '', loaded: false, reducedFlash: false, quality: 'auto', depthClass: 3 },
+    settings: { volume: 0.7, muted: false, lastSeed: '', loaded: false, reducedFlash: false, quality: 'auto', depthClass: 1 },
     best: null, result: null,
     debug: { reveal: false, god: false, showPaths: false, freezeAi: false, overlay: false,
       noclip: false, speedMul: 4, freezeTorch: false, infiniteHp: false, noFog: false,
-      hurtboxes: false, animations: false, stats: false, minimap: false, arrow: false, arrowTarget: 'beacon',
+      hurtboxes: false, animations: false, stats: false, pureDarkness: false, caveDetails: true, minimap: false, arrow: false, arrowTarget: 'beacon',
+      mapOres: false, mapResin: false, mapPlants: false, mapEntrance: true, mapBeacon: true, mapMode: 'plain',
       commit: '', commitT: 0 },
-    wisp: { on: false, d: 0, p0: -1, ss: -1, ps: -1, path: [] },
+    wisp: { on: false, d: 0, p0: -1, ss: -1, ps: -1, path: [], wx: 0, wy: 0, wvx: 0, wvy: 0 },
   }
 }

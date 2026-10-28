@@ -94,12 +94,12 @@ export function run(): void {
     ok(s.ui.cursor === 0, 'ArrowRight at the last button wraps to 0 on dead')
   }
 
-  // S13/S19: Space and a mouse click activate the focused item like Enter (Sound row toggles mute). Space types nowhere in the seed field.
+  // S13/S19: Space and a mouse click activate the focused item like Enter (Sound row cycles: 0.7 default -> 100, see volume-cycle.check.ts). Space types nowhere in the seed field.
   for (const sc of ['title', 'paused'] as const) {
     for (const [what, input] of [['Enter', inp(['Enter'])], ['Space', inp(['Space'])], ['click', inp([], 1)]] as const) {
       const s = at(cave, sc, 2)
       stepScreens(s, input)
-      ok(s.settings.muted, what + ' activates the focused Sound row on ' + sc)
+      ok(s.settings.volume === 1 && !s.settings.muted, what + ' cycles the focused Sound row on ' + sc)
     }
   }
   {
@@ -112,7 +112,9 @@ export function run(): void {
     ok(!stepScreens(at(cave, 'paused'), inp(['KeyQ'])), 'stepScreens returns false on the quit frame')
     const s = at(cave, 'paused'), n = s.meta.steps, x = s.player.x, e = s.player.energy
     step(s, inp(['KeyQ']), DT)
-    ok(s.meta.screen === 'title' && s.meta.steps === n && s.player.x === x && s.player.energy === e, 'quit frame leaves steps, player and flame untouched (steps ' + s.meta.steps + ')')
+    ok(s.meta.screen === 'paused' && s.ui.confirmT > 0 && s.meta.steps === n && s.player.x === x && s.player.energy === e, 'first quit press leaves steps, player and flame untouched (steps ' + s.meta.steps + ')')
+    step(s, inp(['KeyQ']), DT)
+    ok(String(s.meta.screen) === 'title', 'second Q press confirms quit')
     const q = at(cave, 'paused', 4), k = q.fx.events.length
     stepScreens(q, inp(['Enter']))
     ok(q.ui.confirmT > 0 && q.fx.events.length === k + 1 && q.fx.events[k].kind === 'uiConfirm', 'first Quit press arms the confirm and emits one uiConfirm, not uiMove (ui.md §5 rule 7)')
@@ -232,7 +234,8 @@ export function run(): void {
   }
   // N46/N47: toasts age and `copied` decays by exactly 1 s per 60 steps. N01-N03/N12: startRun then drops toasts, copy label, deny shake.
   {
-    const s = at(cave, 'title', 0, { toasts: [{ text: 'a', t: 0.9 }, { text: 'b', t: 1.5 }], copied: 2 })
+    // bestClass 1 matches the shown class (settings default 1): the title frame does not read storage (no store in node -> a toast would).
+    const s = at(cave, 'title', 0, { toasts: [{ text: 'a', t: 0.9 }, { text: 'b', t: 1.5 }], copied: 2, bestClass: 1 })
     for (let k = 0; k < 60; k++) stepScreens(s, inp())
     ok(s.ui.toasts.length === 1 && Math.abs(s.ui.toasts[0].t - 0.5) < 1e-9 && Math.abs(s.ui.copied - 1) < 1e-9, 'toasts and copied age 1 s per 60 steps (copied ' + s.ui.copied + ')')
     Object.assign(s.ui, { copied: 1, copyMsg: 'Copied!', denyT: 0.3 })

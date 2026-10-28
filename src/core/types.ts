@@ -37,7 +37,7 @@ export type State = {
   best: Best | null // mirror of persisted personal best
   result: RunResult | null // set when a run ends
   debug: Debug
-  wisp: { on: boolean; d: number; p0: number; ss: number; ps: number; path: number[] } // escape guide light (systems/escape-wisp.ts): d px lead, p0 player tile, ss/ps rock sigs seen, path tile ids
+  wisp: { on: boolean; d: number; p0: number; ss: number; ps: number; path: number[]; wx: number; wy: number; wvx: number; wvy: number } // escape guide orb (systems/escape-wisp.ts): d lead px, p0 player tile, ss/ps rock sigs, path tile ids, wx/wy world pos, wvx/wvy px/s
 }
 
 export type Meta = {
@@ -47,6 +47,7 @@ export type Meta = {
   phase: Phase
   time: number // s, simulated time since init() on any screen
   steps: number // int, update steps spent in screen 'playing' this run; run seconds = steps / 60
+  palette: number[] // smooth world colour, independent of gameplay zones
   zone: Zone // stored mirror, written by trackDepth
   runId: number // int, +1 per started run; 0 = no run yet
   nextId: number // int, next entity id (shared by monsters, pickups, veins, rocks); 0 is never used
@@ -68,9 +69,11 @@ export type Player = {
   parry: Parry
   roll: Roll
   mining: Mining
+  pendingMaterial: FlameKind | null // apply only after the material-change clip; null means no pending action
+  pickupAt: number; materialChangeAt: number // action start times; -1 before first action or after cancellation
   beaconHold: number // s held on the Beacon, reset when released
   hurtT: number // s of post-hit invulnerability left
-  hitFlash: number; gaitPhase: number // s of red flash left; walk/run clip cycle 0..1 integrated per tick by stepMovement (both cosmetic)
+  hitFlash: number; gaitPhase: number; gaitSpeed: number // s of red flash left; walk/run clip cycle 0..1 integrated per tick by stepMovement (both cosmetic)
   stats: Stats
 }
 export type Swing = {
@@ -212,7 +215,9 @@ export type Settings = {
 export type Debug = {
   reveal: boolean; god: boolean; showPaths: boolean; freezeAi: boolean; overlay: boolean
   noclip: boolean; speedMul: number; freezeTorch: boolean; infiniteHp: boolean; noFog: boolean
-  hurtboxes: boolean; animations: boolean; stats: boolean
+  hurtboxes: boolean; animations: boolean; stats: boolean; pureDarkness: boolean; caveDetails: boolean
+  mapOres: boolean; mapResin: boolean; mapPlants: boolean; mapEntrance: boolean; mapBeacon: boolean
+  mapMode: 'plain' | 'zones' | 'distance'
   minimap: boolean; arrow: boolean; arrowTarget: 'beacon' | 'exit'; commit: string; commitT: number // commit: dev-only short sha ('' = not fetched yet), commitT: s to next fetch
 }
 

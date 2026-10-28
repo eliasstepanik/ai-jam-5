@@ -44,11 +44,11 @@ export const T = {
   },
   swing: { arcDeg: 120, reachPx: 56, activeS: 0.15, cooldownS: 0.5, bufferS: 0.1 },
   parry: {
-    perfectS: 0.035, earlyMaxS: 0.14, lateMaxS: 0.09,
+    perfectS: 0.055, earlyMaxS: 0.18, lateMaxS: 0.12,
     lossMinFrac: 0.15, lossMaxFrac: 0.8, lossExp: 1.5, minSpanS: 0.02, goodSplit: 0.5,
     hitstopS: 0.06, flareS: 0.35,
   },
-  roll: { durationS: 0.3, speedPxS: 420, invulnS: 0.3, cooldownS: 1.5 },
+  roll: { durationS: 0.3, speedPxS: 420, invulnS: 0.3, cooldownS: 1.0 },
   hurt: { hpInvulnS: 0.8, flashS: 0.25 },
   monsters: {
     lurker: {
@@ -57,7 +57,7 @@ export const T = {
       ringFactor: 1.0, ringMarginPx: 14, orbitRadS: 0.35,
       driftAmpPx: 12, driftHz: 0.25,
       lungeChancePerS: [0.03, 0.04, 0.05, 0.06],
-      telegraphS: 0.4, beats: 1, lungeRangePx: 260, contactS: 0.2,
+      telegraphS: 0.55, beats: 1, lungeRangePx: 260, contactS: 0.2,
       biteSlackPx: 4, lungeOverrunS: 0.25,
       recoverS: 0.8, lungeCdS: [3, 5], lungeCdStartS: [2, 4],
       energyHitE: 12, dyingS: 0.5,
@@ -69,7 +69,7 @@ export const T = {
       ringFactor: 1.1, ringMarginPx: 20, orbitRadS: 0.6,
       driftAmpPx: 10, driftHz: 0.2,
       lungeChancePerS: [0, 0.5, 0.6, 0.7],
-      telegraphS: 0.4, beats: 1, lungeRangePx: 280, contactS: 0.24,
+      telegraphS: 0.55, beats: 1, lungeRangePx: 280, contactS: 0.24,
       biteSlackPx: 4, lungeOverrunS: 0.3,
       recoverS: 1.2, lungeCdS: [2.5, 4], lungeCdStartS: [3, 5],
       energyHitE: 20, dyingS: 0.5,

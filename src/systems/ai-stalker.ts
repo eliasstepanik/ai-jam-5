@@ -1,7 +1,7 @@
 // L3 systems: stalker brain (circle toward the spot behind the player, commit-latched, hold while looked at, flee from the light, count the time spent behind).
 // Spec: docs/architecture-monsters-ai.md §7 (behind predicate, FSM table, worked ring speed), §2 (flee latch), §3.3 (seek, chase band).
 // Like every brain it only returns the desired velocity and updates ring / flee / behindT bookkeeping. The windup, lunge and recover
-// numbers (0.40 / 0.24 / 0.54 s, retreat to ringRadius + 100 at 102 px/s, 1.2 s recover, lungeCd 2.5-4, start cd 3-5) are table values
+// numbers (0.55 / 0.24 / 0.54 s, retreat to ringRadius + 100 at 102 px/s, 1.2 s recover, lungeCd 2.5-4, start cd 3-5) are table values
 // the shared pipeline in monsters.ts already reads from T.monsters.stalker and T.ai.
 import type { Monster, State } from '../core/types.ts'
 import { wrapPi } from '../core/math.ts'
