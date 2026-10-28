@@ -83,7 +83,7 @@ export function run(): void {
     ok(s.player.hp === hp0 && s.player.energy === 100 && s.player.hurtT === 0, 'escape roll: no damage, no hurtT')
     ok(count(s, 'dodge') === 1 && count(s, 'hpHit') === 0 && m.ai === 'recover', 'dodge emitted, attacker recovers')
   }
-  // Rule 2 applies to escape only: in descent the i-frames do not stop a bite (rule 4 still costs energy).
+  // Rule 2 applies to escape, or descent with the torch out (see attack-rhythm.check.ts): with a lit flame the i-frames do not stop a bite (rule 4 still costs energy).
   {
     const { s, m } = latched()
     s.player.roll.invuln = 0.2

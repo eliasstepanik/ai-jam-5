@@ -89,7 +89,7 @@ export const HELP = [
     controls: [
       ['WASD', 'Move / face (arrows also)'], ['Mouse', 'Face while standing'], ['Click', 'Swing / parry'], ['E (hold)', 'Mine / light Beacon'],
       ['1 2 3', 'Pick mineral'], ['F', 'Toss mineral into the flame'], ['G', 'Shake off (plain flame)'],
-      ['Space', 'Roll (escape only)'], ['Esc / P', 'Pause'], ['M', 'Mute'], ['Enter', 'Confirm selected button'],
+      ['Space', 'Roll (escape, dark torch)'], ['Esc / P', 'Pause'], ['M', 'Mute'], ['Enter', 'Confirm selected button'],
     ],
   },
   {

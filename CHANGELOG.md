@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Caves regenerate with new layouts: the same seed now gives a different cave than before.
 - The default cave depth is now Shallow (class 1) instead of Standard. Saved player choices are kept; Best records keep their per-class keys.
 - Make parry and dodge more forgiving: wider parry window (perfect ±55 ms, early 180 ms, late 120 ms), longer lurker and stalker telegraph (0.55 s), shorter escape roll cooldown (1.0 s).
+- Shades notice a lit player nearby and no longer stare forever; they now attack within a few seconds.
+- With the torch out, a dodge roll now avoids bites in the descent.
 - Clicking (or Enter/Space on) the Sound button now cycles volume Off → 33 % → 66 % → 100 % → Off. Left/Right, -/= and M behave as before.
 - #99: raise the torch-duration bar another two reference pixels inside its info box.
 - #99: remove the active-mineral underline and raise the duration bar inside the torch info box so it clears the bottom frame.

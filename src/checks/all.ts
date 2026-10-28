@@ -61,6 +61,7 @@ import { run as shadowMist } from './shadow-mist.check.ts'
 import { run as depthLabel } from './depth-label.check.ts'
 import { run as stuckProbe } from './stuck-probe.check.ts'
 import { run as awarenessChecks } from './ai-awareness.check.ts'
+import { run as attackRhythm } from './attack-rhythm.check.ts'
 import { run as aiTactics } from './ai-tactics.check.ts'
 import { run as aiTactics2 } from './ai-tactics-2.check.ts'
 import { run as aiTactics3 } from './ai-tactics-3.check.ts'
@@ -144,6 +145,7 @@ caveSculpt()
 caveAlcove()
 stuckProbe()
 awarenessChecks()
+attackRhythm()
 aiTactics()
 aiTactics2()
 aiTactics3()
