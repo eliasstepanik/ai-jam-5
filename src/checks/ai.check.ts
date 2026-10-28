@@ -147,10 +147,30 @@ function stalker(): void {
   r.player.facing = 0 // target angle PI, the ring angle starts at PI/2 (south): +PI/2 away, so it turns counter-clockwise
   mr.ringAngle = Math.PI / 2
   stalkerBrain(r, mr)
-  ok(near(mr.ringAngle - Math.PI / 2, KS.ringSpeedPxS / mr.ringRadius / 60, 1e-9), 'stalker ring angle advances ringSpeed / ringRadius per step toward facing + PI')
+  ok(near(mr.ringAngle - Math.PI / 2, KS.ringSpeedPxS / mr.ringRadius / 60, 1e-9), 'stalker ring angle advances ringSpeed / ringRadius per step toward the committed angle (facing + PI at latch time)')
   mr.ringAngle = Math.PI - 0.001 // 0.001 rad from the target: snaps onto it instead of overshooting
   stalkerBrain(r, mr)
-  ok(near(wrapPi(mr.ringAngle - Math.PI), 0, 1e-9), 'stalker ring angle never overshoots facing + PI')
+  ok(near(wrapPi(mr.ringAngle - Math.PI), 0, 1e-9), 'stalker ring angle never overshoots the committed angle')
+
+  // E2 latch: the committed angle holds for stalkCommitT while the facing changes, then re-picks (no per-frame re-orient)
+  const l = arena(), ml = stalkerAt(l, 0, 300)
+  l.player.facing = 0
+  stalkerBrain(l, ml)
+  ok(near(ml.stalkAngle, -Math.PI, 1e-12) && ml.stalkT > 0, 'stalker latch: the first call commits facing + PI (wrapPi: -PI)')
+  l.player.facing = 1
+  for (let k = 0; k < 47; k++) stalkerBrain(l, ml) // calls 2..48 consume the 0.8 s window
+  ok(near(ml.stalkAngle, -Math.PI, 1e-12), 'stalker latch: the angle is held for the whole window while the facing changes')
+  for (let k = 0; k < 3; k++) stalkerBrain(l, ml) // past the window: the latch re-picks
+  ok(near(ml.stalkAngle, wrapPi(1 + Math.PI), 1e-12), 'stalker latch: re-picks the new facing + PI after the window expires')
+
+  // E3a: holds position while the player looks at it (not behind); approaches the ring point from behind
+  const h = arena(), mh = stalkerAt(h, 0, 300) // theta PI/2: facing 0 looks at it (off 90 deg), facing -PI/2 leaves it behind
+  h.player.facing = 0
+  const hv = stalkerBrain(h, mh)
+  ok(hv[0] === 0 && hv[1] === 0, 'stalker holds position while the player looks at it')
+  h.player.facing = -Math.PI / 2
+  const hb = stalkerBrain(h, mh)
+  ok(Math.hypot(hb[0], hb[1]) > 0, 'stalker approaches the ring point when behind')
 
   // behindT: +dt only when behind AND on the ring band; any other step resets it
   const b = arena(), mb = stalkerAt(b, 0, 0)
