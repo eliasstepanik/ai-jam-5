@@ -1,7 +1,14 @@
 // Cave overhaul G6: sculpt() on synthetic grids (1 = wall, 0 = floor). The generator wiring and zero-stream-draw proof on real caves is G7.
 // Pins: purity and determinism, one connected component (r3), the exclusion zones, the cavern no-shortcut rule, the caps, the pillar
 // 5x5 rule with spacing >= 3, and that an alcove which cannot be completed leaves the grid byte-for-byte unchanged.
+// G7c (generated caves, section at the end): zero stream draws, r3 and the pillar 5x5 rule on real carveCore terrain.
 import { EXCL_PAD, MARGIN, CAVERN_MAX, PILLAR_MAX, ALCOVE_MAX, carveAlcove, sculpt } from '../world/gen/sculpt.ts'
+import { hashSeed, makeRnd } from '../core/rng.ts'
+import { carveCore, caveSeed } from '../world/generate.ts'
+import { PARAMS } from '../world/gen/params.ts'
+import { bfs4 } from '../world/bfs.ts'
+import { caveOf } from './caves.ts'
+import { SEEDS } from './cave.check.ts'
 
 const ok = (c: boolean, why: string): void => { if (!c) throw new Error('cave sculpt: ' + why) }
 
@@ -168,6 +175,84 @@ function deterministic(): void {
   ok(same(g, before) && s.caverns + s.pillars + s.alcoves === 0, 'wall entrance changed the grid')
 }
 
+// ---- G7c: generated caves (the first GEN seeds; both modes of carveCore on the accepted attempt, as cave-guide.check.ts does) ----
+const GEN = 20
+const SCULPT_TAG = 'cave:sculpt'
+type Pair = { cs: number; core: NonNullable<ReturnType<typeof carveCore>>; bare: NonNullable<ReturnType<typeof carveCore>> }
+function pairs(): Pair[] {
+  const out: Pair[] = []
+  for (const seed of SEEDS.slice(0, GEN)) {
+    const cs = caveSeed(seed, caveOf(seed).stats.attempts - 1), core = carveCore(cs), bare = carveCore(cs, PARAMS[3], ['sculpt'])
+    if (core && bare) out.push({ cs, core, bare })
+  }
+  ok(out.length >= GEN - 4, 'only ' + out.length + ' of ' + GEN + ' generated caves carved in both modes')
+  return out
+}
+const wallGrid = (t: Uint8Array): Uint8Array => Uint8Array.from(t, (v) => v ? 0 : 1) // CaveCore.t (0 = wall) -> work grid (1 = wall)
+
+// Zero stream draws. A makeRnd state is a closure variable, so it cannot be read from outside carveCore (disclosed weaker form); what is
+// proven instead: (1) sculpt's arguments are (grid, w, h, entrance, salt), no Rnd, and its output is a function of those alone (twice-equal);
+// (2) a live stream read before and after a sculpt call has an unchanged state() and an unchanged continuation; (3) carveCore is
+// deterministic in both modes and the passes that run before sculpt (entrance, tunnels streams) give the same entrance and loop stats with and
+// without it; (4) Math.random, the only other entropy source, is never touched by the carve-plus-sculpt path.
+function zeroDraws(ps: Pair[]): void {
+  ok(sculpt.length === 5, 'sculpt takes exactly (g, w, h, entrance, salt): no stream parameter')
+  const realRandom = Math.random
+  Math.random = (): number => { throw new Error('cave sculpt: Math.random called inside carveCore') }
+  try {
+    for (const { cs, core, bare } of ps.slice(0, 6)) { // ponytail: a carve is ~60 ms; six re-carves keep the check cheap, the other 14 caves are covered by sculpt twice-equal below
+      const again = carveCore(cs), bareAgain = carveCore(cs, PARAMS[3], ['sculpt'])
+      ok(!!again && same(again.t, core.t) && again.entrance === core.entrance && again.beacon === core.beacon, 'cs ' + cs + ': carveCore not deterministic')
+      ok(!!bareAgain && same(bareAgain.t, bare.t), 'cs ' + cs + ': skip-sculpt carveCore not deterministic')
+      ok(core.entrance === bare.entrance && core.stats.loops === bare.stats.loops && core.stats.tunnelTiles === bare.stats.tunnelTiles, 'cs ' + cs + ': passes before sculpt differ with and without it')
+    }
+  } finally { Math.random = realRandom }
+  for (const { cs, bare } of ps.slice(0, 5)) {
+    const live = makeRnd(hashSeed(cs, 'cave:tunnels')), twin = makeRnd(hashSeed(cs, 'cave:tunnels'))
+    for (let k = 0; k < 5; k++) { live.next(); twin.next() }
+    const before = live.state(), g = wallGrid(bare.t)
+    sculpt(g, bare.w, bare.h, bare.entrance, hashSeed(cs, SCULPT_TAG))
+    ok(live.state() === before && twin.state() === before, 'cs ' + cs + ': a live stream changed state across a sculpt call')
+    for (let k = 0; k < 5; k++) ok(live.next() === twin.next(), 'cs ' + cs + ': stream continuation changed across a sculpt call')
+  }
+}
+
+// r3 (validate.ts: reached === floor from the entrance) on the sculpted terrain, plus sculpt applied directly to the unsculpted terrain.
+function generatedConnected(ps: Pair[]): void {
+  for (const { cs, core, bare } of ps) {
+    const floor = (t: Uint8Array): number => t.reduce((n, v) => n + (v ? 1 : 0), 0)
+    const reached = (g: Uint8Array, e: number): number => bfs4(g, core.w, core.h, e).reduce((n, v) => n + (v >= 0 ? 1 : 0), 0)
+    ok(reached(wallGrid(core.t), core.entrance) === floor(core.t), 'cs ' + cs + ': r3 carveCore terrain has more than one floor component')
+    const g = wallGrid(bare.t)
+    sculpt(g, bare.w, bare.h, bare.entrance, hashSeed(cs, SCULPT_TAG))
+    ok(reached(g, bare.entrance) === g.reduce((n, v) => n + (1 - v), 0), 'cs ' + cs + ': r3 sculpt on unsculpted terrain left more than one floor component')
+  }
+}
+
+// Pillar 5x5 rule and twice-equal on generated terrain (sculpt run directly on the unsculpted terrain, like cave-guide.check.ts).
+function generatedPillars(ps: Pair[]): void {
+  let seen = 0
+  for (const { cs, bare } of ps) {
+    const { w, h, entrance } = bare, g0 = wallGrid(bare.t), a = g0.slice(), b = g0.slice(), salt = hashSeed(cs, SCULPT_TAG)
+    const sa = sculpt(a, w, h, entrance, salt), sb = sculpt(b, w, h, entrance, salt)
+    ok(same(a, b) && JSON.stringify(sa) === JSON.stringify(sb), 'cs ' + cs + ': sculpt twice on the same input differs')
+    const made: number[] = []
+    for (let i = 0; i < a.length; i++) if (a[i] === 1 && g0[i] === 0) made.push(i)
+    ok(made.length <= sa.pillars, 'cs ' + cs + ': more floor-to-wall changes than counted pillars')
+    const open = a.slice()
+    for (const p of made) open[p] = 0
+    for (const p of made) {
+      const x = p % w, y = Math.floor(p / w)
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) ok(open[(y + dy) * w + x + dx] === 0, 'cs ' + cs + ': pillar without a full 5x5 floor neighbourhood')
+    }
+    for (let i = 0; i < made.length; i++) for (let j = i + 1; j < made.length; j++) {
+      ok(Math.max(Math.abs(made[i] % w - made[j] % w), Math.abs(Math.floor(made[i] / w) - Math.floor(made[j] / w))) >= 3, 'cs ' + cs + ': pillars closer than 3')
+    }
+    seen += made.length
+  }
+  ok(seen > 0, 'no pillar on any generated cave')
+}
+
 export function run(): void {
   exclusions()
   connectivityAndCaps()
@@ -175,4 +260,8 @@ export function run(): void {
   noShortcut()
   alcoveAbort()
   deterministic()
+  const ps = pairs()
+  zeroDraws(ps)
+  generatedConnected(ps)
+  generatedPillars(ps)
 }
