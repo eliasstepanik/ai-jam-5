@@ -91,9 +91,11 @@ const resinOf = (r: CaveResult): number => r.pickups.filter((q) => q.kind === 'r
 function scaleBasis(): void {
   const lo = PARAMS[1], mid = PARAMS[2]
   // (a) bd below the floor: the class-1 ring (bd 231 in [lo.fbLo, lo.bdLo]) checked with class-2 params but the class-1 fallback floor.
-  // sb = bdLo = 340 asks 16 resin and 16 veins, sb = bd = 231 only 10 and 10; the ring has 12 and 13, so r11 fires only if bdLo is the basis.
-  const ring1 = fallbackCave(1, lo), below = { ...mid, fbLo: lo.fbLo }
+  // sb = bdLo = 340 asks 16 resin and 16 veins, sb = bd = 231 only 10 and 10; the ring has 16 resin (playtest-tuning-1 §3,
+  // trimmed to need1 - 1 below) and 13 veins, so r11 fires only if bdLo is the basis.
+  const ring1raw = fallbackCave(1, lo), below = { ...mid, fbLo: lo.fbLo }
   const need1 = scaledMin(24, mid.bdLo)
+  const ring1 = withResin(ring1raw, need1 - 1)
   ok(ring1.beaconDist >= below.fbLo && ring1.beaconDist < mid.bdLo, `scale (a): ring bd ${ring1.beaconDist} is under bdLo ${mid.bdLo}, over fbLo ${below.fbLo}`)
   ok(scaledMin(24, ring1.beaconDist) <= resinOf(ring1) && resinOf(ring1) < need1, `scale (a): ${resinOf(ring1)} resin sit between min@bd and min@bdLo ${need1}`)
   ok(validateCave(ring1, below).why === 'r11 counts', `scale (a): bd under the floor scales by bdLo, got ${validateCave(ring1, below).why}`)
