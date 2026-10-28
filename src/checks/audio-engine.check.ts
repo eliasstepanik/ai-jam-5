@@ -9,8 +9,10 @@ import type { FakeCtx, FakeNode } from './audio-fake.ts'
 import { SOUNDS } from '../assets/sounds.ts'
 import type { SoundDef, SoundId } from '../assets/sounds.ts'
 import { play } from '../audio/sfx.ts'
+import { musicStep } from '../audio/music.ts'
 import { ensureMixer, setMaster } from '../audio/mixer.ts'
 import type { AudioRes, Resources, Voice } from '../assets/resources.ts'
+import type { State } from '../core/types.ts'
 
 function ok(cond: boolean, msg: string): void {
   if (!cond) throw new Error(`check failed: ${msg}`)
@@ -174,6 +176,44 @@ function mixerTest(): void {
   ok(fake.violations.length === 0, `fake ctx violations: ${fake.violations.join('; ')}`)
 }
 
+// P2 (stinger leak): a finished stinger must leave nothing connected. musicStep wires src -> gain -> music group;
+// the source's ended handler disconnects both. Driven through the real music.ts API with the fake ctx.
+function stingerTest(): void {
+  const { fake, res, a } = setup()
+  const dead = { meta: { screen: 'dead' } } as unknown as State
+  const won = { meta: { screen: 'won' } } as unknown as State
+
+  // No buffer decoded: musicStep must not create any node (music has no synth fallback).
+  const before = fake.nodes.length
+  musicStep(res, dead)
+  ok(fake.nodes.length === before && a.music.srcs.length === 0, 'stinger without a buffer created nodes')
+
+  a.buffers.set('mus_sting-death', fake.createBuffer(1, 4800, 48000) as unknown as AudioBuffer)
+  musicStep(res, dead)
+  ok(a.music.srcs.length === 1, 'death stinger did not start')
+  const src = a.music.srcs[0] as unknown as FakeNode
+  const g = a.music.gains[0] as unknown as FakeNode
+  ok(src.connections.length === 1 && g.connections.length === 1, 'stinger not wired src->gain->group before end')
+  fake.fireEnded(src)
+  ok(src.connections.length === 0, 'stinger source still connected after ended')
+  ok(g.connections.length === 0, 'stinger gain node still connected after ended')
+  fake.fireEnded(src) // idempotent: a second ended must not throw or re-connect
+  ok(src.connections.length === 0 && g.connections.length === 0, 'second ended re-connected stinger nodes')
+
+  // Second stinger in a row (screen change fades the first out, win stinger plays and ends):
+  // none of the four stinger nodes may stay connected.
+  fake.advance(1)
+  a.buffers.set('mus_sting-win', fake.createBuffer(1, 4800, 48000) as unknown as AudioBuffer)
+  musicStep(res, won)
+  ok(a.music.srcs.length === 1, 'win stinger did not start after the screen change')
+  const src2 = a.music.srcs[0] as unknown as FakeNode
+  const g2 = a.music.gains[0] as unknown as FakeNode
+  ok(src2.connections.length === 1 && g2.connections.length === 1, 'win stinger not wired before end')
+  fake.fireEnded(src2)
+  for (const n of [src, g, src2, g2]) ok(n.connections.length === 0, `${n.kind} still connected after both stingers`)
+  ok(fake.violations.length === 0, `fake ctx violations: ${fake.violations.join('; ')}`)
+}
+
 export function run(): void {
   capTest()
   stealTest()
@@ -181,4 +221,5 @@ export function run(): void {
   perIdCapTest()
   retriggerTest()
   mixerTest()
+  stingerTest()
 }

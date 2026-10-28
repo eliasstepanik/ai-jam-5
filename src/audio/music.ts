@@ -5,7 +5,8 @@
 //   srcs/gains = nodes of the CURRENT track only (base first, danger layer second). Started iff srcs.length > 0.
 //   danger = last layer gain target applied (-1 = none yet), so setTargetAtTime runs only when it changes.
 // A stinger plays once: it stays in srcs after it ends, so `cur === wanted` never restarts it. A new run changes
-// the wanted track (title/descent) in between, which re-arms the next stinger.
+// the wanted track (title/descent) in between, which re-arms the next stinger. When a source ends (naturally or via
+// a fadeOut stop) its handler below disconnects it and its gain node, so nothing stays connected after it is silent.
 import type { MusicRes, Resources } from '../assets/resources.ts'
 import { SOUNDS } from '../assets/sounds.ts'
 import type { SoundDef, SoundId } from '../assets/sounds.ts'
@@ -30,11 +31,8 @@ function fadeOut(m: MusicRes, now: number): void {
     p.cancelScheduledValues(now)
     p.setValueAtTime(v, now)
     p.setTargetAtTime(0, now, FADE_OUT_TC)
-    src.onended = () => g.disconnect()
-    src.stop(now + FADE_OUT_STOP)
+    src.stop(now + FADE_OUT_STOP) // ended fires at the stop -> startNode's handler disconnects src and g
   })
-  // ponytail: a stinger that already ended never fires onended again; its silent gain node stays connected until the
-  // registry is rebuilt (one node per death/win). Upgrade: track ended state in MusicRes and disconnect directly.
   m.srcs.length = 0
   m.gains.length = 0
 }
@@ -52,6 +50,8 @@ function startNode(
   if (ramp > 0) g.gain.linearRampToValueAtTime(peak, when + ramp)
   src.connect(g)
   g.connect(out)
+  // Idempotent: disconnect() on an already-disconnected node is a no-op, so a double ended (or ended + fadeOut stop) is safe.
+  src.onended = () => { src.disconnect(); g.disconnect() }
   src.start(when, offset)
   m.srcs.push(src)
   m.gains.push(g)
