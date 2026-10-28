@@ -58,6 +58,10 @@ function place(s: State, dx: number, awareness: Monster['awareness'], dy = 0): M
 const dist = (s: State, m: Monster): number => Math.hypot(m.x - s.player.x, m.y - s.player.y)
 const homeDist = (m: Monster): number => Math.hypot(m.x - m.homeX, m.y - m.homeY)
 
+// Longest run of consecutive true flags; push() resets on every false (a break), never on a mere
+// new max (retrospect F1: carry-over let separate stretches add up). Self-tested in run().
+const runTracker = () => { let run = 0, best = 0; return { push(bad: boolean) { run = bad ? run + 1 : 0; if (run > best) best = run }, max: () => best } }
+
 // AC3: an unaware shade far from the player (out of sight and sound) patrols near home,
 // stays in the dark and off solids, pauses between legs.
 function patrolBasics(): void {
@@ -260,28 +264,27 @@ function caveFullFlameRun(): string {
   const s = init()
   startRun(s, '1', caveOf(parseSeed('1')))
   s.settings.loaded = true; s.meta.phase = 'descent'; s.debug.god = true
-  let first = -1, gap = 0, maxGap = 0, over = 0, maxOver = 0, sum = 0
+  let first = -1, sum = 0
+  const gapT = runTracker(), overT = runTracker()
   for (let k = 1; k <= 4000; k++) {
     s.player.energy = 100 // full flame held (stepFlame burns it back down each step)
     step(s, { ...idle, keys: new Set([['KeyD', 'KeyS', 'KeyA', 'KeyW'][Math.floor(k / 60) % 4]]) }, DT)
     if (first < 0 && s.monsters.length > 0) first = k
     const n = nearCount(s)
     sum = (sum * 31 + n * 8 + s.monsters.length) | 0
-    if (n === 0) {
-      if (first > 0) gap++
-    } else if (gap > maxGap) { maxGap = gap; gap = 0 }
-    if (n > T.director.nearCap) over++
-    else if (over > maxOver) { maxOver = over; over = 0 }
+    gapT.push(first > 0 && n === 0)
+    overT.push(n > T.director.nearCap)
   }
-  if (gap > maxGap) maxGap = gap
-  if (over > maxOver) maxOver = over
   ok(first >= 1 && 2 * first <= 4000, 'AC1 cave seed 1: first director spawn at step ' + first + ' (2N <= 4000)')
-  ok(maxGap >= 120, 'AC1: full flame keeps a >= 120-step stretch with nobody within nearRadius (max ' + maxGap + ')')
-  ok(maxOver <= 120, 'AC4: nearCount never stays above nearCap for > 120 steps (max over-run ' + maxOver + ')')
+  ok(gapT.max() >= 180, 'AC1: full flame keeps a >= 180-step stretch with nobody within nearRadius (max ' + gapT.max() + ')')
+  ok(overT.max() <= 120, 'AC4: nearCount never stays above nearCap for > 120 steps (max over-run ' + overT.max() + ')')
   return sum + '|' + s.monsters.map((m) => m.x.toFixed(1) + ',' + m.y.toFixed(1)).join(';')
 }
 
 export function run(): void {
+  const t = runTracker()
+  for (const b of [true, true, false, true, true, false, true, true]) t.push(b)
+  ok(t.max() === 2, 'runTracker: [1,1,0,1,1,0,1,1] longest run is 2, not 6')
   patrolBasics()
   patrolDeterminism()
   patrolRejectsLitPoints()
