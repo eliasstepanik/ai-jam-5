@@ -9,8 +9,8 @@ export type SoundDef = {
 
 export const SOUNDS = {
   mus_title: { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_title', loop: [0, 32.73] },
-  mus_descent: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_descent', loop: [0, 72] },
-  'mus_descent-danger': { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_descent-danger', loop: [0, 72] },
+  mus_descent: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_descent', loop: [0, 30] },
+  'mus_descent-danger': { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_descent-danger', loop: [0, 30] },
   mus_escape: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_escape', loop: [0, 48] },
   'mus_sting-win': { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_sting-win' },
   'mus_sting-death': { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_sting-death' },
@@ -54,7 +54,5 @@ export const SOUNDS = {
 } as const satisfies Record<string, SoundDef>
 export type SoundId = keyof typeof SOUNDS
 
-// Ids whose sample files are undelivered. Keep this explicit so delivery shrinks the allow-list.
-export const PENDING_AUDIO = [
-  'mus_descent', 'mus_descent-danger',
-] as const satisfies readonly SoundId[]
+// Ids whose sample files are undelivered (empty: every sample is delivered). Keep this explicit so a future undelivered id is listed here.
+export const PENDING_AUDIO = [] as const satisfies readonly SoundId[]

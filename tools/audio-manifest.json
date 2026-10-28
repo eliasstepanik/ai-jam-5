@@ -27,22 +27,30 @@
       "lyrics": "[Instrumental]",
       "bpm": 80,
       "keyscale": "D minor",
-      "duration": 72,
+      "duration": 50,
       "fadeIn": 0.005,
       "fadeOut": 0.005,
-      "chosenSeed": null
+      "trim": 32,
+      "loopFade": 2,
+      "peakDb": -3,
+      "chosenSeed": 1128,
+      "selection": "metric-based pick, not verified by ear: hard gates (duration +-20 ms, peak -3 +-1 dB in both formats, no clip/NaN, |DC|<0.01, no per-second RMS gap below -55 dB, no first/last-3 s dip >15 dB below the median, wrap jump < -30 dB, wrap first-difference seam < 0 dB, |tail-head 50 ms level| < 6 dB) then highest RMS; 36 seeds tried (1100-1135: 12 + two extra rounds of 12, manifest candidates raised temporarily, ACE render 50 s trimmed to 32 s, 2 s equal-power loop crossfade baked in, final 30.000 s = 10 bars at 80 BPM), only 1128 passed: RMS -24.5 dB, seam -14.6/-15.9 dB, jump -53.1/-38.0 dB mp3/ogg, tail-head level -4.1/-4.0 dB, peak -3.0/-3.0 dB, DC 6e-4/4e-5. Loop shortened 72 -> 30 s (R-140 fallback, below the 48 s plan step because the pair must fit the remaining budget). mono, peak-normalised -3 dBFS, no LUFS node in the workflow"
     },
     {
       "id": "mus_descent-danger",
       "kind": "music",
-      "tags": "dark ambient, cinematic, instrumental, horror tension layer, 80 bpm, D minor, scraping col legno strings in eighth notes, dissonant rising string cluster, low taiko hits on beats 1 and 3, breathy noise swells, percussive, no melody, overlay stem, seamless loop",
+      "tags": "dark ambient, cinematic, instrumental, horror tension layer, 80 bpm, D minor, sustained low string pad, slow dissonant string swells, deep drone, breathy noise swells, evolving texture, no drums, no percussion, no hits, no melody, steady dynamics, overlay stem, seamless loop",
       "lyrics": "[Instrumental]",
       "bpm": 80,
       "keyscale": "D minor",
-      "duration": 72,
+      "duration": 50,
       "fadeIn": 0.005,
       "fadeOut": 0.005,
-      "chosenSeed": null
+      "trim": 32,
+      "loopFade": 2,
+      "peakDb": -3,
+      "chosenSeed": 1265,
+      "selection": "metric-based pick, not verified by ear: same hard gates as mus_descent (duration +-20 ms, peak -3 +-1 dB in both formats, no clip/NaN, |DC|<0.01, no per-second RMS gap below -55 dB, no first/last-3 s dip >15 dB below the median, wrap jump < -30 dB, wrap first-difference seam < 0 dB, |tail-head 50 ms level| < 6 dB) then highest RMS; same recipe (ACE render 50 s trimmed to 32 s, 2 s equal-power loop crossfade baked in, final 30.000 s so the pair has identical duration and loop points). Round 1 with the original percussive prompt (taiko, col legno): 48 seeds 1200-1247, zero passers (best 1220 ogg wrap jump -16.2 dB). Round 2 with a softer prompt (sustained low string pad, slow dissonant swells, deep drone, noise swells, no drums/percussion/hits): 24 seeds 1248-1271 (seed = 1000 + 100*index + candidate with candidate index continued past 12 via a temporary candidates count; index 2 range 1200-1271 does not reach the next id at 1300), passers 1249, 1259, 1263, 1265, 1270; picked highest RMS 1265: RMS -19.4 dB, seam -6.6/-6.8 dB mp3/ogg, jump -42.2/-38.6 dB, tail-head level -1.3/-1.2 dB, peak -3.0/-2.9 dB, DC 7e-4/3e-5. Gates were not relaxed. mono, peak-normalised -3 dBFS, no LUFS node in the workflow"
     },
     {
       "id": "mus_escape",
