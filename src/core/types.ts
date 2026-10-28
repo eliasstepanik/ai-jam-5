@@ -214,6 +214,7 @@ export type Settings = {
 }
 export type Debug = {
   reveal: boolean; god: boolean; showPaths: boolean; freezeAi: boolean; overlay: boolean
+  aiViz: boolean; wispViz: boolean
   noclip: boolean; speedMul: number; freezeTorch: boolean; infiniteHp: boolean; noFog: boolean
   hurtboxes: boolean; animations: boolean; stats: boolean; pureDarkness: boolean; caveDetails: boolean
   mapOres: boolean; mapResin: boolean; mapPlants: boolean; mapEntrance: boolean; mapBeacon: boolean
