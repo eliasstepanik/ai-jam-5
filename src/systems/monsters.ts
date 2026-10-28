@@ -14,6 +14,7 @@ import { moveCircle } from '../world/collide.ts'
 import { lineOfSightPx } from '../world/los.ts'
 import type { Brain } from './ai-lurker.ts'
 import { escapeAim, escapeBrain, escapeStrike } from './ai-escape.ts'
+import { flowSeek } from './ai-flow.ts'
 import { patrolBrain } from './ai-patrol.ts'
 import { retreatBrain, startRetreat } from './ai-retreat.ts'
 import { devourerBrain } from './ai-devourer.ts'
@@ -256,10 +257,22 @@ export function stepMonsters(s: State, dt: number): void {
     // being lit so a stale lastKnown never triggers it); upgrade: export a fleeLight helper from awareness.ts if a third caller appears.
     // C4 (a): a hunting shade with retreatT > 0 flees instead of orbiting (in this branch !esc implies hunting)
     const retreating = !esc && m.kind !== 'devourer' && m.retreatT > 0 && (m.ai === 'ring' || m.ai === 'stalk')
-    const want = !thinks ? NO_VELOCITY : esc || m.awareness === 'hunting'
+    let want = !thinks ? NO_VELOCITY : esc || m.awareness === 'hunting'
       ? retreating ? retreatBrain(s, m) : brain(s, m)
       : m.awareness === 'searching' || insideLight(s, m.x, m.y) ? searchVelocity(s, m)
       : m.awareness === 'unaware' ? patrolBrain(s, m) : NO_VELOCITY
+    // F6 (#113 step 6): a stuck hunting/searching shade follows the windowed flow field instead of
+    // straight seek (retreat keeps retreatBrain; field rooted at player tile - ponytail in ai-flow.ts).
+    if (!esc && !retreating && (m.ai === 'ring' || m.ai === 'stalk') && m.stuckT > T.ai.flowStuckT
+      && (m.awareness === 'hunting' || m.awareness === 'searching')
+      // AC7: light-flee outranks flow. Hunting: the brain's flee latch ran this frame in the want ternary above
+      // (devourerBrain pins fleeing false, so it is never skipped). Searching: mirrors searchVelocity's flee predicate.
+      && !(m.awareness === 'hunting' ? m.fleeing
+        : insideLight(s, m.x, m.y) || insideLight(s, m.lastKnownX, m.lastKnownY))) {
+      const K = T.monsters[m.kind], hunt = m.awareness === 'hunting'
+      want = flowSeek(s, m, hunt ? s.player.x : m.lastKnownX, hunt ? s.player.y : m.lastKnownY,
+        hunt ? K.chaseSpeedPxS : K.ringSpeedPxS)
+    }
     const prevAi = m.ai
     pipeline(s, m, want, dt)
     // C4 (c)/(d): encounter end in descent (recover exit, or newly dying) -> retreat + calm spawn floor (no new Director field)
