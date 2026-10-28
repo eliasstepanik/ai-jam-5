@@ -2,8 +2,9 @@
 // Method: shades are parked as 'stunned' with aiDur 1e9 (walks with zero velocity, perception frozen), so
 // stepMonsters moves them only through separate(). Spec: docs/architecture-monsters-ai-2.md §3.4 (its
 // per-pair wording is stale; the code sums pushes per shade and collides once - the code governs).
-// Mutants proven RED by hand: push sign flipped, moveCircle swapped for a raw add, zero-distance guard
-// dropped, pushable() guard dropped.
+// Mutants proven RED by hand: push sign flipped, moveCircle swapped for a raw add (no wall clamp), zero-distance
+// guard `L < 1e-6` changed to `L < 0`, outer pushable(a) guard dropped, inner pushable(b) guard dropped,
+// constant push (no (1 - L / gap) falloff), summed push never applied, full instead of half push.
 // ponytail: fixtures read geometry from tuning (radius + separationPx); upgrade: a shared checks/arena.ts.
 import type { Monster, State } from '../core/types.ts'
 import { init } from '../core/state.ts'
@@ -149,15 +150,19 @@ function coincident(): void {
   }
 }
 
-// (5) a shade in windup / lunge / dying is not pushable, and neither is its neighbour pair-wise.
-function unpushable(): void {
-  const s = arena(7307)
+// (5) a windup shade is not pushable, and neither is its neighbour pair-wise. Both orders: windup at index 0
+// exercises the outer pushable(a) guard in separate(), windup at index 1 the inner pushable(b) guard.
+// (lunge / dying share pushable() but are not covered here: only windup is asserted.)
+function unpushable(windupFirst: boolean): void {
+  const s = arena(windupFirst ? 7307 : 7308)
   const cx = s.player.x + 300, cy = s.player.y
   const a = park(s, cx - 3, cy), b = park(s, cx + 3, cy)
-  a.ai = 'windup'
-  a.aiDur = 1e9
+  const w = windupFirst ? a : b
+  w.ai = 'windup'
+  w.aiDur = 1e9
   for (let k = 0; k < 30; k++) stepMonsters(s, DT)
-  ok(a.x === cx - 3 && b.x === cx + 3 && a.y === cy && b.y === cy, 'windup shade pair is left alone')
+  const who = windupFirst ? 'windup at index 0' : 'windup at index 1'
+  ok(a.x === cx - 3 && b.x === cx + 3 && a.y === cy && b.y === cy, 'windup shade pair is left alone (' + who + ')')
 }
 
 export function run(): void {
@@ -166,5 +171,6 @@ export function run(): void {
   symmetric()
   wallClamp()
   coincident()
-  unpushable()
+  unpushable(true)
+  unpushable(false)
 }
