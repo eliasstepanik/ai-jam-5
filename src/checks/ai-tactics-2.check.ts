@@ -155,7 +155,7 @@ function holdWhenLookedAt(): void {
   const x0 = m.x
   const y0 = m.y
   for (let k = 0; k < 60; k++) stepMonsters(s, DT)
-  ok(m.x === x0 && m.y === y0, 'E3 hold: the stalker did not advance while looked at (moved ' + Math.hypot(m.x - x0, m.y - y0).toFixed(3) + ' px in 60 steps)')
+  ok(m.x === x0 && m.y === y0, 'E3 hold: the stalker advanced while looked at (moved ' + Math.hypot(m.x - x0, m.y - y0).toFixed(3) + ' px in 60 steps)')
   s.player.facing = Math.PI // back turned: the same shade is now behind (off PI > 110 deg)
   for (let k = 0; k < 60; k++) stepMonsters(s, DT)
   const d1 = Math.hypot(m.x - s.player.x, m.y - s.player.y)

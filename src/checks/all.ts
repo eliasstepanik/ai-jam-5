@@ -54,6 +54,7 @@ import { run as stuckProbe } from './stuck-probe.check.ts'
 import { run as awarenessChecks } from './ai-awareness.check.ts'
 import { run as aiTactics } from './ai-tactics.check.ts'
 import { run as aiTactics2 } from './ai-tactics-2.check.ts'
+import { run as aiTactics3 } from './ai-tactics-3.check.ts'
 import { run as aiBudget } from './ai-budget.check.ts'
 state()
 runCheck()
@@ -111,5 +112,6 @@ stuckProbe()
 awarenessChecks()
 aiTactics()
 aiTactics2()
+aiTactics3()
 aiBudget()
 console.log('checks ok')
