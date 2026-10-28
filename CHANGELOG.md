@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drifting draft motes and a faint warm bleed of light toward the Beacon that quietly guide the player along the main route.
 - Dynamic puddles: the pool surface shimmers, ripples, drips and reflects the flame, the Beacon and nearby vines instead of showing a flat decal.
 - Sculpted cave terrain: open caverns, single pillars and short dead-end alcoves.
+- Attacks are announced by a wind-up pose, a crawling ground line and a clearer sound.
+- Shade eyes flash briefly when a shade starts its attack.
 
 ### Changed
 - Escape drops more rocks on the way out, and shades now appear ahead of you on the route.

@@ -9,6 +9,7 @@ import { drawHud } from '../ui/hud.ts'
 import { drawScreen } from '../ui/menus.ts'
 import { actorRows, drawRowEntities } from './entities.ts'
 import { drawEyes, drawGlow } from './glow.ts'
+import { drawStrikeLines } from './telegraph.ts'
 import { drawDarkness } from './light.ts'
 import { memoryCanvas } from './memory.ts'
 import { drawPuddles } from './puddles.ts'
@@ -60,6 +61,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   drawFallbackDressing(ctx, s, v)
   drawQuakeScars(ctx, s, v)
   passMark('tiles')
+  drawStrikeLines(ctx, s, v) // pass 6b: windup ground line under the actors
   actorRows(s, v) // buckets monsters, player, pickups, landmarks, landed rocks and non-south veins by foot row (R-180)
   for (let ty = v.ty0; ty <= v.ty1; ty++) { // pass 5b with 7-11: one wall row, then the actors whose foot row is ty
     drawWallRow(ctx, s, v, ty)

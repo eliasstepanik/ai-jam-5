@@ -45,9 +45,13 @@ const fixed = (id: SoundId, gain: number, positional = false): Trigger => ({
   id: () => id,
   params: (e) => (positional ? at(e, { gain }) : flat(e, { gain })),
 })
-const monster = (id: (k: MonsterKind) => SoundId, kind: (e: FxEvent, s: State) => MonsterKind): Trigger => ({
+const monster = (
+  id: (k: MonsterKind) => SoundId,
+  kind: (e: FxEvent, s: State) => MonsterKind,
+  tune: Partial<Record<MonsterKind, { rate: number; gain: number }>> = {},
+): Trigger => ({
   id: (e, s) => id(kind(e, s)),
-  params: (e, s) => { const k = kind(e, s); return at(e, { rate: KIND_RATE[k], gain: KIND_GAIN[k] }) },
+  params: (e, s) => { const k = kind(e, s); return at(e, tune[k] ?? { rate: KIND_RATE[k], gain: KIND_GAIN[k] }) },
 })
 
 // ponytail: goodWindow is not a tuning constant; derived from combat.ts parryLoss (good iff u <= goodSplit).
@@ -103,7 +107,7 @@ export const TRIGGERS: Record<FxEventKind, Trigger | null> = {
   win: null,
   death: fixed('sfx_player-death', 0.8),
   dodge: null,
-  windup: monster((k) => (k === 'devourer' ? 'sfx_devourer-beat' : 'sfx_eye-open'), nearestKind),
+  windup: monster((k) => (k === 'devourer' ? 'sfx_devourer-beat' : 'sfx_eye-open'), nearestKind, { lurker: { rate: 1.2, gain: 0.85 } }), // lurker: louder + lower so the attack cue is readable
   lunge: monster(() => 'sfx_mon-lunge', (e) => kindOf(e.a)),
   denied: fixed('ui_denied', 0.5),
   uiMove: fixed('ui_click', 0.6),

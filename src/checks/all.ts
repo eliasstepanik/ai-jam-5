@@ -1,4 +1,5 @@
 // Runs every pure-logic check (R-040). Add one import + one call per new *.check.ts file; the list is kept in sync by hand.
+import { run as telegraph } from './telegraph.check.ts'
 import { run as puddleDressing } from './puddle-dressing.check.ts'
 import { run as heartUi } from './heart-ui.check.ts'
 import { run as worldVisualFixes } from './world-visual-fixes.check.ts'
@@ -146,6 +147,7 @@ caveAlcove()
 stuckProbe()
 awarenessChecks()
 attackRhythm()
+telegraph()
 aiTactics()
 aiTactics2()
 aiTactics3()
