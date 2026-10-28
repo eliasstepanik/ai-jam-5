@@ -10,7 +10,14 @@ export const MIXER_VERSION = 1
 const GROUP_IDS: readonly Group[] = ['music', 'amb', 'sfx', 'ui']
 const GROUP_GAIN: Readonly<Record<Group, number>> = { music: 0.55, amb: 0.45, sfx: 0.9, ui: 0.7 }
 const LP_HZ = 18000 // masterLp rest frequency; sfx.ts dips it for the hurt sound
-type DuckNode = GainNode & { target?: number } // last linear duck target set through setDuck (undefined = 1)
+// One duck request from one cause (flare, low HP, pause, ...): depth in dB with its own attack/release
+// time constants in seconds. duckFor (trigger.ts) emits the full active set per step.
+export type DuckCause = { db: number; attack: number; release: number }
+// Active duck causes per bus. The mixer merges them: the applied duck is the deepest active cause.
+export type Duck = { music: DuckCause[]; amb: DuckCause[]; sfx: DuckCause[]; ui: DuckCause[] }
+// target = last linear duck target set through setDuck (undefined = 1); rel = longest release among the
+// causes holding the applied depth (undefined when unducked). Both live on the node so they survive hot swaps.
+type DuckNode = GainNode & { target?: number; rel?: number }
 
 function disconnectAll(res: Resources): void {
   const a = res.audio
@@ -48,6 +55,7 @@ export function ensureMixer(res: Resources): void {
     const old: DuckNode | undefined = oldDuck?.[g]
     d.gain.value = old?.gain.value ?? 1
     d.target = old?.target
+    d.rel = old?.rel
     d.connect(master)
     const gain = ctx.createGain()
     gain.gain.value = GROUP_GAIN[g]
@@ -81,26 +89,28 @@ export function setDuck(res: Resources, group: Group, db: number, tc: number): v
   node.gain.setTargetAtTime(lin, a.ctx.currentTime, Math.max(0, tc))
 }
 
-// Attack (duck deepens) and release (duck lifts) time constants in seconds for a duck of depth `db` on `group`.
-// duckFor (trigger.ts) gives each case a distinct (group, depth) pair, so the reason is derivable from the dB alone:
-//   music/amb -6 = perfect parry 0.01 / 0.6 | music -3 = low HP 0.5 / 0.5 | music/amb -10, sfx -inf = pause 0.1 / 0.2
-//   amb -9 = beacon lit 0.05 / 0.1 | anything else (dead/won -12 / -6, ...) 0.1 / 0.1
-// Limit: the same depth from another cause (amb -6 and -10 only ever come from flare / pause today) shares its timing.
-function duckTimes(group: Group, db: number): readonly [number, number] {
-  if (group === 'music' && db === -3) return [0.5, 0.5]
-  if ((group === 'music' || group === 'amb') && db === -6) return [0.01, 0.6]
-  if (((group === 'music' || group === 'amb') && db === -10) || (group === 'sfx' && db === -Infinity)) return [0.1, 0.2]
-  if (group === 'amb' && db === -9) return [0.05, 0.1]
-  return [0.1, 0.1]
-}
-
-// Per-step entry for the four group ducks in dB. Deepening a duck uses the new depth's attack, lifting one uses the
-// release of the depth being left (the node's remembered linear target converted back to dB).
-export function applyDucks(res: Resources, d: Readonly<Record<Group, number>>): void {
+// Per-step entry: merge the active causes per bus. The applied duck is the deepest active cause (most
+// negative dB). Deepening uses the shortest attack among the causes at the new depth; lifting uses the
+// release remembered for the depth being left (the longest release among the causes that held it), so
+// releasing one cause never un-ducks while another cause of equal or greater depth is still active, and
+// the release automation is scheduled from the moment the last cause at that depth goes away.
+// NaN depths are ignored. Per-cause timings come from duckFor (trigger.ts); spec §5 values unchanged.
+export function applyDucks(res: Resources, d: Readonly<Duck>): void {
   for (const g of GROUP_IDS) {
-    const prev = (res.audio.duck?.[g] as DuckNode | undefined)?.target ?? 1
-    const prevDb = prev <= 0 ? -Infinity : Math.round(20 * Math.log10(prev))
-    const db = d[g]
-    setDuck(res, g, db, db < prevDb ? duckTimes(g, db)[0] : duckTimes(g, prevDb)[1])
+    const node: DuckNode | undefined = res.audio.duck?.[g]
+    if (!node) continue
+    let db = 0
+    for (const c of d[g]) if (c.db < db) db = c.db // NaN comparisons are false -> NaN causes skipped
+    let attack = Infinity
+    let release = 0
+    for (const c of d[g]) {
+      if (c.db !== db) continue
+      if (c.attack < attack) attack = c.attack
+      if (c.release > release) release = c.release
+    }
+    const prev = node.target ?? 1
+    const lin = db === -Infinity ? 0 : 10 ** (Math.min(0, db) / 20)
+    if (lin !== prev) setDuck(res, g, db, db < 0 && lin < prev ? attack : node.rel ?? 0.1)
+    node.rel = db < 0 ? release : undefined
   }
 }

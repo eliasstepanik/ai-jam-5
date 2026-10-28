@@ -5,7 +5,8 @@ import { MINERALS } from '../core/state.ts'
 import { T } from '../core/tuning.ts'
 import { hash2 } from '../core/noise.ts'
 import { lightRadius } from '../systems/light.ts'
-import type { SoundId } from '../assets/sounds.ts'
+import type { Group, SoundId } from '../assets/sounds.ts'
+import type { Duck } from './mixer.ts'
 
 export type PlayParams = {
   x?: number; y?: number // world px; omitted = non-positional
@@ -141,7 +142,8 @@ export function danger(s: State): number {
     if (m.ai === 'windup' || m.ai === 'lunge') tele = Math.max(tele, 1 - Math.min(1, Math.max(0, d - R) / TELE_FALLOFF))
     if (d < R + RING_PAD) ring += 1
   }
-  const low = Math.min(1, Math.max(0, 1 - (p.energy / p.energyMax) * 1.5))
+  // energyMax <= 0 (no energy term, e.g. a degenerate tuning): finite result, no 0/0 NaN.
+  const low = p.energyMax <= 0 ? 0 : Math.min(1, Math.max(0, 1 - (p.energy / p.energyMax) * 1.5))
   const hp = p.hp <= 1 ? 0.6 : 0
   return Math.min(1, Math.max(tele, low, ring / 6, hp))
 }
@@ -168,22 +170,36 @@ export function musicFor(s: State): SoundId | null {
   }
 }
 
-// --- ducking (dB per bus, 0 = none; groups combine by taking the most negative) ---
-export type Duck = { music: number; amb: number; sfx: number; ui: number }
+// --- ducking: per-cause requests per bus (the mixer merges them, deepest wins; see mixer.ts applyDucks) ---
+// Attack/release time constants in seconds per cause (spec §5 values, unchanged from the old duckTimes table).
+const T_LOW_HP: readonly [number, number] = [0.5, 0.5] // music -3, descent at 1 HP
+const T_FLARE: readonly [number, number] = [0.01, 0.6] // music/amb -6, flare active
+const T_PAUSE: readonly [number, number] = [0.1, 0.2] // pause ducks (music/amb -10, sfx silent)
+const T_BEACON_AMB: readonly [number, number] = [0.05, 0.1] // amb -9, escape before mus_escape starts
+const T_DEFAULT: readonly [number, number] = [0.1, 0.1] // anything else (beacon music silence, dead/won)
 
 export function duckFor(s: State): Duck {
-  const d: Duck = { music: 0, amb: 0, sfx: 0, ui: 0 }
+  const d: Duck = { music: [], amb: [], sfx: [], ui: [] }
+  const add = (g: Group, db: number, t: readonly [number, number]): void => {
+    d[g].push({ db, attack: t[0], release: t[1] })
+  }
   const { screen, phase } = s.meta
   if (screen === 'playing') {
-    if (phase === 'descent' && s.player.hp === 1) d.music = Math.min(d.music, -3)
+    if (phase === 'descent' && s.player.hp === 1) add('music', -3, T_LOW_HP)
     // Beacon lit: music silent (descent stops) and amb -9 only until mus_escape starts; once escapeLive the music duck lifts so it is audible.
-    if (s.world.beaconLit && !escapeLive(s)) d.music = -Infinity
-    if (phase === 'escape' && !escapeLive(s)) d.amb = Math.min(d.amb, -9)
+    if (s.world.beaconLit && !escapeLive(s)) add('music', -Infinity, T_DEFAULT)
+    if (phase === 'escape' && !escapeLive(s)) add('amb', -9, T_BEACON_AMB)
   } else if (screen === 'paused') {
-    d.music = -10; d.amb = -10; d.sfx = -Infinity
+    add('music', -10, T_PAUSE)
+    add('amb', -10, T_PAUSE)
+    add('sfx', -Infinity, T_PAUSE)
   } else if (screen === 'dead' || screen === 'won') {
-    d.amb = -12; d.sfx = -6
+    add('amb', -12, T_DEFAULT)
+    add('sfx', -6, T_DEFAULT)
   }
-  if (s.fx.flare > 0) { d.music = Math.min(d.music, -6); d.amb = Math.min(d.amb, -6) }
+  if (s.fx.flare > 0) {
+    add('music', -6, T_FLARE)
+    add('amb', -6, T_FLARE)
+  }
   return d
 }

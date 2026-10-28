@@ -1,16 +1,22 @@
 // #102 acceptance: the TRIGGERS/EXTRAS wiring and the danger()/musicFor()/duckFor() ranges.
 // Audit wording (Kittingsl, 2026-10-26): automated trigger-table coverage in src/checks and the
 // check runner, plus event/loop verification evidence. Spec: KB notes/ai-jam-5-audio-finish-plan.md
-// chunk B2. D-CHECK deviation (Orchestrator default, owner ruling R-043a pending): this check
-// imports src/audio/trigger.ts (L4). trigger.ts is DOM-free and import-safe under Node; engine.ts
+// chunks B2 + P1. D-CHECK deviation (Orchestrator default, owner ruling R-043a pending): this check
+// imports DOM-free src/audio/trigger.ts and src/audio/mixer.ts (L4). Both are import-safe under Node;
+// engine.ts
 // is never imported (its module-top import.meta.glob throws under Node), so the lastSeq replay
 // guard itself (engine.ts consumeEvents, `if (e.seq <= a.lastSeq) continue`) is verified here
 // through the pure trigger functions only - see criterion 3.
 import { TRIGGERS, EXTRAS, danger, musicFor, duckFor } from '../audio/trigger.ts'
 import type { Trigger } from '../audio/trigger.ts'
+import { applyDucks, ensureMixer } from '../audio/mixer.ts'
+import type { DuckCause } from '../audio/mixer.ts'
+import { makeFakeCtx } from './audio-fake.ts'
+import type { FakeParam, FakeParamEvent } from './audio-fake.ts'
 import { SOUNDS } from '../assets/sounds.ts'
-import type { SoundId } from '../assets/sounds.ts'
+import type { Group, SoundId } from '../assets/sounds.ts'
 import { init } from '../core/state.ts'
+import type { Resources } from '../assets/resources.ts'
 import type { FxEvent, FxEventKind, Monster, State } from '../core/types.ts'
 
 const ok = (value: boolean, why: string): void => { if (!value) throw new Error('audio wiring: ' + why) }
@@ -135,6 +141,11 @@ export function run(): void {
   ok(danger(d) === 1, `flame out: expected 1, got ${danger(d)}`)
   d.player.energy = d.player.energyMax * 4 // over-full energy clamps the low term, not NaN
   ok(danger(d) === 0, `over-full energy: expected 0, got ${danger(d)}`)
+  const emax = d.player.energyMax
+  d.player.energyMax = 0 // degenerate fixture (unreachable in play): 0/0 must not leak NaN
+  ok(Number.isFinite(danger(d)) && danger(d) >= 0 && danger(d) <= 1,
+    `energyMax 0: expected finite in [0,1], got ${danger(d)}`)
+  d.player.energyMax = emax
   d.player.energy = d.player.energyMax
   d.player.hp = 1
   ok(danger(d) === 0.6, `hp 1: expected 0.6, got ${danger(d)}`)
@@ -160,18 +171,77 @@ export function run(): void {
     ok(id === null || MUSIC_IDS.has(id), `musicFor returned unknown id ${id} on ${st.meta.screen}/${st.meta.phase}`)
   }
 
-  // --- 4c. duckFor: every bus <= 0; finite ducks within the table bounds [-12, 0]
-  // (real bounds read off duckFor: -3/-6/-9/-10/-12 and -Infinity for silent buses) ---
+  // --- 4c. duckFor: every cause depth <= 0; finite depths within the table bounds [-12, 0]
+  // (real depths read off duckFor: -3/-6/-9/-10/-12 and -Infinity for silent buses); timings finite >= 0 ---
   for (const st of screenSweep()) {
     for (const flare of [0, 1]) {
       st.fx.flare = flare
       const duck = duckFor(st)
       for (const bus of ['music', 'amb', 'sfx', 'ui'] as const) {
-        const v = duck[bus]
-        ok(v <= 0 && (v === -Infinity || v >= -12),
-          `duckFor ${bus}=${v} outside {-Infinity} U [-12,0] on ${st.meta.screen}/${st.meta.phase} flare=${flare}`)
+        for (const c of duck[bus]) {
+          ok(c.db <= 0 && (c.db === -Infinity || c.db >= -12),
+            `duckFor ${bus} depth ${c.db} outside {-Infinity} U [-12,0] on ${st.meta.screen}/${st.meta.phase} flare=${flare}`)
+          ok(Number.isFinite(c.attack) && c.attack >= 0 && Number.isFinite(c.release) && c.release >= 0,
+            `duckFor ${bus} timing ${c.attack}/${c.release} not finite >= 0 on ${st.meta.screen}/${st.meta.phase} flare=${flare}`)
+        }
       }
     }
+  }
+  // --- 6. per-cause duck merge (P1) through the real mixer on the fake context: ensureMixer builds
+  // the graph on makeFakeCtx, applyDucks drives the duck nodes, and the recorded setTargetAtTime
+  // events on each duck gain are the assertions. ---
+  const mixerFixture = (): { fake: ReturnType<typeof makeFakeCtx>; res: Resources } => {
+    const fake = makeFakeCtx()
+    const res = { audio: { ctx: fake.ctx, graphVersion: 0, master: null, masterLp: null,
+      comp: null, groups: null, duck: null, lastMaster: 0 } } as unknown as Resources
+    ensureMixer(res)
+    return { fake, res }
+  }
+  const duckMusic = (res: Resources, causes: DuckCause[]): void => {
+    applyDucks(res, { music: causes, amb: [], sfx: [], ui: [] })
+  }
+  const duckEvents = (res: Resources, bus: Group): FakeParamEvent[] =>
+    ((res.audio.duck![bus] as unknown as { gain: FakeParam }).gain.events
+      .filter((e) => e.type === 'setTargetAtTime'))
+  {
+    // Two overlapping same-depth ducks from different causes: no release before the later one ends,
+    // gain never rises while one is active, release uses the last cause's own release.
+    const { fake, res } = mixerFixture()
+    const a: DuckCause = { db: -6, attack: 0.01, release: 0.6 }
+    const b: DuckCause = { db: -6, attack: 0.01, release: 0.2 }
+    duckMusic(res, [a])
+    fake.advance(1)
+    duckMusic(res, [a, b]) // b joins at t=1: depth unchanged -> no new automation
+    fake.advance(1)
+    duckMusic(res, [b]) // a leaves at t=2: b still holds -6 -> gain must not rise
+    fake.advance(1)
+    duckMusic(res, []) // b leaves at t=3 -> release starts here, with b's release
+    const evs = duckEvents(res, 'music')
+    ok(evs.length === 2, `same-depth merge: expected 2 duck events (attack + one release), got ${evs.length}`)
+    ok(evs[0].value === 10 ** (-6 / 20) && evs[0].time === 0 && evs[0].tc === 0.01,
+      `same-depth merge: attack event wrong: ${JSON.stringify(evs[0])}`)
+    ok(evs[1].value === 1 && evs[1].time === 3 && evs[1].tc === 0.2,
+      `same-depth merge: release must start when the last cause ends (t=3) with its release 0.2: ${JSON.stringify(evs[1])}`)
+    ok(fake.violations.length === 0, `same-depth merge: fake violations: ${fake.violations.join('; ')}`)
+  }
+  {
+    // Deeper-then-shallower: the deeper cause wins while active; releasing it lifts only to the
+    // shallower cause, using the deeper cause's release (perfect-parry -6 over low-HP -3).
+    const { fake, res } = mixerFixture()
+    const low: DuckCause = { db: -3, attack: 0.5, release: 0.5 }
+    const parry: DuckCause = { db: -6, attack: 0.01, release: 0.6 }
+    duckMusic(res, [low])
+    fake.advance(1)
+    duckMusic(res, [low, parry]) // deeper joins -> -6 with parry's attack
+    fake.advance(1)
+    duckMusic(res, [low]) // parry leaves -> lift to -3 with parry's release
+    const evs = duckEvents(res, 'music')
+    ok(evs.length === 3, `deep/shallow: expected 3 events, got ${evs.length}`)
+    ok(evs[1].value === 10 ** (-6 / 20) && evs[1].time === 1 && evs[1].tc === 0.01,
+      `deep/shallow: deepening event wrong: ${JSON.stringify(evs[1])}`)
+    ok(evs[2].value === 10 ** (-3 / 20) && evs[2].time === 2 && evs[2].tc === 0.6,
+      `deep/shallow: lift event must reach -3 with the parry release 0.6: ${JSON.stringify(evs[2])}`)
+    ok(fake.violations.length === 0, `deep/shallow: fake violations: ${fake.violations.join('; ')}`)
   }
   // --- 5. every ok() above names the offending kind/id; no wall-clock budget is used here. ---
 }
