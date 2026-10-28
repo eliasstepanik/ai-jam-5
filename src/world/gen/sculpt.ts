@@ -10,13 +10,15 @@ export const EXCL_D0 = 40 // nothing is touched near floor closer than this to t
 export const EXCL_PAD = 2 // Chebyshev padding around those floor tiles, so a changed tile never sits next to a protected one
 export const MARGIN = 3 // untouched map-edge band (validate r2 wants an all-wall border)
 export const CAVERN_MAX = 8, PILLAR_MAX = 40, ALCOVE_MAX = 14
-export const BLOCK = 20 // one cavern candidate per BLOCK x BLOCK block
-export const CAVERN_BASE = 0.15
-// ponytail: accept = CAVERN_BASE + CAVERN_RATE * depth share. Lower CAVERN_RATE to 0.2 if cave.check.ts:126 (attempt-0 accept >= 50/62) falls under 50/62 once G7 wires this in.
-export const CAVERN_RATE = 0.35
+export const BLOCK = 15 // one cavern candidate per BLOCK x BLOCK block
+export const CAVERN_BASE = 0.5
+// ponytail: accept = CAVERN_BASE + CAVERN_RATE * depth share. Tuned over the 62 cave.check.ts SEEDS (G7t): BASE 0.5 / RATE 0.3 / BLOCK 15 give ~7.9 caverns per cave
+// (min 6), because the no-shortcut rule only passes on near-linear floor, so most candidates are rejected, not carved. The rules stay; raise BASE/RATE or lower BLOCK for more
+// (8 = cap), lower them if cave.check.ts:126 (attempt-0 accept >= 50/62) or the 0.92 beaconDist ratio ever fails.
+export const CAVERN_RATE = 0.3
 export const RIM_KEEP = 0.6 // chance an outer-ring cavern tile is carved (organic edge instead of a disc)
-export const PILLAR_RATE = 0.04, PILLAR_Q_MIN = 0.35, PILLAR_WD_MIN = 4
-export const ALCOVE_RATE = 0.012, ALCOVE_Q_MIN = 0.25, ALCOVE_Q_MAX = 0.8
+export const PILLAR_RATE = 0.004, PILLAR_Q_MIN = 0.35, PILLAR_WD_MIN = 4
+export const ALCOVE_RATE = 0.035, ALCOVE_Q_MIN = 0.2, ALCOVE_Q_MAX = 0.9
 export const ALCOVE_LEN_MIN = 6, ALCOVE_LEN_SPAN = 5, ALCOVE_BULB_R = 2
 // Per-feature offsets added to the caller's salt so the four hash gates are independent streams (no RNG involved).
 const K_ACCEPT = 1, K_RIM = 2, K_PILLAR = 3, K_ALCOVE = 4, K_LEN = 5
