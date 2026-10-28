@@ -9,7 +9,7 @@ import { fnv1a } from '../core/rng.ts'
 import { T } from '../core/tuning.ts'
 import { clearCaches } from '../world/caches.ts'
 import { circleHitsSolid } from '../world/collide.ts'
-import { debugAction, debugSpawn, debugForceLeap, setDebugValue, torchSeconds } from '../systems/debug.ts'
+import { debugAction, debugSpawn, debugForceLeap, setDebugValue, torchSeconds, DEBUG_TOGGLES } from '../systems/debug.ts'
 import { debugTeleport, debugBearing } from '../systems/debug-navigation.ts'
 import { clampCam } from '../systems/camera.ts'
 import { stepFlame } from '../systems/flame.ts'
@@ -189,8 +189,23 @@ function mapLayers(): void {
   ok(mapColor('distance', false, -1, 100).join() === '45,45,55', 'unreachable floor is distinct')
 }
 
+function vizToggles(): void {
+  const s = init()
+  ok(s.debug.aiViz === false && s.debug.wispViz === false, 'AI behavior and wisp guide overlays default off')
+  for (const id of ['aiViz', 'wispViz'] as const) {
+    ok((DEBUG_TOGGLES as readonly string[]).includes(id), id + ' is a generic debug toggle')
+    debugAction(s, id); ok(s.debug[id] === true, id + ' turns on')
+    debugAction(s, id); ok(s.debug[id] === false, id + ' turns off')
+  }
+  s.debug.aiViz = true; s.debug.wispViz = true
+  const old = JSON.parse(JSON.stringify(s)); delete old.debug.aiViz; delete old.debug.wispViz
+  const restored = migrate(old)
+  ok(restored.debug.aiViz === false && restored.debug.wispViz === false, 'hot reload fills overlay defaults off')
+  ok(JSON.stringify(migrate(restored)) === JSON.stringify(restored), 'overlay migration remains idempotent')
+}
+
 export function run(): void { mapLayers();
-  cheats(); movementAndSpawn(); navigation(); forcedLeap()
+  cheats(); movementAndSpawn(); navigation(); forcedLeap(); vizToggles()
   const s = room()
   setDebugValue(s, 'torch', 0.5)
   ok(s.player.energy === 50 && torchSeconds(s) === 100, 'torch slider controls remaining duration at current burn')

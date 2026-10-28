@@ -9,6 +9,8 @@ import { currentQuality } from '../render/quality.ts'
 import { drawDebugWorld } from '../render/debug.ts'
 import { debugLayout, contains } from './debug-layout.ts'
 import { drawAiDebug } from './debug-ai.ts'
+import { drawAiViz } from './debug-ai-viz.ts'
+import { drawWispViz } from './debug-wisp.ts'
 import { drawDebugNavigation } from './debug-navigation.ts'
 import { FONT } from './draw.ts'
 import { depthName } from './strings.ts'
@@ -92,6 +94,8 @@ function stats(ctx: CanvasRenderingContext2D, s: State, h: number): void {
 
 export function drawDebug(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
   if (s.debug.showPaths) drawAiDebug(ctx, s, w, h)
+  if (s.debug.aiViz) drawAiViz(ctx, s, w, h)
+  if (s.debug.wispViz) drawWispViz(ctx, s, w, h)
   drawDebugWorld(ctx, s, w, h)
   drawDebugNavigation(ctx, s, w, h)
   const ui = getResources().debug, l = debugLayout(s, w, h, ui.on, ui.tab)
@@ -107,9 +111,9 @@ export function drawDebug(ctx: CanvasRenderingContext2D, s: State, w: number, h:
     text(ctx, 'DEVELOPER TOOLS', l.panel.x + 12, l.panel.y + 12, '#ffd27a')
     text(ctx, debugRunActive(s) ? s.meta.screen + ' / ' + s.meta.phase : 'Start a run to enable player actions', l.panel.x + 10, l.panel.y + l.panel.h - 22, '#a5aab5')
     if (ui.tab === 1) {
-      text(ctx, 'Leap skips windup and resumes enemy AI.', l.panel.x + 10, l.panel.y + 218)
-      text(ctx, 'Targets nearest enemy in clear sight.', l.panel.x + 10, l.panel.y + 240)
-      text(ctx, 'Spawn an enemy first if none is nearby.', l.panel.x + 10, l.panel.y + 262, '#a5aab5')
+      text(ctx, 'Leap skips windup and resumes enemy AI.', l.panel.x + 10, l.panel.y + 236)
+      text(ctx, 'Targets nearest enemy in clear sight.', l.panel.x + 10, l.panel.y + 251)
+      text(ctx, 'Spawn an enemy first if none is nearby.', l.panel.x + 10, l.panel.y + 266, '#a5aab5')
     } else if (ui.tab === 3) {
       text(ctx, 'Depth ' + debugDepthClass(s) + ' ' + depthName(debugDepthClass(s)) + (debugRunActive(s) ? ': restarts this seed' : ': next run'), l.panel.x + 150, l.panel.y + 12, '#a5aab5')
       text(ctx, 'Arrow: direct bearing, walls may block it.', l.panel.x + 10, l.panel.y + 242)
