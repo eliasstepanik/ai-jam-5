@@ -33,7 +33,7 @@ export function run(): void {
     ok(r.early && r.rootMinY < 18 && r.loops === 1 && r.beaconOk, tag + `only the loops row fails (regenerate fixtures): ${JSON.stringify(r)}`)
     ok(carveCore(caveSeed(seed, a)) === null, tag + 'exactly 1 loop is rejected by carveCore')
   }
-  for (const [seed, a] of [[2011, 0], [1122, 1], [1469, 1]]) {
+  for (const [seed, a] of [[2011, 0], [1100, 1], [1469, 1]]) {
     const r = rows(seed, a), core = carveCore(caveSeed(seed, a)), tag = `loops control ${seed}/${a}: `
     ok(r.early && r.rootMinY < 18 && r.loops === 2 && r.beaconOk, tag + `all rows pass with exactly 2 loops (regenerate fixtures): ${JSON.stringify(r)}`)
     ok(core !== null && core.stats.loops === 2, tag + '2 loops is accepted by carveCore')

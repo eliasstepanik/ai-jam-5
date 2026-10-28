@@ -18,10 +18,8 @@ import { SEEDS } from './cave.check.ts'
 const W = MAP_W, H = MAP_H
 const ALCOVES_MIN = 4, ALCOVES_MAX = 14 // A3: alcoves per cave
 const SHARE_MAX = 0.06 // A3: alcove floor / all floor
-const BEACON_CLEAR = 4 // A5: beacon to any alcove tile, i.e. none within 3 (walking steps on every seed, Chebyshev except CLOSE_WALLED)
-// ponytail: with the real alcove tiles, seed 3 has an alcove 2 tiles (Chebyshev) from the beacon behind one wall row, 396 steps on foot.
-// The old tile-pattern heuristic missed it. Pinned to that exact value so any change fails; real fix = sculpt keeps alcoves off the beacon.
-const CLOSE_WALLED: Readonly<Record<number, number>> = { 3: 2 }
+const BEACON_CLEAR = 4 // A5: beacon to any alcove tile, i.e. none within 3 (walking steps and Chebyshev, on every seed)
+const ALCOVE_CLEAR = 4 // mirrors ALCOVE_CLEAR in src/world/generate.ts (not exported): carveCore rejects an attempt with an alcove tile at Chebyshev < this from the Beacon
 const BD_RATIO = 0.92 // A4: sculpted beaconDist / unsculpted beaconDist
 const MIN_TILES = 3 * ALCOVE_LEN_MIN + 12 // unique tiles of the shortest alcove: 3-wide tunnel plus the radius-2 bulb beyond it
 
@@ -111,9 +109,7 @@ function checkSeed(seed: number): { alcoves: number; share: number; near: number
     steps = Math.min(steps, walk[t])
   }
   ok(steps >= BEACON_CLEAR, tag + 'A5 beacon is ' + steps + ' steps from an alcove, needs >= ' + BEACON_CLEAR)
-  const allowed = CLOSE_WALLED[seed]
-  ok(allowed === undefined ? near >= BEACON_CLEAR : near === allowed,
-    tag + 'A5 beacon is ' + near + ' tiles (Chebyshev) from an alcove, needs ' + (allowed === undefined ? '>= ' + BEACON_CLEAR : allowed))
+  ok(near >= ALCOVE_CLEAR, tag + 'A5 beacon is ' + near + ' tiles (Chebyshev) from an alcove, needs >= ' + ALCOVE_CLEAR)
 
   const ratio = c.beaconDist / b.beaconDist
   ok(ratio >= BD_RATIO, tag + 'A4 beaconDist ' + c.beaconDist + ' < ' + BD_RATIO + ' * ' + b.beaconDist)

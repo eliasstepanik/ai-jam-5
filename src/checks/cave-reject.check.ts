@@ -210,11 +210,11 @@ function spacing(): void {
 }
 
 // Rule 13 (CG4 §3 / §5 row 13): the cluster is pickups[0..2], each within Chebyshev 10 of a main tile (CG4 §3 'relax once to Chebyshev <= 10').
-// Seed 3: pickups[1] moved to a wide2 tile 10 (accepted) / 11 (rejected) tiles from the nearest main tile, dist inside [bd - 40, bd - 8]. The tile is
+// Seed 5: pickups[1] moved to a wide2 tile 10 (accepted) / 11 (rejected) tiles from the nearest main tile, dist inside [bd - 40, bd - 8]. The tile is
 // selected by geometry alone, the first match in scan order; its gap is asserted before validateCave is.
 function clusterRules(): void {
-  const r = caveOf(3), I = info(r), mask = new Set(r.chamber)
-  ok(validateCave(r).ok && r.pickups[0].size === 'large' && r.pickups[1].size === 'small', 'rule 13: seed 3 is valid with a large-first cluster (control)')
+  const r = caveOf(5), I = info(r), mask = new Set(r.chamber)
+  ok(validateCave(r).ok && r.pickups[0].size === 'large' && r.pickups[1].size === 'small', 'rule 13: seed 5 is valid with a large-first cluster (control)')
   const sw = copy(r), a = sw.pickups[0]
   sw.pickups[0] = sw.pickups[1]; sw.pickups[1] = a
   // Implementation coupling, not spec wording: validate.ts treats pickups[0..2] as the Beacon cluster with the large one first (CG4 §3 'cluster placed FIRST').

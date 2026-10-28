@@ -22,8 +22,13 @@ export type CaveOpts = GenOpts & { depthClass?: number }
 export const caveSeed = (seed: number, a: number): number =>
   a === 0 ? seed >>> 0 : hashSeed(seed >>> 0, 'cave:' + a)
 
+// Alcove tunnels are decoy dead ends; none may end within this Chebyshev distance of the Beacon (a bulb right behind the goal wall).
+// ponytail: reject the attempt instead of repairing the terrain, the cost is one more attempt on the rare seeds that hit it.
+const ALCOVE_CLEAR = 4
+
 // One terrain attempt (passes 0-9); populate, validateCave and fallbackCave complete it in generateCave below.
 // `skip` names optional passes to leave out ('sculpt'); checks use it to compare against the unsculpted terrain.
+// After placeBeacon and the beaconDist band, the attempt is rejected when any sculpt alcove tile lies within ALCOVE_CLEAR of the Beacon.
 export function carveCore(cs: number, p: CaveParams = PARAMS[3], skip: readonly string[] = []): CaveCore | null {
   const w = MAP_W, h = MAP_H, stream = (tag: string) => makeRnd(hashSeed(cs, 'cave:' + tag))
   const layout = buildMacro(stream('macro'), w, h, p), raw = new Uint8Array(w * h)
@@ -52,9 +57,11 @@ export function carveCore(cs: number, p: CaveParams = PARAMS[3], skip: readonly 
   if (entrance < 0) return null
   const loops = pickLoopPairs(g, w, h, entrance, layout, stream('tunnels'), p)
   if (loops.loops < 2) return null
-  if (!skip.includes('sculpt')) sculpt(g, w, h, entrance, hashSeed(cs, 'cave:sculpt')) // hash2 only: draws nothing from any stream
+  const alcoves = skip.includes('sculpt') ? [] : sculpt(g, w, h, entrance, hashSeed(cs, 'cave:sculpt')).alcoveTiles // hash2 only: draws nothing from any stream
   const B = placeBeacon(g, w, h, entrance)
   if (!B || B.beaconDist < p.bdLo || B.beaconDist > p.bdHi) return null
+  const bx = B.beacon % w, by = Math.floor(B.beacon / w)
+  if (alcoves.some((i) => Math.max(Math.abs(i % w - bx), Math.abs(Math.floor(i / w) - by)) < ALCOVE_CLEAR)) return null
 
   // The work grid is 1=wall; CaveCore.t uses the core contract 0='#', 1='.', 2=','.
   const t = new Uint8Array(g.length), beaconMask = new Uint8Array(g.length)
