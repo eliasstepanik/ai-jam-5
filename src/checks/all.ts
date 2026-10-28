@@ -72,7 +72,7 @@ import { run as caveGuide } from './cave-guide.check.ts'
 import { run as puddleSurface } from './puddle-surface.check.ts'
 import { run as caveSculpt } from './cave-sculpt.check.ts'
 import { run as caveAlcove } from './cave-alcove.check.ts'
-import { run as volumeCycle } from './volume-cycle.check.ts'
+import { run as titleSettings } from './settings.check.ts'
 puddleDressing()
 heartUi()
 state()
@@ -131,7 +131,7 @@ depthTone()
 vineGlow()
 caveGuide()
 puddleSurface()
-volumeCycle()
+titleSettings()
 
 reportedBugs()
 publishedBugs()

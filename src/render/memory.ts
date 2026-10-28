@@ -14,7 +14,7 @@ const COLORS = [10, 8, 6, 32, 28, 23, 18, 15, 12] as const // dark / explored fl
 // full (key = tilesHash; a changed hash or size forces the full rebuild, an equal hash on a new run is caught by the word diff).
 export function memoryCanvas(s: State): HTMLCanvasElement | null {
   const { w, h, explored, tiles, tilesHash } = s.world
-  if (s.debug.pureDarkness || !w || !h || tiles.length !== w * h) return null
+  if (s.settings.pureDarkness || !w || !h || tiles.length !== w * h) return null
   const m = getResources().memory, n = w * h, nWords = Math.ceil(n / 32)
   if (!m.canvas || m.canvas.w !== w || m.canvas.h !== h || !m.img || m.words.length !== nWords) {
     const cv = newCanvas(w, h)

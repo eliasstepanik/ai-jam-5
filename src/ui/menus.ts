@@ -15,6 +15,7 @@ import { logoGlow } from './anim.ts'
 import { COL, button, keycap, panel, text, textWidth } from './draw.ts'
 import { helpLayout, pauseLayout, titleLayout, titleReady, uiScale } from './layout.ts'
 import { drawEnd } from './menus-end.ts'
+import { drawSettings } from './settings.ts'
 import { TAU, fadeIn, fill, focus } from './menu-kit.ts'
 import type { Ctx } from './menu-kit.ts'
 import { HELP, STR, clock, depthName, pct } from './strings.ts'
@@ -58,8 +59,6 @@ function backdrop(ctx: Ctx, s: State, w: number, h: number, u: number, alpha: nu
   ctx.restore()
 }
 
-const soundLabel = (s: State): string => (s.settings.muted ? STR.soundOff : `${STR.soundOn} ${pct(s.settings.volume)}`)
-const flashLabel = (s: State): string => (s.settings.reducedFlash ? STR.flashReduced : STR.flashFull)
 const depthLabel = (s: State): string => (s.settings.depthClass === 'random' ? `${STR.depthLabel}: Random` : `${STR.depthLabel}: ${depthName(s.settings.depthClass)}`)
 
 // --- title ---
@@ -95,15 +94,15 @@ function drawTitle(ctx: Ctx, s: State, w: number, h: number): void {
     ctx.restore()
   }
   const prog = im.total > 0 ? im.loaded / im.total : 0
-  const labels = [ready ? STR.play : `${STR.loadingBtn} ${pct(prog)}`, STR.help, soundLabel(s), flashLabel(s), depthLabel(s)]
+  const labels = [ready ? STR.play : `${STR.loadingBtn} ${pct(prog)}`, STR.help, STR.settings, depthLabel(s)]
   for (let i = 0; i < labels.length; i++) button(ctx, l.buttons[i], labels[i], { focused: focus(s, i), enabled: l.buttons[i].enabled }, u, t, red)
   if (!ready) { // progress track + fill under Play
     fill(ctx, COL.border, l.bar.x, l.bar.y, l.bar.w, l.bar.h)
     fill(ctx, COL.accent, l.bar.x, l.bar.y, l.bar.w * prog, l.bar.h)
   }
-  const sb = l.buttons[5], typing = s.ui.cursor === 5, sx = sb.x + 12 * u, sy = sb.y + sb.h / 2 + 5 * u
+  const sb = l.buttons[4], typing = s.ui.cursor === 4, sx = sb.x + 12 * u, sy = sb.y + sb.h / 2 + 5 * u
   text(ctx, STR.seedLabel, l.seedLabel.x, l.seedLabel.y, 14, u, COL.dim)
-  button(ctx, sb, '', { focused: focus(s, 5), enabled: true }, u, t, red)
+  button(ctx, sb, '', { focused: focus(s, 4), enabled: true }, u, t, red)
   text(ctx, s.ui.seedInput || STR.seedPlaceholder, sx, sy, 16, u, s.ui.seedInput ? COL.text : COL.dim)
   if (typing && Math.floor(t * 4) % 2 === 0) fill(ctx, COL.gold, sx + (s.ui.seedInput ? textWidth(ctx, s.ui.seedInput, 16, u) : 0) + 2 * u, sy - 14 * u, 2 * u, 18 * u) // caret, 2 Hz
   text(ctx, STR.seedHint, l.seedHint.x, l.seedHint.y, 12, u, COL.dim, { align: 'center' })
@@ -125,7 +124,7 @@ function drawPause(ctx: Ctx, s: State, w: number, h: number): void {
   fadeIn(ctx, s, u)
   panel(ctx, l.panel, u)
   text(ctx, STR.paused, l.title.x, l.title.y, 40, u, COL.text, { align: 'center', bold: true })
-  const labels = [STR.resume, STR.help, soundLabel(s), flashLabel(s), s.ui.confirmT > 0 ? STR.quitConfirm : STR.quit]
+  const labels = [STR.resume, STR.help, STR.settings, s.ui.confirmT > 0 ? STR.quitConfirm : STR.quit]
   labels.forEach((lb, i) => button(ctx, l.buttons[i], lb, { focused: focus(s, i), enabled: true }, u, s.meta.time, red))
   text(ctx, `${STR.seedLabel} ${s.meta.seedText} · ${STR.depthWord} ${s.player.stats.maxDepth} · ${clock(s.meta.steps / 60)}`, l.hint.x, l.hint.y, 12, u, COL.dim, { align: 'center' })
   if (s.ui.copied > 0) text(ctx, s.ui.copyMsg, l.copied.x, l.copied.y, 12, u, COL.gold, { align: 'center' })
@@ -240,6 +239,7 @@ function drawHelp(ctx: Ctx, s: State, w: number, h: number): void {
 export function drawScreen(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
   const sc = s.meta.screen
   if (sc === 'title') drawTitle(ctx, s, w, h)
+  else if (sc === 'settings') drawSettings(ctx, s, w, h)
   else if (sc === 'help') {
     // Scale the whole help page together: clamped individual font sizes overlap its columns on small screens.
     const scale = Math.min(1, uiScale(w, h))

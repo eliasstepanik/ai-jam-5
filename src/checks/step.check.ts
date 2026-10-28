@@ -235,13 +235,13 @@ export function run(): void {
 
   // C05/C06/C14/C15 quit confirm: 1st press arms confirmT (2 s), 2nd inside the window quits, after it only re-arms. Rows: 0 Resume .. 2 Sound, 4 Quit.
   {
-    const s = paused(cave, 4)
+    const s = paused(cave, 3)
     step(s, inp(['Enter']), DT)
     ok(s.meta.screen === 'paused' && s.ui.confirmT === 2, 'first Quit press arms the 2 s confirm (confirmT ' + s.ui.confirmT + ')')
     for (let k = 0; k < 60; k++) step(s, inp(), DT)
     step(s, inp(['Enter']), DT)
     ok(s.meta.screen === 'title' && s.ui.confirmT === 0, 'second Quit press inside the window leaves for the title')
-    const t = paused(cave, 4)
+    const t = paused(cave, 3)
     step(t, inp(['Enter']), DT)
     for (let k = 0; k < 125; k++) step(t, inp(), DT)
     ok(t.ui.confirmT === 0, 'confirm disarms after 2 s')
@@ -249,9 +249,10 @@ export function run(): void {
     ok(t.meta.screen === 'paused' && t.ui.confirmT === 2, 'a Quit press after the window only re-arms')
   }
 
-  // C10/C11 volume: Sound row, 0.1 steps with ArrowRight / Equal up and ArrowLeft / Minus down, clamped to 0..1.
+  // C10/C11 volume: volume slider, 0.1 steps with ArrowRight / Equal up and ArrowLeft / Minus down, clamped to 0..1.
   {
-    const s = paused(cave, 2), v = (): number => s.settings.volume
+    const s = paused(cave, 2), v = (): number => s.settings.musicVolume
+    s.meta.screen = 'settings'; s.ui.settingsFrom = 'paused'; s.ui.cursor = 0
     step(s, inp(['ArrowRight']), DT)
     ok(v() === 0.8, 'ArrowRight raises volume by 0.1 (got ' + v() + ')')
     step(s, inp(['Equal']), DT)
@@ -266,7 +267,7 @@ export function run(): void {
     ok(v() === 0, 'volume clamps at 0 (got ' + v() + ')')
     s.ui.cursor = 3
     step(s, inp(['ArrowRight']), DT)
-    ok(v() === 0, 'volume keys only act on the Sound row')
+    ok(v() === 0, 'volume keys only act on the volume slider')
   }
 
   // C16 mute: KeyM toggles on every screen, but not while the seed field has focus (there it types 'm').
@@ -278,7 +279,7 @@ export function run(): void {
     step(t, inp(['KeyM']), DT)
     ok(t.settings.muted && t.ui.seedInput === '', 'KeyM mutes on the title (seed field not focused)')
     t.settings.muted = false
-    t.ui.cursor = 5
+    t.ui.cursor = 4
     step(t, inp(['KeyM']), DT)
     ok(!t.settings.muted && t.ui.seedInput === 'm', 'KeyM types into the focused seed field and does not mute')
   }
@@ -286,7 +287,7 @@ export function run(): void {
   // C24 seed field: capped at SEED_MAX_LEN characters, also when several keys arrive in one update.
   {
     const s = init()
-    Object.assign(s.ui, { cursor: 5, seedInput: 'a'.repeat(SEED_MAX_LEN - 1) })
+    Object.assign(s.ui, { cursor: 4, seedInput: 'a'.repeat(SEED_MAX_LEN - 1) })
     for (let k = 0; k < 16; k++) step(s, inp(), DT)
     step(s, inp(['KeyB', 'KeyC']), DT)
     ok(s.ui.seedInput === 'a'.repeat(SEED_MAX_LEN - 1) + 'b', 'seed field takes characters up to SEED_MAX_LEN only (got ' + s.ui.seedInput.length + ')')

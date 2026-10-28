@@ -114,12 +114,12 @@ function firstLoad(mem: Map<string, string>): void {
   ok(shown(s) === 10, 'first load with no saved settings and class 1 preset shows the class-1 Best, got ' + shown(s))
 }
 
-// (3) The Depth row (focus 4) changes the shown Best at once, in the same frame.
+// (3) The Depth row (focus 3) changes the shown Best at once, in the same frame.
 function depthRow(mem: Map<string, string>): void {
   const s = title(mem, null)
   loadBest(s) // a session that loaded class 3 (the cache default)
   s.settings.depthClass = 3 // pinned: the settings default is class 1 now, this scenario targets class 3
-  s.ui.cursor = 4
+  s.ui.cursor = 3
   stepScreens(s, inp()) // the settled title: class 3
   ok(shown(s) === 30, 'depth row setup: class 3 shows 30, got ' + shown(s))
   for (const [key, to] of [['ArrowLeft', 2], ['ArrowLeft', 1], ['ArrowRight', 2], ['ArrowRight', 3], ['ArrowRight', 4], ['ArrowLeft', 3]] as const) {
@@ -156,7 +156,7 @@ function sameClass(mem: Map<string, string>): void {
     const s = title(mem, { depthClass: c })
     stepScreens(s, inp()) // first load
     s.best = JSON.parse(record(99)) as State['best'] // not in storage: a reload would replace it
-    s.ui.cursor = 4
+    s.ui.cursor = 3
     for (const key of keys) {
       s.meta.screen = 'title' // KeyH opens the help screen
       stepScreens(s, inp(key === '' ? [] : [key]))

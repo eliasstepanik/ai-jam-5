@@ -68,6 +68,19 @@ export function setMaster(res: Resources, vol: number, muted: boolean): void {
   a.master.gain.setTargetAtTime(v, a.ctx.currentTime, 0.05)
 }
 
+// Independent user levels, separate from dynamic ducking and catalog balance.
+export function setBusVolumes(res: Resources, music: number, effects: number): void {
+  const a = res.audio
+  if (!a.ctx) return
+  for (const group of GROUP_IDS) {
+    const node = a.groups?.[group] as DuckNode | undefined
+    const target = GROUP_GAIN[group] * (group === 'music' ? music : effects) ** 2
+    if (!node || node.target === target) continue
+    node.target = target
+    node.gain.setTargetAtTime(target, a.ctx.currentTime, 0.05)
+  }
+}
+
 // Duck one group by `db` (-Infinity = silent) with time constant `tc` seconds. The last target is remembered on the
 // duck node itself (it lives in the registry, so it survives hot swaps) to skip redundant per-step automation.
 export function setDuck(res: Resources, group: Group, db: number, tc: number): void {

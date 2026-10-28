@@ -3,13 +3,14 @@
 // R-077 (no ui.urlSeed: platformStep writes ui.seedInput and consumes copyLink), R-078 (settings/best load once per session via
 // the settings.loaded guard; saveSettings after every Sound/Flashing/volume change, R-168).
 // Clicks activate the focused item: hit-testing needs src/ui/layout.ts (L4), which an L3 file must not import.
-// ponytail: Sound-row volume (ArrowLeft/Right, Minus/Equal, 0.1 steps), the click cycle and mute are changed here; each change saves at once (rare events, no debounce).
+// Settings keyboard changes save immediately; pointer controls use the same writer.
 import type { Input } from '../main.ts'
-import type { FxEventKind, Screen, Settings, State } from '../core/types.ts'
+import type { FxEventKind, Screen, State } from '../core/types.ts'
 import { HELP_PAGES, toast } from '../core/state.ts'
 import { hashSeed } from '../core/rng.ts'
 import { parseSeed, SEED_MAX_LEN } from '../core/seed.ts'
 import { loadBest, loadSettings, saveSettings } from '../core/storage.ts'
+import { setAudioLevel } from './settings.ts'
 import { emit } from './fx.ts'
 import { paramsOf } from '../world/gen/params.ts'
 import { genStep, runSeedText } from './run.ts'
@@ -21,11 +22,13 @@ const END_LOCK_S = 0.5 // scoring-and-save §7
 const CONFIRM_S = 2 // ui-2 §2 quit confirm time (s)
 const POUCH_FULL = 'Pouch full' // R-134
 const BEACON_DENIED = 'The Beacon needs more light' // systems-2 §5
-const ITEMS: Record<Screen, number> = { title: 6, help: 0, playing: 0, paused: 5, dead: 4, won: 4 }
+const ITEMS: Record<Screen, number> = { title: 5, settings: 5, help: 0, playing: 0, paused: 4, dead: 4, won: 4 }
 
 const ui = (s: State, kind: FxEventKind): void => emit(s, kind, s.cam.x, s.cam.y)
 
 function go(s: State, to: Screen): void {
+  if (to === 'settings') s.ui.settingsFrom = s.meta.screen === 'paused' ? 'paused' : 'title'
+  s.ui.settingsDrag = -1
   if (to === 'help') { s.ui.helpFrom = s.meta.screen === 'paused' ? 'paused' : 'title'; s.ui.helpPage = 0 }
   s.meta.screen = to
   s.ui.cursor = 0
@@ -64,7 +67,7 @@ function generate(s: State): void {
   if (s.ui.genPending === '') syncBest(s, s.world.depthClass ?? 3)
 }
 
-// Title depth row (focus 4): set the class, save it, and show that class's Best. Applies at the next run start only (R-164); a running cave never changes.
+// Title depth row (focus 3): set the class, save it, and show that class's Best. Applies at the next run start only (R-164); a running cave never changes.
 // ponytail: 'random' is a stored setting only (from an old save or a link); the row shows and cycles classes 1..4, 'random' counts as 3 until the first change.
 export function setDepth(s: State, to: number, sound: FxEventKind): void {
   s.settings.depthClass = to
@@ -89,27 +92,21 @@ function tick(s: State): void {
   u.confirmT = Math.max(0, u.confirmT - DT)
 }
 
-// Sound-row activation cycles the volume Off -> 33 -> 66 -> 100 -> Off (owner override of R-025/R-174, KB notes/ai-jam-5-audio-button-off-or-70.md).
-// A muted row is Off (cur 0); a between-step volume (the 0.7 default) jumps to the next step above; 100 -> Off keeps the volume, mute is the Off state.
-// ponytail: fixed step list; upgrade path: move VOL_STEPS to tuning if the steps ever become configurable.
-const VOL_STEPS = [33, 66, 100]
-
-export function cycleVolume(set: Settings): void {
-  const cur = set.muted ? 0 : Math.round(set.volume * 100)
-  const next = VOL_STEPS.find((n) => n > cur)
-  if (next !== undefined) { set.volume = next / 100; set.muted = false }
-  else set.muted = true
-}
-
 function activate(s: State, item: number): void {
   const sc = s.meta.screen, set = s.settings
   if (sc === 'title' || sc === 'paused') {
-    if (item === 2) { cycleVolume(set); saveSettings(s); ui(s, 'uiConfirm'); return }
-    if (item === 3) { set.reducedFlash = !set.reducedFlash; saveSettings(s); ui(s, 'uiConfirm'); return }
+    if (item === 2) { ui(s, 'uiConfirm'); go(s, 'settings'); return }
     if (item === 1) { ui(s, 'uiConfirm'); go(s, 'help'); return }
   }
-  if (sc === 'title' && item === 4) { setDepth(s, (shownClass(s) % 4) + 1, 'uiConfirm'); return } // Depth row: 1 -> 2 -> 3 -> 4 -> 1
-  if (sc === 'title') { ui(s, 'uiConfirm'); begin(s, s.ui.seedInput); return } // Play (0) and Seed field (5)
+  if (sc === 'title' && item === 3) { setDepth(s, (shownClass(s) % 4) + 1, 'uiConfirm'); return } // Depth row: 1 -> 2 -> 3 -> 4 -> 1
+  if (sc === 'settings') {
+    if (item < 2) return
+    if (item === 4) { ui(s, 'uiBack'); go(s, s.ui.settingsFrom); return }
+    if (item === 2) set.reducedFlash = !set.reducedFlash
+    if (item === 3) set.pureDarkness = !set.pureDarkness
+    saveSettings(s); ui(s, 'uiConfirm'); return
+  }
+  if (sc === 'title') { ui(s, 'uiConfirm'); begin(s, s.ui.seedInput); return } // Play (0) and Seed field (4)
   if (sc === 'paused') {
     if (item === 0) { ui(s, 'uiConfirm'); go(s, 'playing'); return }
     if (s.ui.confirmT > 0) { ui(s, 'uiBack'); go(s, 'title'); return } // Quit, second press: run abandoned
@@ -134,7 +131,7 @@ export function stepScreens(s: State, input: Input): boolean {
   }
   // The title shows the Best of shownClass. A ?depth= link (platformStep) changes settings.depthClass without a reload, so follow it here.
   if (sc === 'title') syncBest(s, shownClass(s))
-  const seedFocus = sc === 'title' && u.cursor === 5
+  const seedFocus = sc === 'title' && u.cursor === 4
   if (k.has('KeyM') && !seedFocus) { s.settings.muted = !s.settings.muted; saveSettings(s) } // every screen (ui.md §7); 'm' types in the seed box
   if (sc === 'playing') {
     // systems-2 §4: mining emits mineDone a=-1 (pouch full); this machine owns the toast (R-003). An event of the last step has step === meta.steps here.
@@ -152,6 +149,9 @@ export function stepScreens(s: State, input: Input): boolean {
     if (k.has('Escape') || k.has('Enter') || k.has('Backspace')) { ui(s, 'uiBack'); go(s, u.helpFrom) }
     return false
   }
+  if (sc === 'settings' && (k.has('Escape') || k.has('Backspace'))) {
+    ui(s, 'uiBack'); go(s, u.settingsFrom); return false
+  }
   const n = ITEMS[sc]
   if (seedFocus) {
     for (const code of k) {
@@ -165,11 +165,11 @@ export function stepScreens(s: State, input: Input): boolean {
   const up = col ? k.has('ArrowLeft') || k.has('KeyA') : k.has('ArrowUp') || (!seedFocus && k.has('KeyW'))
   const down = col ? k.has('ArrowRight') || k.has('KeyD') : k.has('ArrowDown') || (!seedFocus && k.has('KeyS'))
   if (up !== down) { u.cursor = (u.cursor + (down ? 1 : n - 1)) % n; ui(s, 'uiMove') }
-  if (u.cursor === 2 && (sc === 'title' || sc === 'paused')) { // Sound row: volume in 0.1 steps (resources-3 §3)
+  if (sc === 'settings' && u.cursor < 2) { // Volume sliders: keyboard changes in 0.1 steps
     const dv = (k.has('ArrowRight') || k.has('Equal') ? 1 : 0) - (k.has('ArrowLeft') || k.has('Minus') ? 1 : 0)
-    if (dv !== 0) { s.settings.volume = Math.min(1, Math.max(0, Math.round(s.settings.volume * 10 + dv) / 10)); saveSettings(s); ui(s, 'uiMove') }
+    if (dv !== 0) { setAudioLevel(s, u.cursor, (u.cursor === 0 ? s.settings.musicVolume : s.settings.sfxVolume) + dv * .1); ui(s, 'uiMove') }
   }
-  if (sc === 'title' && u.cursor === 4) { // Depth row: ArrowLeft/Right (Minus/Equal) step -1/+1, clamped to 1..4, no wrap
+  if (sc === 'title' && u.cursor === 3) { // Depth row: ArrowLeft/Right (Minus/Equal) step -1/+1, clamped to 1..4, no wrap
     const dv = (k.has('ArrowRight') || k.has('Equal') ? 1 : 0) - (k.has('ArrowLeft') || k.has('Minus') ? 1 : 0)
     const to = Math.min(4, Math.max(1, shownClass(s) + dv))
     if (dv !== 0 && to !== shownClass(s)) setDepth(s, to, 'uiMove')
@@ -177,13 +177,13 @@ export function stepScreens(s: State, input: Input): boolean {
   if (sc === 'title' && !seedFocus && k.has('KeyH')) { ui(s, 'uiConfirm'); go(s, 'help'); return false }
   if (sc === 'paused') {
     if (k.has('Escape') || k.has('KeyP')) { ui(s, 'uiConfirm'); go(s, 'playing'); return true }
-    if (k.has('KeyQ')) { u.cursor = 4; activate(s, 4); return false }
+    if (k.has('KeyQ')) { u.cursor = 3; activate(s, 3); return false }
   }
   if (sc === 'dead' || sc === 'won') {
     if (k.has('KeyT')) { activate(s, 1); return false }
     if (k.has('Escape')) { activate(s, 2); return false }
   }
-  if (sc !== 'title' && k.has('KeyC')) { ui(s, 'copyLink'); return false }
+  if (sc !== 'title' && sc !== 'settings' && k.has('KeyC')) { ui(s, 'copyLink'); return false }
   const space = k.has('Space') && !seedFocus
   if (k.has('Enter') || space || input.clicks.length > 0) activate(s, u.cursor)
   return s.meta.screen === 'playing'

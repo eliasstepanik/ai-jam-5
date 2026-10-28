@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Title and pause Settings menu with independent saved Music and Sound Effects sliders, flashing controls, and Fog of war / Pure darkness selection.
 - Dev panel: 'AI behaviors' overlay (awareness rings, view and hearing ranges, detection meter, patrol, retreat and stalker-latch markers, near-spawn ring, flow window) and 'Wisp guide' overlay (route, seek target, lead/leash/reseed rings, velocity). Both toggles are on the Enemies tab and exist only in dev builds or with `?debug=1`.
 - #97: updated cave atlas with non-blocking mushrooms, roots, ferns, stalagmites, leaves, branches, gravel and wall dressing; ten muddy puddle variants reflect nearby sprites and ripple when walked through.
 - Glowing vines on cave walls and on the floor beside them near the cave start. They give off a soft pulsing green light and fade out with depth, so the deeper cave has none.
