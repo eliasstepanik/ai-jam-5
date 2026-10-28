@@ -1,11 +1,13 @@
 // Deterministic render-only prop cache. Never changes cave tiles, collision or gameplay RNG.
 import type { State } from '../core/types.ts'
-import { CAVE_DRESSING, dressingAt, dressingJitter, dressingWall } from '../core/cave-props.ts'
+import { CAVE_DRESSING, dressingWall } from '../core/cave-props.ts'
 import { guideFields } from '../core/cave-guide.ts'
 import type { GuideFields } from '../core/cave-guide.ts'
-import { purposeDef, purposeWall } from '../core/cave-purpose.ts'
+import { purposeWall } from '../core/cave-purpose.ts'
+import { purposedCave, waterOf } from '../core/cave-water.ts'
+import type { CaveIn } from '../core/cave-water.ts'
 import { getResources } from '../assets/resources.ts'
-import { cleanCells } from './cracks.ts'
+import { getBeaconRoom } from '../world/caches.ts'
 import type { Draw } from './cracks.ts'
 import type { View } from './view.ts'
 import { currentQuality } from './quality.ts'
@@ -24,8 +26,13 @@ const guideOf = (s: State): GuideFields => {
   const { w, tiles, entrance, beacon } = s.world
   return guideFields(tiles, w, s.world.h, entrance.ty * w + entrance.tx, beacon.ty * w + beacon.tx)
 }
-const derive = (s: State, c: DressingCache, g: GuideFields): Derived => {
-  const d: Derived = { g, wall: new Int8Array(s.world.w * s.world.h).fill(WALL_UNSEEN), water: c.props.filter(p => CAVE_DRESSING[p.def].water) }
+// The pure derivation input (core/cave-water.ts): same tiles, endpoints, exit, seed, Beacon room mask and vein tiles the old cleanCells filter read.
+const caveIn = (s: State): CaveIn => {
+  const { w, h, tiles, entrance, beacon, exit } = s.world
+  return { tiles, w, h, seed: s.meta.seed, entrance: entrance.ty * w + entrance.tx, beacon: beacon.ty * w + beacon.tx, exitTx: exit.tx, exitTy: exit.ty, room: getBeaconRoom(s), veins: s.veins.map(v => v.tile) }
+}
+const derive = (s: State, c: DressingCache, g: GuideFields, water = waterOf(c.props)): Derived => {
+  const d: Derived = { g, wall: new Int8Array(s.world.w * s.world.h).fill(WALL_UNSEEN), water }
   DERIVED.set(c, d)
   return d
 }
@@ -33,19 +40,10 @@ export function dressingCache(s: State): DressingCache {
   const res = getResources()
   const key = [res.images.gen, s.world.exit.tx, s.world.exit.ty, s.meta.seed, s.world.tilesHash, s.world.w, s.world.h, s.world.entrance.tx, s.world.entrance.ty, s.world.beacon.tx, s.world.beacon.ty].join('|')
   if (res.dressing?.key === key) return res.dressing
-  const props: DressingProp[] = [], cells = new Map<number, DressingProp>(), { w, h, tiles } = s.world, skip = cleanCells(s), g = guideOf(s)
-  for (let y = 1; y < h - 1; y += 3) for (let x = 1; x < w - 1; x += 3) {
-    if (dressingAt(tiles, w, h, x, y, s.meta.seed) < 0) continue // the slot gate stays; purposeDef decides what goes there, or rejects it
-    const def = purposeDef(g, x, y, s.meta.seed)
-    if (def < 0) continue
-    let clear = true
-    for (let dy = -1; clear && dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (skip((y + dy) * w + x + dx)) clear = false
-    if (!clear) continue
-    const [jx, jy] = dressingJitter(x, y, s.meta.seed), p = { tile: y * w + x, def, x: x * 32 + 16 + jx, y: y * 32 + 16 + jy }
-    props.push(p); cells.set(p.tile, p)
-  }
+  const { props, water } = purposedCave(caveIn(s)), cells = new Map<number, DressingProp>()
+  for (const p of props) cells.set(p.tile, p)
   const entry: DressingCache = { key, props, cells }
-  derive(s, entry, g)
+  derive(s, entry, guideOf(s), water)
   return res.dressing = entry
 }
 const derivedOf = (s: State): Derived => {
@@ -53,6 +51,7 @@ const derivedOf = (s: State): Derived => {
   return DERIVED.get(c) ?? derive(s, c, guideOf(s))
 }
 // Final purposed water props (class wet only), in lattice order, for later consumers (wetField). Read-only; rebuilt with the cache key.
+// Thin wrapper: the derivation itself lives in core/cave-water.ts so render/depth-tone.ts can read it without importing this file.
 export const purposedWater = (s: State): readonly DressingProp[] => derivedOf(s).water
 export function visibleDressing(s: State, v: View): DressingProp[] {
   if (!dressingOn(s)) return []
