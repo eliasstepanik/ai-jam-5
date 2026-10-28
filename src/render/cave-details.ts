@@ -20,14 +20,15 @@ export const detailsOn = (s: State): boolean => s.debug.caveDetails && currentQu
 export type DetailCtx = { tiles: string; w: number; h: number; seed: number; depth: Float32Array; wet: Uint8Array; g: GuideFields }
 // ponytail: size-1 memo compared by number (no per-call string key). Derived only, so a hot swap just rebuilds; upgrade to an LRU
 // if two caves are ever drawn in one frame.
-let memo: DetailCtx & { run: number; hash: number; bd: number; ex: number; ey: number; bx: number; by: number } | null = null
+let memo: DetailCtx & { run: number; hash: number; bd: number; ex: number; ey: number; bx: number; by: number; nv: number; vg: number; xx: number; xy: number } | null = null
 export function detailCtx(s: State): DetailCtx {
-  const { w, h, tiles, tilesHash, beaconDist, entrance: e, beacon: b } = s.world, seed = s.meta.seed, run = s.meta.runId
-  const m = memo
+  const { w, h, tiles, tilesHash, beaconDist, entrance: e, beacon: b, exit: x, veinGen } = s.world, seed = s.meta.seed, run = s.meta.runId
+  const nv = s.veins.length, m = memo
+  // wetField reads the vein tiles and the exit, so the memo is keyed on them like vine-sites.ts epochOf (veins length + veinGen, exit tile).
   if (m && m.tiles === tiles && m.run === run && m.hash === tilesHash && m.w === w && m.h === h && m.seed === seed && m.bd === beaconDist
-    && m.ex === e.tx && m.ey === e.ty && m.bx === b.tx && m.by === b.ty) return m
+    && m.ex === e.tx && m.ey === e.ty && m.bx === b.tx && m.by === b.ty && m.nv === nv && m.vg === veinGen && m.xx === x.tx && m.xy === x.ty) return m
   memo = { tiles, w, h, seed, depth: depth01Field(s), wet: wetField(s), g: guideFields(tiles, w, h, e.ty * w + e.tx, b.ty * w + b.tx),
-    run, hash: tilesHash, bd: beaconDist, ex: e.tx, ey: e.ty, bx: b.tx, by: b.ty }
+    run, hash: tilesHash, bd: beaconDist, ex: e.tx, ey: e.ty, bx: b.tx, by: b.ty, nv, vg: veinGen, xx: x.tx, xy: x.ty }
   return memo
 }
 // The purpose class only changes WHICH frame a tile gets, never whether it gets one (the gate hash and floor tests ignore cls), so the
