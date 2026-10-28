@@ -13,6 +13,7 @@ import type { Canvas2D } from '../assets/resources.ts'
 import type { Quality } from './quality.ts'
 import { beaconBlend } from './view.ts'
 import type { View } from './view.ts'
+import { playerDepth01, toneOf } from './depth-tone.ts'
 import { MASK_BUCKETS, bucketOf, maskKey } from './keys.ts'
 import type { MaskKind } from './keys.ts'
 
@@ -23,6 +24,9 @@ const DARK_DPR_CAP = 1 // dark canvas never exceeds CSS resolution: the mask is 
 const MASK_OUTER = 1.25 // sprite radius / gameplay radius: the gameplay edge sits in the fade band (render-2 §5.4)
 const SHAFT_R = 72, BEACON_R = 96 // world px (render-2 §5.6)
 const FLICKER_PHASE = 1.7 // second sine phase (architecture-tuning.md §3)
+const VINE_R = 28, VINE_MAX = 24 // world px, nearest stamps per frame (cave overhaul A8)
+// Scratch for the nearest-vine pick (distance², index of the site's x), sorted ascending. Derived scratch only, no game state.
+const nearD = new Float64Array(VINE_MAX), nearI = new Int32Array(VINE_MAX)
 
 // Alpha stops per mask profile (render-2 §5.4). Colour is irrelevant for destination-out; copper reuses the plain profile.
 const PLAIN: readonly (readonly [number, number])[] = [[0, 1], [0.5, 1], [0.8, 0.65], [0.92, 0.25], [1, 0]]
@@ -34,6 +38,7 @@ const MASK_STOPS: Record<MaskKind, readonly (readonly [number, number])[]> = {
   beacon: [[0, 1], [0.3, 0.9], [0.7, 0.4], [1, 0]],
   shaft: [[0, 0.85], [0.5, 0.5], [1, 0]],
   ember: [[0, 0.55], [0.6, 0.3], [1, 0]],
+  vine: [[0, 0.4], [0.5, 0.22], [1, 0]], // cosmetic dim glow: never reaches full reveal
 }
 
 // Canvas creation is lazy and only here (no DOM at import). Plain Node has no document: tests install a stub.
@@ -81,6 +86,28 @@ function maskSources(s: State): LightSource[] {
   return out
 }
 
+// Stamps the VINE_MAX vine sites nearest to the player (insertion into the sorted scratch; sites are flat x, y, phase triples
+// in world px, passed in by the caller so this module stays free of the detail/tileset import chain).
+// ponytail: O(n * VINE_MAX) worst case over the visible chunks' sites; upgrade to a bucketed pick only if a profile shows it.
+function stampVines(c: CanvasRenderingContext2D, s: State, v: View, r: number, sites: readonly number[]): void {
+  const px = s.player.x, py = s.player.y
+  let n = 0
+  for (let i = 0; i < sites.length; i += 3) {
+    const dx = sites[i] - px, dy = sites[i + 1] - py, d = dx * dx + dy * dy
+    if (n === VINE_MAX && d >= nearD[n - 1]) continue
+    let j = n < VINE_MAX ? n++ : n - 1
+    while (j > 0 && nearD[j - 1] > d) { nearD[j] = nearD[j - 1]; nearI[j] = nearI[j - 1]; j-- }
+    nearD[j] = d
+    nearI[j] = i
+  }
+  const L: LightSource = { x: 0, y: 0, r: VINE_R, kind: 'vine' }
+  for (let k = 0; k < n; k++) {
+    L.x = sites[nearI[k]]
+    L.y = sites[nearI[k] + 1]
+    stampRadial(c, L, v, r, s)
+  }
+}
+
 function maskSprite(kind: MaskKind, b: number): HTMLCanvasElement {
   const cache = getResources().light
   const key = maskKey(kind, b)
@@ -102,7 +129,7 @@ export const stampRadial: MaskStamp = (c, L, v, r, s) => {
   const xd = (L.x * v.z + v.ox) * r
   const yd = (L.y * v.z + v.oy) * r
   const px = L.r * MASK_OUTER * v.z * r
-  const f = L.kind === 'beacon' || L.kind === 'shaft' ? 1 : flicker(s)
+  const f = L.kind === 'beacon' || L.kind === 'shaft' || L.kind === 'vine' ? 1 : flicker(s)
   const rd = px * f
   if (xd + rd < 0 || xd - rd > v.cw * r || yd + rd < 0 || yd - rd > v.ch * r) return
   c.drawImage(maskSprite(L.kind, bucketOf(2 * px, MASK_BUCKETS)), xd - rd, yd - rd, 2 * rd, 2 * rd)
@@ -134,7 +161,7 @@ function ensureDark(v: View, q: Quality): Canvas2D {
 // Postcondition, on EVERY exit path (reveal, finished blend, normal, escape fade): identity transform, source-over, alpha 1,
 // smoothing off. The caller (A17) must set worldXf again before the next world-space pass; pass 15 fills (0,0,cw,ch) as is.
 export function drawDarkness(ctx: CanvasRenderingContext2D, s: State, v: View, q: Quality,
-  memory: CanvasImageSource | null = getResources().memory.canvas?.canvas ?? null): void {
+  memory: CanvasImageSource | null = getResources().memory.canvas?.canvas ?? null, vines: readonly number[] = []): void {
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.globalCompositeOperation = 'source-over'
   ctx.globalAlpha = 1
@@ -156,11 +183,13 @@ export function drawDarkness(ctx: CanvasRenderingContext2D, s: State, v: View, q
     const kt = TILE * v.z * r
     c.drawImage(memory, sx, sy, sw, sh, (sx * TILE * v.z + v.ox) * r, (sy * TILE * v.z + v.oy) * r, sw * kt, sh * kt)
     c.globalCompositeOperation = 'multiply'
-    c.fillStyle = 'rgb(' + s.meta.palette.map(value => Math.round(value * 255)).join(',') + ')'
+    const t = toneOf(playerDepth01(s)) // deeper = darker remembered cave (design-render §2)
+    c.fillStyle = 'rgb(' + Math.round(t.r * t.amb * 255) + ',' + Math.round(t.g * t.amb * 255) + ',' + Math.round(t.b * t.amb * 255) + ')'
     c.fillRect(0, 0, d.w, d.h)
   }
   c.globalCompositeOperation = 'destination-out'
   for (const L of maskSources(s)) stampRadial(c, L, v, r, s)
+  stampVines(c, s, v, r, vines) // cosmetic only: gameplay insideLight is unchanged
   c.globalCompositeOperation = 'source-over'
   ctx.imageSmoothingEnabled = true
   ctx.globalAlpha = 1 - k

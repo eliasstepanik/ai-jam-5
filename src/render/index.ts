@@ -16,6 +16,7 @@ import { drawFallbackDressing } from './dressing.ts'
 import { drawQuakeScars } from './cave-details.ts'
 import { drawMist } from './mist.ts'
 import { drawPixelFire } from './pixel-fire.ts'
+import { vineSites } from './vine-sites.ts'
 import { drawEscapeWisp } from './wisp.ts'
 import { drawOreEmission } from './ore-emission.ts'
 import { drawZonePalette } from './zone-palette.ts'
@@ -66,7 +67,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   passMark('ents')
   // Pass 14. memoryCanvas runs once per frame, before the darkness, and hands over the up-to-date explored-tile canvas (C4).
   // drawDarkness leaves identity transform, source-over, alpha 1 and smoothing off on every path.
-  drawDarkness(ctx, s, v, q, memoryCanvas(s))
+  drawDarkness(ctx, s, v, q, memoryCanvas(s), vineSites(s, v))
   drawBeaconMode(ctx, s, v) // pass 15: warm multiply once the Beacon is lit; sets its own identity transform and resets composite and alpha
   passMark('dark')
   worldXf(ctx, v)
