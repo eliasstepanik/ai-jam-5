@@ -55,6 +55,7 @@ import { run as awarenessChecks } from './ai-awareness.check.ts'
 import { run as aiTactics } from './ai-tactics.check.ts'
 import { run as aiTactics2 } from './ai-tactics-2.check.ts'
 import { run as aiTactics3 } from './ai-tactics-3.check.ts'
+import { run as flowfieldChecks } from './flowfield.check.ts'
 import { run as aiBudget } from './ai-budget.check.ts'
 state()
 runCheck()
@@ -113,5 +114,6 @@ awarenessChecks()
 aiTactics()
 aiTactics2()
 aiTactics3()
+flowfieldChecks()
 aiBudget()
 console.log('checks ok')
