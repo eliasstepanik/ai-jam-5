@@ -58,6 +58,7 @@ const monster: Monster = {
   contactT: 0.25, stuckT: 0.1, behindT: 0.3, lastX: 1198, lastY: 901, fleeing: true,
   awareness: 'searching', detectionTimer: 0.3, lastKnownX: 5, lastKnownY: 7, searchT: 2, homeX: 1150, homeY: 870,
   patrolX: 30, patrolY: -20, patrolT: 0.5, retreatT: 1, facing: 0.7, stalkT: 0.4, stalkAngle: 1,
+  suspectT: 0.5, patience: 1.5,
 }
 // Issue #113 (M5): the 14 monster keys added by the smarter-monsters work. The literal sets them to non-default
 // values, so migrate(mid) deep-equal (below) proves migrate keeps them; deleting them below proves migrate fills them.
@@ -160,6 +161,17 @@ export function run(): void {
     const filled113 = migrate(noIssue113).monsters[0] as unknown as Record<string, unknown>
     ok(ISSUE_113_KEYS.every((k) => filled113[k] === (DEFAULT_MONSTER as Record<string, unknown>)[k]),
       'migrate fills the 14 deleted issue-113 monster keys with their defaults')
+    // playtest-tuning-1b §5.6: suspectT and patience fill to 0 on old monsters, set values survive, idempotent
+    const noF1 = structuredClone(mid) as unknown as { monsters: Record<string, unknown>[] }
+    delete noF1.monsters[0].suspectT; delete noF1.monsters[0].patience
+    const f1 = migrate(noF1)
+    ok(f1.monsters[0].suspectT === 0 && f1.monsters[0].patience === 0, 'migrate fills a missing monster.suspectT and patience with 0')
+    ok(deepEq(migrate(f1), f1), 'migrate is idempotent (monster.suspectT and patience deleted)')
+    ok(migrate(mid).monsters[0].suspectT === 0.5 && migrate(mid).monsters[0].patience === 1.5, 'migrate keeps set suspectT and patience')
+    const pz = T.monsters
+    ok(T.ai.suspectMaxS === 2 && T.ai.noticeLitMarginPx === 80, 'T.ai.suspectMaxS 2, noticeLitMarginPx 80')
+    ok(deepEq(pz.lurker.patienceS, [6, 5.5, 5, 4.5]) && deepEq(pz.stalker.patienceS, [0, 4, 3.5, 3]) && deepEq(pz.devourer.patienceS, [0, 0, 5, 4.5]),
+      'T.monsters patienceS rows')
     for (const bad of [{ version: 0 }, null, 5]) ok(deepEq(migrate(bad), init()), `migrate(${JSON.stringify(bad)}) is init()`)
 
     // B2s: an old save without the rock/escape fields gets the defaults; set values survive

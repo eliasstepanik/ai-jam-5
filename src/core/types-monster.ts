@@ -43,4 +43,6 @@ export type Monster = {
   facing: number // rad, view-cone direction
   stalkT: number // s, stalk-commit timer
   stalkAngle: number // rad, committed stalk approach angle
+  suspectT: number // s spent suspicious (bounded by T.ai.suspectMaxS)
+  patience: number // s of eligibility since the last windup (forces a windup at T.monsters[kind].patienceS)
 }

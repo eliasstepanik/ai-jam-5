@@ -57,6 +57,7 @@ export const T = {
       ringFactor: 1.0, ringMarginPx: 14, orbitRadS: 0.35,
       driftAmpPx: 12, driftHz: 0.25,
       lungeChancePerS: [0.03, 0.04, 0.05, 0.06],
+      patienceS: [6.0, 5.5, 5.0, 4.5], // s eligible before a forced windup; 0 = kind not spawned in that zone
       telegraphS: 0.55, beats: 1, lungeRangePx: 260, contactS: 0.2,
       biteSlackPx: 4, lungeOverrunS: 0.25,
       recoverS: 0.8, lungeCdS: [3, 5], lungeCdStartS: [2, 4],
@@ -69,6 +70,7 @@ export const T = {
       ringFactor: 1.1, ringMarginPx: 20, orbitRadS: 0.6,
       driftAmpPx: 10, driftHz: 0.2,
       lungeChancePerS: [0, 0.5, 0.6, 0.7],
+      patienceS: [0, 4.0, 3.5, 3.0], // counts only while the behind gate holds
       telegraphS: 0.55, beats: 1, lungeRangePx: 280, contactS: 0.24,
       biteSlackPx: 4, lungeOverrunS: 0.3,
       recoverS: 1.2, lungeCdS: [2.5, 4], lungeCdStartS: [3, 5],
@@ -81,6 +83,7 @@ export const T = {
       ringFactor: 0.85, ringMarginPx: 30, orbitRadS: 0.15,
       driftAmpPx: 6, driftHz: 0.1,
       lungeChancePerS: [0, 0, 0.25, 0.3],
+      patienceS: [0, 0, 5.0, 4.5],
       telegraphS: 0.8, beats: 2, lungeRangePx: 150, contactS: 0.3,
       biteSlackPx: 6, lungeOverrunS: 0.3,
       recoverS: 1.5, lungeCdS: [4, 6], lungeCdStartS: [3, 5],
@@ -110,6 +113,8 @@ export const T = {
     viewRange: 260, // px, sight range (> max ring)
     viewHalfAngle: 1.2, // rad, sight cone half angle (~69 deg)
     noticeT: 0.6, // s, detection fill time
+    noticeLitMarginPx: 80, // px, lit player noticed within lightRadius + this (line of sight, cone ignored)
+    suspectMaxS: 2.0, // s, max time suspicious before hunting
     hearRadius: 90, // px, hearing radius
     hearSpeed: 60, // px/s, player speed needed to be heard
     loseT: 1.0, // s, hunting without sensing before searching
