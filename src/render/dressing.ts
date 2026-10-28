@@ -38,7 +38,7 @@ const derive = (s: State, c: DressingCache, g: GuideFields, water = waterOf(c.pr
 }
 export function dressingCache(s: State): DressingCache {
   const res = getResources()
-  const key = [res.images.gen, s.world.exit.tx, s.world.exit.ty, s.meta.seed, s.world.tilesHash, s.world.w, s.world.h, s.world.entrance.tx, s.world.entrance.ty, s.world.beacon.tx, s.world.beacon.ty, s.veins.map(v => v.tile).join(',')].join('|') // veins: cleanSkip skips vein cells, like purposedCave's memo
+  const key = [res.images.gen, s.world.exit.tx, s.world.exit.ty, s.meta.seed, s.world.tilesHash, s.world.w, s.world.h, s.world.entrance.tx, s.world.entrance.ty, s.world.beacon.tx, s.world.beacon.ty, s.world.veinGen, s.veins.length].join('|') // veins: cleanSkip skips vein cells; mining splices one and bumps veinGen (same identity as vine-sites.ts)
   if (res.dressing?.key === key) return res.dressing
   const { props, water } = purposedCave(caveIn(s)), cells = new Map<number, DressingProp>()
   for (const p of props) cells.set(p.tile, p)
