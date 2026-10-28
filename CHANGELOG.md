@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - #99: delivered UI hearts, nine-slice menu/HUD panels, selection markers, material-colored animated torch/fuel meter and local Hollow Sigil font.
 
 ### Fixed
+- Corrected reversed source labels for torch and walking audio; rebuilt double-cadence sprint audio from the actual footstep recording.
 - #84: position the enlarged title logo just above Play, lower on tall windows, and remove its tagline.
 - #98: resin refills the torch without triggering the player pickup animation; healing-plant and ore animations are retained.
 - #127: restore pure-black creature particles at the user’s request; blending into black terrain is intentional. Retain lifetime fading and foreground-wall occlusion.

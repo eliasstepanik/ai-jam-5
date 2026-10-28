@@ -1,0 +1,13 @@
+Audio source label correction - 2026-10-28
+Owner corrected the originally reversed filenames after PR #161.
+The original TorchSFX.wav is footsteps; playerstep.wav is the burning torch.
+Existing encoded torch/walk files swapped byte-for-byte, preserving processing.
+Runtime sfx_flame-loop: original playerstep.wav, 3.2 seconds.
+Runtime sfx_player-walk: original TorchSFX.wav, 1.48 seconds.
+Runtime sfx_player-run: original TorchSFX.wav, atempo=2, 0.74 seconds.
+Both Opus and MP3 pairs corrected. Music and original WAVs unchanged.
+Catalog loop endpoints updated; README provenance corrected. This supersedes
+source-role statements in supplied-audio-verification.txt; its source hashes
+and historical evidence remain valid for that earlier delivery.
+Full checks/build and actual browser playback/loop mapping verification pass.
+IN PROGRESS / awaiting owner audition; broader #105 remains open.
