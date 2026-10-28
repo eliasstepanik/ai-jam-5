@@ -9,6 +9,7 @@ import { caveOf } from './caves.ts'
 import { SEEDS } from './cave.check.ts'
 import { CAVE_DRESSING, dressingAt, dressingWall } from '../core/cave-props.ts'
 import { POOL_NAMES, WALL_POOL_NAMES, classAt, onRoute, purposeDef, purposeWall } from '../core/cave-purpose.ts'
+import { BLEED_ALPHA, BLEED_RANGE, MOTE_ALPHA, bleedAlpha, lowerNeighbour, moteAt, moteSite, moteTarget } from '../render/draft.ts'
 
 const ok = (c: boolean, why: string): void => { if (!c) throw new Error('cave guide: ' + why) }
 
@@ -212,6 +213,31 @@ function walls(): void { // purposeWall: dressingWall gate stays, def comes from
   ok(gated > 0 && kept > 0 && repl > 0 && kept + repl < gated, 'walls: gate ' + gated + ', kept ' + kept + ', remapped ' + repl + ' (some rejected, some remapped)')
 }
 
+function draft(): void { // G4 / A6: motes drift one step toward the beacon, only from main tiles; bleed alpha follows distB
+  let main = 0, sites = 0, bleed = 0
+  for (const seed of PURPOSE_SEEDS.slice(0, 12)) {
+    const c = caveOf(seed), f = guideFields(c.tiles, W, H, c.entrance.ty * W + c.entrance.tx, c.beacon.ty * W + c.beacon.tx)
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = y * W + x, d = f.distB[i], tg = moteTarget(f, x, y), lo = lowerNeighbour(f, x, y), a = bleedAlpha(f, x, y)
+      if (f.main[i]) {
+        main++
+        if (d > 0) ok(lo >= 0 && f.distB[lo] === d - 1, 'seed ' + seed + ': main tile ' + x + ',' + y + ' has a neighbour with distB ' + (d - 1))
+        if (moteSite(f, x, y) && d > 0) { sites++; ok(tg === lo, 'seed ' + seed + ': moteTarget is the lower neighbour at ' + x + ',' + y) }
+      } else ok(tg === -1 && !moteSite(f, x, y), 'seed ' + seed + ': no mote off the main route at ' + x + ',' + y + (f.deadTip[i] ? ' (dead end)' : ''))
+      if (f.deadTip[i]) ok(tg === -1, 'seed ' + seed + ': no mote on dead-end tip ' + x + ',' + y)
+      if (a > 0) { bleed++; ok(d >= 0 && d <= BLEED_RANGE && (x + y) % 2 === 0 && Math.abs(a - BLEED_ALPHA * (1 - d / BLEED_RANGE)) < 1e-12, 'seed ' + seed + ': bleed alpha at ' + x + ',' + y) }
+      else ok(d < 0 || d > BLEED_RANGE || (x + y) % 2 !== 0 || d === BLEED_RANGE, 'seed ' + seed + ': bleed missing at ' + x + ',' + y)
+      if (tg >= 0) for (const t of [0, 0.37, 1.9, 123.456]) {
+        const m = moteAt(f, x, y, tg, t), n = moteAt(f, x, y, tg, t), p = moteAt(f, x, y, tg, t + 2) // life 2 s: t and t + 2 give one phase
+        ok(m.x === n.x && m.y === n.y && m.a === n.a, 'seed ' + seed + ': moteAt deterministic at ' + x + ',' + y)
+        ok(m.a >= 0 && m.a <= MOTE_ALPHA && Math.abs(m.x - p.x) < 1e-6 && Math.abs(m.y - p.y) < 1e-6, 'seed ' + seed + ': mote alpha in [0, ' + MOTE_ALPHA + '] and 2 s periodic')
+      }
+    }
+  }
+  ok(sites > 0 && sites * 3 < main && sites * 12 > main, 'draft: one mote site per ~6 main tiles (' + sites + ' of ' + main + ')')
+  ok(bleed > 0, 'draft: bleed tiles exist')
+}
+
 export function run(): void {
   for (const g of GRIDS) { distances(g); route(g); wallDist(g); d01(g) }
   tips()
@@ -223,5 +249,6 @@ export function run(): void {
   depthMatch()
   purpose()
   walls()
-  console.log('cave-guide: ok (' + GRIDS.length + ' synthetic grids + 1 generated cave + purpose on ' + PURPOSE_SEEDS.length + ' seeds)')
+  draft()
+  console.log('cave-guide: ok (' + GRIDS.length + ' synthetic grids + 1 generated cave + purpose on ' + PURPOSE_SEEDS.length + ' seeds + draft)')
 }
