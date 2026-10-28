@@ -188,7 +188,7 @@ function director(): void {
     ok(s.monsters.length === 0, 'unreachable from the exit: no escape spawn (got ' + s.monsters.length + ')')
   }
   // Descent spawn on a real cave (D3p pre-baseline for the out-of-sight rule): at least one spawn within 3000 steps,
-  // spawn ring lightRadius + 60..140 kept. The old all-floor arena pinned first-at-once, a 240-step interval and cap 3;
+  // spawn ring lightRadius + 135..280 kept. The old all-floor arena pinned first-at-once, a 240-step interval and cap 3;
   // an out-of-sight reject would fail every spawn there, so the count/interval pins are dropped (D3, issue #113 step 4).
   {
     const s = init()
@@ -208,7 +208,7 @@ function director(): void {
     ok(s.monsters.length >= 1, 'descent cave seed 1: at least one spawn (got ' + s.monsters.length + ')')
     for (const m of s.monsters) {
       const d = Math.hypot(m.x - s.player.x, m.y - s.player.y)
-      ok(d >= R + T.director.spawnGapPx[0] - 1e-6 && d <= R + T.director.spawnGapPx[1] + 1e-6, 'descent ring R + 60..140 (got ' + d.toFixed(1) + ')')
+      ok(d >= R + T.director.spawnGapPx[0] - 1e-6 && d <= R + T.director.spawnGapPx[1] + 1e-6, 'descent ring R + 135..280 (got ' + d.toFixed(1) + ')')
     }
   }
 }

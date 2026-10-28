@@ -98,9 +98,15 @@ function windowClipping(): void {
   ok(dist.length === (2 * win + 1) * (2 * win + 1), 'dist length is (2*win+1)^2')
   ok(dist[idx(10, 13, 10, 10, win)] === 3, 'tile at the window edge is filled')
   ok(flowStep(dist, 10, 10, win, 10, 14) === null, 'flowStep outside the window must be null')
+  // flowStep edge wraps: a local index one past the window row (lx == side) or past the last column
+  // (nx == side) addresses the NEXT row's first cell, which on this open grid has a usable dist.
+  ok(flowStep(dist, 10, 10, win, 14, 10) === null, 'flowStep one column right of the window must be null (lx >= side)')
+  const edge = flowStep(dist, 10, 10, win, 13, 9) // right-edge tile, d 4; the wrapped cell (7,10) has d 3, like the real S neighbour
+  ok(edge !== null && edge[0] === 0 && edge[1] === 1, 'a right-edge tile steps S, never E into the wrapped next-row cell (nx >= side)')
   buildFlow(solid, w, h, 1, 1, win, dist)
   ok(dist[idx(0, 0, 1, 1, win)] === 2, 'in-map corner next to the source is reached')
   ok(dist[idx(-2, -2, 1, 1, win)] === -1, 'off-map window cells stay -1')
+  ok(dist[idx(0, -1, 1, 1, win)] === -1 && dist[idx(1, -1, 1, 1, win)] === -1, 'off-map window row above the map must stay -1 (ny < y0)')
 }
 
 // (3) window bounds are exact: a tile inside the window that is reachable only by a path leaving
@@ -186,26 +192,52 @@ function cacheIdentity(): void {
   ok(getFlowField(s) !== f5, 'clearCaches must drop the flow entry')
 }
 
-// (7) UNCOVERED / vacuous: the identity assert below does NOT test that the flow build is lazy.
-// getFlowField keys on runId, tiles, solidSig, player tile and win only; with the stationary
-// player of this fixture no code path in stepMonsters can change that key, so the warm entry is
-// returned whether or not the F6 flow gate in monsters.ts opens (chunk 38b retrospect proved it:
-// forcing the gate open still passes). Real coverage needs a DEV build/call counter in caches.ts,
-// a production edit that was not approved in chunk 38c. Until then rule (7) is marked uncovered;
-// this assert only guards against an accidental key change during stepMonsters.
-function lazyFlowBuild(): void {
+// (7) no flow rebuild while no shade is stuck. A stationary player never changes the cache key, so
+// identity alone cannot see a rebuild; the check therefore walks the player over two new tiles
+// during the steps and watches the ping-pong buffers instead. f0 is built into buffer A; a build
+// for tile Q goes to buffer B, a build for the next tile R overwrites buffer A, i.e. f0.dist. With
+// no stuck shade (stuckT 0) f0.dist must stay byte-identical, getFlowField must stay the same object
+// across the stationary steps, and must hand out a NEW object once the key really changed (R). The
+// control run pins stuckT above flowStuckT (F6 gate open, hunting lurker, escape off): there the
+// steps themselves build Q and R, so f0.dist must be overwritten. If the control stops
+// overwriting, the fixture lost its power and the lazy run proves nothing (red).
+// Mutations that turn the lazy run red: getFlowField always rebuilding (caches.ts), or both the F6
+// gate in monsters.ts and the stuckT guard in flowSeek (ai-flow.ts) forced open.
+function lazyRun(stuckT: number): { held: boolean, same: boolean, fresh: boolean } {
   const s = caveFixture()
   s.meta.phase = 'descent'
   s.debug.god = true
   s.director.spawnT = 1e9
-  const m = spawnMonster(s, 'lurker', s.player.x + 96, s.player.y, lightRadius(s))
+  s.player.energy = 50
+  const m = spawnMonster(s, 'lurker', 178 * TILE + TILE / 2, 20 * TILE + TILE / 2, lightRadius(s))
   const f0 = getFlowField(s)
   if (f0 === null) throw new Error('check failed: flow field at the spawn tile must not be null')
-  for (let k = 0; k < 300; k++) {
-    m.stuckT = 0 // pin: no monster is stuck, so the F6 flow gate in monsters.ts never opens
-    stepMonsters(s, DT)
+  const snap = f0.dist.slice(), solid = getSolid(s), w = s.world.w
+  const free = (tx: number, ty: number): boolean => solid[ty * w + tx] === 0
+  const step = (n: number): void => {
+    for (let k = 0; k < n; k++) {
+      m.awareness = 'hunting'; m.detectionTimer = 0; m.stuckT = stuckT // pins, as in ai-tactics-3
+      stepMonsters(s, DT)
+    }
   }
-  ok(getFlowField(s) === f0, 'the flow cache key is unchanged over 300 steps (vacuous for rule 7, see above)')
+  let same = true
+  for (let k = 0; k < 20; k++) { step(1); same = same && getFlowField(s) === f0 }
+  const ptx = f0.ptx, pty = f0.pty
+  ok(free(ptx + 1, pty) && free(ptx + 2, pty), 'fixture: two free tiles east of the spawn tile')
+  s.player.x = (ptx + 1) * TILE + TILE / 2
+  step(20)
+  s.player.x = (ptx + 2) * TILE + TILE / 2
+  step(20)
+  const f1 = getFlowField(s)
+  return { held: f0.dist.every((d, i) => d === snap[i]), same, fresh: f1 !== null && f1 !== f0 }
+}
+
+function lazyFlowBuild(): void {
+  const lazy = lazyRun(0), ctl = lazyRun(1)
+  ok(lazy.same, 'stationary player, no stuck shade: getFlowField returns the same object every step')
+  ok(lazy.fresh, 'a real key change (player moved two tiles) must hand out a new field object')
+  ok(!ctl.held, 'control: a stuck hunting shade must build fields during the steps (f0.dist overwritten)')
+  ok(lazy.held, 'no shade stuck: no flow field may be built during the steps (f0.dist untouched)')
 }
 
 export function run(): void {

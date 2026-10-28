@@ -57,6 +57,7 @@ import { run as aiTactics2 } from './ai-tactics-2.check.ts'
 import { run as aiTactics3 } from './ai-tactics-3.check.ts'
 import { run as flowfieldChecks } from './flowfield.check.ts'
 import { run as aiBudget } from './ai-budget.check.ts'
+import { run as separation } from './separation.check.ts'
 state()
 runCheck()
 stepCheck()
@@ -115,5 +116,6 @@ aiTactics()
 aiTactics2()
 aiTactics3()
 flowfieldChecks()
+separation()
 aiBudget()
 console.log('checks ok')
