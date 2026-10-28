@@ -23,7 +23,7 @@ const STOPS: readonly (readonly [number, number, number, number, number])[] = [
 const clamp01 = (v: number): number => v > 0 ? (v < 1 ? v : 1) : 0 // NaN -> 0
 
 let depthSrc: Int32Array | null = null, depthBd = -1, depthV = new Float32Array(0)
-let wetSrc: Int32Array | null = null, wetSeed = -1, wetExit = -1, wetV = new Uint8Array(0)
+let wetSrc: Int32Array | null = null, wetSeed = -1, wetExit = -1, wetVeins: readonly number[] = [], wetV = new Uint8Array(0)
 
 // Floor and reachable cells: d / beaconDist. Walls and unreachable cells: value of the nearest such cell (4-neighbour multi-source BFS,
 // same algorithm as zoneMap in render/tiles.ts).
@@ -86,10 +86,11 @@ const caveIn = (s: State): CaveIn => {
 }
 
 // 1 within Chebyshev 3 of a PURPOSED water anchor (purposedCave(...).water), i.e. exactly where puddles are drawn.
-// Cache key: the depth field identity (tiles, endpoints), the seed and the exit (the cleanSkip box), like the dressing cache key.
+// Cache key: the depth field identity (tiles, endpoints), the seed, the exit (the cleanSkip box) and the vein tiles (cleanSkip skips vein cells),
+// compared element-wise exactly like purposedCave's memo, without allocating per call.
 export function wetField(s: State): Uint8Array {
-  const src = getDepthField(s), seed = s.meta.seed, { w, h, tiles, exit } = s.world, ek = exit.ty * w + exit.tx
-  if (wetSrc === src && wetSeed === seed && wetExit === ek) return wetV
+  const src = getDepthField(s), seed = s.meta.seed, { w, h, tiles, exit } = s.world, ek = exit.ty * w + exit.tx, vs = s.veins
+  if (wetSrc === src && wetSeed === seed && wetExit === ek && wetVeins.length === vs.length && vs.every((v, i) => v.tile === wetVeins[i])) return wetV
   const v = new Uint8Array(w * h)
   if (tiles.length === w * h) {
     for (const p of purposedCave(caveIn(s)).water) {
@@ -99,6 +100,6 @@ export function wetField(s: State): Uint8Array {
       }
     }
   }
-  wetSrc = src; wetSeed = seed; wetExit = ek; wetV = v
+  wetSrc = src; wetSeed = seed; wetExit = ek; wetVeins = vs.map(v => v.tile); wetV = v
   return v
 }
