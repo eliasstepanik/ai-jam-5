@@ -73,6 +73,9 @@ import { run as puddleSurface } from './puddle-surface.check.ts'
 import { run as caveSculpt } from './cave-sculpt.check.ts'
 import { run as caveAlcove } from './cave-alcove.check.ts'
 import { run as volumeCycle } from './volume-cycle.check.ts'
+import { run as audioRecipes } from './audio-recipes.check.ts'
+import { run as audioEngine } from './audio-engine.check.ts'
+import { run as audioWiring } from './audio-wiring.check.ts'
 puddleDressing()
 heartUi()
 state()
@@ -148,4 +151,7 @@ aiTactics3()
 flowfieldChecks()
 separation()
 aiBudget()
+audioRecipes()
+audioWiring()
+audioEngine()
 console.log('checks ok')
