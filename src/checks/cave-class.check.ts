@@ -34,7 +34,7 @@ function paramRows(): void {
   const p3 = PARAMS[3]
   ok(p3.eccMin === 12 && p3.eccMax === 14, 'class 3 ecc 12-14')
   ok(p3.bdLo === 510 && p3.bdHi === 690 && p3.fbLo === 459, 'class 3 band 510-690, fallback floor 459')
-  ok(p3.cols === 8 && p3.rows === 6 && p3.rampS === 80, 'class 3 grid 8x6, rampS 80')
+  ok(p3.cols === 8 && p3.rows === 6 && p3.rampS === 60, 'class 3 grid 8x6, rampS 60')
   const bands: Record<DepthClass, number[]> = { 1: [220, 340, 198], 2: [340, 460, 306], 3: [510, 690, 459], 4: [690, 860, 459] } // R-164: bdLo, bdHi, fbLo
   for (const c of CLASSES) ok([PARAMS[c].bdLo, PARAMS[c].bdHi, PARAMS[c].fbLo].join() === bands[c].join(), `class ${c} band / fallback floor row ${bands[c]}`)
   for (const c of CLASSES) ok(PARAMS[c].depthClass === c && paramsOf(c) === PARAMS[c], `PARAMS[${c}] keyed by its own class`)
@@ -91,9 +91,11 @@ const resinOf = (r: CaveResult): number => r.pickups.filter((q) => q.kind === 'r
 function scaleBasis(): void {
   const lo = PARAMS[1], mid = PARAMS[2]
   // (a) bd below the floor: the class-1 ring (bd 231 in [lo.fbLo, lo.bdLo]) checked with class-2 params but the class-1 fallback floor.
-  // sb = bdLo = 340 asks 16 resin and 16 veins, sb = bd = 231 only 10 and 10; the ring has 12 and 13, so r11 fires only if bdLo is the basis.
-  const ring1 = fallbackCave(1, lo), below = { ...mid, fbLo: lo.fbLo }
+  // sb = bdLo = 340 asks 16 resin and 16 veins, sb = bd = 231 only 10 and 10; the ring has 16 resin (playtest-tuning-1 §3,
+  // trimmed to need1 - 1 below) and 13 veins, so r11 fires only if bdLo is the basis.
+  const ring1raw = fallbackCave(1, lo), below = { ...mid, fbLo: lo.fbLo }
   const need1 = scaledMin(24, mid.bdLo)
+  const ring1 = withResin(ring1raw, need1 - 1)
   ok(ring1.beaconDist >= below.fbLo && ring1.beaconDist < mid.bdLo, `scale (a): ring bd ${ring1.beaconDist} is under bdLo ${mid.bdLo}, over fbLo ${below.fbLo}`)
   ok(scaledMin(24, ring1.beaconDist) <= resinOf(ring1) && resinOf(ring1) < need1, `scale (a): ${resinOf(ring1)} resin sit between min@bd and min@bdLo ${need1}`)
   ok(validateCave(ring1, below).why === 'r11 counts', `scale (a): bd under the floor scales by bdLo, got ${validateCave(ring1, below).why}`)

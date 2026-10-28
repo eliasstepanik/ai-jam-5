@@ -14,6 +14,7 @@ export type MonsterTune = {
   ringFactor: number; ringMarginPx: number; orbitRadS: number
   driftAmpPx: number; driftHz: number
   lungeChancePerS: Z4 // base hazard rate while eligible (lurker/devourer); stalker uses it while behind
+  patienceS: Z4 // s of eligibility after which a windup is forced; 0 = kind not spawned in that zone
   telegraphS: number // total windup (devourer: both beats)
   beats: number // 1 = single telegraph, 2 = devourer two-beat
   lungeRangePx: number // windup may start only if distance to player <= this
@@ -72,6 +73,8 @@ export type Tuning = {
     viewRange: number // px, sight range of the vision cone
     viewHalfAngle: number // rad, half angle of the vision cone
     noticeT: number // s, time in view to fill the detection meter
+    noticeLitMarginPx: number // px, a lit player is noticed within lightRadius + this (with line of sight), cone or not
+    suspectMaxS: number // s, max time suspicious before the shade turns hunting
     hearRadius: number // px, radius within which a fast player is heard
     hearSpeed: number // px/s, player speed above which hearing triggers
     loseT: number // s, hunting without sensing the player before switching to searching
@@ -89,6 +92,7 @@ export type Tuning = {
   escape: {
     sprintMul: number; accelPxS2: number; maxAlive: number; spawnIntervalS: number
     spawnGapPx: [number, number]; despawnPx: number
+    spawnAheadTiles: [number, number]; spawnAheadP: number // playtest-tuning-1 §4: ahead-route escape spawn window (tiles) and probability
     rockWarnS: number; rocksMax: number; firstRockS: number; firstSpawnS: number
     quakeShakePx: number; winRadiusTiles: number
     frictionMul: number; attackSlots: number; chaseMul: number; interceptS: number; recoverS: number

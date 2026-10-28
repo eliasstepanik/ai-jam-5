@@ -160,7 +160,7 @@ const beaconIgnite: Recipe = (a, out, t, p) => {
   return [noise(a, 'pink', t, 1.5, lp), osc(a, 'sine', 60, 30, t, 1.25, env(a.ctx!, t, 0, 1, 1, out), 0.8)]
 }
 
-// Explicit keys (not a spread of the Partial) so tsc proves all 43 SoundIds are covered. The 19 ids owned by synth-3.ts
+// Explicit keys (not a spread of the Partial) so tsc proves all SoundIds are covered. The 19 ids owned by synth-3.ts
 // are read as `B.x ?? null`: type-safe, and a missing recipe degrades to silence instead of throwing.
 const B = RECIPES_B
 export const SYNTH: Record<SoundId, Recipe | null> = {
@@ -182,6 +182,8 @@ export const SYNTH: Record<SoundId, Recipe | null> = {
   sfx_parry: parry,
   'sfx_parry-perfect': perfectParry(),
   'sfx_parry-bad': parryBad,
+  'sfx_player-walk': null,
+  'sfx_player-run': null,
   sfx_roll: B.sfx_roll ?? null,
   'sfx_mine-hit': mineHit,
   'sfx_mineral-collect': mineralCollect,

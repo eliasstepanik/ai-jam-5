@@ -183,7 +183,7 @@ export function drawDarkness(ctx: CanvasRenderingContext2D, s: State, v: View, q
   c.setTransform(1, 0, 0, 1, 0, 0)
   c.fillStyle = '#000'
   c.fillRect(0, 0, d.w, d.h) // off-map area and everything the memory layer does not cover
-  if (memory && !s.debug.pureDarkness) {
+  if (memory && !s.settings.pureDarkness) {
     c.imageSmoothingEnabled = true // soft memory edges
     const sx = v.tx0, sy = v.ty0, sw = v.tx1 - v.tx0 + 1, sh = v.ty1 - v.ty0 + 1
     const kt = TILE * v.z * r

@@ -7,9 +7,11 @@ import type { AudioRes, Resources } from '../assets/resources.ts'
 import { getResources } from '../assets/resources.ts'
 import { PENDING_AUDIO, SOUNDS } from '../assets/sounds.ts'
 import type { SoundDef, SoundId } from '../assets/sounds.ts'
+import { pausedMenu } from '../core/settings.ts'
 import type { State } from '../core/types.ts'
 import type { Input } from '../main.ts'
-import { applyDucks, ensureMixer, setMaster } from './mixer.ts'
+import { applyDucks, ensureMixer, setMaster, setBusVolumes } from './mixer.ts'
+import { unlockMusic } from './stream-music.ts'
 import { musicStep } from './music.ts'
 import { loopStep, pruneVoices, play } from './sfx.ts'
 import { noiseBuffers } from './synth.ts'
@@ -53,7 +55,7 @@ function sampleNames(): string[] {
   const pending: readonly string[] = PENDING_AUDIO
   const names = new Set<string>()
   for (const [id, def] of Object.entries(SOUNDS) as [SoundId, SoundDef][]) {
-    if (!def.file && !def.layers) continue
+    if (def.stream || (!def.file && !def.layers)) continue
     for (const n of [def.file ?? id, ...(def.layers ?? [])]) if (!pending.includes(n)) names.add(n)
   }
   return [...names].sort((x, y) => Number(FIRST_SAMPLES.includes(y)) - Number(FIRST_SAMPLES.includes(x)))
@@ -119,6 +121,7 @@ export function unlock(res: Resources): void {
   ctx.onstatechange = () => syncState(getResources().audio) // reads the live registry, not a captured one
   a.noise ??= noiseBuffers(ctx)
   ensureMixer(res)
+  unlockMusic(res)
   loadSamples(res)
   ctx.resume().then(() => {
     const live = getResources().audio
@@ -130,7 +133,7 @@ export function unlock(res: Resources): void {
 function onVisibility(a: AudioRes): void {
   const ctx = a.ctx
   if (!ctx || a.state === 'failed') return
-  if (document.hidden) ctx.suspend().catch(warnOnce)
+  if (document.hidden) { a.score?.element.pause(); ctx.suspend().catch(warnOnce) }
   else if (a.lastScreen !== 'paused') ctx.resume().catch(warnOnce)
 }
 
@@ -167,7 +170,7 @@ export function installAudioListeners(res: Resources): void {
 
 function resumeSoon(a: EngineRes, s: State): void {
   const ctx = a.ctx
-  if (!ctx || ctx.state !== 'suspended' || document.hidden || s.meta.screen === 'paused') return
+  if (!ctx || ctx.state !== 'suspended' || document.hidden || pausedMenu(s)) return
   if (Math.abs(s.meta.time - (a.resumeAt ?? -Infinity)) < RESUME_GAP_S) return
   a.resumeAt = s.meta.time
   ctx.resume().catch(warnOnce)
@@ -207,26 +210,28 @@ export function audioStep(s: State, _input: Input): void {
   const ctx = a.ctx
   if (!ctx || a.state === 'failed') {
     consumeSilently(a, s)
-    a.lastScreen = s.meta.screen
+    a.lastScreen = pausedMenu(s) ? 'paused' : s.meta.screen
     return
   }
   resumeSoon(a, s)
   // iOS Safari may later drop the context to 'interrupted' (call, lock screen) and refuse a gesture-less resume():
   // bring the gesture listeners back (the visible, non-pause case only); syncState/unlock drop them once running again.
-  if (ctx.state !== 'running' && !document.hidden && s.meta.screen !== 'paused' && a.lastScreen !== 'paused') armGestures(a)
+  if (a.score?.blocked) armGestures(a)
+  if (ctx.state !== 'running' && !document.hidden && !pausedMenu(s) && a.lastScreen !== 'paused') armGestures(a)
   ensureMixer(res)
-  setMaster(res, s.settings.volume, s.settings.muted)
+  setMaster(res, 1, s.settings.muted)
+  setBusVolumes(res, s.settings.musicVolume, s.settings.sfxVolume)
   applyDucks(res, duckFor(s))
   musicStep(res, s)
   loopStep(res, s) // before events: it mirrors the camera that positional play() reads
   consumeEvents(res, s)
   pruneVoices(a)
   // Pause: ducks fall first, then the whole context is suspended once; leaving pause resumes via resumeSoon.
-  if (s.meta.screen !== 'paused') a.pauseAt = -1
+  if (!pausedMenu(s)) a.pauseAt = -1
   else if (a.lastScreen !== 'paused') a.pauseAt = ctx.currentTime
   else if (a.pauseAt >= 0 && ctx.state === 'running' && ctx.currentTime >= a.pauseAt + PAUSE_SUSPEND_S) {
     a.pauseAt = -2 // suspended once per pause
     ctx.suspend().catch(warnOnce)
   }
-  a.lastScreen = s.meta.screen
+  a.lastScreen = pausedMenu(s) ? 'paused' : s.meta.screen
 }

@@ -82,27 +82,30 @@ function notice(): void {
   s = field(true)
   m = place(s, -150, 'unaware')
   ok(until(s, m, 300, () => m.awareness !== 'unaware') === -1 && m.detectionTimer === 0, '(2) a wall blocks sight for 300 steps')
-  // (3) player behind (outside the cone, in range, no wall)
+  // (3) player behind (outside the cone, no wall): playtest-tuning-1b lit notice - unnoticed only beyond lightRadius + noticeLitMarginPx, noticed inside it
+  s = field()
+  m = place(s, lightRadius(s) + T.ai.noticeLitMarginPx + 20, 'unaware')
+  ok(until(s, m, 300, () => m.awareness !== 'unaware') === -1, '(3) a standing player behind the shade beyond R + margin is not noticed')
   s = field()
   m = place(s, 150, 'unaware')
-  ok(until(s, m, 300, () => m.awareness !== 'unaware') === -1, '(3) a player behind the shade is not noticed')
+  ok(until(s, m, 300, () => m.awareness === 'hunting') > 0, '(3) a lit standing player behind the shade inside R + margin is noticed')
 }
 
 function hearing(): void {
-  // (4) fast player inside hearRadius, behind the shade (not seen): notice at ~2x noticeT
-  let s = field()
+  // (4) fast player inside hearRadius, wall between (not seen; lit notice needs LOS, hearing passes walls; -80 px = tile 157, left of the wall tile 158): notice at ~2x noticeT
+  let s = field(true)
   s.player.vx = T.ai.hearSpeed + 40
-  let m = place(s, 60, 'unaware')
+  let m = place(s, -80, 'unaware')
   const n = until(s, m, 300, () => m.awareness === 'hunting')
   ok(within(n, 2 * NOTICE - 1), '(4) heard notice at ~2x noticeT (' + 2 * NOTICE + ' steps), got ' + n)
   // slower than hearSpeed never; fast but outside hearRadius never
-  s = field()
+  s = field(true)
   s.player.vx = T.ai.hearSpeed - 10
-  m = place(s, 60, 'unaware')
+  m = place(s, -80, 'unaware')
   ok(until(s, m, 300, () => m.awareness !== 'unaware') === -1, '(4) a slow player is never heard')
-  s = field()
+  s = field(true)
   s.player.vx = T.ai.hearSpeed + 40
-  m = place(s, T.ai.hearRadius + 40, 'unaware')
+  m = place(s, -(T.ai.hearRadius + 40), 'unaware')
   ok(until(s, m, 300, () => m.awareness !== 'unaware') === -1, '(4) a fast player outside hearRadius is never heard')
 }
 

@@ -9,19 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Automated audio checks closing the #101-#103 acceptance gaps: `src/checks/audio-fake.ts` (a recording fake `AudioContext`), `audio-engine.check.ts` (24-voice pool, priority stealing, 30 ms retrigger guard, mixer constants), `audio-wiring.check.ts` (all 28 `FxEventKind` mapped, the null set, sound ids exist, ducking/danger/music ranges), `audio-recipes.check.ts` (every synth recipe renders without throwing, node-count caps, static peak/level spread).
-- 14 AI-generated audio samples (7 SFX, 2 music stingers, cave ambience, 4 music tracks) in `src/assets/audio/`, and ComfyUI pipeline additions (`gen-audio` trim/peakDb/loopFade options, loop-seam nodes in the graph).
+- 14 AI-generated audio samples (7 SFX, 2 music stingers, cave ambience, 4 music tracks) produced via ComfyUI, and ComfyUI pipeline additions (`gen-audio` trim/peakDb/loopFade options, loop-seam nodes in the graph). 12 ship in `src/assets/audio/`; the generated `mus_title`, `mus_descent` and `mus_escape` were superseded by the owner-supplied Beacon Run stream and removed from the bundle.
 
 ### Changed
 - Master compressor threshold -18 -> -14 dB and attack 5 -> 15 ms (fewer click artefacts); heartbeat voice cap 1 -> 2.
 - Ducking now merges per cause: the deepest cause wins and the release comes from the last cause.
 - The assets check now asserts a sound is pending exactly when its `.ogg` or `.mp3` file is missing (`PENDING_AUDIO` is now empty).
-- `mus_descent` and `mus_descent-danger` loop is 30 s (was a 72 s placeholder); `mus_title` loop 32.73 s.
+- `mus_descent-danger` loop is 30 s (was a 72 s placeholder).
+- Raised the total audio budget in `scripts/check-assets.ts` from 3.3 MB to 4.6 MB per format (the shipped set needs 4,091,024 B ogg / 4,360,305 B mp3); the earlier "14 generated samples" text now means 12 shipped (see Added).
 
 ### Fixed
 - `danger()` could return NaN when `energyMax <= 0`.
 - The music stinger gain node was never disconnected after the stinger ended (node leak).
 
 ### Added
+- Copper flame leaves faint sparks that lead toward the Beacon.
+- Supplied eight-minute Beacon Run music, burning-torch sample and walking footsteps; post-Beacon sprinting uses double-cadence footsteps without raising pitch.
+- Title and pause Settings menu with independent saved Music and Sound Effects sliders, flashing controls, and Fog of war / Pure darkness selection.
 - Dev panel: 'AI behaviors' overlay (awareness rings, view and hearing ranges, detection meter, patrol, retreat and stalker-latch markers, near-spawn ring, flow window) and 'Wisp guide' overlay (route, seek target, lead/leash/reseed rings, velocity). Both toggles are on the Enemies tab and exist only in dev builds or with `?debug=1`.
 - #97: updated cave atlas with non-blocking mushrooms, roots, ferns, stalagmites, leaves, branches, gravel and wall dressing; ten muddy puddle variants reflect nearby sprites and ripple when walked through.
 - Glowing vines on cave walls and on the floor beside them near the cave start. They give off a soft pulsing green light and fade out with depth, so the deeper cave has none.
@@ -29,8 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drifting draft motes and a faint warm bleed of light toward the Beacon that quietly guide the player along the main route.
 - Dynamic puddles: the pool surface shimmers, ripples, drips and reflects the flame, the Beacon and nearby vines instead of showing a flat decal.
 - Sculpted cave terrain: open caverns, single pillars and short dead-end alcoves.
+- Attacks are announced by a wind-up pose, a crawling ground line and a clearer sound.
+- Shade eyes flash briefly when a shade starts its attack.
 
 ### Changed
+- Escape drops more rocks on the way out, and shades now appear ahead of you on the route.
+- Resin supply now rises with depth: the middle and deep zones get more resin, and the extra resin near the end is spread out instead of piling up at the start of the last zone.
 - Darkness and tint now deepen continuously with depth. The per-zone colour tints are removed from rendering (the plain fallback shown before the tileset decodes keeps flat per-zone floor fills).
 - More cracks and rubble the deeper you go.
 - Props are placed with a purpose instead of being scattered: route markers and landmarks along the way to the Beacon, decoys, water and lairs in dead ends, and rubble where the route runs close to a wall.
@@ -38,15 +46,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Caves regenerate with new layouts: the same seed now gives a different cave than before.
 - The default cave depth is now Shallow (class 1) instead of Standard. Saved player choices are kept; Best records keep their per-class keys.
 - Make parry and dodge more forgiving: wider parry window (perfect ±55 ms, early 180 ms, late 120 ms), longer lurker and stalker telegraph (0.55 s), shorter escape roll cooldown (1.0 s).
+- Shades notice a lit player nearby and no longer stare forever; they now attack within a few seconds.
+- With the torch out, a dodge roll now avoids bites in the descent.
 - Clicking (or Enter/Space on) the Sound button now cycles volume Off → 33 % → 66 % → 100 % → Off. Left/Right, -/= and M behave as before.
 - #99: raise the torch-duration bar another two reference pixels inside its info box.
 - #99: remove the active-mineral underline and raise the duration bar inside the torch info box so it clears the bottom frame.
 - The vine glow now follows the shape of each vine and fades out outside the torch light radius instead of showing as a round blob.
+- Sodium now carries the easier-parry bonus on top of its larger, faster-burning flame; copper no longer affects parries.
 
 ### Added
 - #99: delivered UI hearts, nine-slice menu/HUD panels, selection markers, material-colored animated torch/fuel meter and local Hollow Sigil font.
 
 ### Fixed
+- Corrected reversed source labels for torch and walking audio; rebuilt double-cadence sprint audio from the actual footstep recording.
 - #84: position the enlarged title logo just above Play, lower on tall windows, and remove its tagline.
 - #98: resin refills the torch without triggering the player pickup animation; healing-plant and ore animations are retained.
 - #127: restore pure-black creature particles at the user’s request; blending into black terrain is intentional. Retain lifetime fading and foreground-wall occlusion.

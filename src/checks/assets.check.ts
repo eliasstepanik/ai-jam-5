@@ -69,7 +69,7 @@ export function run(): void {
   rejects(() => sheetAnimations('player_body', 'walk', 64, 512, { n: [[10, 20]] }), 'tips forbidden on no-torch set')
   ok(sheetAnimations('player_body-torch', 'walk', 64, 512, { n: [[10, 20]] })['walk-n'].torchTips?.[0][0] === 10, 'measured tip override')
 
-  ok(Object.keys(SOUNDS).length === 43, '43 sound ids')
+  ok(Object.keys(SOUNDS).length === 45, '45 sound ids')
   const pending = new Set<string>(PENDING_AUDIO), files = new Set<string>()
   ok(pending.size === PENDING_AUDIO.length, 'duplicate PENDING_AUDIO id')
   const onDisk = new Set(audioDir())
@@ -91,8 +91,12 @@ export function run(): void {
     const s = (SOUNDS as Record<string, SoundDef>)[id]
     ok(!!s && !!(s.file || s.layers), 'PENDING_AUDIO id is not a known sample sound ' + id)
   }
-  for (const n of onDisk) ok(owned.has(n), 'orphan audio file ' + n + ' (no SOUNDS id owns it)')
-  ok(files.size === 14 && !('sfx_parry-perfect-ring' in SOUNDS), 'internal ring layer is a file, not a SoundId')
+  // A file is allowed only if some id references it via file/layers (no reserved-slot allowance: the
+  // generated mus_title/mus_descent/mus_escape files were removed when master #161 repointed those ids to mus_beacon-run).
+  for (const n of onDisk) {
+    ok(owned.has(n), 'orphan audio file ' + n + ' (no SOUNDS id owns it)')
+  }
+  ok(files.size === 15 && !('sfx_parry-perfect-ring' in SOUNDS), 'internal ring layer is a file, not a SoundId')
   ok(!('sfx_step' in SOUNDS) && !('sfx_roll-ready' in SOUNDS) && !('ui_hover' in SOUNDS), 'orphan sounds removed')
-  ok(JSON.stringify(SOUNDS.mus_descent.loop) === JSON.stringify(SOUNDS['mus_descent-danger'].loop), 'synchronous descent loop points')
+  ok(SOUNDS.mus_descent.stream && SOUNDS.mus_descent.loop[1] === 480, 'full eight-minute owner score streams')
 }

@@ -19,7 +19,7 @@ import type { FakeNode } from './audio-fake.ts'
 function ok(cond: boolean, msg: string): void { if (!cond) throw new Error('audio-recipes check: ' + msg) }
 
 // The X0 audit: exactly these 6 ids are null (music has no synth fallback, R-092).
-const NULL_IDS: readonly SoundId[] = ['mus_title', 'mus_descent', 'mus_descent-danger', 'mus_escape', 'mus_sting-win', 'mus_sting-death']
+const NULL_IDS: readonly SoundId[] = ['mus_title', 'mus_descent', 'mus_descent-danger', 'mus_escape', 'mus_sting-win', 'mus_sting-death', 'sfx_player-run', 'sfx_player-walk']
 
 // Node budget per render. Default 12 (the synth.ts/synth-2.ts ponytail guideline). Allowlist measured
 // 2026-10-28 against the fake (max over the render variants below):
@@ -102,13 +102,14 @@ export function run(): void {
     noise,
   }) as unknown as AudioRes
 
-  // Coverage: every SoundId has a SYNTH entry; the null entries are exactly the 6 music ids.
+  // Coverage: every SoundId has a SYNTH entry; the null entries are exactly the 6 music ids plus the two
+// player-move ids master made sample-only (sfx_player-walk/sfx_player-run, synth-2.ts from origin/master).
   const nulls: string[] = []
   for (const id of Object.keys(SOUNDS) as SoundId[]) {
     ok(id in SYNTH, 'SYNTH has no entry for ' + id)
     if (SYNTH[id] === null) nulls.push(id)
   }
-  ok(JSON.stringify(nulls.sort()) === JSON.stringify([...NULL_IDS].sort()), 'null SYNTH entries are exactly the 6 music ids, got: ' + nulls.join(','))
+  ok(JSON.stringify(nulls.sort()) === JSON.stringify([...NULL_IDS].sort()), 'null SYNTH entries are exactly NULL_IDS, got: ' + nulls.join(','))
 
   for (const [id, recipe] of Object.entries(SYNTH) as [SoundId, (Recipe | null)][]) {
     if (recipe === null) continue

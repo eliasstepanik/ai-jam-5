@@ -17,9 +17,9 @@ const ROWS: Row[] = [
   { name: 'perfect, 2 steps early', d: -2 / 60, kind: 'lurker', mineral: 'none', grade: 'perfect', loss: 0 },
   { name: 'early 80 ms plain', d: -0.08, kind: 'lurker', mineral: 'none', grade: 'good', loss: 2.50 },
   { name: 'late 80 ms plain', d: 0.08, kind: 'lurker', mineral: 'none', grade: 'good', loss: 3.66 },
-  { name: 'early 80 ms copper', d: -0.08, kind: 'lurker', mineral: 'copper', grade: 'perfect', loss: 0 },
-  { name: 'late 80 ms copper', d: 0.08, kind: 'lurker', mineral: 'copper', grade: 'perfect', loss: 0 },
-  { name: 'copper -0.050 (inside its wider perfect band)', d: -0.05, kind: 'lurker', mineral: 'copper', grade: 'perfect', loss: 0 },
+  { name: 'early 80 ms sodium', d: -0.08, kind: 'lurker', mineral: 'sodium', grade: 'perfect', loss: 0 },
+  { name: 'late 80 ms sodium', d: 0.08, kind: 'lurker', mineral: 'sodium', grade: 'perfect', loss: 0 },
+  { name: 'sodium -0.050 (inside its wider perfect band)', d: -0.05, kind: 'lurker', mineral: 'sodium', grade: 'perfect', loss: 0 },
   { name: 'early 80 ms devourer', d: -0.08, kind: 'devourer', mineral: 'none', grade: 'good', loss: 7.28 },
   { name: 'edge early plain', d: -0.18, kind: 'lurker', mineral: 'none', grade: 'poor', loss: 9.60 },
   { name: 'in-game early 5 steps', d: -5 / 60, kind: 'lurker', mineral: 'none', grade: 'good', loss: 2.64 },
@@ -45,14 +45,14 @@ export function run(): void {
     ok(Math.abs(got.loss - r.loss) <= 0.01, r.name + ': loss ' + got.loss + ', want ' + r.loss + ' +-0.01')
   }
 
-  // 2. Perfect band edges (R-127 epsilon): |d| = perfectS is perfect, one hair beyond is not; copper's band is 1.6x wider.
+  // 2. Perfect band edges (R-127 epsilon): |d| = perfectS is perfect, one hair beyond is not; sodium's band is 1.6x wider.
   const P = T.parry.perfectS
   ok(parryLoss(-P, 'lurker', 'none').grade === 'perfect', '-perfectS is perfect')
   ok(parryLoss(P, 'lurker', 'none').grade === 'perfect', '+perfectS is perfect')
   ok(parryLoss(-P - 1e-6, 'lurker', 'none').grade === 'good', 'just outside the perfect band is graded')
-  const PC = P * T.minerals.table.copper.perfectMul
-  ok(parryLoss(-PC, 'lurker', 'copper').grade === 'perfect', 'copper perfect band is perfectS * perfectMul')
-  ok(parryLoss(-PC - 1e-6, 'lurker', 'copper').grade === 'good', 'just outside the copper perfect band is graded')
+  const PC = P * T.minerals.table.sodium.perfectMul
+  ok(parryLoss(-PC, 'lurker', 'sodium').grade === 'perfect', 'sodium perfect band is perfectS * perfectMul')
+  ok(parryLoss(-PC - 1e-6, 'lurker', 'sodium').grade === 'good', 'just outside the sodium perfect band is graded')
 
   // 3. Monotonic loss outside the perfect band, both directions; late is punished harder than early at the same |d|.
   for (const sign of [-1, 1]) {
@@ -65,8 +65,9 @@ export function run(): void {
   }
   ok(parryLoss(0.08, 'lurker', 'none').loss > parryLoss(-0.08, 'lurker', 'none').loss, 'late loses more than early at the same |d|')
   for (const d of [-0.14, -0.10, -0.08, 0.08, 0.09, 0.10]) {
-    ok(parryLoss(d, 'lurker', 'copper').loss < parryLoss(d, 'lurker', 'none').loss, 'copper loss < plain loss at d=' + d)
+    ok(parryLoss(d, 'lurker', 'sodium').loss < parryLoss(d, 'lurker', 'none').loss, 'sodium loss < plain loss at d=' + d)
   }
+  ok(Math.abs(parryLoss(-0.12, 'lurker', 'copper').loss - parryLoss(-0.12, 'lurker', 'none').loss) <= 1e-9, 'copper loss equals plain loss at d=-0.12 (parry effect removed)')
   ok(parryLoss(-0.14, 'lurker', 'none').loss <= T.monsters.lurker.energyHitE * T.parry.lossMaxFrac + 1e-9, 'loss never exceeds energyHitE * lossMaxFrac')
 
   // 4. resolveParries: every graded parry kills; perfect costs nothing and fires flare + hitstop.
@@ -97,9 +98,9 @@ export function run(): void {
     ok(m.ai === 'dying' && s.player.parry.lastGrade === 'poor' && s.fx.events.some(e => e.kind === 'parryPoor'), 'poor parry kills and emits parryPoor')
   }
   {
-    const { s, m } = lunging(-0.12, 'lurker', 'copper')
+    const { s, m } = lunging(-0.12, 'lurker', 'sodium')
     resolveParries(s)
-    ok(m.ai === 'dying' && Math.abs(s.player.energy - (100 - 2.04)) <= 0.01, 'copper early parry costs ~2.04 E (got ' + s.player.energy + ')')
+    ok(m.ai === 'dying' && Math.abs(s.player.energy - (100 - 2.04)) <= 0.01, 'sodium early parry costs ~2.04 E (got ' + s.player.energy + ')')
   }
 
   // 5. Whiff boundary: delta < -earlyMaxS skips the shade (it stays in the lunge); exactly -earlyMaxS is still graded (R-127).

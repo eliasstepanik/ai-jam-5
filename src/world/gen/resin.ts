@@ -15,9 +15,10 @@ export const Z4_E_PER_TILE = 1.15, MARGIN = 15
 export const L_MAX = Math.floor((T.flame.energyMax - T.beacon.minStartE - MARGIN) / Z4_E_PER_TILE)
 
 const TRIES = 24, WINDOW = 8, FRONT = 0.6, MAX_EXTRA = 3
-const DENS = { // CG4 §1: density per 100 path tiles, 2-decimal literals, zones 1..4
-  nearSmall: [2.0, 2.67, 3.33, 2.67], nearLarge: [0, 0, 0.67, 0.67],
-  offSmall: [2.0, 2.0, 1.33, 0.67], offLarge: [0, 0.67, 0.67, 0.67],
+// playtest-tuning-1 §3 (owner override, supersedes CG4 §1): density per 100 path tiles, 2-decimal literals, zones 1..4
+const DENS = {
+  nearSmall: [2.0, 2.67, 3.33, 3.33], nearLarge: [0, 0.67, 1.0, 1.33],
+  offSmall: [1.33, 1.33, 1.33, 1.33], offLarge: [0, 0.67, 1.0, 1.0],
 } as const
 const cnt = (d: readonly number[], bd: number): number[] => d.map((x) => quota(x, bd))
 
@@ -144,20 +145,28 @@ export function placeResin(c: PopCtx, rnd: Rnd, chambers: readonly Pocket[], t1:
     }
   }
   for (let zi = 0; zi < 4; zi++) {
-    const n = qNS[zi] + qNL[zi], kL = Math.floor(n / 2)
-    if (qNL[zi] > 0) { const i = slot(zi, kL); if (i >= 0) add(i, 'large') }
+    const n = qNS[zi] + qNL[zi]
+    // Large near slots spread over the zone front; qNL = 1 yields the old single slot kL = floor(n / 2) (CG4 §1).
+    // playtest-tuning-1 §3 raises nearLarge quota to 2 in zones 3-4, so the pass must fill the whole quota.
+    const larges = new Set(Array.from({ length: qNL[zi] }, (_, j) => Math.floor(n * (j + 0.5) / qNL[zi])))
+    for (const k of larges) { const i = slot(zi, k); if (i >= 0) add(i, 'large') }
     offPath(zi, qOL[zi] - placedOL[zi], 'large')
     for (let k = 0; k < n; k++) {
-      if (qNL[zi] > 0 && k === kL) continue
+      if (larges.has(k)) continue
       if (zi === 0 && k === 0) continue // T1 fills zone-1 slot 0
       const i = slot(zi, k); if (i >= 0) add(i, 'small')
     }
     offPath(zi, qOS[zi] - placedOS[zi], 'small')
   }
 
-  // rule 14b: zone-4 energy; add up to 3 zone-4 near smalls on the front-loaded slots k = 0, 1, 2
+  // rule 14b: zone-4 energy; add up to 3 zone-4 near smalls, spread over the front 60 % of zone 4 with their own
+  // targets (playtest-tuning-1 §3: reusing slot(3, k) piled all extras at the zone-4 start, deep zone stayed dry)
+  const extraSlot = (k: number): number => {
+    const Z = bd / 4, zs = Math.ceil(3 * Z), target = zs + (k + 0.5) / MAX_EXTRA * FRONT * Z
+    return nearSlot(rnd, c, near[3], target, 10, taken)
+  }
   const e4 = (): number => tiles.reduce((s, i, k) => s + (zone[i] === 4 ? (out[k].size === 'large' ? T.resin.largeE : T.resin.smallE) : 0), 0)
   const need = 1.163 * (bd / 4) + T.beacon.minStartE + MARGIN
-  for (let k = 0; k < MAX_EXTRA && e4() < need; k++) { const i = slot(3, k); if (i >= 0) add(i, 'small') }
+  for (let k = 0; k < MAX_EXTRA && e4() < need; k++) { const i = extraSlot(k); if (i >= 0) add(i, 'small') }
   return e4() >= need ? out : null
 }

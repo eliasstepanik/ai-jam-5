@@ -3,19 +3,20 @@ export type Group = 'music' | 'amb' | 'sfx' | 'ui'
 export type SoundDef = {
   readonly group: Group; readonly gain: number; readonly pri: 0 | 1 | 2 | 3; readonly cap: number
   readonly file?: string
+  readonly stream?: boolean // long music stays in a media element, never fully decoded into buffers
   readonly loop?: readonly [start: number, end: number]
   readonly layers?: readonly string[]
 }
 
 export const SOUNDS = {
-  mus_title: { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_title', loop: [0, 32.73] },
-  mus_descent: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_descent', loop: [0, 30] },
+  mus_title: { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_beacon-run', stream: true, loop: [0, 480] },
+  mus_descent: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_beacon-run', stream: true, loop: [0, 480] },
   'mus_descent-danger': { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_descent-danger', loop: [0, 30] },
-  mus_escape: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_escape', loop: [0, 48] },
+  mus_escape: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_beacon-run', stream: true, loop: [0, 480] },
   'mus_sting-win': { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_sting-win' },
   'mus_sting-death': { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_sting-death' },
   amb_cave: { group: 'amb', gain: 0.8, pri: 1, cap: 1, file: 'amb_cave', loop: [0, 40] },
-  'sfx_flame-loop': { group: 'sfx', gain: 0.35, pri: 3, cap: 1 },
+  'sfx_flame-loop': { group: 'sfx', gain: 0.35, pri: 3, cap: 1, file: 'sfx_flame-loop', loop: [0, 3.2] },
   'sfx_flame-toss-sodium': { group: 'sfx', gain: 0.8, pri: 2, cap: 1 },
   'sfx_flame-toss-copper': { group: 'sfx', gain: 0.8, pri: 2, cap: 1 },
   'sfx_flame-toss-strontium': { group: 'sfx', gain: 0.8, pri: 2, cap: 1 },
@@ -26,6 +27,8 @@ export const SOUNDS = {
   sfx_parry: { group: 'sfx', gain: 0.8, pri: 3, cap: 2 },
   'sfx_parry-perfect': { group: 'sfx', gain: 1, pri: 3, cap: 1, layers: ['sfx_parry-perfect-ring'] },
   'sfx_parry-bad': { group: 'sfx', gain: 0.7, pri: 3, cap: 1 },
+  'sfx_player-walk': { group: 'sfx', gain: 0.4, pri: 1, cap: 1, file: 'sfx_player-walk', loop: [0, 1.48] },
+  'sfx_player-run': { group: 'sfx', gain: 0.4, pri: 1, cap: 1, file: 'sfx_player-run', loop: [0, 0.74] },
   sfx_roll: { group: 'sfx', gain: 0.6, pri: 1, cap: 1 },
   'sfx_mine-hit': { group: 'sfx', gain: 0.7, pri: 1, cap: 2 },
   'sfx_mineral-collect': { group: 'sfx', gain: 0.6, pri: 1, cap: 2 },

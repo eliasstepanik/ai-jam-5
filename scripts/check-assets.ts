@@ -261,10 +261,12 @@ for (const p of audioFiles) {
   if (ext === 'ogg' && head.toString('latin1', 0, 4) !== 'OggS') fail(p + ' does not start with OggS')
   else if (ext === 'ogg' && !head.includes('OpusHead', 0, 'latin1')) fail(p + ' is not Ogg Opus (no OpusHead in the first 64 bytes)')
   if (ext === 'mp3' && head.toString('latin1', 0, 3) !== 'ID3' && !(head[0] === 0xff && (head[1] & 0xe0) === 0xe0)) fail(p + ' has no ID3 tag or MPEG frame sync at byte 0')
-  if (size > 900 * KB) fail(p + ' is ' + size + ' bytes, max 900 KB')
+  const limit = name.startsWith('mus_beacon-run.') ? 3.1 * MB : 900 * KB
+  if (size > limit) fail(p + ' is ' + size + ' bytes, max ' + limit)
   audioBytes[ext] += size
 }
-for (const [ext, n] of Object.entries(audioBytes)) if (n > 3.3 * MB) fail('audio .' + ext + ' total ' + n + ' bytes, max 3.3 MB')
+// ponytail: raised 3.3 -> 4.6 MB (owner-decision in merge of #161): the shipped set (Beacon Run stream + 12 generated sounds) needs ogg 4,091,024 / mp3 4,360,305 B. Upgrade path: re-encode at a lower bitrate or drop generated tracks to restore the old 3.3 MB budget.
+for (const [ext, n] of Object.entries(audioBytes)) if (n > 4.6 * MB) fail('audio .' + ext + ' total ' + n + ' bytes, max 4.6 MB')
 for (const f of pending) if (!(f in SOUNDS)) fail('PENDING_AUDIO lists unknown sound ' + f)
 
 if (failures.length > 0) {

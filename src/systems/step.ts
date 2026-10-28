@@ -23,6 +23,7 @@ import { stepQuake } from './quake.ts'
 import { checkEnd } from './run.ts'
 import { stepScreens } from './screens.ts'
 import { stepWisp } from './escape-wisp.ts'
+import { stepCopperTrail } from './copper-trail.ts'
 
 export function step(s: State, input: Input, dt: number): void {
   s.meta.time += dt // D1: the run clock counts on every screen
@@ -36,7 +37,7 @@ export function step(s: State, input: Input, dt: number): void {
   }
   const it = resolveIntent(s, input) // D2
   const esc = s.meta.phase === 'escape'
-  if (esc) stepRoll(s, it, dt) // X3 (R-169): before stepMovement, which skips its velocity block while roll.t > 0
+  stepRoll(s, it, dt) // X3 (R-169): before stepMovement, which skips its velocity block while roll.t > 0; descent: only a dead torch starts a roll (movement.ts)
   stepMovement(s, it, dt) // D3
   trackDepth(s) // D4
   fadePalette(s.meta.palette, s.meta.zone, dt)
@@ -52,6 +53,7 @@ export function step(s: State, input: Input, dt: number): void {
   }
   if (s.meta.phase === 'escape') stepQuake(s, dt) // X11 (R-169): before checkEnd, so lose wins a same-step tie
   stepWisp(s, dt) // guide light (#81): after stepQuake so a landed rock re-routes in the same step; switches itself off outside the escape
+  stepCopperTrail(s, dt) // copper trail: descent only, self-gating (clears itself in the escape or when the copper flame ends)
   stepDirector(s, dt) // D11
   stepMonsters(s, dt) // D12
   if (s.meta.phase === 'descent') resolveParries(s) // D13, before D14: a parry on the bite step wins

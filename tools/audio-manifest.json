@@ -6,6 +6,7 @@
   "sounds": [
     {
       "id": "mus_title",
+      "superseded": "master #161 streams mus_beacon-run; generated file removed from bundle",
       "kind": "music",
       "tags": "dark ambient, cinematic, instrumental, folk, 66 bpm, D minor, lonely fingerpicked acoustic guitar motif, low bowed cello drone, soft crackling campfire texture, distant airy choir pad, no drums, sparse, cave, melancholic, seamless loop",
       "lyrics": "[Instrumental]",
@@ -22,6 +23,7 @@
     },
     {
       "id": "mus_descent",
+      "superseded": "master #161 streams mus_beacon-run; generated file removed from bundle",
       "kind": "music",
       "tags": "dark ambient, cinematic, instrumental, 80 bpm, D minor, slow felt kick pulse like a heartbeat, deep sub drone, sparse glassy kalimba motif with cave reverb, water drips, tense, minimal, no melody lead, seamless loop",
       "lyrics": "[Instrumental]",
@@ -54,6 +56,7 @@
     },
     {
       "id": "mus_escape",
+      "superseded": "master #161 streams mus_beacon-run; generated file removed from bundle",
       "kind": "music",
       "tags": "dark ambient, cinematic, instrumental, epic action chase, 150 bpm, D minor, driving taiko and low tom ostinato in sixteenths, aggressive cello ostinato, brass stabs, rising choir ahs, rumbling sub bass, desperate escape, collapsing cave, seamless loop",
       "lyrics": "[Instrumental]",

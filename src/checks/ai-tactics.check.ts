@@ -38,6 +38,7 @@ function field(): State {
   s.director.spawnT = 1e9
   s.meta.phase = 'descent'
   Object.assign(s, { monsters: [], pickups: [] })
+  s.meta.nextId = 72 // pin the monster id: patrolBrain hashes on it, and startRun's pickup ids moved it with the resin layout
   const w = s.world.w
   s.world.tiles = '.'.repeat(w).repeat(s.world.h)
   s.world.tilesHash = 6201

@@ -74,10 +74,10 @@ export function init(): State {
     rng: { cave: 0, gameplay: 0, cosmetic: 0 },
     ui: {
       cursor: 0, helpPage: 0, toasts: [], storageOk: true, seedInput: '', copied: 0,
-      hover: -1, screenAt: 0, helpFrom: 'title', confirmT: 0, denyT: 0, copyMsg: '',
+      hover: -1, screenAt: 0, settingsFrom: 'title', settingsDrag: -1, helpFrom: 'title', confirmT: 0, denyT: 0, copyMsg: '',
       genPending: '', genAttempt: 0, bestClass: 3,
     },
-    settings: { volume: 0.7, muted: false, lastSeed: '', loaded: false, reducedFlash: false, quality: 'auto', depthClass: 1 },
+    settings: { musicVolume: 0.7, sfxVolume: 0.7, pureDarkness: false, volume: 0.7, muted: false, lastSeed: '', loaded: false, reducedFlash: false, quality: 'auto', depthClass: 1 },
     best: null, result: null,
     debug: { reveal: false, god: false, showPaths: false, freezeAi: false, overlay: false,
       noclip: false, speedMul: 4, freezeTorch: false, infiniteHp: false, noFog: false,
@@ -85,5 +85,6 @@ export function init(): State {
       mapOres: false, mapResin: false, mapPlants: false, mapEntrance: true, mapBeacon: true, mapMode: 'plain',
       commit: '', commitT: 0, aiViz: false, wispViz: false },
     wisp: { on: false, d: 0, p0: -1, ss: -1, ps: -1, path: [], wx: 0, wy: 0, wvx: 0, wvy: 0 },
+    trail: { on: false, t: 0, p0: -1, path: [] },
   }
 }

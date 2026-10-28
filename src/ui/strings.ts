@@ -26,6 +26,12 @@ export const STR = {
   storageOff: 'Saving disabled in this browser',
   paused: 'PAUSED',
   // settings buttons: label text only, caller adds the value
+  back: 'Back',
+  settings: 'Settings',
+  music: 'Music',
+  soundEffects: 'Sound Effects',
+  fogOfWar: 'Fog of war',
+  pureDarkness: 'Pure darkness',
   soundOn: 'Sound: On',
   soundOff: 'Sound: Off',
   flashFull: 'Flashing: Full',
@@ -89,7 +95,7 @@ export const HELP = [
     controls: [
       ['WASD', 'Move / face (arrows also)'], ['Mouse', 'Face while standing'], ['Click', 'Swing / parry'], ['E (hold)', 'Mine / light Beacon'],
       ['1 2 3', 'Pick mineral'], ['F', 'Toss mineral into the flame'], ['G', 'Shake off (plain flame)'],
-      ['Space', 'Roll (escape only)'], ['Esc / P', 'Pause'], ['M', 'Mute'], ['Enter', 'Confirm selected button'],
+      ['Space', 'Roll (escape, dark torch)'], ['Esc / P', 'Pause'], ['M', 'Mute'], ['Enter', 'Confirm selected button'],
     ],
   },
   {
@@ -107,8 +113,8 @@ export const HELP = [
     // flame colours mirror render/flame.ts FLAME_COL core/mantle for the help swatch
     minerals: [
       { name: 'None', core: '#fff4d6', mantle: '#ff8a1e', effect: 'Plain orange flame. G shakes any mineral off.', key: 'G' },
-      { name: 'Sodium', core: '#ffffff', mantle: '#ffe14a', effect: 'Bigger light, burns faster, LURES more shades.', key: '1' },
-      { name: 'Copper', core: '#e8fff9', mantle: '#1fd6b8', effect: 'Normal light. Parries are more forgiving.', key: '2' },
+      { name: 'Sodium', core: '#ffffff', mantle: '#ffe14a', effect: 'Bigger light, burns faster, LURES more shades. Parries are more forgiving.', key: '1' },
+      { name: 'Copper', core: '#e8fff9', mantle: '#1fd6b8', effect: 'Normal light. Faint sparks lead toward the Beacon.', key: '2' },
       { name: 'Strontium', core: '#ffe0e0', mantle: '#e0182d', effect: 'Small dim light. FEWER shades notice you.', key: '3' },
     ],
     tips: [

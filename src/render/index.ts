@@ -9,6 +9,7 @@ import { drawHud } from '../ui/hud.ts'
 import { drawScreen } from '../ui/menus.ts'
 import { actorRows, drawRowEntities } from './entities.ts'
 import { drawEyes, drawGlow } from './glow.ts'
+import { drawStrikeLines } from './telegraph.ts'
 import { drawDarkness } from './light.ts'
 import { memoryCanvas } from './memory.ts'
 import { drawPuddles } from './puddles.ts'
@@ -21,6 +22,7 @@ import { drawMist } from './mist.ts'
 import { drawPixelFire } from './pixel-fire.ts'
 import { vineSites } from './vine-sites.ts'
 import { drawEscapeWisp } from './wisp.ts'
+import { drawCopperTrail } from './copper-trail.ts'
 import { drawOreEmission } from './ore-emission.ts'
 import { drawZonePalette } from './zone-palette.ts'
 import { drawBeaconMode, drawFlashes, drawVignettes } from './overlay.ts'
@@ -38,7 +40,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   frameBegin() // pass 0
   const sc = s.meta.screen
   // Pass 1: title and help draw their own backdrop. An empty world (title, generation pending) has nothing for the world passes.
-  if (sc === 'title' || sc === 'help' || s.world.tiles === '') {
+  if (sc === 'title' || sc === 'help' || sc === 'settings' || s.world.tiles === '') {
     drawScreen(ctx, s, w, h)
     return
   }
@@ -59,6 +61,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   drawFallbackDressing(ctx, s, v)
   drawQuakeScars(ctx, s, v)
   passMark('tiles')
+  drawStrikeLines(ctx, s, v) // pass 6b: windup ground line under the actors
   actorRows(s, v) // buckets monsters, player, pickups, landmarks, landed rocks and non-south veins by foot row (R-180)
   for (let ty = v.ty0; ty <= v.ty1; ty++) { // pass 5b with 7-11: one wall row, then the actors whose foot row is ty
     drawWallRow(ctx, s, v, ty)
@@ -85,6 +88,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
   drawParticles(ctx, s, v, 'add') // pass 18: sparks above the darkness
   drawPixelFire(ctx, s, v)
   drawEscapeWisp(ctx, s, v)
+  drawCopperTrail(ctx, s, v)
   ctx.globalCompositeOperation = 'source-over'
   ctx.globalAlpha = 1
   passMark('glow')
