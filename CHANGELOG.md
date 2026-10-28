@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Automated audio checks closing the #101-#103 acceptance gaps: `src/checks/audio-fake.ts` (a recording fake `AudioContext`), `audio-engine.check.ts` (24-voice pool, priority stealing, 30 ms retrigger guard, mixer constants), `audio-wiring.check.ts` (all 28 `FxEventKind` mapped, the null set, sound ids exist, ducking/danger/music ranges), `audio-recipes.check.ts` (every synth recipe renders without throwing, node-count caps, static peak/level spread).
+- 14 AI-generated audio samples (7 SFX, 2 music stingers, cave ambience, 4 music tracks) in `src/assets/audio/`, and ComfyUI pipeline additions (`gen-audio` trim/peakDb/loopFade options, loop-seam nodes in the graph).
+
+### Changed
+- Master compressor threshold -18 -> -14 dB and attack 5 -> 15 ms (fewer click artefacts); heartbeat voice cap 1 -> 2.
+- Ducking now merges per cause: the deepest cause wins and the release comes from the last cause.
+- The assets check now asserts a sound is pending exactly when its `.ogg` or `.mp3` file is missing (`PENDING_AUDIO` is now empty).
+- `mus_descent` and `mus_descent-danger` loop is 30 s (was a 72 s placeholder); `mus_title` loop 32.73 s.
+
+### Fixed
+- `danger()` could return NaN when `energyMax <= 0`.
+- The music stinger gain node was never disconnected after the stinger ended (node leak).
+
+### Added
 - Dev panel: 'AI behaviors' overlay (awareness rings, view and hearing ranges, detection meter, patrol, retreat and stalker-latch markers, near-spawn ring, flow window) and 'Wisp guide' overlay (route, seek target, lead/leash/reseed rings, velocity). Both toggles are on the Enemies tab and exist only in dev builds or with `?debug=1`.
 - #97: updated cave atlas with non-blocking mushrooms, roots, ferns, stalagmites, leaves, branches, gravel and wall dressing; ten muddy puddle variants reflect nearby sprites and ripple when walked through.
 - Glowing vines on cave walls and on the floor beside them near the cave start. They give off a soft pulsing green light and fade out with depth, so the deeper cave has none.
