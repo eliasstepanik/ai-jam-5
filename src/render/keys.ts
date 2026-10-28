@@ -40,3 +40,17 @@ export const chunkKey = (cx: number, cy: number): number => cx + cy * CHUNKS_W
 
 // h = 16-way floor hash, floor(hash2(tx, ty, seed) * 16) in 0..15. 0-9 -> 0, 10-12 -> 1, 13-14 -> 2, 15 -> 3 (render-2 §2.1).
 export const variantOf = (h: number): number => (h < 10 ? 0 : h < 13 ? 1 : h < 15 ? 2 : 3)
+
+// Torch fade for the vine glow and the darkness carve (vine-glow.ts, light.ts stampVines): 1 within TF_FULL * R of the player,
+// smoothstep down to RESIDUAL at TF_FAR * R, flat RESIDUAL beyond (far vines stay faintly findable as navigation hints,
+// design-render §4). Monotonic non-increasing, clamped to [RESIDUAL, 1], safe for R <= 0 (returns RESIDUAL). R is flameRadius(s)
+// in world px. Lives here (pure, DOM-free, check-reachable): vine-sites.ts cannot be imported by light.ts - the check runner
+// reaches light.ts through render/draft.ts, and vine-sites -> cave-details -> tileset.ts is a bare JSON import node cannot load.
+const TF_FULL = 0.6, TF_FAR = 1.15, TF_RESIDUAL = 0.12
+export function torchFade(dist: number, R: number): number {
+  if (!(R > 0) || !(dist >= 0)) return TF_RESIDUAL // R <= 0, NaN (either arg): residual, never a divide by zero, never NaN out
+  if (dist <= TF_FULL * R) return 1
+  if (dist >= TF_FAR * R) return TF_RESIDUAL
+  const u = (dist - TF_FULL * R) / ((TF_FAR - TF_FULL) * R)
+  return 1 - (1 - TF_RESIDUAL) * u * u * (3 - 2 * u)
+}
