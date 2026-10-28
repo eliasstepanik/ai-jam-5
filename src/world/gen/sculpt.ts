@@ -9,21 +9,27 @@ import { bfs4 } from '../bfs.ts'
 export const EXCL_D0 = 40 // nothing is touched near floor closer than this to the entrance (r4 ring, T1-T4 teach windows, r10 safe start)
 export const EXCL_PAD = 2 // Chebyshev padding around those floor tiles, so a changed tile never sits next to a protected one
 export const MARGIN = 3 // untouched map-edge band (validate r2 wants an all-wall border)
-export const CAVERN_MAX = 8, PILLAR_MAX = 40, ALCOVE_MAX = 14
+export const CAVERN_MAX = 8, PILLAR_MAX = 40, ALCOVE_MAX = 10
 export const BLOCK = 15 // one cavern candidate per BLOCK x BLOCK block
 export const CAVERN_BASE = 0.5
 // ponytail: accept = CAVERN_BASE + CAVERN_RATE * depth share. Tuned over the 62 cave.check.ts SEEDS (G7t): BASE 0.5 / RATE 0.3 / BLOCK 15 give ~7.9 caverns per cave
 // (min 6), because the no-shortcut rule only passes on near-linear floor, so most candidates are rejected, not carved. The rules stay; raise BASE/RATE or lower BLOCK for more
-// (8 = cap), lower them if cave.check.ts:126 (attempt-0 accept >= 50/62) or the 0.92 beaconDist ratio ever fails.
+// (8 = cap), lower them if cave.check.ts:126 (attempt-0 accept >= 50/62) or the 0.92 beaconDist ratio ever fails. BASE 0.5 (design 0.15) / RATE 0.3 (design 0.35) /
+// BLOCK 15 (design 20) also differ from the design: with the design values the no-shortcut rule left too few caverns. BLOCK is fixture-sensitive, do not change it.
+// ponytail: alcove constants differ from KB cave-overhaul-design-gen section 1 (q 0.25..0.8 kept; rate 0.012, cap 14) in two places, both tuned over the same 62 SEEDS:
+// ALCOVE_RATE 0.06 (design 0.012): the design rate was never measured against the real wd == 1 + single-wall-side + abort rules, which reject most candidates; 0.012 gives
+// ~2 alcoves, 0.06 gives mean 9.7 (min 7, max 10). ALCOVE_MAX 10 (design 14): the cap, not the rate, bounds sculpt-added floor to <= 2.52 % (14 gave 2.9 %).
+// Measured max alcove tip / M0 = 0.819, so the r5 bound 0.8 * M0 + 12 stays well under the A4 0.92 * M0 floor.
 export const CAVERN_RATE = 0.3
 export const RIM_KEEP = 0.6 // chance an outer-ring cavern tile is carved (organic edge instead of a disc)
 export const PILLAR_RATE = 0.004, PILLAR_Q_MIN = 0.35, PILLAR_WD_MIN = 4
-export const ALCOVE_RATE = 0.035, ALCOVE_Q_MIN = 0.2, ALCOVE_Q_MAX = 0.9
+export const ALCOVE_RATE = 0.06, ALCOVE_Q_MIN = 0.25, ALCOVE_Q_MAX = 0.8
 export const ALCOVE_LEN_MIN = 6, ALCOVE_LEN_SPAN = 5, ALCOVE_BULB_R = 2
 // Per-feature offsets added to the caller's salt so the four hash gates are independent streams (no RNG involved).
 const K_ACCEPT = 1, K_RIM = 2, K_PILLAR = 3, K_ALCOVE = 4, K_LEN = 5
 
-export type SculptStats = { caverns: number; pillars: number; alcoves: number }
+// alcoveTiles: tile indices (y * w + x, ascending, no duplicates) of every floor tile the alcove pass carved (tunnels and bulbs).
+export type SculptStats = { caverns: number; pillars: number; alcoves: number; alcoveTiles: readonly number[] }
 
 // 4-neighbour distance to the nearest wall (wall = 0, floor >= 1); the grid edge is not a wall (the generator border already is).
 function wallDist(g: Uint8Array, w: number, h: number): Int32Array {
@@ -79,6 +85,7 @@ function caverns(g: Uint8Array, w: number, h: number, d0: Int32Array, M0: number
         if (x < 0 || y < 0 || x >= w || y >= h) { if (inDisc(dx, dy, r)) { ok = false; break } else continue }
         const i = y * w + x
         if (inDisc(dx, dy, r) && prot[i]) { ok = false; break }
+        if (cav[i]) { ok = false; break } // an earlier cavern tile (d0 = -1 there) would hide its depth from lo/hi: discs never overlap or touch
         if (d0[i] >= 0) { if (d0[i] < lo) lo = d0[i]; if (d0[i] > hi) hi = d0[i] }
       }
       if (!ok || hi - lo > 2 * r + 2) continue
@@ -163,7 +170,7 @@ function alcoves(g: Uint8Array, w: number, h: number, d0: Int32Array, M0: number
 }
 
 export function sculpt(g: Uint8Array, w: number, h: number, entrance: number, salt: number): SculptStats {
-  const stats: SculptStats = { caverns: 0, pillars: 0, alcoves: 0 }
+  const stats: SculptStats = { caverns: 0, pillars: 0, alcoves: 0, alcoveTiles: [] }
   const d0 = bfs4(g, w, h, entrance)
   let M0 = 0
   for (let i = 0; i < d0.length; i++) if (d0[i] > M0) M0 = d0[i]
@@ -172,6 +179,10 @@ export function sculpt(g: Uint8Array, w: number, h: number, entrance: number, sa
   stats.caverns = caverns(g, w, h, d0, M0, prot, salt, cav)
   const d1 = bfs4(g, w, h, entrance) // caverns add floor: reachable distances for the depth shares of pillars and alcoves
   stats.pillars = pillars(g, w, h, d1, M0, prot, salt, cav)
+  const before = g.slice() // alcoves are the only pass after this point that turns wall into floor, so the diff is exactly their tiles
   stats.alcoves = alcoves(g, w, h, d1, M0, prot, salt)
+  const tiles: number[] = []
+  for (let i = 0; i < g.length; i++) if (before[i] && !g[i]) tiles.push(i)
+  stats.alcoveTiles = tiles
   return stats
 }
