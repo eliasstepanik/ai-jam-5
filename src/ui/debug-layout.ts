@@ -34,6 +34,8 @@ export function debugLayout(s: State, w: number, h: number, open: boolean, tab: 
   } else if (tab === 1) {
     for (let i = 0; i < 3; i++) add((['lurker', 'stalker', 'devourer'] as const)[i], ['+ Lurker', '+ Stalker', '+ Devourer'][i], 72, x + i * (third + 6), third, active)
     add('forceLeap', 'Force nearest enemy leap', 174, x, width, active)
+    add('aiViz', 'AI behaviors', 208, x, half, true, s.debug.aiViz)
+    add('wispViz', 'Wisp guide', 208, x + half + 6, half, true, s.debug.wispViz)
     add('freezeAi', 'Freeze enemy AI', 106, x, width, true, s.debug.freezeAi)
     add('showPaths', 'AI diagnostics', 280, x, width, true, s.debug.showPaths)
     add('animations', 'Animation labels (all actors)', 140, x, width, true, s.debug.animations)
