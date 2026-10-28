@@ -38,6 +38,7 @@ export type State = {
   result: RunResult | null // set when a run ends
   debug: Debug
   wisp: { on: boolean; d: number; p0: number; ss: number; ps: number; path: number[]; wx: number; wy: number; wvx: number; wvy: number } // escape guide orb (systems/escape-wisp.ts): d lead px, p0 player tile, ss/ps rock sigs, path tile ids, wx/wy world pos, wvx/wvy px/s
+  trail: { on: boolean; t: number; p0: number; path: number[] } // copper flame trail to the Beacon (systems/copper-trail.ts): t anim s, p0 player tile, path tile ids
 }
 
 export type Meta = {

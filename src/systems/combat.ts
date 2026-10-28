@@ -125,7 +125,7 @@ export function damagePlayer(s: State, m: Monster): void {
   const p = s.player
   const descent = s.meta.phase === 'descent'
   if (s.debug.god) return toRecover(s, m) // 1
-  if (!descent && p.roll.invuln > 0) { // 2: dodge; i-frames protect against bites only
+  if ((!descent || p.energy <= 0) && p.roll.invuln > 0) { // 2: dodge; i-frames protect against bites only (descent: dead torch only)
     emit(s, 'dodge', p.x, p.y)
     return toRecover(s, m)
   }

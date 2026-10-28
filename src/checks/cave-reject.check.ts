@@ -96,17 +96,21 @@ function classBand(): void {
   ok(validateCave(a690).ok, 'rule 5: non-fallback beaconDist 690 (real geometry) is accepted')
 }
 
-// Rule 14b: E4 >= 1.163 * (bd / 4) + minStartE + MARGIN (CG4 §5). Drop zone-4 smalls outside the cluster and outside the last 60 path tiles (so E60,
-// hence 14a, is unchanged), one by one, over the 62 seeds. E4 moves in steps of 25, so the coefficient is pinned only by caves whose E4 lands within 3.6 %
-// of the bound: E4 in [bound, bound + 0.036 bd / 4) must be accepted, E4 in [bound - 0.036 bd / 4, bound) must be rejected as winnable.
+// Rule 14b: E4 >= 1.163 * (bd / 4) + minStartE + MARGIN (CG4 §5). Drop zone-4 resin outside the cluster and outside the last 60 path tiles (so E60,
+// hence 14a, is unchanged), one by one, over the 62 seeds. E4 moves in steps of 25 (50 per large), so the coefficient is pinned only by caves whose E4 lands
+// within 3.6 % of the bound: E4 in [bound, bound + 0.036 bd / 4) must be accepted, E4 in [bound - 0.036 bd / 4, bound) must be rejected as winnable.
+// playtest-tuning-1 §3: zone 4 now holds ~400 E against a ~220 E bound, so smalls alone cannot reach the bound; larges are dropped too (smalls first,
+// then larges first), keeping >= 4 large resin so that rule 11 stays quiet.
 function zone4Resin(): void {
   let accepted = 0, rejected = 0
   for (const s of SEEDS) {
     const r = caveOf(s), I = info(r), bound = 1.163 * (I.bd / 4) + NEED, w = 0.036 * (I.bd / 4)
-    const drop = r.pickups.map((p, k) => ({ p, k })).filter(({ p, k }) => k >= 3 && p.kind === 'resin' && p.size === 'small' && zoneIn(I, tileOf(p)) === 4 && I.d[tileOf(p)] < I.bd - 60)
-    for (let n = 0; n <= drop.length; n++) {
+    const cand = r.pickups.map((p, k) => ({ p, k })).filter(({ p, k }) => k >= 3 && p.kind === 'resin' && zoneIn(I, tileOf(p)) === 4 && I.d[tileOf(p)] < I.bd - 60)
+    const smalls = cand.filter(({ p }) => p.size === 'small'), larges = cand.filter(({ p }) => p.size === 'large')
+    for (const drop of [[...smalls, ...larges], [...larges, ...smalls]]) for (let n = 0; n <= drop.length; n++) {
       const v = copy(r), gone = new Set(drop.slice(0, n).map((d) => d.k))
       v.pickups = v.pickups.filter((_, k) => !gone.has(k))
+      if (v.pickups.filter((p) => p.size === 'large').length < 4) continue
       const e4 = v.pickups.filter((p) => p.kind === 'resin' && zoneIn(I, tileOf(p)) === 4).reduce((a, p) => a + restore(p), 0)
       if (e4 >= bound && e4 < bound + w) { accepted++; ok(validateCave(v).ok, `rule 14b seed ${s}: E4 ${e4} >= ${bound.toFixed(2)} is accepted`) }
       if (e4 < bound && e4 >= bound - w) { rejected++; ok(why(v) === 'winnable', `rule 14b seed ${s}: E4 ${e4} < ${bound.toFixed(2)} is rejected as winnable (${why(v)})`) }
@@ -167,13 +171,16 @@ const keep = (r: CaveResult, drop: Set<number>): CaveResult => { const v = copy(
 // The dropped pickups sit in zones 1-3 outside the cluster, T1 and the last 60 path tiles, so rule 11 is the only rule that can fire.
 function countBounds(): void {
   const r = caveOf(1), I = info(r), nResin = r.pickups.filter((p) => p.kind === 'resin').length
-  const bigs = r.pickups.map((p, k) => ({ p, k })).filter(({ p, k }) => k >= 3 && p.kind === 'resin' && p.size === 'large' && zoneIn(I, tileOf(p)) !== 4).map(({ k }) => k)
-  ok(bigs.length === 3 && r.pickups.filter((p) => p.size === 'large').length === 6, 'rule 11: seed 1 has 3 droppable large resin outside zone 4 (6 large in total)')
-  const four = keep(r, new Set(bigs.slice(0, 2))), three = keep(r, new Set(bigs))
+  const bigOf = (z4: boolean): number[] => r.pickups.map((p, k) => ({ p, k })).filter(({ p, k }) => k >= 3 && p.kind === 'resin' && p.size === 'large' && (zoneIn(I, tileOf(p)) === 4) === z4).map(({ k }) => k)
+  const bigs = bigOf(false), bigs4 = bigOf(true)
+  // playtest-tuning-1 §3: seed 1 now has 8 large resin (4 droppable outside zone 4, 3 in zone 4, 1 cluster), so the 3-large control also drops one zone-4 large;
+  // rule 11 is checked before any energy rule, so it is still the rule that fires.
+  ok(bigs.length === 4 && bigs4.length >= 1 && r.pickups.filter((p) => p.size === 'large').length === 8, 'rule 11: seed 1 has 4 droppable large resin outside zone 4 and >= 1 in zone 4 (8 large in total)')
+  const four = keep(r, new Set(bigs)), three = keep(r, new Set([...bigs, bigs4[0]]))
   ok(four.pickups.filter((p) => p.size === 'large').length === 4 && validateCave(four).ok, 'rule 11: exactly 4 large resin (the spec minimum) are accepted')
   ok(three.pickups.filter((p) => p.size === 'large').length === 3 && why(three) === 'r11 counts', 'rule 11: 3 large resin (< 4) are rejected as r11 counts')
   const sm = spare(r)
-  ok(nResin === 33 && sm.length >= 10, 'rule 11: seed 1 has 33 resin and >= 10 spare small resin')
+  ok(nResin === 34 && sm.length >= 10, 'rule 11: seed 1 has 34 resin and >= 10 spare small resin')
   const n24 = keep(r, new Set(sm.slice(0, nResin - 24))), n23 = keep(r, new Set(sm.slice(0, nResin - 23)))
   ok(n24.pickups.filter((p) => p.kind === 'resin').length === 24 && validateCave(n24).ok, 'rule 11: exactly 24 resin (the spec minimum) are accepted')
   ok(n23.pickups.filter((p) => p.kind === 'resin').length === 23 && why(n23) === 'r11 counts', 'rule 11: 23 resin (< 24) are rejected as r11 counts')

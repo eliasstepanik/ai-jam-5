@@ -15,6 +15,7 @@ import type { View } from './view.ts'
 import { charFrame, animLen, drawAtlas } from './charatlas.ts'
 import { propActors, drawProp } from './props.ts'
 import { ctx2d, newCanvas } from './light.ts'
+import { windupK } from './telegraph.ts'
 import { directionOf, drawPlayerBody, fitFrame, frameAt, snap } from './entities-player.ts'
 
 export { torchTip } from './entities-player.ts'
@@ -26,6 +27,8 @@ const MON_MOVE_SPEED = 5 // render-2 §3.2: faces its velocity above this speed 
 const IDLE_PHASE_MS = 370 // render-2 §3.2: loop offset per monster id
 const DEATH_FADE_FRAMES = 3 // assets-sprites §5: eyes fade out over the first 3 death frames
 const EYE_IDLE_A = 0.55 // render-3 §1 eye halo alpha (idle), telegraph is 1
+const POSE_RECOIL_PX = 4 // windup pose: recoil away from the player at k = 1
+const POSE_STRETCH = 0.12 // windup pose: scale (1 + 0.12k, 1 - 0.12k) in lunge-direction space
 
 // Cull on [x0 - 48, x1 + 48] x [y0 - 48, y1 + 48]; view.ts inView has no entity margin and is left as is.
 export const entityInView = (v: View, x: number, y: number): boolean =>
@@ -61,10 +64,26 @@ export function monsterFrame(s: State, m: Monster): [string, number] {
 }
 
 
+// Windup pose around the sprite centre (cx, cy): recoil 4 px away from the player and squash 12 % across the lunge axis.
+// Leaves ctx transformed; callers save/restore. ponytail: one pose for all kinds, no extra atlas frame; upgrade: authored windup frames.
+export function applyWindupPose(ctx: CanvasRenderingContext2D, m: Monster, cx: number, cy: number, k: number): void {
+  const c = Math.cos(m.lungeDir), n = Math.sin(m.lungeDir)
+  ctx.translate(cx - POSE_RECOIL_PX * k * c, cy - POSE_RECOIL_PX * k * n)
+  ctx.rotate(m.lungeDir)
+  ctx.scale(1 + POSE_STRETCH * k, 1 - POSE_STRETCH * k)
+  ctx.rotate(-m.lungeDir)
+  ctx.translate(-cx, -cy)
+}
+
 function drawMonster(ctx: CanvasRenderingContext2D, s: State, v: View, m: Monster): void {
   if (!entityInView(v, m.x, m.y)) return
-  const [anim, frame] = monsterFrame(s, m)
-  drawAtlas(ctx, charFrame(m.kind, anim, dirIndex(monsterDirection(s, m)), frame), snap(m.x, v.z) - PIVOT, snap(m.y - MON_FOOT[m.kind], v.z) - PIVOT)
+  const [anim, frame] = monsterFrame(s, m), f = charFrame(m.kind, anim, dirIndex(monsterDirection(s, m)), frame)
+  const x = snap(m.x, v.z) - PIVOT, y = snap(m.y - MON_FOOT[m.kind], v.z) - PIVOT, k = windupK(m)
+  if (k <= 0) { drawAtlas(ctx, f, x, y); return }
+  ctx.save()
+  applyWindupPose(ctx, m, x + PIVOT, y + PIVOT, k)
+  drawAtlas(ctx, f, x, y)
+  ctx.restore()
 }
 
 export const eyeAnim = (m: Monster): 'idle' | 'telegraph' => (m.ai === 'windup' || m.ai === 'lunge' ? 'telegraph' : 'idle')

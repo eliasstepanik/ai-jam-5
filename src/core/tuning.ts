@@ -29,11 +29,11 @@ export const T = {
         core: '#fff4d6', mantle: '#ff8a1e', deep: '#c2410c', spark: '#5ab0ff',
       },
       sodium: {
-        radiusMul: 1.3, burnMul: 1.5, attractMul: 1.6, perfectMul: 1.0, lossMul: 1.0, flickerMul: 1.2,
+        radiusMul: 1.5, burnMul: 2.0, attractMul: 1.6, perfectMul: 1.6, lossMul: 0.6, flickerMul: 1.2,
         core: '#ffffff', mantle: '#ffe14a', deep: '#f5b700', spark: '#6a5cff',
       },
       copper: {
-        radiusMul: 1.0, burnMul: 1.0, attractMul: 1.0, perfectMul: 1.6, lossMul: 0.6, flickerMul: 0.8,
+        radiusMul: 1.0, burnMul: 1.0, attractMul: 1.0, perfectMul: 1.0, lossMul: 1.0, flickerMul: 0.8,
         core: '#e8fff9', mantle: '#1fd6b8', deep: '#0e8f9c', spark: '#ff5c7a',
       },
       strontium: {
@@ -57,6 +57,7 @@ export const T = {
       ringFactor: 1.0, ringMarginPx: 14, orbitRadS: 0.35,
       driftAmpPx: 12, driftHz: 0.25,
       lungeChancePerS: [0.03, 0.04, 0.05, 0.06],
+      patienceS: [6.0, 5.5, 5.0, 4.5], // s eligible before a forced windup; 0 = kind not spawned in that zone
       telegraphS: 0.55, beats: 1, lungeRangePx: 260, contactS: 0.2,
       biteSlackPx: 4, lungeOverrunS: 0.25,
       recoverS: 0.8, lungeCdS: [3, 5], lungeCdStartS: [2, 4],
@@ -69,6 +70,7 @@ export const T = {
       ringFactor: 1.1, ringMarginPx: 20, orbitRadS: 0.6,
       driftAmpPx: 10, driftHz: 0.2,
       lungeChancePerS: [0, 0.5, 0.6, 0.7],
+      patienceS: [0, 4.0, 3.5, 3.0], // counts only while the behind gate holds
       telegraphS: 0.55, beats: 1, lungeRangePx: 280, contactS: 0.24,
       biteSlackPx: 4, lungeOverrunS: 0.3,
       recoverS: 1.2, lungeCdS: [2.5, 4], lungeCdStartS: [3, 5],
@@ -81,6 +83,7 @@ export const T = {
       ringFactor: 0.85, ringMarginPx: 30, orbitRadS: 0.15,
       driftAmpPx: 6, driftHz: 0.1,
       lungeChancePerS: [0, 0, 0.25, 0.3],
+      patienceS: [0, 0, 5.0, 4.5],
       telegraphS: 0.8, beats: 2, lungeRangePx: 150, contactS: 0.3,
       biteSlackPx: 6, lungeOverrunS: 0.3,
       recoverS: 1.5, lungeCdS: [4, 6], lungeCdStartS: [3, 5],
@@ -110,6 +113,8 @@ export const T = {
     viewRange: 260, // px, sight range (> max ring)
     viewHalfAngle: 1.2, // rad, sight cone half angle (~69 deg)
     noticeT: 0.6, // s, detection fill time
+    noticeLitMarginPx: 80, // px, lit player noticed within lightRadius + this (line of sight, cone ignored)
+    suspectMaxS: 2.0, // s, max time suspicious before hunting
     hearRadius: 90, // px, hearing radius
     hearSpeed: 60, // px/s, player speed needed to be heard
     loseT: 1.0, // s, hunting without sensing before searching
@@ -125,18 +130,19 @@ export const T = {
     flowStuckT: 0.25, // s, stuck time before flow-field fallback (< stuckNudgeS)
   },
   escape: {
-    sprintMul: 2.0, accelPxS2: 1800, maxAlive: 8, spawnIntervalS: 1.2, // maxAlive/interval FINAL (economy-3 §2.1)
+    sprintMul: 2.0, accelPxS2: 1800, maxAlive: 10, spawnIntervalS: 0.9, // playtest-tuning-1 §4 (supersedes economy-3 §2.1)
     spawnGapPx: [220, 340], despawnPx: 700,
-    rockWarnS: 1.0, rocksMax: 200, firstRockS: 1.5, firstSpawnS: 1.0, // rocksMax 200: economy-3 §3; firstSpawnS: R-147
+    spawnAheadTiles: [8, 14], spawnAheadP: 0.75, // playtest-tuning-1 §4: 75% of escape spawns block the exit route 8-14 tiles ahead
+    rockWarnS: 0.9, rocksMax: 260, firstRockS: 1.5, firstSpawnS: 1.0, // rocksMax 260: playtest-tuning-1 §4 (supersedes economy-3 §3); firstSpawnS: R-147
     quakeShakePx: 2, winRadiusTiles: 1,
     frictionMul: 2, attackSlots: 3, chaseMul: 1.3, interceptS: 0.3, recoverS: 0.4, // R-074
   },
   rocks: {
-    rateStart: 0.6, rateEnd: 1.6, rampS: 80, minIntervalS: 0.4, retryS: 0.25, // rampS 80: economy-3 §3
-    pendingMax: 4, p2Start: 0.15, p2End: 0.4, damageHp: 1,
-    lookahead: 28, routeModeP: 0.75, lateralTiles: 2, exitClearTiles: 5,
+    rateStart: 1.0, rateEnd: 2.4, rampS: 60, minIntervalS: 0.3, retryS: 0.25, // playtest-tuning-1 §4 (supersedes economy-3 §3)
+    pendingMax: 6, p2Start: 0.25, p2End: 0.5, damageHp: 1,
+    lookahead: 36, routeModeP: 0.9, lateralTiles: 1, exitClearTiles: 5,
     beaconClearTiles: 6, playerGapPx: 16, detourMaxTiles: 12, detourMaxFrac: 0.5,
-    bfsTestsMax: 3,
+    bfsTestsMax: 5,
   },
   hud: { exitLookTiles: 4 }, // R-061
   cave: { pocketDepth: 10, fallbackPocketDepth: 5 }, // R-163

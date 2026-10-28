@@ -85,5 +85,6 @@ export function init(): State {
       mapOres: false, mapResin: false, mapPlants: false, mapEntrance: true, mapBeacon: true, mapMode: 'plain',
       commit: '', commitT: 0, aiViz: false, wispViz: false },
     wisp: { on: false, d: 0, p0: -1, ss: -1, ps: -1, path: [], wx: 0, wy: 0, wvx: 0, wvy: 0 },
+    trail: { on: false, t: 0, p0: -1, path: [] },
   }
 }

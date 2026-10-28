@@ -7,11 +7,14 @@ import type { Monster, State } from '../core/types.ts'
 import { init } from '../core/state.ts'
 import { parseSeed } from '../core/seed.ts'
 import { T } from '../core/tuning.ts'
-import { clearCaches } from '../world/caches.ts'
+import { clearCaches, getExitDist } from '../world/caches.ts'
+import { downhill } from '../world/route.ts'
+import { idx, tileToWorld, worldToTile } from '../world/grid.ts'
 import { spawnMonster } from '../entities/monster.ts'
 import { commitRock } from '../systems/rocks.ts'
 import { startRun } from '../systems/run.ts'
 import { lightRadius } from '../systems/light.ts'
+import { findSpawn } from '../systems/director.ts'
 import { step } from '../systems/step.ts'
 import { caveOf } from './caves.ts'
 
@@ -133,8 +136,17 @@ function win(): void {
   ok(d.meta.screen === 'playing', 'descent on the exit tile: no win')
 }
 
+// Exit route ahead of the player (tiles 0..14), and "point lies within one tile of route tile 8..14" (the ahead spawn window).
+function aheadRoute(s: State): number[] {
+  return downhill(s, getExitDist(s), idx(s, worldToTile(s.player.x), worldToTile(s.player.y)), T.escape.spawnAheadTiles[1] + 1)
+}
+function onAhead(s: State, route: number[], x: number, y: number): boolean {
+  const tx = worldToTile(x), ty = worldToTile(y), w = s.world.w
+  return route.some((i, j) => j >= T.escape.spawnAheadTiles[0] && Math.max(Math.abs(i % w - tx), Math.abs(Math.floor(i / w) - ty)) <= 1)
+}
+
 function director(): void {
-  // Escape: first spawn at once, then every 72 steps (1.2 s), alive never above 8, ring 220..340 px, no lightRadius term.
+  // Escape: first spawn at once, then every 54 steps (0.9 s, playtest-tuning-1 §4), alive never above 10, >= 220 px (ring 220..340 or ahead on the exit route), no lightRadius term.
   {
     const s = arena()
     s.debug.freezeAi = true
@@ -143,17 +155,48 @@ function director(): void {
     s.director.spawnT = 0
     const at: number[] = []
     let max = 0
-    for (let k = 1; k <= 12 * 72; k++) {
+    for (let k = 1; k <= 14 * 54; k++) {
       const n = s.monsters.length
       step(s, inp(), DT)
       if (s.monsters.length > n) at.push(k)
       max = Math.max(max, s.monsters.length)
     }
-    ok(at[0] === 1 && at.slice(1).every((v, i) => v - at[i] === 72), 'escape spawns every 72 steps (got ' + at.slice(0, 5).join(',') + ')')
-    ok(max === T.escape.maxAlive && s.monsters.length === 8, 'escape cap 8 reached and kept (max ' + max + ')')
+    ok(at[0] === 1 && at.slice(1).every((v, i) => v - at[i] === 54), 'escape spawns every 54 steps (got ' + at.slice(0, 5).join(',') + ')')
+    ok(max === T.escape.maxAlive && s.monsters.length === 10, 'escape cap 10 reached and kept (max ' + max + ')')
+    const route = aheadRoute(s)
     for (const m of s.monsters) {
       const d = Math.hypot(m.x - s.player.x, m.y - s.player.y)
-      ok(d >= T.escape.spawnGapPx[0] - 1e-6 && d <= T.escape.spawnGapPx[1] + 1e-6, 'spawn ring 220..340 px (got ' + d.toFixed(1) + ')')
+      const reach = (T.escape.spawnAheadTiles[1] + 1) * TILE // farthest ahead spot: route tile 14 plus one tile of lateral offset
+      ok(d >= T.escape.spawnGapPx[0] - 1e-6 && d <= reach, 'spawn at 220 px or more, within the ahead reach (got ' + d.toFixed(1) + ')')
+      ok(d <= T.escape.spawnGapPx[1] + 1e-6 || onAhead(s, route, m.x, m.y), 'beyond the 340 px ring only when ahead on the exit route (got ' + d.toFixed(1) + ')')
+    }
+  }
+  // 200 findSpawn calls: at least 70% of escape spawns lie ahead on the exit route (playtest-tuning-1 §4), all at >= 220 px. Open
+  // arena plus a real cave (the player placed on a far-from-exit floor tile), so twisty routes are covered too.
+  {
+    const cave = arena()
+    startRun(cave, '1', caveOf(parseSeed('1')))
+    cave.settings.loaded = true
+    cave.meta.phase = 'escape'
+    const E = getExitDist(cave)
+    let far = -1
+    for (let i = 0; i < E.length; i++) if (E[i] > 40 && (far < 0 || E[i] > E[far])) far = i
+    ok(far >= 0, 'cave fixture has a floor tile 40+ tiles from the exit')
+    cave.player.x = tileToWorld(far % cave.world.w)
+    cave.player.y = tileToWorld(Math.floor(far / cave.world.w))
+    for (const [name, s] of [['arena', arena()], ['cave', cave]] as const) {
+      const route = aheadRoute(s)
+      let ahead = 0, spawned = 0
+      for (let k = 0; k < 200; k++) {
+        const pt = findSpawn(s, 'lurker')
+        if (!pt) continue
+        spawned++
+        ok(Math.hypot(pt.x - s.player.x, pt.y - s.player.y) >= T.escape.spawnGapPx[0] - 1e-6, name + ': spawn at 220 px or more')
+        if (onAhead(s, route, pt.x, pt.y)) ahead++
+      }
+      ok(spawned >= 190, name + ': findSpawn found a spot nearly every call (' + spawned + '/200)')
+      ok(ahead >= 0.7 * 200, name + ': >= 70% of 200 escape spawns lie ahead on the exit route (got ' + ahead + ')')
+      ok(ahead < spawned, name + ': the behind/ring share still exists (' + ahead + ' of ' + spawned + ' ahead)')
     }
   }
   // At most one devourer: with one alive the pick weight is 0, over many spawn attempts.

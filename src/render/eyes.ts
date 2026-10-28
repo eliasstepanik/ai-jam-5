@@ -4,10 +4,13 @@ import { getResources } from '../assets/resources.ts'
 import { charFrame } from './charatlas.ts'
 import { dirIndex } from '../core/grid.ts'
 import { MON_FOOT, monsterDirection, monsterFrame } from './entities.ts'
+import { eyeFlash } from './telegraph.ts'
 import { snap } from './entities-player.ts'
 import { eraseForeground } from './foreground-walls.ts'
 import { ctx2d, newCanvas } from './light.ts'
 import type { View } from './view.ts'
+
+const REDUCED_FLASH = 0.3 // settings.reducedFlash scales every flash layer (same constant as glow.ts)
 
 function atlasMask(s: State, m: Monster, eyes: boolean): HTMLCanvasElement | null {
   const res = getResources(), sheet = res.images.sheets[1]
@@ -46,10 +49,24 @@ export function drawAtlasEyes(ctx: CanvasRenderingContext2D, s: State, m: Monste
   g.drawImage(grey, 0, 0)
   g.globalAlpha = alpha
   g.drawImage(eyes, 0, 0)
+  // Windup flash: two extra additive eye draws inside the occlusion canvas, so foreground walls still clip them.
+  const f = eyeFlash(m) * (s.settings.reducedFlash ? REDUCED_FLASH : 1)
+  if (f > 0) {
+    g.globalCompositeOperation = 'lighter'; g.globalAlpha = f
+    g.drawImage(eyes, 0, 0); g.drawImage(eyes, 0, 0)
+    g.globalCompositeOperation = 'source-over'
+  }
   g.globalAlpha = 1
   eraseForeground(g, s, v, m.y, x, y, 64, 64)
   ctx.save()
   ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1
   ctx.drawImage(canvas, x, y)
+  if (f > 0) { // whitish-violet halo at the eye line, radius 10 + 8f px
+    const hx = x + 32, hy = y + 32 - 6, r = 10 + 8 * f, h = ctx.createRadialGradient(hx, hy, 0, hx, hy, r)
+    h.addColorStop(0, `rgba(244,232,255,${0.9 * f})`); h.addColorStop(1, 'rgba(244,232,255,0)')
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.fillStyle = h
+    ctx.fillRect(hx - r, hy - r, 2 * r, 2 * r)
+  }
   ctx.restore()
 }

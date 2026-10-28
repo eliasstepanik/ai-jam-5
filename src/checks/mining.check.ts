@@ -91,6 +91,10 @@ export function run(): void {
     step(s, inp(['KeyE']), DT)
     ok(s.player.mining.progress === 0, 'roll.t > 0: progress 0')
     s.player.roll.t = 0
+    s.player.x = (s.veins[0].stand % s.world.w) * TILE + TILE / 2 // playtest-tuning-1b: a roll in descent now moves the player (dead-torch dodge); re-seat on the stand
+    s.player.y = Math.floor(s.veins[0].stand / s.world.w) * TILE + TILE / 2
+    s.player.vx = 0
+    s.player.vy = 0
     hold(s, 5)
     ok(s.player.mining.progress > 0, 'control: progress builds again')
     s.player.energy = 0

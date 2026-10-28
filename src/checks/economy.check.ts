@@ -33,8 +33,9 @@ export const BEG: Profile = { zoneS: 83, hitEps: [0.27, 1.23, 1.77, 1.89], sprea
 export const EXP: Profile = { zoneS: 55, hitEps: [0.09, 0.26, 0.41, 0.44], spread: 0.6, resin: NEAR }
 const PLAIN: Mod = { extraS: 0, extraE: 0, burnMul: 1, hitMul: 1 }
 const GREEDY: Mod = { ...PLAIN, extraS: 20, extraE: 9 }
-const SODIUM: Mod = { ...PLAIN, burnMul: 1.5, hitMul: 1.6 }
-const CALM: Mod = { ...PLAIN, hitMul: 0.5 } // strontium / copper
+const SODIUM: Mod = { ...PLAIN, burnMul: 2.0, hitMul: 1.6 }
+const CALM: Mod = { ...PLAIN, hitMul: 0.5 } // strontium
+const COPPER: Mod = PLAIN // copper has no economy effect since playtest tuning 1
 
 // linear drain, pickups at (k + 0.5) / n × spread, clamp at E_MAX; dip = lowest energy before a pickup
 function zone(e: number, need: number, items: string, spread: number) {
@@ -87,7 +88,8 @@ function simulator(): void {
   ok(midSkip.beacon < GATE_E && mid.beacon >= GATE_E, 'gate blocks mid only when the cluster is skipped')
   ok(exp.beacon >= GATE_E && GATE_E > HOLD_E, 'expert passes without the cluster; gate covers the hold')
   ok(descend(BEG, PLAIN, false).beacon < 0, 'beginner skipping the cluster goes dark')
-  ok(descend(BEG, CALM, false).beacon >= GATE_E, 'strontium/copper beginner passes without the cluster')
+  ok(descend(BEG, CALM, false).beacon >= GATE_E, 'strontium beginner passes without the cluster')
+  ok(descend(BEG, COPPER, false).beacon < 0, 'copper beginner skipping the cluster goes dark (copper is plain)')
   for (const [name, m] of [['greedy', GREEDY], ['sodium', SODIUM]] as const) {
     ok(descend(MID, m).atCluster < 0, `${name} mid is dark before the cluster`)
     ok(descend(MID, m, false).beacon < GATE_E, `${name} mid without the cluster is gate-blocked`)

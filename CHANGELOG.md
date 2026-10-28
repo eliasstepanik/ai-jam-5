@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Copper flame leaves faint sparks that lead toward the Beacon.
 - Supplied eight-minute Beacon Run music, burning-torch sample and walking footsteps; post-Beacon sprinting uses double-cadence footsteps without raising pitch.
 - Title and pause Settings menu with independent saved Music and Sound Effects sliders, flashing controls, and Fog of war / Pure darkness selection.
 - Dev panel: 'AI behaviors' overlay (awareness rings, view and hearing ranges, detection meter, patrol, retreat and stalker-latch markers, near-spawn ring, flow window) and 'Wisp guide' overlay (route, seek target, lead/leash/reseed rings, velocity). Both toggles are on the Enemies tab and exist only in dev builds or with `?debug=1`.
@@ -17,8 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Drifting draft motes and a faint warm bleed of light toward the Beacon that quietly guide the player along the main route.
 - Dynamic puddles: the pool surface shimmers, ripples, drips and reflects the flame, the Beacon and nearby vines instead of showing a flat decal.
 - Sculpted cave terrain: open caverns, single pillars and short dead-end alcoves.
+- Attacks are announced by a wind-up pose, a crawling ground line and a clearer sound.
+- Shade eyes flash briefly when a shade starts its attack.
 
 ### Changed
+- Escape drops more rocks on the way out, and shades now appear ahead of you on the route.
+- Resin supply now rises with depth: the middle and deep zones get more resin, and the extra resin near the end is spread out instead of piling up at the start of the last zone.
 - Darkness and tint now deepen continuously with depth. The per-zone colour tints are removed from rendering (the plain fallback shown before the tileset decodes keeps flat per-zone floor fills).
 - More cracks and rubble the deeper you go.
 - Props are placed with a purpose instead of being scattered: route markers and landmarks along the way to the Beacon, decoys, water and lairs in dead ends, and rubble where the route runs close to a wall.
@@ -26,10 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Caves regenerate with new layouts: the same seed now gives a different cave than before.
 - The default cave depth is now Shallow (class 1) instead of Standard. Saved player choices are kept; Best records keep their per-class keys.
 - Make parry and dodge more forgiving: wider parry window (perfect ±55 ms, early 180 ms, late 120 ms), longer lurker and stalker telegraph (0.55 s), shorter escape roll cooldown (1.0 s).
+- Shades notice a lit player nearby and no longer stare forever; they now attack within a few seconds.
+- With the torch out, a dodge roll now avoids bites in the descent.
 - Clicking (or Enter/Space on) the Sound button now cycles volume Off → 33 % → 66 % → 100 % → Off. Left/Right, -/= and M behave as before.
 - #99: raise the torch-duration bar another two reference pixels inside its info box.
 - #99: remove the active-mineral underline and raise the duration bar inside the torch info box so it clears the bottom frame.
 - The vine glow now follows the shape of each vine and fades out outside the torch light radius instead of showing as a round blob.
+- Sodium now carries the easier-parry bonus on top of its larger, faster-burning flame; copper no longer affects parries.
 
 ### Added
 - #99: delivered UI hearts, nine-slice menu/HUD panels, selection markers, material-colored animated torch/fuel meter and local Hollow Sigil font.

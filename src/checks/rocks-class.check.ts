@@ -1,5 +1,5 @@
 // Per-depth-class rock ramp (R-164): rampOf unit rows, the rocks.ts p2 size odds (seen through planRockFall, whose private p2 picks
-// 1x1 vs 2x2) and the quake.ts rate (seen through the quakeT that stepQuake arms). Class 3 / undefined = T.rocks.rampS = 80.
+// 1x1 vs 2x2) and the quake.ts rate (seen through the quakeT that stepQuake arms). Class 3 / undefined = the params table value 60 (equals T.rocks.rampS since playtest-tuning-1).
 // L0-L3 imports only; DOM-free; every scenario builds its own State; no module-level mutable state.
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
@@ -47,10 +47,13 @@ function armed(cls: number | undefined, escapeT: number): { quakeT: number; u: (
 
 export function run(): void {
   const { rateStart, rateEnd, rampS, p2Start, p2End } = T.rocks
-  ok(rampS === 80, 'T.rocks.rampS is the class-3 value 80')
+  // playtest-tuning-1 §4: T.rocks.rampS is 60; rampOf reads the per-class table in world/gen/params.ts, where class 3 is the literal 60,
+  // so this row pins that the two stay equal.
+  ok(rampS === 60, 'T.rocks.rampS is the tuned value 60')
+  ok(near(rampOf(30, 3), 0.5), 'class 3 ramp length in the params table equals T.rocks.rampS (60)')
 
-  // (a) rampOf: per-class length, class 3 and undefined share T.rocks.rampS, clamped to 0..1.
-  const len: [number | undefined, number][] = [[1, 40], [2, 55], [3, 80], [undefined, 80], [4, 105]]
+  // (a) rampOf: per-class length, class 3 and undefined share the 60 s table value, clamped to 0..1.
+  const len: [number | undefined, number][] = [[1, 40], [2, 55], [3, 60], [undefined, 60], [4, 105]]
   for (const [c, l] of len) {
     ok(rampOf(0, c) === 0, 'ramp 0 at escapeT 0, class ' + c)
     ok(near(rampOf(40, c), Math.min(1, 40 / l)), 'ramp at escapeT 40, class ' + c)
@@ -61,10 +64,10 @@ export function run(): void {
   }
   ok(rampOf(40, 1) === 1, 'class 1 saturated at 40')
   ok(near(rampOf(40, 2), 40 / 55), 'class 2 at 40 is 40/55')
-  ok(rampOf(40, 3) === 0.5 && rampOf(40, undefined) === 0.5, 'class 3 and undefined at 40 are 0.5')
+  ok(rampOf(30, 3) === 0.5 && rampOf(30, undefined) === 0.5, 'class 3 and undefined at 30 are 0.5')
   ok(near(rampOf(40, 4), 40 / 105), 'class 4 at 40 is 40/105')
 
-  // (b) rocks.ts p2: at escapeT 40 class 1 is saturated (p2End), class 3 / undefined sit halfway (p2Start..p2End).
+  // (b) rocks.ts p2: at escapeT 40 class 1 is saturated (p2End), class 3 / undefined sit at 2/3 of p2Start..p2End.
   const N = 300
   const sat = plans(3, 1e9, N), c1 = plans(1, 40, N), c3 = plans(3, 40, N), cu = plans(undefined, 40, N), c0 = plans(1, 0, N)
   ok(sat.made === N && c1.made === N && c3.made === N, 'open room: every call yields a plan')
@@ -73,8 +76,8 @@ export function run(): void {
   ok(c1.big > c3.big, 'class 1 builds more 2x2 rocks than class 3 at escapeT 40: ' + c1.big + ' vs ' + c3.big)
   ok(cu.sig === c3.sig, 'undefined class plans exactly like class 3')
   ok(c0.sig === plans(3, 0, N).sig, 'escapeT 0: every class has p2Start, identical plans')
-  ok(plans(2, 40, N).sig === plans(3, 40 * 80 / 55, N).sig, 'class 2 at 40 plans like class 3 at 40 * 80 / 55 (same ramp fraction)')
-  ok(plans(4, 40, N).sig === plans(3, 40 * 80 / 105, N).sig, 'class 4 at 40 plans like class 3 at 40 * 80 / 105 (same ramp fraction)')
+  ok(plans(2, 40, N).sig === plans(3, 40 * 60 / 55, N).sig, 'class 2 at 40 plans like class 3 at 40 * 60 / 55 (same ramp fraction)')
+  ok(plans(4, 40, N).sig === plans(3, 40 * 60 / 105, N).sig, 'class 4 at 40 plans like class 3 at 40 * 60 / 105 (same ramp fraction)')
   ok(p2Start < p2End && c3.big > c0.big, 'class 3 at 40 builds more 2x2 than at escapeT 0 (p2 ramps with escapeT)')
 
   // (c) quake.ts rate: same seed, same world; stepQuake arms quakeT = u / rate with the same jitter u for every class, so

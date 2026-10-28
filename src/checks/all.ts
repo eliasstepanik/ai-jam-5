@@ -1,4 +1,5 @@
 // Runs every pure-logic check (R-040). Add one import + one call per new *.check.ts file; the list is kept in sync by hand.
+import { run as telegraph } from './telegraph.check.ts'
 import { run as suppliedAudio } from './supplied-audio.check.ts'
 import { run as puddleDressing } from './puddle-dressing.check.ts'
 import { run as heartUi } from './heart-ui.check.ts'
@@ -56,11 +57,13 @@ import { run as commitCheck } from './commit.check.ts'
 import { run as escapeWisp } from './escape-wisp.check.ts'
 import { run as escapeWispGlide } from './escape-wisp-glide.check.ts'
 import { run as escapeWispEdge } from './escape-wisp-edge.check.ts'
+import { run as copperTrail } from './copper-trail.check.ts'
 import { run as animSpeed } from './anim-speed.check.ts'
 import { run as shadowMist } from './shadow-mist.check.ts'
 import { run as depthLabel } from './depth-label.check.ts'
 import { run as stuckProbe } from './stuck-probe.check.ts'
 import { run as awarenessChecks } from './ai-awareness.check.ts'
+import { run as attackRhythm } from './attack-rhythm.check.ts'
 import { run as aiTactics } from './ai-tactics.check.ts'
 import { run as aiTactics2 } from './ai-tactics-2.check.ts'
 import { run as aiTactics3 } from './ai-tactics-3.check.ts'
@@ -127,6 +130,7 @@ debug()
 escapeWisp()
 escapeWispGlide()
 escapeWispEdge()
+copperTrail()
 shadowMist()
 depthLabel()
 depthTone()
@@ -144,6 +148,8 @@ caveSculpt()
 caveAlcove()
 stuckProbe()
 awarenessChecks()
+attackRhythm()
+telegraph()
 aiTactics()
 aiTactics2()
 aiTactics3()
