@@ -96,7 +96,7 @@ export const T = {
       stalker: [0, 0.4, 0.4, 0.35],
       devourer: [0, 0, 0.15, 0.3],
     },
-    devourerMax: 1, spawnGapPx: [60, 140], spawnTries: 48,
+    devourerMax: 1, spawnGapPx: [135, 280], spawnTries: 48, // floor 135 = light radius 170 + gap keeps full-flame descent spawns outside nearRadius 300; ceiling 280 keeps first spawn early
     despawnPx: 560, flameOutSpawnMul: 1.5, attackSlots: [1, 1, 2, 2], firstSpawnS: 3,
     nearCap: 2, // max monsters allowed inside nearRadius of the player (count)
     nearRadius: 300, // px, distance from player that counts as "near"
