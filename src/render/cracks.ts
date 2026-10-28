@@ -1,4 +1,4 @@
-// L4 render: crack decor selection and placement (issue #85). Pure and DOM-free: a crack is a function of (tile, seed, special cells) only.
+// L4 render: crack decor selection and placement (issue #85). Pure and DOM-free: a crack is a function of (tile, seed, special cells, depth01) only.
 // No rng, no module state, so chunk canvases can be rebuilt in any order and always show the same cracks. The blit itself is a callback
 // supplied by tiles-paint.ts, so checks can run the real placement loops with a recording callback.
 // The tileset frames are `ground_crack_01..04`, `ground_crack_large_01..06` (overlay_ground) and `wall_crack_01..03` (overlay_wall).
@@ -8,6 +8,7 @@ import { TILE } from '../core/state.ts'
 import { hash2 } from '../core/noise.ts'
 import { getBeaconRoom } from '../world/caches.ts'
 import { CHUNK_TILES } from './keys.ts'
+import { crackMul, depth01Field } from './depth-tone.ts'
 
 const WALL_CH = 35 // '#'
 const G_SALT = 0x6c61, G_KIND_SALT = 0x6c62, W_SALT = 0x7761 // DEFAULT: salts, distinct from FACE_SALT 0x9e37 and the floor hash
@@ -52,6 +53,9 @@ export function wallCrack(tiles: string, w: number, h: number, tx: number, ty: n
   return u < chance ? WALL_CRACKS[Math.floor(hash2(tx, ty, seed ^ (W_SALT + 1)) * WALL_CRACKS.length)] : null
 }
 
+// depth01 of tile (tx, ty) from the per-tile field; out-of-map or missing entry -> 0 (entrance side, fewest cracks).
+const depthAt = (f: Float32Array, w: number, h: number, tx: number, ty: number): number => tx < 0 || ty < 0 || tx >= w || ty >= h ? 0 : f[ty * w + tx] || 0
+
 // Draw callback: frame `name` with its anchor at (x, y) in the target canvas (tiles-paint.ts passes `blit`).
 export type Draw = (name: string, x: number, y: number) => void
 
@@ -66,12 +70,12 @@ export function cleanCells(s: State): Skip {
 // Ground cracks for chunk (cx, cy), canvas origin at world pixel (ox, oy). Large frames reach LARGE_RX / LARGE_RY tiles out, so anchors in the
 // margin around the chunk are visited too; a neighbour chunk derives the same crack from the same tile, so the overdraw is identical.
 export function groundCracks(s: State, cx: number, cy: number, ox: number, oy: number, draw: Draw): void {
-  const { w, h, tiles } = s.world, seed = s.meta.seed, skip = cleanCells(s)
+  const { w, h, tiles } = s.world, seed = s.meta.seed, skip = cleanCells(s), field = depth01Field(s)
   const tx1 = (cx + 1) * CHUNK_TILES + LARGE_RX, ty1 = (cy + 1) * CHUNK_TILES + LARGE_RY
   for (let ty = cy * CHUNK_TILES - LARGE_RY; ty < ty1; ty++) {
     for (let tx = cx * CHUNK_TILES - LARGE_RX; tx < tx1; tx++) {
       const stage = detailStage(s.meta.phase === 'escape', s.director.escapeT)
-      const name = groundCrack(tiles, w, h, tx, ty, seed, skip, GROUND_P + stage * 0.05)
+      const name = groundCrack(tiles, w, h, tx, ty, seed, skip, GROUND_P * crackMul(depthAt(field, w, h, tx, ty)) + stage * 0.05)
       if (name) draw(name, tx * TILE - ox + TILE / 2, ty * TILE - oy + TILE / 2)
     }
   }
@@ -79,6 +83,7 @@ export function groundCracks(s: State, cx: number, cy: number, ox: number, oy: n
 
 // Wall crack for wall tile (tx, ty), drawn with its anchor at (ax, ay) = the middle of the tile's south face (the caller knows the face height).
 export function wallCrackAt(s: State, skip: Skip, tx: number, ty: number, ax: number, ay: number, draw: Draw): void {
-  const { w, h, tiles } = s.world, name = wallCrack(tiles, w, h, tx, ty, s.meta.seed, skip, WALL_P + detailStage(s.meta.phase === 'escape', s.director.escapeT) * 0.06)
+  const { w, h, tiles } = s.world, d = depthAt(depth01Field(s), w, h, tx, ty)
+  const name = wallCrack(tiles, w, h, tx, ty, s.meta.seed, skip, WALL_P * crackMul(d) + detailStage(s.meta.phase === 'escape', s.director.escapeT) * 0.06)
   if (name) draw(name, ax, ay)
 }

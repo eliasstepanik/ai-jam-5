@@ -58,6 +58,11 @@ import { run as escapeWispEdge } from './escape-wisp-edge.check.ts'
 import { run as animSpeed } from './anim-speed.check.ts'
 import { run as shadowMist } from './shadow-mist.check.ts'
 import { run as depthLabel } from './depth-label.check.ts'
+import { run as depthTone } from './depth-tone.check.ts'
+import { run as caveGuide } from './cave-guide.check.ts'
+import { run as puddleSurface } from './puddle-surface.check.ts'
+import { run as caveSculpt } from './cave-sculpt.check.ts'
+import { run as caveAlcove } from './cave-alcove.check.ts'
 import { run as volumeCycle } from './volume-cycle.check.ts'
 puddleDressing()
 heartUi()
@@ -113,6 +118,9 @@ escapeWispGlide()
 escapeWispEdge()
 shadowMist()
 depthLabel()
+depthTone()
+caveGuide()
+puddleSurface()
 volumeCycle()
 
 reportedBugs()
@@ -120,4 +128,6 @@ publishedBugs()
 worldVisualFixes()
 pixelParticles()
 caveDetail()
+caveSculpt()
+caveAlcove()
 console.log('checks ok')

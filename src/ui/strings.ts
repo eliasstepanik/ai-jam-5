@@ -61,7 +61,6 @@ export const STR = {
   endHint: '← → select · Enter confirm · T retry · C copy · Esc title',
   // hud
   depth: 'DEPTH',
-  zone: 'ZONE',
   flameOut: 'FLAME OUT',
   flame: { plain: 'PLAIN', sodium: 'SODIUM', copper: 'COPPER', strontium: 'STRONTIUM' },
   hotbarHint: 'F toss · G shake off',

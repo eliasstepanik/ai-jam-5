@@ -13,7 +13,7 @@ import { MINERALS, TILE, TOAST_S } from '../core/state.ts'
 import { T } from '../core/tuning.ts'
 import { clamp } from '../core/math.ts'
 import { hash2 } from '../core/noise.ts'
-import { DEPTH_MAX, depthOf, zoneOfDepth } from '../core/score.ts'
+import { DEPTH_MAX, depthOf } from '../core/score.ts'
 import { getDepthField } from '../world/caches.ts'
 import { playerTile } from '../world/grid.ts'
 import { resourceIcon } from '../render/tileset.ts'
@@ -158,7 +158,7 @@ function depthBlock(ctx: CanvasRenderingContext2D, s: State, l: HudLayout): void
   const dx = l.depth.x - maxW - mainW - 16 * u
   if (!skinSprite(ctx, 'selection_pointer', 'stone', dx - 7 * u, l.depth.y - 10 * u, 14 * u, 8 * u))
     ui(ctx, 'ui_depth', 'idle', 0, dx, l.depth.y - 5 * u, PS * u)
-  text(ctx, `${STR.zone} ${zoneOfDepth(depth)} · ${depthTag(s.world.depthClass, s.world.beaconDist)}`, l.zone.x, l.zone.y, 12, u, COL.dim, { align: 'right' })
+  text(ctx, depthTag(s.world.depthClass, s.world.beaconDist), l.zone.x, l.zone.y, 12, u, COL.dim, { align: 'right' })
   text(ctx, clock(s.meta.steps / 60), l.clock.x, l.clock.y, 14, u, COL.dim, { align: 'right' })
 }
 
