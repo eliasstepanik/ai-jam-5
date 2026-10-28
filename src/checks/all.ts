@@ -67,6 +67,7 @@ import { run as flowfieldChecks } from './flowfield.check.ts'
 import { run as aiBudget } from './ai-budget.check.ts'
 import { run as separation } from './separation.check.ts'
 import { run as depthTone } from './depth-tone.check.ts'
+import { run as vineGlow } from './vine-glow.check.ts'
 import { run as caveGuide } from './cave-guide.check.ts'
 import { run as puddleSurface } from './puddle-surface.check.ts'
 import { run as caveSculpt } from './cave-sculpt.check.ts'
@@ -127,6 +128,7 @@ escapeWispEdge()
 shadowMist()
 depthLabel()
 depthTone()
+vineGlow()
 caveGuide()
 puddleSurface()
 volumeCycle()

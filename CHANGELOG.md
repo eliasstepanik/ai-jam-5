@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clicking (or Enter/Space on) the Sound button now cycles volume Off → 33 % → 66 % → 100 % → Off. Left/Right, -/= and M behave as before.
 - #99: raise the torch-duration bar another two reference pixels inside its info box.
 - #99: remove the active-mineral underline and raise the duration bar inside the torch info box so it clears the bottom frame.
+- The vine glow now follows the shape of each vine and fades out outside the torch light radius instead of showing as a round blob.
 
 ### Added
 - #99: delivered UI hearts, nine-slice menu/HUD panels, selection markers, material-colored animated torch/fuel meter and local Hollow Sigil font.
