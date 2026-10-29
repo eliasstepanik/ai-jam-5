@@ -12,7 +12,7 @@ export function sampleCopperFire(p: CopperHints, runId: number, time: number, on
   p.at = time
   if (!on) { p.pixels = []; p.next.clear(); return }
   p.pixels = p.pixels.filter(q => time < q.born + q.life)
-  const tiles = new Set(points.map(q => q.tile)), interval = .65 / Math.max(.25, quality)
+  const tiles = new Set(points.map(q => q.tile)), interval = 1.1 / Math.max(.25, quality)
   for (const tile of p.next.keys()) if (!tiles.has(tile)) p.next.delete(tile)
   for (const q of points) {
     const phase = hash2(q.tile, 61, seed) * interval
@@ -21,7 +21,7 @@ export function sampleCopperFire(p: CopperHints, runId: number, time: number, on
     const cycle = Math.floor(time / interval), h = (salt: number): number => hash2(q.tile, cycle, seed ^ salt)
     // One fresh particle per emitter after a render gap; never catch up old fire in a pile.
     if (p.pixels.length < 128) p.pixels.push({ x: q.x + (h(62) - .5) * 24, y: q.y + (h(63) - .5) * 10,
-      vx: (h(64) - .5) * 6, vy: -10 - h(65) * 8, born: time, life: .6 + h(66) * .5, size: h(67) < .6 ? 2 : 3 })
+      vx: (h(64) - .5) * 6, vy: -10 - h(65) * 8, born: time, life: .6 + h(66) * .5, size: h(67) < .6 ? 1 : 2 })
     p.next.set(q.tile, time + interval)
   }
 }

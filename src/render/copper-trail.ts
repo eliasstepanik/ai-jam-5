@@ -36,10 +36,10 @@ export function drawCopperTrail(ctx: CanvasRenderingContext2D, s: State, v: View
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1
     g.clearRect(0, 0, 4, 4)
     const size = Math.max(1, p.size - Math.floor(f * p.size))
-    g.fillStyle = f < .25 ? col.core : f < .7 ? col.mantle : col.fringe
+    g.fillStyle = f < .1 ? col.core : f < .7 ? col.mantle : col.fringe
     g.fillRect(0, 0, size, size)
     eraseForeground(g, s, v, p.y, x, y, 4, 4)
-    ctx.globalAlpha = Math.min(1, age / .08, (1 - f) * 3) * (s.settings.reducedFlash ? .75 : 1)
+    ctx.globalAlpha = .7 * Math.min(1, age / .08, (1 - f) * 3) * (s.settings.reducedFlash ? .75 : 1)
     ctx.drawImage(canvas, x, y)
   }
   ctx.restore()
