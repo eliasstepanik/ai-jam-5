@@ -1,0 +1,43 @@
+Player atlas v2 integration - 2026-10-29
+Related #87 (eliasstepanik), partial; awaiting owner visual confirmation.
+Source: supplied all_characters_atlas_v2 PNG + JSON. PNG copied unchanged;
+full JSON copied to art/characters-source.json, trimmed reproducibly for runtime.
+PNG SHA256: 2212f518f737e0a18b058a1bc756c8dd3ded3816822a71656397165fda8d888c
+4096x2048, 438432 bytes (<600KiB); 1364 frames, 34 animation sets, revision 2.
+Runtime metadata 171011 bytes (<400KiB). No source artwork changed.
+
+Updated clips in all 8 directions:
+walk_lit_torch_base: 8 frames, 12fps, cycle 666.6667ms (previous 4 at 6fps).
+run_lit_torch_base: 8 frames, 20fps, cycle 400ms (previous 4 at 10fps).
+run_without_torch: 8 frames, 20fps, cycle 400ms (previous 4 at 10fps).
+Unlit walk/run reuse the updated walk with flame palette removed as before.
+Gait selection/indexing is data driven and already supports all eight frames.
+No movement tuning, gameplay action times, collision or invulnerability changes.
+#79 stays closed; gait checks now exercise eight frames at the existing speed.
+
+1172 untouched frames compare byte-for-byte in decoded RGBA crops against v1;
+their anchors and per-frame timing are identical. Palettes unchanged. Monster,
+wisp, pickup, material-change, combat and death frames are preserved.
+
+Hot reload previously could reuse the old PNG with new atlas coordinates,
+and leave tinted/palette-swapped frame canvases from the old packing alive.
+Reload now clears those derived canvases and uses metadata hash in the image
+URL, pairing the matching sheet pixels with its metadata.
+
+Verification:
+- Full npm run check and npm run build pass.
+- Trimmer repeats byte-identically; runtime PNG hash and 1364-frame gate pass.
+- Actual main host swaps v1->v2 without reload, retaining run seed/id, HP,
+  position, seed text and user volume setting. Stale cache canvases freed.
+- Browser compares actual player drawing to a freshly fetched v2 sheet in 320
+  cases: five torch/movement modes x eight directions x all eight frames.
+- 384 material palette checks (128 frames x 3 minerals), 128 torch-tip anchor
+  checks; lit/unlit/escape body pixels, loop lengths and source coordinates pass.
+- Palette cache stays capped at 256. No browser errors or warnings.
+- Visual before/after contact sheet covers all three updated clips and all
+  directions. V1 frames repeat only in this comparison to align cycle phase.
+
+Broader #87 is not complete: other action animation/transition improvements
+are outside this supplied locomotion update. Leave it open awaiting remaining
+criteria and owner confirmation. No docs snapshot edits; owner KB resync needed.
+Production export additionally verifies the hashed v2 character image loads at 4096x2048 with the matching metadata-hash URL; no browser errors.

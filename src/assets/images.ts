@@ -174,6 +174,9 @@ export function startPreload(res: Resources): void {
   const im = res.images
   const sourceKey = tilesetMeta.meta.png_sha256 + ':' + characterMeta.png_sha256 + ':' + SHEETS['./characters.png'] + ':' + Object.values(SCREEN_URLS).join('|') + ':' + Object.values(SHEETS).join('|') + ':' + UI_FONT_URL
   if (im.started && im.sourceKey === sourceKey) return
+  // A repacked character atlas can reuse old coordinates for different poses.
+  for (const c of [...res.swapped.values(), ...im.tints.values()]) c.width = c.height = 0
+  res.swapped.clear(); im.tints.clear()
   im.sourceKey = sourceKey
   im.gen += 1 // invalidate old coordinates immediately; the loading slots use safe placeholders
   im.rects.clear()
@@ -186,7 +189,10 @@ export function startPreload(res: Resources): void {
   const sheets = im.sheets // discard asynchronous results from an atlas superseded during hot reload
   const settle = (): void => { im.loaded += 1; im.gen += 1 }
   const sheetJob = async (slot: number, file: string, url: string | undefined, legacy: boolean): Promise<void> => {
-    const img = await loadImage(url)
+    // Image elements can retain an old URL in memory even after metadata hot-swaps.
+    const hash = file === 'characters.png' ? characterMeta.png_sha256 : file === 'cave_tileset.png' ? tilesetMeta.meta.png_sha256 : ''
+    const versioned = url && hash ? url + (url.includes('?') ? '&' : '?') + 'v=' + hash : url
+    const img = await loadImage(versioned)
     if (im.sheets !== sheets) return
     im.sheets[slot] = img
     im.sheetState[slot] = img ? 'ok' : 'failed'
