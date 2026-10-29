@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Raised the total audio budget in `scripts/check-assets.ts` from 3.3 MB to 4.6 MB per format (all 30 audio files together need 4,091,024 B ogg / 4,360,305 B mp3); the earlier "14 generated samples" text now means 11 shipped (see Added).
 
 ### Fixed
+- Activating the Beacon now sets the run's reached depth to 40 / 40 on the result screen (#146).
 - Wall vine glow and its darkness carve now line up with the vine sprites (were one tile too low).
 - `danger()` could return NaN when `energyMax <= 0`.
 - The music stinger gain node was never disconnected after the stinger ended (node leak).

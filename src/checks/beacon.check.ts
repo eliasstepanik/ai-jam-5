@@ -8,6 +8,8 @@ import { parseSeed } from '../core/seed.ts'
 import { T } from '../core/tuning.ts'
 import { LIGHT_ALL, lightRadius } from '../systems/light.ts'
 import { spawnMonster } from '../entities/monster.ts'
+import { DEPTH_MAX, depthOf } from '../core/score.ts'
+import { getDepthField } from '../world/caches.ts'
 import { startRun } from '../systems/run.ts'
 import { step } from '../systems/step.ts'
 import { caveOf } from './caves.ts'
@@ -135,5 +137,27 @@ export function run(): void {
     ok(s.world.beaconLitAt === s.meta.time && s.world.beaconLitAt > 0, 'beaconLitAt = meta.time of the lighting step')
     ok(s.player.mining.progress === 0 && s.player.mining.targetTile === -1, 'mining reset')
     ok(s.fx.events.filter(e => e.kind === 'beaconLit').length === 1, 'beaconLit emitted once')
+  }
+  // 6. #146: lighting from a tile that reads depth 39 sets the reached depth to 40 and keeps it.
+  {
+    const s = setup(80)
+    const field = getDepthField(s), bd = s.world.beaconDist, w = s.world.w
+    const bx = s.world.beacon.tx, by = s.world.beacon.ty
+    let tx = -1, ty = -1
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      if (depthOf(field[(by + dy) * w + (bx + dx)], bd) === 39) { tx = bx + dx; ty = by + dy; break }
+    }
+    ok(tx >= 0, 'setup: a tile next to the Beacon reads depth 39')
+    s.player.x = tx * TILE + TILE / 2
+    s.player.y = ty * TILE + TILE / 2
+    tick(s, [], [])
+    ok(s.player.stats.maxDepth === 39, 'setup: reached depth is 39 before lighting (got ' + s.player.stats.maxDepth + ')')
+    hold(s, 300, ['KeyE'], ['KeyE'])
+    ok(s.world.beaconLit && s.meta.phase === 'escape', 'Beacon lit from the depth-39 tile')
+    ok(s.player.stats.maxDepth === DEPTH_MAX, 'lighting from depth 39 sets maxDepth to 40 (got ' + s.player.stats.maxDepth + ')')
+    ok(s.player.stats.deepestZone === 4, 'deepestZone is 4 after lighting')
+    ok(s.player.stats.maxPathDist >= bd, 'maxPathDist >= beaconDist after lighting')
+    hold(s, 30)
+    ok(s.player.stats.maxDepth === DEPTH_MAX && s.player.stats.deepestZone === 4, 'trackDepth afterwards does not lower them')
   }
 }
