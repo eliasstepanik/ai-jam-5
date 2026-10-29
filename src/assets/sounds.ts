@@ -13,7 +13,7 @@ export const SOUNDS = {
   mus_title: { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_beacon-run', stream: true, loop: [0, 480] },
   mus_descent: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_beacon-run', stream: true, loop: [0, 480] },
   'mus_descent-danger': { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_descent-danger', loop: [0, 30] },
-  mus_escape: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_beacon-run', stream: true, loop: [0, 480] },
+  mus_escape: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_blackout-escape', stream: true, loop: [0, 480] },
   'mus_sting-win': { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_sting-win' },
   'mus_sting-death': { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_sting-death' },
   amb_cave: { group: 'amb', gain: 0.8, pri: 1, cap: 1, file: 'amb_cave', loop: [0, 40] },

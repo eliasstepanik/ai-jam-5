@@ -8,10 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Dedicated eight-minute Blackout escape music, selected after the Beacon cue, with Opus/MP3 streaming through the Music controls.
 - Automated audio checks closing the #101-#103 acceptance gaps: `src/checks/audio-fake.ts` (a recording fake `AudioContext`), `audio-engine.check.ts` (24-voice pool, priority stealing, 30 ms retrigger guard, mixer constants), `audio-wiring.check.ts` (all 28 `FxEventKind` mapped, the null set, sound ids exist, ducking/danger/music ranges), `audio-recipes.check.ts` (every synth recipe renders without throwing, node-count caps, static peak/level spread).
 - 14 AI-generated audio samples (7 SFX, 2 music stingers, cave ambience, 4 music tracks) produced via ComfyUI, and ComfyUI pipeline additions (`gen-audio` trim/peakDb/loopFade options, loop-seam nodes in the graph). 11 ship in `src/assets/audio/`; the generated `mus_title`, `mus_descent` and `mus_escape` were superseded by the owner-supplied Beacon Run stream and removed from the bundle.
 
 ### Changed
+- #167: make sporadic copper guidance clearly visible using the green torch palette and a 90% peak opacity envelope.
 - Falling rocks randomly choose one of three supplied impact recordings, keeping a common voice cap.
 - #167: copper torch guidance uses faint, sporadic green pixel cubes with lateral scatter and wall occlusion instead of the dotted line.
 - Updated the character atlas to v2 with eight-frame player walking/running in all directions; preserved movement and action timing, and reload atlas pixels/tints together.

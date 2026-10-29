@@ -11,5 +11,5 @@ export function copperHint(seed: number, time: number, slot: number): CopperHint
   const f = age / life
   return { distance: 38 + h(44) * 88 + age * (12 + h(45) * 10),
     side: (h(46) * 2 - 1) * 18 + (h(47) * 2 - 1) * f * 4,
-    lift: -3 - f * 7, size: h(48) < .7 ? 2 : 3, alpha: .2 * Math.sin(Math.PI * f) }
+    lift: -3 - f * 7, size: h(48) < .7 ? 2 : 3, alpha: .9 * Math.sin(Math.PI * f) }
 }

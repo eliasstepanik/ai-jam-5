@@ -1,0 +1,50 @@
+Escape score and copper visibility follow-up - 2026-10-29
+#167 reporter: Kittingsl. IN PROGRESS / awaiting visual confirmation.
+The first cube pass was rejected as too faint. This revision retains sporadic
+independent timing, 3-cue cap, scatter and wall occlusion, but uses the torch's
+exact FLAME_COL.copper core/mantle/fringe and raises peak opacity .2 -> .9.
+Native 2-3px cube faces remain crisp. Smooth fades and reduced-flashing scale
+are retained. No dotted line, circle or new generated image asset.
+
+Owner music request: Blackout_Run_For_Your_Life_8min.mp3
+Source SHA256 ca955cee2286a13136a2dc8b81b7a43f1011998f6462f5fa468664033c70315c
+Source bytes 15361581, 480s stereo. FFmpeg measured mean -17.1 dB, peak -2.4 dB.
+The neighbouring generation_manifest.json records ACE-Step 1.5 Turbo, four
+180 BPM/E minor acoustic survival-horror passages joined by 5.333s equal-power
+crossfades. Prompt summary/processing are credited in README. Original MP3
+unchanged. Full track encoded at 48kbps stereo to constrained-VBR Opus/Ogg and
+24kHz MP3. 20ms in / 50ms out edge fades avoid a click on repeat; no time stretch
+or duration reduction. Delivered sizes: Ogg 2941318 B, MP3 2880524 B.
+
+mus_escape now owns mus_blackout-escape; title/descent keep Beacon Run. Existing
+post-Beacon timing, stingers and music ducking are unchanged. One Audio element
+and media/source graph are reused, switching src only for changed delivery.
+Long tracks are streamed rather than decoded into memory. Opus unsupported ->
+MP3. Music slider/mute route through the existing music bus. Track replacement
+increments a generation cursor so an outgoing play() rejection cannot mark the
+incoming track blocked. Intentional pause aborts are likewise ignored.
+HMR fills optional resource fields additively; State and main.ts untouched.
+
+Verification:
+- npm run check / npm run build pass (36 audio files, 1364 character frames).
+- Updated delivery assertions for separate escape file and 480-second streams.
+- Copper pure check requires many visible samples above .7 alpha, max .9,
+  with sparse timing/scatter and no game RNG or State writes.
+- 600 browser frames: 343 quiet, mean .525 cues, max3, 43 sideways positions,
+  0 circles, wall clipping175/315, low-quality91/315; frozen clock stable.
+- Actual browser: silent before gesture. Descent keeps Beacon Run; pre-cue escape
+  pauses music, then starts new track from zero. Opus duration480.0065, MP3
+  duration480. Both play, not full-track decoded buffers. Same graph across all
+  switches. Pause/resume preserves cursor, win stops stream, title restores
+  Beacon Run. Real module HMR retains graph and cursor; stale play rejection
+  race passes. Console errors/warnings: none.
+- copper-brighter-comparison.png shows old opacity/palette versus this revision.
+
+All #167 requested presentation behavior is implemented, pending human approval.
+This is one additional owner-selected music delivery, not completion of broader
+#105. Its adaptive danger-stem synchronisation and remaining original audio
+acceptance criteria have not been newly audited/implemented here; keep it open.
+7.6 MB per-format budget explicitly accommodates the requested second full
+8-minute score; per-stream file cap remains3.1 MB, other files900 KB. Future
+budget reduction can shorten/re-encode scores. Docs snapshot unchanged; owner
+knowledge-base resync needed for the escape track and copper visibility change.
