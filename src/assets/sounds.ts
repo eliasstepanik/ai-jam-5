@@ -11,7 +11,7 @@ export type SoundDef = {
 export const SOUNDS = {
   mus_title: { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_beacon-run', stream: true, loop: [0, 480] },
   mus_descent: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_beacon-run', stream: true, loop: [0, 480] },
-  'mus_descent-danger': { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_descent-danger', loop: [0, 72] },
+  'mus_descent-danger': { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_descent-danger', loop: [0, 30] },
   mus_escape: { group: 'music', gain: 0.7, pri: 3, cap: 1, file: 'mus_beacon-run', stream: true, loop: [0, 480] },
   'mus_sting-win': { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_sting-win' },
   'mus_sting-death': { group: 'music', gain: 0.8, pri: 3, cap: 1, file: 'mus_sting-death' },
@@ -42,7 +42,7 @@ export const SOUNDS = {
   'sfx_mon-death': { group: 'sfx', gain: 0.6, pri: 1, cap: 4, file: 'sfx_mon-death' },
   'sfx_devourer-beat': { group: 'sfx', gain: 1, pri: 2, cap: 1 },
   sfx_hurt: { group: 'sfx', gain: 0.9, pri: 3, cap: 1 },
-  sfx_heartbeat: { group: 'sfx', gain: 0.7, pri: 3, cap: 1 },
+  sfx_heartbeat: { group: 'sfx', gain: 0.7, pri: 3, cap: 2 },
   'sfx_player-death': { group: 'sfx', gain: 0.8, pri: 3, cap: 1 },
   'sfx_beacon-charge': { group: 'sfx', gain: 0.8, pri: 3, cap: 1 },
   'sfx_beacon-ignite': { group: 'sfx', gain: 1, pri: 3, cap: 1 },
@@ -57,8 +57,5 @@ export const SOUNDS = {
 } as const satisfies Record<string, SoundDef>
 export type SoundId = keyof typeof SOUNDS
 
-// Eleven catalog sample entries remain undelivered. Keep this explicit so delivery shrinks the allow-list.
-export const PENDING_AUDIO = [
-  'mus_descent-danger', 'mus_sting-win', 'mus_sting-death', 'amb_cave',
-  'sfx_parry-perfect', 'sfx_eye-open', 'sfx_mon-growl', 'sfx_mon-lunge', 'sfx_mon-death', 'sfx_beacon-horn', 'sfx_rock-impact',
-] as const satisfies readonly SoundId[]
+// Ids whose sample files are undelivered (empty: every sample is delivered). Keep this explicit so a future undelivered id is listed here.
+export const PENDING_AUDIO = [] as const satisfies readonly SoundId[]

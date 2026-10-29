@@ -265,7 +265,8 @@ for (const p of audioFiles) {
   if (size > limit) fail(p + ' is ' + size + ' bytes, max ' + limit)
   audioBytes[ext] += size
 }
-for (const [ext, n] of Object.entries(audioBytes)) if (n > 3.3 * MB) fail('audio .' + ext + ' total ' + n + ' bytes, max 3.3 MB')
+// ponytail: raised 3.3 -> 4.6 MB (owner-decision in merge of #161): all 30 audio files (Beacon Run stream + owner-supplied + 11 generated sounds) need ogg 4,091,024 / mp3 4,360,305 B. Upgrade path: re-encode at a lower bitrate or drop generated tracks to restore the old 3.3 MB budget.
+for (const [ext, n] of Object.entries(audioBytes)) if (n > 4.6 * MB) fail('audio .' + ext + ' total ' + n + ' bytes, max 4.6 MB')
 for (const f of pending) if (!(f in SOUNDS)) fail('PENDING_AUDIO lists unknown sound ' + f)
 
 if (failures.length > 0) {
