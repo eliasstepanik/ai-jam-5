@@ -45,7 +45,7 @@ function fire(): void {
   sample(.25, points.slice(5)); ok(p.pixels.includes(a) && a.x === x && a.y === y, 're-routing never translates living fire')
   const count = p.pixels.length; sample(.25, points.slice(5)); ok(p.pixels.length === count, 'frozen clock never re-emits')
   for (let i = 1; i < 600; i++) sample(.25 + i / 60)
-  ok(p.pixels.length > 8 && p.pixels.length < 40, 'low density spread across twenty route tiles')
+  ok(p.pixels.length > 4 && p.pixels.length < 24, 'low density spread across twenty route tiles')
   sample(11, points, 'strontium'); ok(!p.pixels.includes(a) && p.material === 'strontium', 'colour switch clears the old guide history')
   sample(11.5, points, 'strontium', false); ok(!p.pixels.length && !p.next.size, 'extinguish clears fire')
   sampleCopperFire(p, 2, 0, true, 'copper', 42, points, 1); ok(p.runId === 2, 'new run resets pool')
@@ -63,7 +63,7 @@ function controls(): void {
   ok(resolveIntent(s, { ...input, wheel: 1, pressed: new Set(['Digit3']) }).select === 'strontium', 'number keys retain priority')
   for (const [w, h] of [[1280, 720], [640, 360], [1920, 1080]]) {
     const l = hudLayout(w, h, s), a = escapeTipPose(0, l), z = escapeTipPose(3, l), mid = escapeTipPose(2.4, l)
-    ok(a.y > l.exitBanner.y + 66 * l.u && a.size === 16, 'dodge starts below announcement')
+    ok(a.y > l.exitBanner.y + 66 * l.u && a.size === 28, 'dodge starts below announcement')
     ok(z.x === l.hotbarHint.x && z.y === l.hotbarHint.y && z.size === 12, 'dodge settles at old torch controls')
     ok(mid.y > a.y && mid.y < z.y && mid.size < a.size && mid.size > z.size, 'smooth shrink and move')
   }

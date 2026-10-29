@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 14 AI-generated audio samples (7 SFX, 2 music stingers, cave ambience, 4 music tracks) produced via ComfyUI, and ComfyUI pipeline additions (`gen-audio` trim/peakDb/loopFade options, loop-seam nodes in the graph). 11 ship in `src/assets/audio/`; the generated `mus_title`, `mus_descent` and `mus_escape` were superseded by the owner-supplied Beacon Run stream and removed from the bundle.
 
 ### Changed
+- Enlarge the initial escape dodge cue to 28px; retain the 12px settled hotkey style.
+- Make copper/strontium guide fire subtler with fewer, smaller, dimmer particles and briefer white cores.
 - Replace timed guidance clusters with low-density torch-like fire across the visible shortest route, keeping particles in world space.
 - Sodium no longer burns torch energy faster; update Help and remove the normal-flame mineral-column circle.
 - #167: copper guidance now twinkles in small clusters at fixed world spots on the Beacon path for 0.5–1 second, with a 1–2 second gap after each cluster.

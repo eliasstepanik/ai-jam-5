@@ -250,6 +250,8 @@ The jam requires that the majority of the game is AI-generated. This section say
 
 - Mineral path fire and controls (2026-10-29): user selected sparse torch-like fire along the full guide route, superseding the earlier timed twinkle clusters. Copper points toward the Beacon; strontium toward the nearest reachable resin by walking distance. Native 1–3px fire rises from fixed floor emitters, staggered per tile, retaining born positions through movement and route updates; a bounded registry pool stores only cosmetic history. All visible route sections can emit, with wall/LOS clipping and lower density than the torch. Sodium now has normal passive burn (other effects retained). Added wrapping mouse-wheel selection, updated mineral help, and a plain “Spacebar to dodge” reminder that moves from below the escape banner to the old hotkey-tip position, shrinking from 16 to 12. No new generated art or audio.
 
+- Guide subtlety tuning (2026-10-29): increase the initial plain dodge reminder to 28px, retaining its 12px settled size and motion. Both mineral guides now emit every 1.1s per tile (previously 0.65s), with 1–2px births, 70% maximum opacity and a shorter white-core phase. World anchoring and target routing remain. No new generated assets.
+
 ## Credits and licences
 
 - Owner-supplied `Blackout_Run_For_Your_Life_8min.mp3` (Blackout - Run for Your Life), authorised for game integration; the source manifest records ACE-Step 1.5 Turbo. Locally bundled compressed derivatives are used.
