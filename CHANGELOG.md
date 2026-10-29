@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 14 AI-generated audio samples (7 SFX, 2 music stingers, cave ambience, 4 music tracks) produced via ComfyUI, and ComfyUI pipeline additions (`gen-audio` trim/peakDb/loopFade options, loop-seam nodes in the graph). 11 ship in `src/assets/audio/`; the generated `mus_title`, `mus_descent` and `mus_escape` were superseded by the owner-supplied Beacon Run stream and removed from the bundle.
 
 ### Changed
+- #167: copper guidance now twinkles in small clusters at fixed world spots on the Beacon path for 0.5–1 second, with a 1–2 second gap after each cluster.
 - #167: make sporadic copper guidance clearly visible using the green torch palette and a 90% peak opacity envelope.
 - Falling rocks randomly choose one of three supplied impact recordings, keeping a common voice cap.
 - #167: copper torch guidance uses faint, sporadic green pixel cubes with lateral scatter and wall occlusion instead of the dotted line.
