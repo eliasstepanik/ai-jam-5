@@ -1,6 +1,6 @@
 // Walk / run clip playback follows the real movement speed (issue #79): gaitHz and the integrated phase in core/gait.ts,
 // advanced by systems/movement.ts into player.gaitPhase. L0-L3 imports only (R-043); DOM-free. Expected values are literals: the tuned
-// strides (walk 44 px, run 52 px per cycle) and the characters.json frame durations (walk 4 x 166.7, run 4 x 100 ms). The durations are
+// strides (walk 44 px, run 52 px per cycle) and the characters.json frame durations (walk 8 x 83.33, run 8 x 50 ms). The durations are
 // copied here because render/charatlas.ts, the only reader of characters.json, is render code that checks must not import (R-043); the
 // real clips are even, so no uneven-duration case comes from the data and gaitFrame is tested with literal uneven durations below.
 import { GAIT_MAX_HZ, GAIT_MIN_HZ, RUN_MIN_SPEED, RUN_STRIDE_PX, WALK_MIN_SPEED, WALK_STRIDE_PX, gaitAdvance, gaitFrame, gaitHz, gaitRuns, gaitSetOf, gaitStride } from '../core/gait.ts'
@@ -15,8 +15,8 @@ import type { Intent } from '../systems/intent.ts'
 const ok = (cond: boolean, msg: string): void => { if (!cond) throw new Error('check failed: anim-speed: ' + msg) }
 const near = (a: number, b: number): boolean => Math.abs(a - b) < 1e-9
 const DT = 1 / 60
-const WALK_DURS = [166.7, 166.6, 166.7, 166.7], RUN_DURS = [100, 100, 100, 100]
-const back = (a: number, b: number): number => (b - a + 4) % 4 // forward frame steps from a to b on a 4-frame loop
+const WALK_DURS = Array<number>(8).fill(1000 / 12), RUN_DURS = Array<number>(8).fill(50)
+const back = (a: number, b: number): number => (b - a + 8) % 8 // forward frame steps from a to b on an 8-frame loop
 
 function rate(): void {
   ok(WALK_STRIDE_PX === 44 && RUN_STRIDE_PX === 52, `stride constants 44 / 52, got ${WALK_STRIDE_PX} / ${RUN_STRIDE_PX}`)
@@ -60,14 +60,14 @@ function phase(): void {
   }
   ok(a === b, 'same input, same phase')
   // frame lookup over the real clip durations
-  ok(gaitFrame(0, WALK_DURS) === 0 && gaitFrame(0.26, WALK_DURS) === 1 && gaitFrame(0.51, WALK_DURS) === 2 && gaitFrame(0.99, WALK_DURS) === 3, 'walk frames by phase')
-  ok(gaitFrame(0.24, RUN_DURS) === 0 && gaitFrame(0.25, RUN_DURS) === 1 && gaitFrame(1.5, RUN_DURS) === 2 && gaitFrame(-0.1, RUN_DURS) === 3, 'run frames by phase, wrapped')
+  ok(gaitFrame(0, WALK_DURS) === 0 && gaitFrame(0.26, WALK_DURS) === 2 && gaitFrame(0.51, WALK_DURS) === 4 && gaitFrame(0.99, WALK_DURS) === 7, 'walk frames by phase')
+  ok(gaitFrame(0.24, RUN_DURS) === 1 && gaitFrame(0.25, RUN_DURS) === 2 && gaitFrame(1.5, RUN_DURS) === 4 && gaitFrame(-0.1, RUN_DURS) === 7, 'run frames by phase, wrapped')
   ok(gaitFrame(0.5, []) === 0, 'empty clip gives frame 0')
   const UNEVEN = [300, 100, 100, 500] // total 1000 ms: frame boundaries at phase 0.3, 0.4, 0.5
   ok(gaitFrame(0.29, UNEVEN) === 0 && gaitFrame(0.31, UNEVEN) === 1 && gaitFrame(0.41, UNEVEN) === 2 && gaitFrame(0.51, UNEVEN) === 3 && gaitFrame(0.99, UNEVEN) === 3, 'uneven durations: frame by cumulative time')
 }
 
-// Defect A regression: the frame must move on by at most one step per tick while the speed ramps, whatever the run clock reads.
+// Phase continuity: normal locomotion advances by <=1 frame/tick; fast debug speeds can cross two of the finer v2 frames.
 function continuity(): void {
   for (const [lo, hi, set, durs] of [[11, 120, 'lit', WALK_DURS], [122, 400, 'lit', RUN_DURS], [11, 400, 'escape', RUN_DURS]] as const) {
     for (const dir of [1, -1]) {
@@ -76,7 +76,7 @@ function continuity(): void {
         const v = dir > 0 ? lo + (hi - lo) * i / 600 : hi - (hi - lo) * i / 600
         ph = gaitAdvance(ph, v, set, DT)
         const f = gaitFrame(ph, durs)
-        ok(back(prev, f) <= 1, `${set} ramp ${dir > 0 ? 'up' : 'down'}: frame ${prev} -> ${f} at ${v.toFixed(1)} px/s`)
+        ok(back(prev, f) <= Math.ceil(gaitHz(v, gaitStride(set, v)) * DT * durs.length), `${set} ramp ${dir > 0 ? 'up' : 'down'}: frame ${prev} -> ${f} at ${v.toFixed(1)} px/s`)
         prev = f
       }
     }

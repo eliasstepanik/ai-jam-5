@@ -17,7 +17,7 @@ type Anim = {
 }
 type Entry = { index: number; name: string; role: string; hex: string; rgb: number[] }
 type Source = {
-  format: string; image: string; size: { w: number; h: number }; frame_size: unknown; direction_order: string[]
+  asset_revision?: number; format: string; image: string; size: { w: number; h: number }; frame_size: unknown; direction_order: string[]
   counts: { frames: number }; palette_panel_rect: Rect; palettes: { id: string; entries: Entry[] }[]; animations: Anim[]
 }
 
@@ -67,11 +67,12 @@ const animations = src.animations.map((a) => {
   out.directions = directions
   return out
 })
-if (frames !== src.counts.frames || frames !== 1268) fail(`frame count ${frames}`)
+if (frames !== src.counts.frames || frames !== 1364) fail(`frame count ${frames}`)
 
 const out = {
   png_sha256: createHash('sha256').update(readFileSync('src/assets/characters.png')).digest('hex'),
   format: src.format,
+  asset_revision: src.asset_revision ?? 1,
   image: src.image,
   size: src.size,
   frame_size: src.frame_size,

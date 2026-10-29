@@ -183,7 +183,7 @@ const MAPPED = [
 ]
 type CharFrame = { duration_ms: number; rect: Rect; anchor: { x: number; y: number } }
 type Chars = {
-  format: string; size: { w: number; h: number }; frame_size: { w: number; h: number }; direction_order: string[]; counts: { frames: number }
+  png_sha256: string; format: string; size: { w: number; h: number }; frame_size: { w: number; h: number }; direction_order: string[]; counts: { frames: number }
   palette_panel_rect: Rect; animations: { id: string; frame_count_per_direction: number; directions: Record<string, CharFrame[]> }[]
 }
 const CH_PNG = ASSETS + '/characters.png', CH_JSON = ASSETS + '/characters.json'
@@ -216,12 +216,17 @@ else if (ch) {
       }
     }
   }
+  for (const [id, ms] of [['walk_lit_torch_base', 1000 / 12], ['run_lit_torch_base', 50], ['run_without_torch', 50]] as const) {
+    const clip = ch.animations.find(a => a.id === 'player/' + id)
+    if (clip?.frame_count_per_direction !== 8 || Object.values(clip.directions).some(fs => fs.some(f => Math.abs(f.duration_ms - ms) > 1e-6))) fail('v2 locomotion frame count/timing: ' + id)
+  }
   const materialFrames = ch.animations.find(a => a.id === 'player/material_change_lit_torch_base')?.directions.south
   if (!materialFrames || Math.abs(materialFrames.reduce((ms, f) => ms + f.duration_ms, 0) / 1000 - MATERIAL_CHANGE_S) > 1e-6) fail('material-change gameplay duration differs from atlas playback')
-  if (charFrames !== 1268 || ch.counts.frames !== 1268) fail('characters.json must hold 1268 frames (counts.frames ' + ch.counts.frames + ', actual ' + charFrames + ')')
+  if (charFrames !== 1364 || ch.counts.frames !== 1364) fail('characters.json must hold 1364 frames (counts.frames ' + ch.counts.frames + ', actual ' + charFrames + ')')
   for (const id of MAPPED) if (!ids.has(id)) fail('characters.json lacks animation ' + id + ' (used by the animation mapping)')
 }
 if (ch) {
+  if (existsSync(CH_PNG) && createHash('sha256').update(readFileSync(CH_PNG)).digest('hex') !== ch.png_sha256) fail('characters.png hash differs from runtime JSON')
   sheet(CH_PNG, CH_SIZE, 600 * KB)
   jsonSize(CH_JSON, 400 * KB)
 }
