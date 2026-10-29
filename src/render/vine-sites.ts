@@ -23,7 +23,7 @@ const HASH = 35 // '#'
 const isVine = (name: string | null): boolean => name !== null && (name.startsWith('ground_vine_') || name.startsWith('wall_vine_'))
 
 // One glowing vine: frame name (tileFrame-able), the world-px anchor exactly where cave-details.ts blits it (floor x*32+16, y*32+24;
-// wall x+16, y+56) and the pulse phase. Derived data only; the consumer owns all drawing.
+// wall tx*32+16, ty*32+8, paintWalls y = ty*32 - FACE_H, anchor y + 56) and the pulse phase. Derived data only; the consumer owns all drawing.
 export type VineSprite = { readonly name: string; readonly x: number; readonly y: number; readonly phase: number }
 
 // Derived cache, rebuilt when anything the pick reads changes: DetailCtx identity (tiles, seed, run, depth/wet/guide inputs), the vein
@@ -65,8 +65,8 @@ function chunkSites(e: Epoch, cx: number, cy: number): ChunkSites {
     const name = wallDetailAt(c, tx, ty)
     if (!isVine(name)) continue
     const phase = hash2(tx, ty, seed ^ SALT)
-    triples.push(tx * TILE + 16, (ty + 1) * TILE + 8, phase)
-    sprites.push({ name: name!, x: tx * TILE + 16, y: (ty + 1) * TILE + 8, phase })
+    triples.push(tx * TILE + 16, ty * TILE + 8, phase)
+    sprites.push({ name: name!, x: tx * TILE + 16, y: ty * TILE + 8, phase })
   }
   const out = { triples, sprites }
   e.chunks.set(key, out)
