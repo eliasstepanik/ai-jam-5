@@ -1,28 +1,46 @@
-// Copper flame trail: a few faint additive sparks drifting along s.trail.path toward the Beacon (systems/copper-trail.ts).
-// Stateless: positions follow s.trail.t, no particle pool, no RNG. Called inside the additive 'lighter' pass.
+// Sparse green pixel cubes hint along the Beacon route without tracing it as a dotted line.
 import type { State } from '../core/types.ts'
-import { T } from '../core/tuning.ts'
-import { trailAt, TRAIL_ALPHA, TRAIL_LEN_PX, TRAIL_MOTES, TRAIL_PERIOD_S, TRAIL_R_PX, TRAIL_START_PX } from '../systems/copper-trail.ts'
+import { COPPER_HINT_SLOTS, copperHint } from '../core/copper-hints.ts'
+import { hash2 } from '../core/noise.ts'
+import { trailAt } from '../systems/copper-trail.ts'
+import { idx, inMap, isSolidAt, worldToTile } from '../world/grid.ts'
+import { lineOfSightPx } from '../world/los.ts'
+import { getResources } from '../assets/resources.ts'
+import { ctx2d, newCanvas } from './light.ts'
+import { eraseForeground } from './foreground-walls.ts'
+import { currentQuality } from './quality.ts'
 import type { View } from './view.ts'
 import { inView, worldXf } from './view.ts'
 
-const P = { x: 0, y: 0 } // scratch point (no per-frame allocation)
-
 export function drawCopperTrail(ctx: CanvasRenderingContext2D, s: State, v: View): void {
   const tr = s.trail
-  if (!tr.on || !tr.path.length || s.meta.screen !== 'playing') return
-  ctx.save()
-  worldXf(ctx, v)
-  ctx.globalCompositeOperation = 'lighter'
-  ctx.fillStyle = T.minerals.table.copper.mantle
-  for (let k = 0; k < TRAIL_MOTES; k++) {
-    const ph = (tr.t / TRAIL_PERIOD_S + k / TRAIL_MOTES) % 1
-    trailAt(s, TRAIL_START_PX + ph * TRAIL_LEN_PX, P)
-    if (!inView(v, P.x, P.y)) continue
-    ctx.globalAlpha = TRAIL_ALPHA * Math.sin(Math.PI * ph)
-    ctx.beginPath()
-    ctx.arc(P.x, P.y, TRAIL_R_PX, 0, Math.PI * 2) // world transform already scales by the view zoom
-    ctx.fill()
+  if (!tr.on || tr.path.length < 2 || s.meta.screen !== 'playing') return
+  const res = getResources(), quality = currentQuality(s).particles
+  let canvas = res.light.get('copper-hint')
+  if (!canvas) { canvas = newCanvas(4, 4); res.light.set('copper-hint', canvas) }
+  const g = ctx2d(canvas), p = { x: 0, y: 0 }, ahead = { x: 0, y: 0 }
+  ctx.save(); worldXf(ctx, v)
+  ctx.globalCompositeOperation = 'source-over'; ctx.imageSmoothingEnabled = false
+  for (let slot = 0; slot < COPPER_HINT_SLOTS; slot++) {
+    if (slot > 0 && hash2(slot, 0, s.meta.seed) > quality) continue
+    const hint = copperHint(s.meta.seed, tr.t, slot)
+    if (!hint) continue
+    trailAt(s, hint.distance, p); trailAt(s, hint.distance + 12, ahead)
+    let dx = ahead.x - p.x, dy = ahead.y - p.y
+    if (Math.hypot(dx, dy) < .01) { dx = p.x - s.player.x; dy = p.y - s.player.y }
+    const length = Math.hypot(dx, dy) || 1
+    const x = Math.round(p.x - dy / length * hint.side), groundY = p.y + dx / length * hint.side
+    const y = Math.round(groundY + hint.lift), tx = worldToTile(x), ty = worldToTile(groundY)
+    if (!inView(v, x, y) || !inMap(s, tx, ty) || isSolidAt(s, idx(s, tx, ty)) ||
+      !lineOfSightPx(s, s.player.x, s.player.y, x, groundY)) continue
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1
+    g.clearRect(0, 0, 4, 4)
+    g.fillStyle = '#33994b'; g.fillRect(0, 1, hint.size, hint.size)
+    g.fillStyle = '#71dc7d'; g.fillRect(0, 0, hint.size, 1)
+    g.fillStyle = '#196c32'; g.fillRect(hint.size, 1, 1, hint.size)
+    eraseForeground(g, s, v, groundY, x, y, 4, 4)
+    ctx.globalAlpha = hint.alpha * (s.settings.reducedFlash ? .75 : 1)
+    ctx.drawImage(canvas, x, y)
   }
   ctx.restore()
 }

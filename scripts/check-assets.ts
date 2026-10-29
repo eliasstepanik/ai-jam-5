@@ -249,7 +249,7 @@ const used = new Set<string>()
 for (const [id, def] of Object.entries(SOUNDS) as [string, SoundDef][]) {
   if (!/^(mus|amb|sfx|ui)_[a-z0-9-]+$/.test(id)) fail('SOUNDS id ' + id + ' must match ^(mus|amb|sfx|ui)_[a-z0-9-]+$')
   if (def.loop && !(def.loop[0] >= 0 && def.loop[0] < def.loop[1])) fail('SOUNDS ' + id + ' loop must satisfy 0 <= start < end')
-  for (const f of [...def.file ? [def.file] : [], ...def.layers ?? []]) {
+  for (const f of [...def.file ? [def.file] : [], ...def.layers ?? [], ...def.variants ?? []]) {
     used.add(f + '.ogg'); used.add(f + '.mp3')
     if (pending.has(id)) continue
     for (const ext of ['ogg', 'mp3']) if (!existsSync(AUDIO + '/' + f + '.' + ext)) fail('SOUNDS ' + id + ' needs ' + AUDIO + '/' + f + '.' + ext + ' (or list it in PENDING_AUDIO)')

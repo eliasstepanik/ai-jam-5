@@ -6,6 +6,7 @@
 // from architecture.md §4 / R-043; the owner records ruling R-043a.
 import { makeFakeCtx } from './audio-fake.ts'
 import type { FakeCtx, FakeNode } from './audio-fake.ts'
+import { soundFile } from '../assets/sound-variants.ts'
 import { SOUNDS } from '../assets/sounds.ts'
 import type { SoundDef, SoundId } from '../assets/sounds.ts'
 import { play } from '../audio/sfx.ts'
@@ -42,7 +43,7 @@ function setup(): Setup {
   // exactly one bufferSource per voice, no synth recipes, fully deterministic bookkeeping.
   for (const [id, d] of Object.entries(SOUNDS) as [SoundId, SoundDef][]) {
     if (d.group === 'music') continue
-    a.buffers.set(d.file ?? id, fake.createBuffer(1, 4800, 48000) as unknown as AudioBuffer)
+    for (const file of [d.file ?? id, ...d.variants ?? []]) a.buffers.set(file, fake.createBuffer(1, 4800, 48000) as unknown as AudioBuffer)
   }
   return { fake, res, a }
 }
@@ -214,7 +215,20 @@ function stingerTest(): void {
   ok(fake.violations.length === 0, `fake ctx violations: ${fake.violations.join('; ')}`)
 }
 
+function rockVariantsTest(): void {
+  const { fake, res, a } = setup(), heard = new Set<string>()
+  for (let seq = 0; seq < 30; seq++) {
+    play(res, 'sfx_rock-impact', { seq }) // simultaneous landings must each get one source, bounded by the shared cap
+    const voice = a.voices[a.voices.length - 1], file = soundFile('sfx_rock-impact', seq)
+    ok(voice.id === 'sfx_rock-impact' && voice.nodes.length === 1, 'one sample source per rock, not three layers')
+    ok((srcOf(voice).buffer as unknown) === a.buffers.get(file), 'actual playback selects the chosen variation')
+    ok(a.voices.length === Math.min(seq + 1, 4), 'simultaneous impacts respect the common four-voice cap')
+    heard.add(file)
+  }
+  ok(heard.size === 3 && !a.broken.size && !fake.violations.length, 'all delivered alternatives play without synthesis or warnings')
+}
 export function run(): void {
+  rockVariantsTest()
   capTest()
   stealTest()
   lockoutTest()

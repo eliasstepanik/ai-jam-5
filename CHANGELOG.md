@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 14 AI-generated audio samples (7 SFX, 2 music stingers, cave ambience, 4 music tracks) produced via ComfyUI, and ComfyUI pipeline additions (`gen-audio` trim/peakDb/loopFade options, loop-seam nodes in the graph). 11 ship in `src/assets/audio/`; the generated `mus_title`, `mus_descent` and `mus_escape` were superseded by the owner-supplied Beacon Run stream and removed from the bundle.
 
 ### Changed
+- Falling rocks randomly choose one of three supplied impact recordings, keeping a common voice cap.
+- #167: copper torch guidance uses faint, sporadic green pixel cubes with lateral scatter and wall occlusion instead of the dotted line.
 - Updated the character atlas to v2 with eight-frame player walking/running in all directions; preserved movement and action timing, and reload atlas pixels/tints together.
 - Master compressor threshold -18 -> -14 dB and attack 5 -> 15 ms (fewer click artefacts); heartbeat voice cap 1 -> 2.
 - Ducking now merges per cause: the deepest cause wins and the release comes from the last cause.

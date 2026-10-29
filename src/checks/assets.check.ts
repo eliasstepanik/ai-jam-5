@@ -79,7 +79,7 @@ export function run(): void {
     ok(/^(mus|amb|sfx|ui)_[a-z0-9-]+$/.test(id), 'sound id spelling ' + id)
     ok(s.gain >= 0 && s.gain <= 1 && Number.isInteger(s.cap) && s.cap > 0, 'gain and voice cap ' + id)
     if (s.loop) ok(s.loop[0] >= 0 && s.loop[1] > s.loop[0], 'sample loop points ' + id)
-    const own = [...s.file ? [s.file] : [], ...s.layers ?? []]
+    const own = [...s.file ? [s.file] : [], ...s.layers ?? [], ...s.variants ?? []]
     // Pending iff at least one of its .ogg/.mp3 files is missing: delivery must shrink PENDING_AUDIO, a missing file must be listed.
     const missing = own.flatMap((f) => AUDIO_EXT.map((e) => f + '.' + e)).filter((n) => !onDisk.has(n))
     if (own.length > 0) ok(pending.has(id) === missing.length > 0, pending.has(id)
@@ -91,12 +91,12 @@ export function run(): void {
     const s = (SOUNDS as Record<string, SoundDef>)[id]
     ok(!!s && !!(s.file || s.layers), 'PENDING_AUDIO id is not a known sample sound ' + id)
   }
-  // A file is allowed only if some id references it via file/layers (no reserved-slot allowance: the
+  // A file is allowed only if some id references it via file/layers/variants (no reserved-slot allowance: the
   // generated mus_title/mus_descent/mus_escape files were removed when master #161 repointed those ids to mus_beacon-run).
   for (const n of onDisk) {
     ok(owned.has(n), 'orphan audio file ' + n + ' (no SOUNDS id owns it)')
   }
-  ok(files.size === 15 && !('sfx_parry-perfect-ring' in SOUNDS), 'internal ring layer is a file, not a SoundId')
+  ok(files.size === 17 && !('sfx_parry-perfect-ring' in SOUNDS), 'internal ring layer is a file, not a SoundId')
   ok(!('sfx_step' in SOUNDS) && !('sfx_roll-ready' in SOUNDS) && !('ui_hover' in SOUNDS), 'orphan sounds removed')
   ok(SOUNDS.mus_descent.stream && SOUNDS.mus_descent.loop[1] === 480, 'full eight-minute owner score streams')
 }

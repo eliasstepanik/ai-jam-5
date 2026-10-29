@@ -34,6 +34,7 @@ const LOAD_PARALLEL = 4
 const FIRST_SAMPLES = ['mus_descent', 'amb_cave'] // decode order: P0 first
 // Static Vite construct (not a runtime side effect): an absent or empty folder simply yields {}.
 const URLS = import.meta.glob('../assets/audio/*.{ogg,mp3}', { query: '?url', import: 'default', eager: true }) as Record<string, string>
+const SAMPLE_REVISION = import.meta.url + '|' + Object.values(URLS).join('|')
 
 // console.warn once per distinct message. The dedupe Set sits on getResources().audio so it survives HMR swaps.
 export function warnOnce(e: unknown): void {
@@ -55,29 +56,34 @@ function sampleNames(): string[] {
   const pending: readonly string[] = PENDING_AUDIO
   const names = new Set<string>()
   for (const [id, def] of Object.entries(SOUNDS) as [SoundId, SoundDef][]) {
-    if (def.stream || (!def.file && !def.layers)) continue
-    for (const n of [def.file ?? id, ...(def.layers ?? [])]) if (!pending.includes(n)) names.add(n)
+    if (def.stream || (!def.file && !def.layers && !def.variants)) continue
+    for (const n of [def.file ?? id, ...(def.layers ?? []), ...(def.variants ?? [])]) if (!pending.includes(n)) names.add(n)
   }
   return [...names].sort((x, y) => Number(FIRST_SAMPLES.includes(y)) - Number(FIRST_SAMPLES.includes(x)))
 }
 
-async function loadOne(ctx: AudioContext, name: string, url: string): Promise<void> {
+async function loadOne(ctx: AudioContext, name: string, url: string, generation: number): Promise<void> {
   const buffers = getResources().audio.buffers
   try {
     const r = await fetch(url)
     if (!r.ok) throw new Error(`sample ${name}: HTTP ${r.status}`)
-    buffers.set(name, await ctx.decodeAudioData(await r.arrayBuffer()))
+    const decoded = await ctx.decodeAudioData(await r.arrayBuffer())
+    if (getResources().audio.sampleGen === generation) buffers.set(name, decoded)
   } catch (e) {
+    if (getResources().audio.sampleGen !== generation) return
     buffers.set(name, null) // synth fallback (sfx) or silence (music/ambience)
     warnOnce(e instanceof Error ? new Error(`sample ${name} failed: ${e.message}`) : e)
   }
 }
 
-// Fire-and-forget: never awaited by audioStep. Each name is requested once (pending/buffers guard).
+// Fire-and-forget: never awaited by audioStep. Each name is requested once per loader revision (including changed deliveries during HMR).
 function loadSamples(res: Resources): void {
   const a = res.audio
   const ctx = a.ctx
-  if (!ctx) return
+  if (!ctx || a.sampleRevision === SAMPLE_REVISION) return
+  a.sampleRevision = SAMPLE_REVISION
+  const generation = a.sampleGen = (a.sampleGen ?? 0) + 1
+  a.pending.clear(); a.buffers.clear() // old names/bytes must not survive a changed audio delivery
   const ext = document.createElement('audio').canPlayType('audio/ogg; codecs="opus"') !== '' ? 'ogg' : 'mp3'
   const queue: [string, string][] = []
   for (const name of sampleNames()) {
@@ -87,7 +93,7 @@ function loadSamples(res: Resources): void {
     queue.push([name, url])
   }
   const worker = async (): Promise<void> => {
-    for (let job = queue.shift(); job; job = queue.shift()) await loadOne(ctx, job[0], job[1])
+    for (let job = queue.shift(); job; job = queue.shift()) await loadOne(ctx, job[0], job[1], generation)
   }
   for (let i = 0; i < LOAD_PARALLEL; i++) worker().catch(warnOnce)
 }
@@ -219,6 +225,7 @@ export function audioStep(s: State, _input: Input): void {
   if (a.score?.blocked) armGestures(a)
   if (ctx.state !== 'running' && !document.hidden && !pausedMenu(s) && a.lastScreen !== 'paused') armGestures(a)
   ensureMixer(res)
+  loadSamples(res) // O(1) after the manifest was handled; also discovers newly delivered variants during HMR
   setMaster(res, 1, s.settings.muted)
   setBusVolumes(res, s.settings.musicVolume, s.settings.sfxVolume)
   applyDucks(res, duckFor(s))

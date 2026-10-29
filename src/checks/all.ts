@@ -1,5 +1,6 @@
 // Runs every pure-logic check (R-040). Add one import + one call per new *.check.ts file; the list is kept in sync by hand.
 import { run as telegraph } from './telegraph.check.ts'
+import { run as rockVariants } from './rock-variants.check.ts'
 import { run as suppliedAudio } from './supplied-audio.check.ts'
 import { run as puddleDressing } from './puddle-dressing.check.ts'
 import { run as heartUi } from './heart-ui.check.ts'
@@ -80,6 +81,7 @@ import { run as titleSettings } from './settings.check.ts'
 import { run as audioRecipes } from './audio-recipes.check.ts'
 import { run as audioEngine } from './audio-engine.check.ts'
 import { run as audioWiring } from './audio-wiring.check.ts'
+rockVariants()
 suppliedAudio()
 puddleDressing()
 heartUi()

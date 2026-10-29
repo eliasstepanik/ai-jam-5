@@ -2,6 +2,7 @@
 // Rules: all state lives in res.audio (voices, loops, cursors, camera mirror); no module-level mutable state, no timers,
 // no Math.random. Recipe exceptions are caught here (broken set, one warning per id), never propagated.
 import type { AudioRes, Resources, Voice } from '../assets/resources.ts'
+import { soundFile } from '../assets/sound-variants.ts'
 import { SOUNDS } from '../assets/sounds.ts'
 import type { SoundDef, SoundId } from '../assets/sounds.ts'
 import { hash2 } from '../core/noise.ts'
@@ -82,8 +83,9 @@ export function play(res: Resources, id: SoundId, p: PlayParams): void {
   const d = def(id)
   const t = ctx.currentTime + (p.delay ?? 0)
   const last = a.lastStart.get(id)
-  if (last !== undefined && Math.abs(t - last) < RETRIGGER_S) return
-  const buf = a.buffers.get(d.file ?? id) ?? null
+  // Each simultaneous landing gets a source; the shared family cap bounds the pile-up.
+  if (id !== 'sfx_rock-impact' && last !== undefined && Math.abs(t - last) < RETRIGGER_S) return
+  const file = soundFile(id, p.seq), buf = a.buffers.get(file) ?? null
   const recipe = SYNTH[id]
   if (!buf && (!recipe || a.broken.has(id))) return
   if (!stealFor(res, id)) return
@@ -107,7 +109,7 @@ export function play(res: Resources, id: SoundId, p: PlayParams): void {
   let stopAt = t + 6 // recipe voices: upper bound until their sources end; sample voices: longest layer below
   let sampleEnd = 0
   if (buf) {
-    for (const f of [d.file ?? id, ...(d.layers ?? [])]) {
+    for (const f of [file, ...(d.layers ?? [])]) {
       const b = a.buffers.get(f)
       if (!b) continue
       const src = ctx.createBufferSource()
