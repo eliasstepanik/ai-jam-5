@@ -96,7 +96,8 @@ export function run(): void {
   for (const n of onDisk) {
     ok(owned.has(n), 'orphan audio file ' + n + ' (no SOUNDS id owns it)')
   }
-  ok(files.size === 17 && !('sfx_parry-perfect-ring' in SOUNDS), 'internal ring layer is a file, not a SoundId')
+  ok(files.size === 18 && !('sfx_parry-perfect-ring' in SOUNDS), 'internal ring layer is a file, not a SoundId')
   ok(!('sfx_step' in SOUNDS) && !('sfx_roll-ready' in SOUNDS) && !('ui_hover' in SOUNDS), 'orphan sounds removed')
+  ok(SOUNDS.mus_escape.stream && SOUNDS.mus_escape.file === 'mus_blackout-escape' && SOUNDS.mus_escape.loop[1] === 480, 'dedicated full escape score streams')
   ok(SOUNDS.mus_descent.stream && SOUNDS.mus_descent.loop[1] === 480, 'full eight-minute owner score streams')
 }

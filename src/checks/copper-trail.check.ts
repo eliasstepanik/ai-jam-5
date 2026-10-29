@@ -63,7 +63,7 @@ function clears(): void {
 }
 
 function sporadic(): void {
-  let quiet = 0, visible = 0, max = 0
+  let quiet = 0, visible = 0, max = 0, bright = 0
   const sideways = new Set<number>()
   for (let tick = 0; tick < 3600; tick++) {
     let n = 0
@@ -71,14 +71,16 @@ function sporadic(): void {
       const a = copperHint(42, tick / 60, slot), b = copperHint(42, tick / 60, slot)
       ok(JSON.stringify(a) === JSON.stringify(b), 'same clock is stable between render calls')
       if (!a) continue
+      if (a.alpha >= .7) bright++
       n++; sideways.add(Math.round(a.side))
-      ok(a.alpha >= 0 && a.alpha <= .2 && a.distance >= 38 && a.distance < 150, 'faint nearby directional cue')
+      ok(a.alpha >= 0 && a.alpha <= .9 && a.distance >= 38 && a.distance < 150, 'bright bounded nearby directional cue')
       ok(a.size >= 2 && a.size <= 3 && Math.abs(a.side) <= 22, 'native small cube with bounded lateral scatter')
     }
     if (!n) quiet++
     visible += n; max = Math.max(max, n)
   }
   ok(quiet > 600 && visible > 300 && max <= 3, 'sporadic visible hints with long quiet gaps and bounded count')
+  ok(bright > 300, 'many cubes reach torch-like visible opacity')
   ok(sideways.size > 12, 'particles scatter sideways rather than forming a line')
 }
 export function run(): void {

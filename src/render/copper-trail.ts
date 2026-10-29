@@ -2,6 +2,7 @@
 import type { State } from '../core/types.ts'
 import { COPPER_HINT_SLOTS, copperHint } from '../core/copper-hints.ts'
 import { hash2 } from '../core/noise.ts'
+import { FLAME_COL } from './flame.ts'
 import { trailAt } from '../systems/copper-trail.ts'
 import { idx, inMap, isSolidAt, worldToTile } from '../world/grid.ts'
 import { lineOfSightPx } from '../world/los.ts'
@@ -15,7 +16,7 @@ import { inView, worldXf } from './view.ts'
 export function drawCopperTrail(ctx: CanvasRenderingContext2D, s: State, v: View): void {
   const tr = s.trail
   if (!tr.on || tr.path.length < 2 || s.meta.screen !== 'playing') return
-  const res = getResources(), quality = currentQuality(s).particles
+  const res = getResources(), quality = currentQuality(s).particles, col = FLAME_COL.copper
   let canvas = res.light.get('copper-hint')
   if (!canvas) { canvas = newCanvas(4, 4); res.light.set('copper-hint', canvas) }
   const g = ctx2d(canvas), p = { x: 0, y: 0 }, ahead = { x: 0, y: 0 }
@@ -35,9 +36,9 @@ export function drawCopperTrail(ctx: CanvasRenderingContext2D, s: State, v: View
       !lineOfSightPx(s, s.player.x, s.player.y, x, groundY)) continue
     g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1
     g.clearRect(0, 0, 4, 4)
-    g.fillStyle = '#33994b'; g.fillRect(0, 1, hint.size, hint.size)
-    g.fillStyle = '#71dc7d'; g.fillRect(0, 0, hint.size, 1)
-    g.fillStyle = '#196c32'; g.fillRect(hint.size, 1, 1, hint.size)
+    g.fillStyle = col.mantle; g.fillRect(0, 1, hint.size, hint.size)
+    g.fillStyle = col.core; g.fillRect(0, 0, hint.size, 1)
+    g.fillStyle = col.fringe; g.fillRect(hint.size, 1, 1, hint.size)
     eraseForeground(g, s, v, groundY, x, y, 4, 4)
     ctx.globalAlpha = hint.alpha * (s.settings.reducedFlash ? .75 : 1)
     ctx.drawImage(canvas, x, y)

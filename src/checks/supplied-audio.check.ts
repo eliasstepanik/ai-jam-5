@@ -1,4 +1,4 @@
-// Supplied audio semantics: full score, real movement and exactly doubled escape cadence.
+// Supplied audio semantics: distinct full scores, real movement and exactly doubled escape cadence.
 import { init } from '../core/state.ts'
 import { footstepMode } from '../core/footsteps.ts'
 import { SOUNDS, PENDING_AUDIO } from '../assets/sounds.ts'
@@ -24,7 +24,8 @@ export function run(): void {
   }
   ok(SOUNDS['sfx_player-walk'].loop[1] === SOUNDS['sfx_player-run'].loop[1] * 2, 'run loop is half the walking duration')
   for (const id of ['mus_title', 'mus_descent', 'mus_escape'] as const) {
-    ok(SOUNDS[id].file === 'mus_beacon-run' && SOUNDS[id].stream && SOUNDS[id].loop[1] === 480, id + ' streams the same full score')
+    const file = id === 'mus_escape' ? 'mus_blackout-escape' : 'mus_beacon-run'
+    ok(SOUNDS[id].file === file && SOUNDS[id].stream && SOUNDS[id].loop[1] === 480, id + ' streams the selected full score')
     ok(!(PENDING_AUDIO as readonly string[]).includes(id), id + ' no longer pending')
   }
 }

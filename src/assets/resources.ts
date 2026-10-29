@@ -52,7 +52,7 @@ export type AudioRes = {
   lastSeq: number; lastScreen: string
   unlock: { el: EventTarget; type: string; fn: EventListener }[]
   duck: Record<Group, GainNode> | null; masterLp: BiquadFilterNode | null
-  score?: { element: HTMLAudioElement; source: MediaElementAudioSourceNode; gain: GainNode; bus: GainNode; level: number; pending: boolean; blocked: boolean }
+  score?: { url?: string; gen?: number; element: HTMLAudioElement; source: MediaElementAudioSourceNode; gain: GainNode; bus: GainNode; level: number; pending: boolean; blocked: boolean }
   lastMaster: number; pauseAt: number
   nextCrackle: number; nextBeat: number; crackleN: number; growlAt: number
   broken: Set<SoundId>; synthGen: number
