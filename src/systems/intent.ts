@@ -47,6 +47,6 @@ export function resolveIntent(s: State, input: Input): Intent {
     interactEdge: pressed.has('KeyE'),
     toss: pressed.has('KeyF'),
     shake: pressed.has('KeyG'),
-    select: d < 0 ? null : MINERALS[d],
+    select: d >= 0 ? MINERALS[d] : input.wheel ? MINERALS[((MINERALS.indexOf(p.selected) + input.wheel) % 3 + 3) % 3] : null,
   }
 }

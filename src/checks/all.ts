@@ -58,6 +58,7 @@ import { run as commitCheck } from './commit.check.ts'
 import { run as escapeWisp } from './escape-wisp.check.ts'
 import { run as escapeWispGlide } from './escape-wisp-glide.check.ts'
 import { run as escapeWispEdge } from './escape-wisp-edge.check.ts'
+import { run as mineralGuidance } from './mineral-guidance.check.ts'
 import { run as copperTrail } from './copper-trail.check.ts'
 import { run as animSpeed } from './anim-speed.check.ts'
 import { run as shadowMist } from './shadow-mist.check.ts'
@@ -136,6 +137,7 @@ escapeWisp()
 escapeWispGlide()
 escapeWispEdge()
 copperTrail()
+mineralGuidance()
 shadowMist()
 depthLabel()
 depthTone()

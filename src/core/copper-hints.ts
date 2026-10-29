@@ -1,32 +1,27 @@
-// World-anchored cosmetic bursts. Only the resource pool changes; gameplay State/RNG are untouched.
+// Bounded world-space fire history shared by the copper/strontium route guides. No gameplay RNG/State writes.
 import { hash2 } from './noise.ts'
-export type CopperBurst = { x: number; y: number; born: number; life: number; id: number }
-export type CopperHints = { runId: number; at: number; active: boolean; nextAt: number; seq: number; burst: CopperBurst | null }
-export const COPPER_TWINKLE_PIXELS = 6
+export type GuidePixel = { x: number; y: number; vx: number; vy: number; born: number; life: number; size: number }
+export type GuidePoint = { tile: number; x: number; y: number }
+export type CopperHints = { version: 2; runId: number; material: string; at: number; next: Map<number, number>; pixels: GuidePixel[] }
 export function createCopperHints(): CopperHints {
-  return { runId: -1, at: 0, active: false, nextAt: 0, seq: 0, burst: null }
+  return { version: 2, runId: -1, material: '', at: 0, next: new Map(), pixels: [] }
 }
-const gap = (seed: number, seq: number): number => 1 + hash2(seq, 51, seed)
-// choose() is sampled once at birth, never while the player moves during a live twinkle.
-export function sampleCopperHints(p: CopperHints, runId: number, time: number, on: boolean, seed: number,
-  choose: (fraction: number) => { x: number; y: number } | null): void {
-  if (p.runId !== runId || time < p.at) Object.assign(p, createCopperHints(), { runId })
+export function sampleCopperFire(p: CopperHints, runId: number, time: number, on: boolean, material: string,
+  seed: number, points: readonly GuidePoint[], quality: number): void {
+  if (p.runId !== runId || time < p.at || p.material !== material) Object.assign(p, createCopperHints(), { runId, material })
   p.at = time
-  if (!on) { p.active = false; p.burst = null; return }
-  if (!p.active) { p.active = true; p.nextAt = time + gap(seed, p.seq); return }
-  if (p.burst && time >= p.burst.born + p.burst.life) p.burst = null
-  if (time < p.nextAt) return
-  const id = p.seq++, anchor = choose(hash2(id, 52, seed)), life = .5 + .5 * hash2(id, 53, seed)
-  p.burst = anchor ? { x: anchor.x, y: anchor.y, born: time, life, id } : null
-  // Skip missed bursts after a long render gap; never catch up with a pile of simultaneous cues.
-  p.nextAt = time + (anchor ? life : 0) + gap(seed, p.seq)
-}
-export function copperPixel(b: CopperBurst, seed: number, time: number, i: number):
-  { x: number; y: number; size: number; alpha: number } | null {
-  const h = (salt: number): number => hash2(b.id * COPPER_TWINKLE_PIXELS + i, salt, seed)
-  const start = h(54) * .15, end = .85 + h(55) * .15
-  const f = ((time - b.born) / b.life - start) / (end - start)
-  if (f <= 0 || f >= 1) return null
-  return { x: Math.round(b.x + (h(56) - .5) * 20), y: Math.round(b.y + (h(57) - .5) * 14 - 2),
-    size: h(58) < .5 ? 1 : 2, alpha: .95 * Math.sin(Math.PI * f) }
+  if (!on) { p.pixels = []; p.next.clear(); return }
+  p.pixels = p.pixels.filter(q => time < q.born + q.life)
+  const tiles = new Set(points.map(q => q.tile)), interval = .65 / Math.max(.25, quality)
+  for (const tile of p.next.keys()) if (!tiles.has(tile)) p.next.delete(tile)
+  for (const q of points) {
+    const phase = hash2(q.tile, 61, seed) * interval
+    const next = p.next.get(q.tile) ?? Math.ceil((time - phase) / interval) * interval + phase
+    if (time < next) { p.next.set(q.tile, next); continue }
+    const cycle = Math.floor(time / interval), h = (salt: number): number => hash2(q.tile, cycle, seed ^ salt)
+    // One fresh particle per emitter after a render gap; never catch up old fire in a pile.
+    if (p.pixels.length < 128) p.pixels.push({ x: q.x + (h(62) - .5) * 24, y: q.y + (h(63) - .5) * 10,
+      vx: (h(64) - .5) * 6, vy: -10 - h(65) * 8, born: time, life: .6 + h(66) * .5, size: h(67) < .6 ? 2 : 3 })
+    p.next.set(q.tile, time + interval)
+  }
 }

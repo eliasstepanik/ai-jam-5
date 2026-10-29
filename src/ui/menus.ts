@@ -212,12 +212,7 @@ function drawHelp(ctx: Ctx, s: State, w: number, h: number): void {
     }
     HELP[2].minerals.forEach((m, i) => {
       const cy = l.table.y + l.tableHead + i * l.tableRow + l.tableRow / 2
-      if (i === 0) {
-        ctx.fillStyle = COL.accent
-        ctx.beginPath()
-        ctx.arc(c.icon + 16 * u, cy, 8 * u, 0, TAU)
-        ctx.fill()
-      } else if (!resourceIcon(ctx, MINERALS[i - 1], c.icon + 16 * u, cy, u)) drawSprite(ctx, `item_mineral-${MINERALS[i - 1]}`, 'idle', 0, c.icon + 16 * u, cy, 0, 2 * u) // placeholder art ignores scale, atlas art honours it
+      if (i > 0 && !resourceIcon(ctx, MINERALS[i - 1], c.icon + 16 * u, cy, u)) drawSprite(ctx, `item_mineral-${MINERALS[i - 1]}`, 'idle', 0, c.icon + 16 * u, cy, 0, 2 * u)
       text(ctx, m.name, c.name, cy + 6 * u, 16, u, COL.text, { bold: true })
       if (!skinSprite(ctx, UI_TORCH_FRAMES[Math.floor(s.meta.time * UI_FPS) % 3], i === 0 ? 'normal' : MINERALS[i - 1], c.flame, cy - 18 * u, 24 * u, 36 * u)) {
         for (const [r, col] of [[12, m.mantle], [5, m.core]] as const) { // flame swatch: mantle disc, core disc

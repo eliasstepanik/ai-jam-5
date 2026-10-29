@@ -6,6 +6,7 @@ import { mergeState } from './merge.ts'
 import type { Mod } from './merge.ts'
 
 export type Input = {
+  wheel?: number // accumulated hotbar steps: down/right positive, consumed once per fixed update
   keys: Set<string> // held, KeyboardEvent.code
   pressed: Set<string> // went down since the last update step; also 'Blur' when focus or visibility was lost
   mouse: { x: number; y: number; down: boolean } // CSS pixels relative to the canvas, primary button only
@@ -60,10 +61,11 @@ function resize(): void {
 
 // ---- input ----
 const input: Input = { keys: new Set(), pressed: new Set(), mouse: { x: 0, y: 0, down: false }, clicks: [], view: { w: 0, h: 0, dpr: 1 } }
+let wheelRemainder = 0
 const GAME_KEYS = /^(Arrow|Space)/ // stop page scroll
 const listeners: [EventTarget, string, (e: never) => void][] = []
-function on<E extends Event>(t: EventTarget, type: string, fn: (e: E) => void): void {
-  t.addEventListener(type, fn as EventListener)
+function on<E extends Event>(t: EventTarget, type: string, fn: (e: E) => void, options?: AddEventListenerOptions): void {
+  t.addEventListener(type, fn as EventListener, options)
   listeners.push([t, type, fn as (e: never) => void])
 }
 
@@ -81,6 +83,7 @@ on<KeyboardEvent>(window, 'keydown', (e) => {
 })
 on<KeyboardEvent>(window, 'keyup', (e) => input.keys.delete(e.code))
 function lostFocus(): void {
+  input.wheel = 0; wheelRemainder = 0
   input.keys.clear()
   input.mouse.down = false
   input.pressed.add('Blur') // game pauses on its next step
@@ -105,6 +108,16 @@ on<PointerEvent>(canvas, 'pointerdown', (e) => {
 })
 on<PointerEvent>(window, 'pointerup', () => (input.mouse.down = false))
 on<PointerEvent>(window, 'pointercancel', () => (input.mouse.down = false))
+on<WheelEvent>(canvas, 'wheel', (e) => {
+  if (e.ctrlKey || !e.deltaY || state.meta.screen !== 'playing' || state.meta.phase !== 'descent') return
+  e.preventDefault()
+  const delta = e.deltaY * (e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? h : 1)
+  if (Math.sign(delta) !== Math.sign(wheelRemainder)) wheelRemainder = 0
+  wheelRemainder += delta
+  const steps = Math.trunc(wheelRemainder / 100)
+  input.wheel = (input.wheel ?? 0) + steps
+  wheelRemainder -= steps * 100
+}, { passive: false })
 on<Event>(canvas, 'contextmenu', (e) => e.preventDefault())
 on<Event>(window, 'resize', resize)
 resize()
@@ -128,6 +141,7 @@ function frame(now: number): void {
     } catch (e) {
       fail('update', e)
     }
+    input.wheel = 0
     input.pressed.clear()
     input.clicks.length = 0
     if (performance.now() - t0 > STEP_BUDGET_MS) {

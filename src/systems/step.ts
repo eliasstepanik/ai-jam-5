@@ -53,7 +53,7 @@ export function step(s: State, input: Input, dt: number): void {
   }
   if (s.meta.phase === 'escape') stepQuake(s, dt) // X11 (R-169): before checkEnd, so lose wins a same-step tie
   stepWisp(s, dt) // guide light (#81): after stepQuake so a landed rock re-routes in the same step; switches itself off outside the escape
-  stepCopperTrail(s, dt) // copper trail: descent only, self-gating (clears itself in the escape or when the copper flame ends)
+  stepCopperTrail(s, dt) // mineral guidance: copper to Beacon / strontium to resin; self-gating in descent
   stepDirector(s, dt) // D11
   stepMonsters(s, dt) // D12
   if (s.meta.phase === 'descent') resolveParries(s) // D13, before D14: a parry on the bite step wins

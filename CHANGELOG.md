@@ -8,12 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Strontium guides to the nearest reachable resin with sparse red path fire; copper uses teal path fire toward the Beacon.
+- Mouse-wheel mineral selection wraps in both directions.
+- “Spacebar to dodge” appears under the escape announcement, then shrinks and moves to the former torch-control tip position in the same plain text style.
 - Dedicated eight-minute Blackout escape music, selected after the Beacon cue, with Opus/MP3 streaming through the Music controls.
 - Automated audio checks closing the #101-#103 acceptance gaps: `src/checks/audio-fake.ts` (a recording fake `AudioContext`), `audio-engine.check.ts` (24-voice pool, priority stealing, 30 ms retrigger guard, mixer constants), `audio-wiring.check.ts` (all 28 `FxEventKind` mapped, the null set, sound ids exist, ducking/danger/music ranges), `audio-recipes.check.ts` (every synth recipe renders without throwing, node-count caps, static peak/level spread).
 - 14 AI-generated audio samples (7 SFX, 2 music stingers, cave ambience, 4 music tracks) produced via ComfyUI, and ComfyUI pipeline additions (`gen-audio` trim/peakDb/loopFade options, loop-seam nodes in the graph). 11 ship in `src/assets/audio/`; the generated `mus_title`, `mus_descent` and `mus_escape` were superseded by the owner-supplied Beacon Run stream and removed from the bundle.
 
 ### Changed
-- #167: copper guidance now twinkles in small clusters at fixed world spots on the Beacon path for 0.5�1 second, with a 1�2 second gap after each cluster.
+- Replace timed guidance clusters with low-density torch-like fire across the visible shortest route, keeping particles in world space.
+- Sodium no longer burns torch energy faster; update Help and remove the normal-flame mineral-column circle.
+- #167: copper guidance now twinkles in small clusters at fixed world spots on the Beacon path for 0.5–1 second, with a 1–2 second gap after each cluster.
 - #167: make sporadic copper guidance clearly visible using the green torch palette and a 90% peak opacity envelope.
 - Falling rocks randomly choose one of three supplied impact recordings, keeping a common voice cap.
 - #167: copper torch guidance uses faint, sporadic green pixel cubes with lateral scatter and wall occlusion instead of the dotted line.
