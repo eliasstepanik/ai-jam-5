@@ -2,6 +2,7 @@
 import type { DressingCache } from '../core/cave-props.ts'
 import type { WaterFx } from '../core/puddle-fx.ts'
 import type { HeartUi } from '../core/heart-ui.ts'
+import type { CopperHints } from '../core/copper-hints.ts'
 import type { PixelPool } from '../core/pixel-particles.ts'
 import type { SoundId, Group } from './sounds.ts'
 
@@ -63,6 +64,7 @@ export type Resources = {
   dark: Canvas2D | null; scratch: Scratch | null
   swapped: Map<string, HTMLCanvasElement> // flame palette-swap frames (R-185): 64x64, key 'x|y|material' (sheet rect of the frame + material, see render/charatlas.ts swappedFrame), LRU 256; slot name is a DEFAULT (D7)
   emitterPixels?: { gen: number; frames: Map<string, Uint16Array> }
+  copperFx?: CopperHints
   shadowFx?: { runId: number; at: number; slots: Map<number, { cycle: number; x: number; y: number }> }
   dressing?: DressingCache
   waterFx?: WaterFx

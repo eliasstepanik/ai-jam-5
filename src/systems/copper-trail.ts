@@ -1,4 +1,4 @@
-// L3 systems: copper flame trail (playtest tuning 1 §1.1). While a lit copper flame is carried in the descent, sporadic cube particles
+// L3 systems: copper flame trail (playtest tuning 1 §1.1). While a lit copper flame is carried in the descent, world-anchored twinkle clusters
 // hint at the shortest walkable route to the Beacon. Cosmetic: it only reads the world and writes s.trail, no RNG draws, no clock.
 // Render is in render/copper-trail.ts. The route is the steepest descent on a Beacon-rooted distance field (walls only).
 import type { State } from '../core/types.ts'

@@ -246,6 +246,8 @@ The jam requires that the majority of the game is AI-generated. This section say
 
 - Escape score and copper visibility (2026-10-29): integrated the supplied `Blackout_Run_For_Your_Life_8min.mp3`. Its accompanying manifest identifies ACE-Step 1.5 Turbo: four acoustic survival-horror chase passages, 180 BPM/E minor, urgent strings, hand drums and dissonance, joined with 5.333-second equal-power crossfades. Codex encoded the full 480-second MP3 source to stereo 48 kbps Opus (constrained VBR) and MP3, preserving its level and adding 20/50 ms edge fades. The original is unchanged. The extra full score raises the per-format audio download budget to 7.6 MB; both eight-minute tracks stream. Copper hints now reuse `FLAME_COL.copper` from the torch, with a smooth opacity envelope peaking at 90% instead of 20%; no new art was generated.
 
+- Copper guide anchoring (2026-10-29): replaced player-relative cue placement with a single small cluster born at a visible floor-tile centre on the shortest walkable Beacon path. Its world anchor and pixel offsets remain fixed while the player moves or the route updates. A twinkle lasts 0.5–1 second, followed by a separate 1–2 second quiet gap. Copper torch colours, native pixel faces, smooth fades and wall occlusion are retained. The bounded cosmetic pool lives in the existing resource registry and survives HMR; no gameplay State/RNG changes or generated image assets.
+
 ## Credits and licences
 
 - Owner-supplied `Blackout_Run_For_Your_Life_8min.mp3` (Blackout - Run for Your Life), authorised for game integration; the source manifest records ACE-Step 1.5 Turbo. Locally bundled compressed derivatives are used.

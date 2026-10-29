@@ -1,0 +1,48 @@
+Anchored copper twinkles - 2026-10-29
+Issue #167 / BUG-028, reporter Kittingsl. IN PROGRESS awaiting confirmation.
+
+User clarification supersedes the previous moving-cue presentation:
+- Small green particle clusters at spots on the route to the Beacon.
+- An existing twinkle must stay at its world position when the player moves.
+- Twinkle lasts 0.5-1s; quiet delay BETWEEN twinkles is 1-2s.
+
+Cause: old render called trailAt(distance from current player position) every
+frame. Recalculating the path and moving within a tile dragged the same cues.
+Now one six-pixel cluster chooses a visible walkable route tile centre once at
+birth. Stored anchor and hashed local pixel offsets remain world-fixed through
+movement, camera motion, path recalculation and HMR. Only the next birth samples
+the current path. Player-distance minimum40px excludes cues under the feet;
+visibility and wall tests exclude inaccessible/hidden shortcuts. Six pixels
+form one small twinkle, never a dotted continuous line. Low quality uses two.
+Copper torch palette, smooth .95 maximum alpha and reduced-flashing scaling
+are retained. No particle drift; brightness alone twinkles.
+
+The one-burst pool is lazy in resources.copperFx; State and main.ts untouched.
+Only trail simulation time is read, so paused/frozen clocks do not animate.
+Unequip/flame-out/escape clear hints; new run and clock rollback reset the pool.
+Large render gaps skip missed bursts, never pile up old ones. Each lifetime
+finishes before a new 1-2s gap is scheduled. No gameplay RNG draws.
+
+Verification:
+- npm run check and npm run build pass (existing bundle-size/import warnings).
+- 120s/60Hz pure check: 52 bursts, lifetimes .51185-.99610s, observed quiet
+  gaps1.03968-2.00044s (up to one fixed-step quantisation beyond a scheduled
+  deadline). Anchor callback once per birth; same clock never respawns. Pixels
+  retain exact x/y/size at multiple ages, alpha fades. Run reset, clock rollback,
+  empty route, re-equip gap and skipped-render handling pass.
+- Existing route tests in real caves, Beacon distance descent, mineral/energy/
+  phase gating, walkability and no-gameplay-RNG checks remain passing.
+- Actual browser: live cluster anchor(528,400) is on Beacon path. All six pixels
+  retain identical world positions while player/camera move and route changes.
+  Low quality uses2; reduced-flashing scales .75; a new wall hides the cluster
+  without relocating it; frozen clock pixels repeat; render State unchanged.
+  Flame-off clears and re-equip waits a gap. Real module HMR preserves the
+  same pool and anchor. Console errors/warnings: none.
+- Bent-corridor browser fixture: 14 bursts appear on both route legs as player
+  advances through the bend; every anchor is on the current walkable route.
+  Turning does not move the existing burst.
+- copper-anchored-twinkle.png: same floor framing, before/after player movement.
+
+Acceptance: all current #167 presentation requests implemented. Human approval
+pending; leave issue open. No other issue closures. Docs snapshot unchanged;
+owner knowledge-base resync needed for fixed-position clusters and revised timing.

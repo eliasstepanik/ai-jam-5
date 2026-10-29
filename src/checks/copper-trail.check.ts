@@ -1,7 +1,7 @@
 // Copper trail (playtest tuning 1 §1.1): on only in the descent with a lit copper flame and energy > 0, the route runs from the player
 // tile toward the Beacon (distance falls by one per tile, all floor), it clears when the flame, energy or phase changes, and it draws
 // no random numbers. Real caves (seeds 7, 42). L0-L3 imports only; DOM-free.
-import { copperHint, COPPER_HINT_SLOTS } from '../core/copper-hints.ts'
+import { copperPixel, createCopperHints, sampleCopperHints, COPPER_TWINKLE_PIXELS } from '../core/copper-hints.ts'
 import { init } from '../core/state.ts'
 import { parseSeed } from '../core/seed.ts'
 import { bfs4 } from '../world/bfs.ts'
@@ -62,29 +62,51 @@ function clears(): void {
   }
 }
 
-function sporadic(): void {
-  let quiet = 0, visible = 0, max = 0, bright = 0
-  const sideways = new Set<number>()
-  for (let tick = 0; tick < 3600; tick++) {
-    let n = 0
-    for (let slot = 0; slot < COPPER_HINT_SLOTS; slot++) {
-      const a = copperHint(42, tick / 60, slot), b = copperHint(42, tick / 60, slot)
-      ok(JSON.stringify(a) === JSON.stringify(b), 'same clock is stable between render calls')
-      if (!a) continue
-      if (a.alpha >= .7) bright++
-      n++; sideways.add(Math.round(a.side))
-      ok(a.alpha >= 0 && a.alpha <= .9 && a.distance >= 38 && a.distance < 150, 'bright bounded nearby directional cue')
-      ok(a.size >= 2 && a.size <= 3 && Math.abs(a.side) <= 22, 'native small cube with bounded lateral scatter')
+function anchoredTwinkles(): void {
+  const p = createCopperHints(), seed = 42
+  let x = 100, y = 200, choices = 0, previousEnd = -1, seen = -1, births = 0
+  const choose = (): { x: number; y: number } => { choices++; return { x, y } }
+  for (let tick = 0; tick < 7200; tick++) {
+    const time = tick / 60
+    sampleCopperHints(p, 1, time, true, seed, choose)
+    const b = p.burst
+    if (b && b.id !== seen) {
+      seen = b.id; births++
+      ok(b.life >= .5 && b.life <= 1, 'twinkle lasts .5-1 second')
+      if (previousEnd >= 0) ok(b.born - previousEnd >= 1 && b.born - previousEnd <= 2 + DT, 'gap after twinkle is 1-2 seconds')
+      previousEnd = b.born + b.life
+      const birthX = b.x, birthY = b.y
+      x += 64; y -= 32 // walking/path changes only affect the NEXT spawn
+      const before = choices
+      sampleCopperHints(p, 1, time, true, seed, choose)
+      ok(choices === before && b.x === birthX && b.y === birthY, 'same clock does not respawn or follow player')
+      for (let i = 0; i < COPPER_TWINKLE_PIXELS; i++) {
+        const a = copperPixel(b, seed, b.born + b.life * .3, i), z = copperPixel(b, seed, b.born + b.life * .7, i)
+        ok(!!a && !!z && a.x === z.x && a.y === z.y && a.size === z.size, 'pixels stay world-fixed throughout twinkle')
+        ok(a!.alpha > 0 && a!.alpha <= .95 && z!.alpha <= .95, 'bright smooth bounded alpha')
+      }
+      ok(copperPixel(b, seed, b.born - .1, 0) === null && copperPixel(b, seed, b.born + b.life, 0) === null, 'no pixel outside lifetime')
     }
-    if (!n) quiet++
-    visible += n; max = Math.max(max, n)
   }
-  ok(quiet > 600 && visible > 300 && max <= 3, 'sporadic visible hints with long quiet gaps and bounded count')
-  ok(bright > 300, 'many cubes reach torch-like visible opacity')
-  ok(sideways.size > 12, 'particles scatter sideways rather than forming a line')
+  ok(births > 40 && births === choices, 'one world anchor choice per burst, with repeated quiet gaps')
+  sampleCopperHints(p, 1, 120, false, seed, choose)
+  ok(!p.active && !p.burst, 'unequip clears active cluster')
+  sampleCopperHints(p, 1, 120, true, seed, choose)
+  ok(!p.burst && p.nextAt >= 121 && p.nextAt <= 122, 're-equip waits one gap')
+  sampleCopperHints(p, 2, 0, true, seed, choose)
+  ok(p.runId === 2 && p.seq === 0 && !p.burst, 'new run clears old anchors')
+  sampleCopperHints(p, 2, 100, true, seed, choose)
+  ok(p.seq === 1, 'large render gap produces one fresh cluster, no catch-up pile')
+  sampleCopperHints(p, 2, 0, true, seed, choose)
+  ok(p.seq === 0 && !p.burst, 'clock rollback resets pool')
+  const empty = createCopperHints()
+  sampleCopperHints(empty, 1, 0, true, seed, () => null)
+  sampleCopperHints(empty, 1, 3, true, seed, () => null)
+  ok(!empty.burst && empty.nextAt >= 4 && empty.nextAt <= 5, 'no visible route spot waits without inventing a marker')
 }
+
 export function run(): void {
-  sporadic()
+  anchoredTwinkles()
   leadsToBeacon()
   clears()
 }
