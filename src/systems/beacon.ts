@@ -1,7 +1,7 @@
 // L3 systems: hold E at the Beacon to light it (D8) and the descent -> escape phase change.
 // Spec: docs/architecture-systems-2.md §5, R-125 (START GATE on max(eStart, energy)), R-127 (epsilon on the 300-step hold),
 // R-169/R-176 (one call in step.ts, no counting spy). Writes player.beaconHold/energy/mining, world.beaconLit/beaconLitAt, meta.phase,
-// director.spawnT/quakeT, fx.beaconFlash/shake/shakeMag, monsters (dying). Emits denied (gate) and beaconLit.
+// director.spawnT/quakeT, fx.beaconFlash/shake/shakeMag, monsters (dying), player.stats.maxPathDist/maxDepth/deepestZone (trackDepth in depth.ts is the other writer). Emits denied (gate) and beaconLit.
 // Never writes ui.toasts (R-003): stepScreens turns `denied` into the toast. All progress lives in State (player.beaconHold).
 import { beaconInReach, beaconPosition } from '../world/beacon-position.ts'
 import type { State } from '../core/types.ts'
