@@ -1,5 +1,5 @@
-// L3 systems: copper flame trail (playtest tuning 1 §1.1). While a lit copper flame is carried in the descent, a faint string of sparks
-// points along the shortest walkable route to the Beacon. Cosmetic: it only reads the world and writes s.trail, no RNG draws, no clock.
+// L3 systems: copper flame trail (playtest tuning 1 §1.1). While a lit copper flame is carried in the descent, sporadic cube particles
+// hint at the shortest walkable route to the Beacon. Cosmetic: it only reads the world and writes s.trail, no RNG draws, no clock.
 // Render is in render/copper-trail.ts. The route is the steepest descent on a Beacon-rooted distance field (walls only).
 import type { State } from '../core/types.ts'
 import { bfs4 } from '../world/bfs.ts'
@@ -9,13 +9,6 @@ import { downhill, playerSources } from '../world/route.ts'
 import { beaconTile } from '../world/beacon-position.ts'
 
 export const TRAIL_TILES = 12 // route length in tiles: 11 steps = 352 px
-export const TRAIL_MOTES = 6 // sparks on the line at once
-export const TRAIL_PERIOD_S = 2.4 // one spark's trip from start to end of the line
-export const TRAIL_START_PX = 24 // first point of the line, px along the route from the player
-export const TRAIL_LEN_PX = 300 // length of the line
-export const TRAIL_ALPHA = 0.22
-export const TRAIL_R_PX = 2
-
 // Own Beacon-rooted field: no such field exists in world/caches.ts (getDepthField is entrance-rooted).
 // ponytail: module-level rebuildable cache (like escape-wisp.ts), rebuilt only when the key changes (about once per run in the descent;
 // no rocks before the escape); the key covers run, tiles, size, Beacon tile and rock signature. Upgrade: a Beacon field in world/caches.ts.

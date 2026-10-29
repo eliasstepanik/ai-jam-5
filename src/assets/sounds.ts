@@ -3,6 +3,7 @@ export type Group = 'music' | 'amb' | 'sfx' | 'ui'
 export type SoundDef = {
   readonly group: Group; readonly gain: number; readonly pri: 0 | 1 | 2 | 3; readonly cap: number
   readonly file?: string
+  readonly variants?: readonly string[] // alternatives, one sample per event (not layers)
   readonly stream?: boolean // long music stays in a media element, never fully decoded into buffers
   readonly loop?: readonly [start: number, end: number]
   readonly layers?: readonly string[]
@@ -49,7 +50,7 @@ export const SOUNDS = {
   'sfx_beacon-horn': { group: 'sfx', gain: 1, pri: 3, cap: 1, file: 'sfx_beacon-horn' },
   'sfx_cave-rumble': { group: 'sfx', gain: 0.6, pri: 1, cap: 1 },
   'sfx_rock-warn': { group: 'sfx', gain: 0.7, pri: 2, cap: 4 },
-  'sfx_rock-impact': { group: 'sfx', gain: 0.9, pri: 2, cap: 4, file: 'sfx_rock-impact' },
+  'sfx_rock-impact': { group: 'sfx', gain: 0.9, pri: 2, cap: 4, file: 'sfx_rock-impact', variants: ['sfx_rock-impact', 'sfx_rock-impact-2', 'sfx_rock-impact-3'] },
   sfx_drip: { group: 'sfx', gain: 0.4, pri: 0, cap: 2 },
   ui_click: { group: 'ui', gain: 0.6, pri: 0, cap: 2 },
   ui_confirm: { group: 'ui', gain: 0.7, pri: 0, cap: 1 },

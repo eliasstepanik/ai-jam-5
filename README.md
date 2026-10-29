@@ -242,7 +242,11 @@ The jam requires that the majority of the game is AI-generated. This section say
 
 - Character atlas v2 (2026-10-29): owner supplied `all_characters_atlas_v2.png` and matching JSON with approved eight-frame walking, torch running and escape running. The PNG is copied unchanged; full source metadata is kept in `art/characters-source.json` and trimmed reproducibly for runtime. New frame timings preserve the prior complete cycle durations. The other 1172 frames retain identical pixels, anchors and timing. Codex updated asset guards and gait checks, and fixed atlas-reload cache invalidation; no new image generation or artwork edits were used.
 
+- Rock audio and copper guidance (2026-10-29): the owner supplied `Rock fall 1.wav`, `Rock fall 2.wav`, and `Rock fall 3.wav`. Codex integrated mono, peak-normalised (0.8), edge-faded Opus/MP3 derivatives at 48 kbps; original WAVs are unchanged. Each rock landing chooses one alternative using event-hashed cosmetic variation, without drawing gameplay RNG. Code-drawn copper guidance now uses sparse, irregular, briefly drifting green pixel cubes rather than an evenly spaced dotted route. No new image assets or image generation were used.
+
 ## Credits and licences
+
+- Owner-supplied rock impact recordings: `Rock fall 1.wav`, `Rock fall 2.wav`, and `Rock fall 3.wav`, authorised for this game. Generation/source details were not supplied.
 
 - Owner-supplied recordings authorised for this game: `Beacon_Run_8min.wav`, `TorchSFX.wav`, and `playerstep.wav`. Compressed runtime derivatives are bundled locally; no external music service is used.
 

@@ -44,6 +44,7 @@ export type AudioRes = {
   graphVersion: number
   master: GainNode | null; comp: DynamicsCompressorNode | null
   groups: Record<Group, GainNode> | null
+  sampleRevision?: string; sampleGen?: number // invalidate changed deliveries once per loader HMR evaluation
   buffers: Map<string, AudioBuffer | null>; pending: Set<string>
   noise: { white: AudioBuffer; pink: AudioBuffer; brown: AudioBuffer } | null
   voices: Voice[]; lastStart: Map<SoundId, number>

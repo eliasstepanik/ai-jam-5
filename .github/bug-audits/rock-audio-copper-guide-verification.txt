@@ -1,0 +1,49 @@
+Rock audio + copper guidance - 2026-10-29
+#167 submitted by Kittingsl (local BUG-028), IN PROGRESS awaiting confirmation.
+Audio is an explicit owner delivery; does not close broader audio issues.
+
+Rock fall WAV sources, each 0.8865s / stereo / 48kHz, originals untouched:
+1 SHA256 4cf5907fd45179684e0429672b92b5e9775ff1abf23f7451c08ca3225df06a35
+2 SHA256 2adcdb3dbad2e8964a7a7273b41c22e72dd042a8e2a0039b8d2e767e053a1f43
+3 SHA256 7cfe5131e4d405899a2796fca3aa33c091e75316a273961b594c4be45e23e27e
+FFmpeg 7.1: average stereo channels to mono, normalise mono peak to .8,
+3ms start / 5ms end fades, Opus/Ogg and MP3 at 48kbps. Base rock-impact file
+replaced with take 1; -2/-3 files added for the other alternatives.
+Each rockLand plays exactly one alternative; alternatives are not layers.
+Event hash gives stable pseudorandom choices without consuming simulation RNG.
+All variations share one four-voice cap and the existing effects bus; simultaneous
+landings are not discarded by the ordinary 30ms same-id retrigger guard.
+
+The sample loader discovers variants and recognises a changed loader revision
+during HMR, discarding stale deliveries and ignoring obsolete async results.
+Normal updates take the O(1) revision fast path. Music stream, event cursor and
+State remain intact, so old events never replay during a code hot swap.
+
+#167 requested: subtle, sporadic green cubic particles pointing toward Beacon,
+without a continuous evenly spaced dotted line. Implemented as 3 bounded lanes,
+irregular deterministic birth windows/gaps, short .6-.95s lifetimes, lateral
+scatter, gentle drift and smooth fades capped at alpha .2. Small shaded cube
+faces are native pixel rectangles (no circles, blur or hard flashing). Positions
+follow the existing walkable Beacon route; walls and foreground art clip them.
+Quality thins the secondary lanes; mineral/energy/phase gating stays unchanged.
+The escape wisp is separate and untouched. No new State fields or image art.
+
+Verification:
+- Full npm run check and build pass; 34 audio files fit unchanged budgets.
+- Pure random-choice/distribution, route/RNG/gating and sparse-pattern checks.
+- Real one-shot engine fake verifies chosen buffer identity, one node per impact,
+  all three variants and simultaneous-event common cap (no synth fallback).
+- Actual browser: 30 fall events select takes 1/2/3 11/11/8 times. All durations
+  .8865s; four simultaneous voices, one source per event. MP3 fallback decodes
+  all three. Code HMR preserves buffer map/music and does not replay events.
+- Stale delivery simulation reloads the correct supplied sample successfully.
+- Copper preview over 600 frames (60s): 343 quiet frames, mean .525 visible
+  cubes, maximum 3, 43 sideways positions, 0 arcs/circles. Wall barrier clips
+  175 of 315 cues; low quality draws 91 instead of 315. Frozen clock pixels
+  repeat exactly; render does not mutate State. Torch off/other mineral/escape
+  suppress hints. Browser consoles have no errors or warnings.
+- Before/after screenshot: copper-hint-comparison.png.
+
+All requested #167 behavior is implemented; human visual approval is pending.
+Keep issue open until confirmed. Docs snapshot unchanged; owner knowledge-base
+resync needed for this replacement of the old dotted route presentation.
