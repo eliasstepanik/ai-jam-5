@@ -1,0 +1,70 @@
+Mineral guidance, controls and escape teaching - 2026-10-29
+#167 submitted by Kittingsl; other items are explicit owner enhancements.
+IN PROGRESS awaiting human confirmation. No issues closed.
+
+Accepted appearance: user selected sparse fire pixels along the path. This
+supersedes previous twinkle clusters/timing. Copper uses its existing torch
+palette (white/teal); strontium uses red. One staggered emitter per visible
+route tile, low density (1.54 pixels/sec/tile versus torch28/sec at its source),
+short .6-1.1s lives, gently rising and shrinking native pixels. World-space birth
+positions/velocities never track the player or the updated route. Old pixels
+finish naturally after re-routing. At most128 live particles; the registry shape
+is versioned so old cluster resources are safely replaced once during HMR.
+
+Route is the full shortest walkable path, not a 12-tile prefix. Copper targets
+the visual Beacon stand. Strontium uses a cached multi-source BFS from remaining
+resin, so the guide leads to nearest REACHABLE resin by walking distance. Plants
+are ignored; missing/unreachable resin is graceful. Changing mineral or resin
+sources rebuilds the route even while standing still. No gameplay RNG draws;
+no new State keys. All guide rendering preserves State, clips LOS/foreground
+walls, scales density by quality, and clears when the flame ends or escape starts.
+
+Sodium burnMul2 ->1; light, attraction, parry properties unchanged. Help no
+longer claims faster burn and describes resin guidance. The normal-torch row
+has no mineral-column circle (flame image remains).
+
+Host change is specifically for the new wheel input. Native wheel is accumulated
+and normalised (pixels, lines and pages); partial trackpad deltas accumulate.
+Down selects right / up left; modulo wrap includes empty slots. Selecting never
+spends/equips a mineral. Number keys still work and have priority. One-shot input
+is consumed once per fixed step; blur clears wheel state; menu/escape scroll is
+ignored. Non-passive canvas listener is removed with the existing HMR cleanup.
+
+Escape message: exact text Spacebar to dodge. Plain dim non-bold text, no panel,
+matching the pre-Beacon hotkey hint. Initially16px under RUN!/Reach the entrance;
+after2s it smoothly moves down and shrinks over .8s to12px at hotbarHint. It
+remains for the escape and freezes with the director timer while paused.
+
+Verification:
+- Full npm run check passes; final npm run build passes (existing large-bundle
+  and static/dynamic stream-import warnings only). No dependencies added.
+- New DOM-free mineral-guidance check: wall-detour resin is rejected in favour
+  of walking-nearest resin; unreachable resin/plant ignored; removing resin
+  re-routes a stationary player; no-resin state; mode switch; full route beyond
+  twelve tiles; no RNG draws; escape gating.
+- Fire check: staggered emission, bounded density/history, frozen-clock no new
+  spawns, retained world coordinates through route changes, material/run reset,
+  extinguish, cap128. Existing real-cave Beacon route/gating tests retained.
+- Sodium burn check compares actual consumption to the plain flame rate. The
+  economy scenario now uses normal burn with extra shade pressure (old faster-
+  burn scenario superseded by the user's balance request).
+- Intent check: both wheel directions, multi-step wrap and empty selection,
+  selection-only semantics, number-key priority. Tip pose across3 viewports.
+- Actual browser native wheel100/-100/1000 and50+50 deltas, pause ignore/resume,
+  keyboard selection all pass. Main-host HMR keeps one canvas, one wheel action
+  per notch, and selection; gameplay HMR keeps live fire registry/history.
+- Browser guide fixture: average10.405 / maximum15 drawn fire pixels over121
+  frames; particles retain born world positions/velocities across player/camera
+  movement and route update. Frozen clock pixels identical, no State writes,
+  old-cluster resource upgraded, wall clipping/flame-out and red resin target pass.
+- Browser Help draw verifies no normal mineral-column arc and no faster-burn
+  claim, resin guidance present. Screenshots inspected for legibility/overlap.
+- Escape tip draw records16px at y299,14px at y504 during transition,12px at y709
+  at3s and30s (1280x720). Final plain text matches hotkey styling; no box/bold.
+- Browser consoles: zero errors/warnings.
+
+Visuals: mineral-path-fire.png, mineral-help.png, escape-dodge-0/1.png.
+Documentation text encoding repaired for pre-existing Windows-encoded dashes in
+README/CHANGELOG. Docs snapshot unchanged. Owner knowledge-base resync needed
+for sodium burn, resin guidance, path fire, wheel input and escape teaching UI.
+All explicitly requested criteria implemented; human visual confirmation pending.

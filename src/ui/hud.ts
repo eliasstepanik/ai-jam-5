@@ -3,6 +3,7 @@
 // HP, hotbar, flame, depth, prompts, toasts, parry text and the escape banner. Navigation is the wisp or opt-in developer arrow.
 // ponytail: no module-level state; every animation is a pure function of meta.time / meta.steps / the State timers. The only
 // state belongs to State and the resource registry.
+import { drawEscapeTip } from './escape-tip.ts'
 import { heartFrames } from '../core/heart-ui.ts'
 import { getResources } from '../assets/resources.ts'
 import { UI_FPS, UI_TORCH_FRAMES } from '../assets/ui-data.ts'
@@ -68,6 +69,7 @@ export function drawHud(ctx: CanvasRenderingContext2D, s: State, w: number, h: n
   prompt(ctx, s, w, h, l)
   parryText(ctx, s, l)
   runBanner(ctx, s, l)
+  drawEscapeTip(ctx, s, l, COL.dim)
   ctx.restore()
 }
 

@@ -25,7 +25,7 @@ Theme: TORCH. You carry the last flame of a dying torch down a seeded cave. The 
 | Mouse | Face while standing; moving faces the travel direction |
 | Left click | Swing the torch / parry a lunging shade (click as its eyes flare) |
 | `E` (hold) | Mine an ore vein, or light the Beacon |
-| `1` `2` `3` | Pick a mineral (changes the flame colour and its effect) |
+| `1` `2` `3` / Mouse wheel | Select a mineral. Wheel down moves right, up moves left, wrapping at either end. |
 | `F` / `G` | Toss the picked mineral into the flame / shake the mineral off |
 | `Space` | Roll (escape only) |
 | `Esc` or `P` | Pause |
@@ -246,7 +246,9 @@ The jam requires that the majority of the game is AI-generated. This section say
 
 - Escape score and copper visibility (2026-10-29): integrated the supplied `Blackout_Run_For_Your_Life_8min.mp3`. Its accompanying manifest identifies ACE-Step 1.5 Turbo: four acoustic survival-horror chase passages, 180 BPM/E minor, urgent strings, hand drums and dissonance, joined with 5.333-second equal-power crossfades. Codex encoded the full 480-second MP3 source to stereo 48 kbps Opus (constrained VBR) and MP3, preserving its level and adding 20/50 ms edge fades. The original is unchanged. The extra full score raises the per-format audio download budget to 7.6 MB; both eight-minute tracks stream. Copper hints now reuse `FLAME_COL.copper` from the torch, with a smooth opacity envelope peaking at 90% instead of 20%; no new art was generated.
 
-- Copper guide anchoring (2026-10-29): replaced player-relative cue placement with a single small cluster born at a visible floor-tile centre on the shortest walkable Beacon path. Its world anchor and pixel offsets remain fixed while the player moves or the route updates. A twinkle lasts 0.5�1 second, followed by a separate 1�2 second quiet gap. Copper torch colours, native pixel faces, smooth fades and wall occlusion are retained. The bounded cosmetic pool lives in the existing resource registry and survives HMR; no gameplay State/RNG changes or generated image assets.
+- Copper guide anchoring (2026-10-29): replaced player-relative cue placement with a single small cluster born at a visible floor-tile centre on the shortest walkable Beacon path. Its world anchor and pixel offsets remain fixed while the player moves or the route updates. A twinkle lasts 0.5–1 second, followed by a separate 1–2 second quiet gap. Copper torch colours, native pixel faces, smooth fades and wall occlusion are retained. The bounded cosmetic pool lives in the existing resource registry and survives HMR; no gameplay State/RNG changes or generated image assets.
+
+- Mineral path fire and controls (2026-10-29): user selected sparse torch-like fire along the full guide route, superseding the earlier timed twinkle clusters. Copper points toward the Beacon; strontium toward the nearest reachable resin by walking distance. Native 1–3px fire rises from fixed floor emitters, staggered per tile, retaining born positions through movement and route updates; a bounded registry pool stores only cosmetic history. All visible route sections can emit, with wall/LOS clipping and lower density than the torch. Sodium now has normal passive burn (other effects retained). Added wrapping mouse-wheel selection, updated mineral help, and a plain “Spacebar to dodge” reminder that moves from below the escape banner to the old hotkey-tip position, shrinking from 16 to 12. No new generated art or audio.
 
 ## Credits and licences
 

@@ -75,6 +75,7 @@ export const STR = {
   beacon: 'Light the Beacon (costs flame)',
   run: 'RUN!',
   runSub: 'Reach the entrance',
+  dodgeHint: 'Spacebar to dodge',
   exit: 'EXIT',
   parry: { perfect: 'PERFECT', good: 'GOOD', poor: 'POOR' },
   // depth class selector (R-164); `depth` above is the HUD word, so the settings title row gets its own key
@@ -94,7 +95,7 @@ export const HELP = [
     ],
     controls: [
       ['WASD', 'Move / face (arrows also)'], ['Mouse', 'Face while standing'], ['Click', 'Swing / parry'], ['E (hold)', 'Mine / light Beacon'],
-      ['1 2 3', 'Pick mineral'], ['F', 'Toss mineral into the flame'], ['G', 'Shake off (plain flame)'],
+      ['1–3/Wheel', 'Pick mineral'], ['F', 'Toss mineral into the flame'], ['G', 'Shake off (plain flame)'],
       ['Space', 'Roll (escape, dark torch)'], ['Esc / P', 'Pause'], ['M', 'Mute'], ['Enter', 'Confirm selected button'],
     ],
   },
@@ -113,9 +114,9 @@ export const HELP = [
     // flame colours mirror render/flame.ts FLAME_COL core/mantle for the help swatch
     minerals: [
       { name: 'None', core: '#fff4d6', mantle: '#ff8a1e', effect: 'Plain orange flame. G shakes any mineral off.', key: 'G' },
-      { name: 'Sodium', core: '#ffffff', mantle: '#ffe14a', effect: 'Bigger light, burns faster, LURES more shades. Parries are more forgiving.', key: '1' },
-      { name: 'Copper', core: '#e8fff9', mantle: '#1fd6b8', effect: 'Normal light. Faint sparks lead toward the Beacon.', key: '2' },
-      { name: 'Strontium', core: '#ffe0e0', mantle: '#e0182d', effect: 'Small dim light. FEWER shades notice you.', key: '3' },
+      { name: 'Sodium', core: '#ffffff', mantle: '#ffe14a', effect: 'Bigger light. LURES more shades. Easier parries.', key: '1' },
+      { name: 'Copper', core: '#e8fff9', mantle: '#1fd6b8', effect: 'Normal light. Path fire guides toward the Beacon.', key: '2' },
+      { name: 'Strontium', core: '#ffe0e0', mantle: '#e0182d', effect: 'Dimmer light. FEWER shades. Guides to nearest resin.', key: '3' },
     ],
     tips: [
       'Resin relights a dead flame instantly.',

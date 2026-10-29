@@ -2,13 +2,16 @@
 let queue = new Int32Array(0)
 
 export function bfs4(g: Uint8Array, w: number, h: number, src: number, out: Int32Array = new Int32Array(w * h)): Int32Array {
+  return bfs4Many(g, w, h, [src], out)
+}
+export function bfs4Many(g: Uint8Array, w: number, h: number, sources: readonly number[], out: Int32Array = new Int32Array(w * h)): Int32Array {
   out.fill(-1)
   const n = w * h
   if (queue.length !== n) queue = new Int32Array(n)
-  if (!Number.isInteger(src) || src < 0 || src >= n) return out
   let head = 0, tail = 0
-  out[src] = 0
-  queue[tail++] = src
+  for (const src of sources) if (Number.isInteger(src) && src >= 0 && src < n && out[src] < 0) {
+    out[src] = 0; queue[tail++] = src
+  }
   while (head < tail) {
     const i = queue[head++], x = i % w, d = out[i] + 1
     // E S W N, without allocating a neighbour array for every visited cell.

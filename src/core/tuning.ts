@@ -29,7 +29,7 @@ export const T = {
         core: '#fff4d6', mantle: '#ff8a1e', deep: '#c2410c', spark: '#5ab0ff',
       },
       sodium: {
-        radiusMul: 1.5, burnMul: 2.0, attractMul: 1.6, perfectMul: 1.6, lossMul: 0.6, flickerMul: 1.2,
+        radiusMul: 1.5, burnMul: 1.0, attractMul: 1.6, perfectMul: 1.6, lossMul: 0.6, flickerMul: 1.2,
         core: '#ffffff', mantle: '#ffe14a', deep: '#f5b700', spark: '#6a5cff',
       },
       copper: {

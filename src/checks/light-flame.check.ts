@@ -101,7 +101,7 @@ export function run(): void {
     const so = init()
     so.player.energy = 50; so.player.activeMineral = 'sodium'
     stepFlame(so, DT)
-    near(50 - so.player.energy, 0.5 * T.minerals.table.sodium.burnMul / 60, 1e-12, 'sodium burns burnMul faster')
+    near(50 - so.player.energy, 0.5 / 60, 1e-12, 'sodium has the same passive burn as a plain flame')
     const esc = init()
     esc.player.energy = 50; esc.meta.phase = 'escape'
     stepFlame(esc, DT)
