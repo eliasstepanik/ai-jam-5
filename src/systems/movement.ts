@@ -2,7 +2,7 @@
 // Spec: docs/architecture-systems.md §5.1-§5.2 (S5). moveCircle/isSolidTile live only in world/ (R-012): no re-export.
 import type { State } from '../core/types.ts'
 import { T } from '../core/tuning.ts'
-import { moveCircle } from '../world/collide.ts'
+import { movePlayerCircle } from '../world/player-collide.ts'
 import { clamp } from '../core/math.ts'
 import { gaitAdvance, gaitSetOf } from '../core/gait.ts'
 import { TILE } from '../core/state.ts'
@@ -41,7 +41,7 @@ export function stepMovement(s: State, it: Intent, dt: number): void {
   // Collision runs while rolling too.
   // ponytail: a wall hit zeroes that axis only, so a slide runs at the axis component, not re-projected to full speed;
   // add projection along the wall if wall-hugging feels sticky.
-  const res = moveCircle(s, p.x, p.y, p.vx * dt, p.vy * dt, T.player.radiusPx)
+  const res = movePlayerCircle(s, p.x, p.y, p.vx * dt, p.vy * dt, T.player.radiusPx)
   p.x = res.x
   p.y = res.y
   if (res.hitX) p.vx = 0

@@ -1,0 +1,42 @@
+Beacon collision, camera edges and warm-field verification (2026-10-30)
+
+Tracking and acceptance
+- #139 (eliasstepanik): human confirmed solved; confirmation recorded locally and GitHub closed as completed.
+- #143 / BUG-025 (Kittingsl): implemented and verified, IN PROGRESS / awaiting human confirmation.
+  Physical capsule follows the authored 92x44px rounded ground footprint at the actual displayed Beacon anchor.
+  Walking, escape sprint and dodging cannot cross the base; player slides along it.
+  Interaction works from all four sides; debug teleport and leaving noclip resolve to safe positions.
+- #141 / BUG-024 (Kittingsl): implemented and verified, IN PROGRESS / awaiting human confirmation.
+  Camera follows at all edges/corners without viewport/map clamping.
+  Existing radius-bounded invisible player boundary works in normal movement and noclip.
+- #175 / BUG-030 (Kittingsl): newly recorded report, implemented and verified, IN PROGRESS / awaiting human confirmation.
+  Old draft renderer intentionally selected only even (x+y) floor tiles for radial warm spots: the checkerboard source.
+  All reachable floor source cells now use distance-weighted alpha; walls/unreachable cells remain zero.
+  One cached source texel per tile, linearly interpolated for this faint ambient pass only; sprites/motes remain crisp.
+  Resource registry retains one reusable canvas, keyed by guide-field identity and module revision.
+  Broader floor-texture blending acceptance in #112 is NOT claimed complete or closed here.
+
+Verification
+- npm run check: passed, including check ok / checks ok / check-guard ok.
+- npm run build: passed (TypeScript and Vite); existing chunk-size/static-dynamic import advisories remain.
+- New beacon-camera.check.ts: 16 angular high-speed approaches, sliding, dodge tunnelling, HMR overlap repair,
+  full Beacon activation from four sides, safe teleport/noclip exit, all 8 edges/corners x normal/noclip, resize.
+- Updated debug/step checks remove obsolete clamped-camera expectations.
+- Cave-guide checks verify both parities against walk-distance falloff; wall/out-of-range weights zero.
+- Headless Edge against the actual dev host, seed 42: native movement stops 10.000000000000128px outside base,
+  native interaction enters escape, all 16 edge/corner cases stay centred (maximum settled error 0px).
+- Camera module HMR reports state kept; no browser errors or warnings.
+- Warm-source browser pixel check near Beacon: old mean parity brightness 210.263 versus 0;
+  new 76.697 versus 76.978 (normalised parity imbalance 1.0 to 0.0036524).
+- Twenty cached frames allocate zero ImageData; source field 307200 bytes.
+- Changed cave target and actual draft-module HMR refresh the same canvas; serialised State unchanged.
+- Reviewed beacon-collision-contact.png and camera-map-corners.png from actual native gameplay renders.
+- beacon-warm-field-comparison.png uses the same captured gameplay base plus separately captured old/new
+  ambient layers, composited additively at equal exposure; no repeated-frame light accumulation.
+
+Implementation and knowledge-base follow-up
+- Player collision wraps the tile solver; no State schema or gameplay RNG changes.
+- No assets, audio, external runtime dependencies, or owner docs snapshot were changed.
+- User-requested edge-follow camera supersedes the old camera-clamp design/ruling behavior (R181).
+- Owner should update the knowledge base and re-sync docs for camera follow and the removed parity-based draft glow.
+- Local bug-reports/ remains outside the commit, consistent with the existing project workflow.

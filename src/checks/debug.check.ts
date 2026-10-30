@@ -11,7 +11,8 @@ import { clearCaches } from '../world/caches.ts'
 import { circleHitsSolid } from '../world/collide.ts'
 import { debugAction, debugSpawn, debugForceLeap, setDebugValue, torchSeconds, DEBUG_TOGGLES } from '../systems/debug.ts'
 import { debugTeleport, debugBearing } from '../systems/debug-navigation.ts'
-import { clampCam } from '../systems/camera.ts'
+import { playerHitsSolid } from '../world/player-collide.ts'
+import { beaconInReach } from '../world/beacon-position.ts'
 import { stepFlame } from '../systems/flame.ts'
 import { damagePlayer, hurtPlayerHp, resolveParries } from '../systems/combat.ts'
 import { resolveIntent } from '../systems/intent.ts'
@@ -137,14 +138,13 @@ function navigation(): void {
   p.roll.t = 0.2; p.roll.invuln = 0.2; p.swing.active = true; p.swing.buffer = 0.1
   p.mining.targetTile = 99; p.mining.progress = 1; p.beaconHold = 2
   debugAction(s, 'teleportBeacon')
-  ok(p.x === 208 && p.y === 208 && s.cam.x === 208 && s.cam.y === 208, 'Beacon teleport snaps player and camera to the landmark')
+  ok(!playerHitsSolid(s, p.x, p.y, T.player.radiusPx) && beaconInReach(s, T.beacon.reachPx) && s.cam.x === p.x && s.cam.y === p.y, 'Beacon teleport lands beside solid base, in reach, with centred camera')
   ok(p.hp === 2 && p.energy === 43 && !s.world.beaconLit, 'teleport preserves health/fuel and does not light Beacon')
   ok(p.vx === 0 && p.vy === 0 && !p.roll.t && !p.roll.invuln && !p.swing.active && !p.swing.buffer && !p.beaconHold && p.mining.targetTile === -1, 'teleport cancels transient movement and interactions')
   s.meta.screen = 'paused'
   debugAction(s, 'teleportEntrance', input.view)
   const doorway = entranceExit(s), ex = doorway.tx * 32 + 16, ey = doorway.ty * 32 + 16
-  const cam = clampCam(ex, ey, s.world.w, s.world.h, input.view)
-  ok(p.x === ex && p.y === ey && s.cam.x === cam.x && s.cam.y === cam.y && s.meta.screen === 'paused', 'paused entrance teleport clamps camera immediately')
+  ok(p.x === ex && p.y === ey && s.cam.x === p.x && s.cam.y === p.y && s.meta.screen === 'paused', 'paused entrance teleport centres camera immediately')
   s.world.beacon = { tx: 12, ty: 6 }
   ok(debugTeleport(s, 'beacon') && !circleHitsSolid(s, p.x, p.y, T.player.radiusPx), 'blocked landmark falls back to clear floor')
   s.rocks = [{ id: 900, x: ex, y: ey, size: 1, tiles: [doorway.ty * s.world.w + doorway.tx], t: 2, landed: true, hit: true, shrunk: false }]
