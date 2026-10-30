@@ -12,7 +12,7 @@ export function sampleCopperFire(p: CopperHints, runId: number, time: number, on
   p.at = time
   if (!on) { p.pixels = []; p.next.clear(); return }
   p.pixels = p.pixels.filter(q => time < q.born + q.life)
-  const tiles = new Set(points.map(q => q.tile)), interval = 1.1 / Math.max(.25, quality)
+  const tiles = new Set(points.map(q => q.tile)), interval = 2.2 / Math.max(.25, quality)
   for (const tile of p.next.keys()) if (!tiles.has(tile)) p.next.delete(tile)
   for (const q of points) {
     const phase = hash2(q.tile, 61, seed) * interval
