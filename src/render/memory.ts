@@ -1,50 +1,40 @@
-// L4 render: explored-memory canvas, one pixel per tile, blitted by drawDarkness (light.ts) under the light masks.
-// Spec: docs/architecture-render-2.md §5.2, architecture-modules-render.md (memory.ts row), R-086/C4 (memoryCanvas(s), not drawMemory).
-// Canvas, ImageData and the word copy live in res.memory (resources.ts); this module keeps no state and never writes State.
-// Per frame: compare world.explored words with the copy, repaint only changed words, upload one dirty rect.
+// Explored memory follows the same raised cap/face geometry as world art, including a dark off-map margin.
+// Derived pixels and ownership live in the registry; unchanged frames do no pixel work. State stays read-only.
 import type { State } from '../core/types.ts'
 import { getResources } from '../assets/resources.ts'
 import { ctx2d, newCanvas } from './light.ts'
+import { FACE_H } from './tiles-paint.ts'
+import { MEMORY_COLORS, memoryOwners, memoryRect } from './memory-field.ts'
 
-const HASH = 35 // '#'
-const COLORS = [10, 8, 6, 32, 28, 23, 18, 15, 12] as const // dark / explored floor / explored wall; zone colour is applied by light.ts
-
-// Memory canvas for the current world, brought up to date with world.explored; null for a title/empty world.
-// ponytail: created on the first world frame and never disposed (resources §2). A same-size new run keeps the canvas and repaints in
-// full (key = tilesHash; a changed hash or size forces the full rebuild, an equal hash on a new run is caught by the word diff).
 export function memoryCanvas(s: State): HTMLCanvasElement | null {
   const { w, h, explored, tiles, tilesHash } = s.world
   if (s.settings.pureDarkness || !w || !h || tiles.length !== w * h) return null
-  const m = getResources().memory, n = w * h, nWords = Math.ceil(n / 32)
-  if (!m.canvas || m.canvas.w !== w || m.canvas.h !== h || !m.img || m.words.length !== nWords) {
-    const cv = newCanvas(w, h)
-    m.canvas = { canvas: cv, ctx: ctx2d(cv), w, h }
-    m.img = m.canvas.ctx.createImageData(w, h)
-    m.words = new Int32Array(nWords)
-    m.key = -1
+  const m = getResources().memory, rect = memoryRect(w, h, FACE_H), nWords = Math.ceil(w * h / 32)
+  if (!m.canvas || m.canvas.w !== rect.w || m.canvas.h !== rect.h || !m.img || m.words.length !== nWords) {
+    const cv = newCanvas(rect.w, rect.h)
+    m.canvas = { canvas: cv, ctx: ctx2d(cv), w: rect.w, h: rect.h }
+    m.img = m.canvas.ctx.createImageData(rect.w, rect.h)
+    m.words = new Int32Array(nWords); m.key = -1
   }
-  const key = tilesHash ^ 0x4d454d32 // invalidate old per-zone memory after HMR
-  const full = m.key !== key
-  const data = m.img.data
-  let dx0 = w, dy0 = h, dx1 = -1, dy1 = -1
-  for (let k = 0; k < nWords; k++) {
-    const word = explored[k] | 0
-    if (!full && word === m.words[k]) continue
-    m.words[k] = word
-    for (let i = k * 32, end = Math.min(n, i + 32); i < end; i++) {
-      const c = COLORS
-      const wall = tiles.charCodeAt(i) === HASH
-      const lit = ((word >>> (i & 31)) & 1) === 1
-      const o = lit ? (wall ? 6 : 3) : 0
-      data[i * 4] = c[o]; data[i * 4 + 1] = c[o + 1]; data[i * 4 + 2] = c[o + 2]; data[i * 4 + 3] = 255
-    }
-    const x0 = (k * 32) % w, y0 = Math.floor((k * 32) / w), y1 = Math.floor((Math.min(n, k * 32 + 32) - 1) / w)
-    // A word may wrap to the next row (w is not a multiple of 32): widen to the full row then.
-    const wraps = y1 !== y0
-    dx0 = Math.min(dx0, wraps ? 0 : x0); dx1 = Math.max(dx1, wraps ? w - 1 : x0 + 31)
-    dy0 = Math.min(dy0, y0); dy1 = Math.max(dy1, y1)
+  const key = tilesHash ^ 0x4d454d33, revision = import.meta.url
+  const full = m.key !== key || m.revision !== revision || !m.owners
+  if (full) m.owners = memoryOwners(tiles, w, h, FACE_H)
+  let changed = full
+  for (let k = 0; !changed && k < nWords; k++) changed = (explored[k] | 0) !== m.words[k]
+  if (!changed) return m.canvas.canvas
+  const data = m.img.data, owners = m.owners!
+  let x0 = rect.w, y0 = rect.h, x1 = -1, y1 = -1
+  for (let i = 0; i < owners.length; i++) {
+    const owner = owners[i], tile = owner >> 1, word = tile >> 5, bit = 1 << (tile & 31)
+    if (!full && (owner < 0 || (((explored[word] | 0) ^ m.words[word]) & bit) === 0)) continue
+    const seen = owner >= 0 && ((explored[word] | 0) & bit) !== 0
+    const o = seen ? (owner & 1 ? 6 : 3) : 0
+    data[i * 4] = MEMORY_COLORS[o]; data[i * 4 + 1] = MEMORY_COLORS[o + 1]; data[i * 4 + 2] = MEMORY_COLORS[o + 2]; data[i * 4 + 3] = 255
+    const x = i % rect.w, y = Math.floor(i / rect.w)
+    x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y)
   }
-  m.key = key
-  if (dx1 >= 0) m.canvas.ctx.putImageData(m.img, 0, 0, dx0, dy0, Math.min(w - 1, dx1) - dx0 + 1, dy1 - dy0 + 1)
+  for (let k = 0; k < nWords; k++) m.words[k] = explored[k] | 0
+  m.key = key; m.revision = revision
+  if (x1 >= 0) m.canvas.ctx.putImageData(m.img, 0, 0, x0, y0, x1 - x0 + 1, y1 - y0 + 1)
   return m.canvas.canvas
 }

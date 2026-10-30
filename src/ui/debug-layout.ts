@@ -5,7 +5,7 @@ import type { DebugAction } from '../systems/debug.ts'
 import type { Rect } from './layout.ts'
 import { DEPTH_NAMES } from './strings.ts'
 
-export type DebugControlId = DebugAction | 'open' | 'tab0' | 'tab1' | 'tab2' | 'tab3' | 'tab4' | 'speed' | 'torch'
+export type DebugControlId = DebugAction | 'lock' | 'open' | 'tab0' | 'tab1' | 'tab2' | 'tab3' | 'tab4' | 'speed' | 'torch'
 export type DebugControl = Rect & { id: DebugControlId; label: string; enabled: boolean; on?: boolean; slider?: number }
 export const contains = (r: Rect, x: number, y: number): boolean => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h
 
@@ -13,6 +13,7 @@ export function debugLayout(s: State, w: number, h: number, open: boolean, tab: 
   const panel = { x: Math.max(8, w - 356), y: Math.max(8, h - 376), w: Math.min(340, w - 16), h: Math.min(332, h - 52) }
   const controls: DebugControl[] = [{ id: 'open', label: open ? 'Close DEV [F2]' : 'DEV [F2]', x: w - 116, y: h - 36, w: 108, h: 28, enabled: true, on: open }]
   if (!open) return { panel, controls }
+  controls.push({ id: 'lock', label: 'Disable dev tools', x: w - 268, y: h - 36, w: 140, h: 28, enabled: true })
   const x = panel.x + 10, width = panel.w - 20, half = (width - 6) / 2, third = (width - 12) / 3
   const active = debugRunActive(s), torch = active && s.meta.phase === 'descent'
   const add = (id: DebugControlId, label: string, y: number, left = x, size = width, enabled = true, on?: boolean, slider?: number): void => {

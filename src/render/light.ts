@@ -12,6 +12,7 @@ import { getResources } from '../assets/resources.ts'
 import type { Canvas2D } from '../assets/resources.ts'
 import type { Quality } from './quality.ts'
 import { beaconBlend } from './view.ts'
+import { MEMORY_DARK, MEMORY_PAD } from './memory-field.ts'
 import type { View } from './view.ts'
 import { playerDepth01, toneOf } from './depth-tone.ts'
 import { MASK_BUCKETS, bucketOf, maskKey, torchFade } from './keys.ts'
@@ -167,7 +168,7 @@ function ensureDark(v: View, q: Quality): Canvas2D {
 // Postcondition, on EVERY exit path (reveal, finished blend, normal, escape fade): identity transform, source-over, alpha 1,
 // smoothing off. The caller (A17) must set worldXf again before the next world-space pass; pass 15 fills (0,0,cw,ch) as is.
 export function drawDarkness(ctx: CanvasRenderingContext2D, s: State, v: View, q: Quality,
-  memory: CanvasImageSource | null = getResources().memory.canvas?.canvas ?? null, vines: readonly number[] = []): void {
+  memory: HTMLCanvasElement | null = getResources().memory.canvas?.canvas ?? null, vines: readonly number[] = []): void {
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.globalCompositeOperation = 'source-over'
   ctx.globalAlpha = 1
@@ -181,13 +182,14 @@ export function drawDarkness(ctx: CanvasRenderingContext2D, s: State, v: View, q
   c.globalCompositeOperation = 'source-over'
   c.globalAlpha = 1
   c.setTransform(1, 0, 0, 1, 0, 0)
-  c.fillStyle = '#000'
-  c.fillRect(0, 0, d.w, d.h) // off-map area and everything the memory layer does not cover
+  c.fillStyle = memory && !s.settings.pureDarkness ? MEMORY_DARK : '#000'
+  c.fillRect(0, 0, d.w, d.h) // match the memory's dark margin across the entire viewport
   if (memory && !s.settings.pureDarkness) {
     c.imageSmoothingEnabled = true // soft memory edges
-    const sx = v.tx0, sy = v.ty0, sw = v.tx1 - v.tx0 + 1, sh = v.ty1 - v.ty0 + 1
-    const kt = TILE * v.z * r
-    c.drawImage(memory, sx, sy, sw, sh, (sx * TILE * v.z + v.ox) * r, (sy * TILE * v.z + v.oy) * r, sw * kt, sh * kt)
+    const unit = (s.world.w * TILE + 2 * MEMORY_PAD) / memory.width
+    const width = memory.width * unit, height = memory.height * unit
+    const top = s.world.h * TILE + MEMORY_PAD - height
+    c.drawImage(memory, (v.ox - MEMORY_PAD * v.z) * r, (v.oy + top * v.z) * r, width * v.z * r, height * v.z * r)
     c.globalCompositeOperation = 'multiply'
     const t = toneOf(playerDepth01(s)) // deeper = darker remembered cave (design-render §2)
     c.fillStyle = 'rgb(' + Math.round(t.r * t.amb * 255) + ',' + Math.round(t.g * t.amb * 255) + ',' + Math.round(t.b * t.amb * 255) + ')'

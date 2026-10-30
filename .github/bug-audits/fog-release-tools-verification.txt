@@ -1,0 +1,48 @@
+Fog alignment, map boundary, session developer gate and entrance pixels (2026-10-30)
+
+All four reports submitted by Kittingsl; implemented and verified, IN PROGRESS / awaiting human confirmation.
+Refs #177 (BUG-031), #178 (BUG-032), #179 (enhancement / BUG-033), #180 (BUG-034).
+Broader #112 terrain blending and #93 artwork criteria are not closed by this batch.
+
+Acceptance / implementation
+#177: memory ownership projects dark wall caps 48px north and brighter faces toward their ground base.
+  A 16px source sample resolves the half-tile lift; per-pixel owners retain each source tile's explored bit.
+  Unchanged frames return the cached canvas without pixel uploads. Changed explored bits update their projected pixels.
+  Tile hash/dimensions/module revision invalidate derived ownership, retaining a same-size canvas where possible.
+#178: viewport-wide unexplored memory color matches the padded canvas edges, avoiding the black/color seam.
+  Virtual off-map solid rock caps cover the southern exposed floor strip after real wall/actor rows.
+  Memory ownership also includes this virtual cap strip. Camera follow and invisible movement bounds are unchanged.
+#179: all builds start hidden. Host captures Ctrl+Shift+F2 at keydown, including fast taps.
+  F2/backquote/query alone do not unlock. Once unlocked, F2/backquote/DEV retain normal panel behavior.
+  Disable dev tools resets ongoing cheats and overlays, safely resolves noclip, clears temporary quality and relocks.
+  Access and temporary quality live only in the HMR resource registry; no URL/local/session storage writes.
+  New runs/HMR retain an unlocked session; full page reload starts locked with tool defaults. Ordinary settings remain intact.
+#180: entrance source has three stray bright texels at (47,46), (48,46), (63,46).
+  The entrance blit replaces these with adjacent stone #39322c; all other RGBA pixels are unchanged.
+  Tile cache version increments so cached and cold wall rows receive the correction after HMR. Owner atlas untouched.
+
+Verification
+- npm run check: passed (check ok, checks ok, check-assets/UI-assets ok, check-guard ok).
+- npm run build: passed, including TypeScript. Existing large-chunk/static-dynamic import advisories remain.
+- New pure memory-field check: raised caps, face/floor ownership, side alignment, margins and virtual south caps.
+- New debug-access check: locked ordinary keys, atomic unlock, ephemeral quality, full reset, safe noclip exit, old HMR gate upgrade.
+- Headless Edge, native input: unlock, panel close/open, freeze/noclip controls, reset button, old-query rejection.
+- Actual HMR reports game.ts swapped/state kept; access/toggle survive HMR and a new run. Full reload relocks and clears toggles.
+- Exported production JavaScript: hidden by default even with ?debug=1; native unlock works; reload clears access/toggle;
+  disable relocks; ordinary F2 cannot bypass; debug operations do not write localStorage. No console errors.
+- Browser fog: 48 edge/corner combinations across DPR 1/1.25/2 and full/half dark resolution; maximum background variation 1 RGB level.
+- Twelve projected-cap/face pixel checks across DPR/quality/fractional camera pans pass. Pure darkness returns no memory and stays black.
+- Twenty unchanged memory frames upload zero images; exploration removal/re-addition and changed caves refresh correctly.
+- Memory HMR refreshes pixels/ownership while reusing the same canvas; memory rendering leaves State unchanged.
+- Actual seed-42 escape renders reviewed at all four edges: no exposed southern floor strip.
+- Entrance sprite comparison: exactly three changed pixels, all replaced with expected opaque stone; no other pixel changes.
+
+Evidence
+- fog-projection-comparison.png: same fixture/view before/after, both at explicitly marked 8x exposure for dark-memory inspection.
+- entrance-stone-comparison.png: source frame versus actual corrected blit, nearest-neighbour enlargement.
+- real-map-edge-escape.png: north/south/west/east seed-42 escape renders after correction.
+- hidden-dev-production-locked.png and hidden-dev-production-unlocked.png: actual production export, native controls.
+
+Knowledge-base follow-up for Elias
+Re-sync memory geometry (previously one flat pixel per collision cell), padded off-map treatment and session-only dev access.
+The docs snapshot is untouched. No new runtime dependencies, artwork files or audio. Local bug reports remain outside the commit.

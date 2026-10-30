@@ -93,4 +93,11 @@ export function floorName(v: number): string {
 export function blit(c: CanvasRenderingContext2D, ts: Tileset, name: string, x: number, y: number): void {
   const [fx, fy, w, h, ax, ay] = tileFrame(name)
   c.drawImage(ts.image, fx, fy, w, h, x - ax, y - ay, w, h)
+  if (name === 'wall_cave_entrance_3wide' && w === 112 && h === 112) {
+    // Three stray daylight texels on the stone ridge, corrected to their adjacent stone palette.
+    const fill = c.fillStyle
+    c.fillStyle = '#39322c'
+    c.fillRect(x - ax + 47, y - ay + 46, 2, 1); c.fillRect(x - ax + 63, y - ay + 46, 1, 1)
+    c.fillStyle = fill
+  }
 }

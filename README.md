@@ -60,7 +60,7 @@ Open the URL Vite prints.
 
 ## Developer tools
 
-In development, click **DEV** in the lower-right corner or press **F2** / **Backquote**. Exported builds opt in with `?debug=1` (or `&debug=1` alongside a seed).
+Developer tools start hidden in all builds. Press **Ctrl+Shift+F2** to unlock and open them for this page session. After unlocking, click **DEV** or press **F2** / **Backquote** to open or close the panel. **Disable dev tools** beside the close button clears active cheats/overlays and locks access again, safely resolving noclip. Reloading the page always starts locked with fresh tool defaults; the old `?debug=1` bypass is removed.
 
 - **Player:** noclip (default 4x speed, adjustable 1–10x), infinite HP, freeze torch drain, remaining torch duration/fuel slider, extinguish/refill, and kill player.
 - **Enemies:** spawn a Lurker, Stalker, or Devourer on clear nearby floor, freeze AI, and show player/enemy animation clips and frame indices above their sprites (plus enemy AI state). The same label toggle is available on the Player tab.
@@ -255,6 +255,8 @@ The jam requires that the majority of the game is AI-generated. This section say
 - Guide density refinement (2026-10-30): double the shared guide-fire emitter interval from 1.1 to 2.2 seconds, halving emission for both copper and strontium at every quality level. No new assets or other effect changes.
 
 - Beacon and camera fixes (2026-10-30): Codex added a rounded physical Beacon base to player movement, safe debug landing and the collider overlay; camera follow now continues at map edges while the existing invisible player boundary remains. Replaced alternating-tile Beacon draft glow with one cached, softly interpolated source field. Browser checks cover contact/activation, every edge/corner in normal and noclip movement, cache reuse and HMR. No new art or audio. The owner should re-sync the knowledge-base camera-clamp and draft-glow descriptions to these requested behaviors.
+
+- Fog and release preparation (2026-10-30): Codex aligned explored memory with raised wall caps/faces using a cached 16px ownership field and a padded uniform darkness background. Virtual off-map rock caps hide the southern edge's exposed floor strip. Added an atomic Ctrl+Shift+F2 session unlock and a safe reset/lock button; developer quality overrides remain in memory. Corrected exactly three bright entrance-ridge texels to adjacent stone color during canvas blitting, preserving the owner atlas. Checks, native browser/HMR tests and production-export reload tests verify the changes. No generated assets or audio. The owner should re-sync the knowledge-base memory geometry and developer-access descriptions.
 
 ## Credits and licences
 

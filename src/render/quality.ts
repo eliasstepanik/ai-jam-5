@@ -28,7 +28,7 @@ const MARK = '@' // perf.pass key holding the timestamp of the previous mark; co
 
 // Dev/user override: 'q0'..'q3' pins a level, anything else (incl. 'auto' and unknown stored values) means auto.
 export function currentQuality(s: State): Quality {
-  const o: string = s.settings.quality
+  const o: string = getResources().debug.quality ?? s.settings.quality
   if (o.length === 2 && o[0] === 'q' && o[1] >= '0' && o[1] <= '3') return QUALITY[Number(o[1])]
   const level = getResources().perf.level
   return QUALITY[level >= 0 && level <= 3 ? level : 0]
