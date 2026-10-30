@@ -252,6 +252,8 @@ The jam requires that the majority of the game is AI-generated. This section say
 
 - Guide subtlety tuning (2026-10-29): increase the initial plain dodge reminder to 28px, retaining its 12px settled size and motion. Both mineral guides now emit every 1.1s per tile (previously 0.65s), with 1–2px births, 70% maximum opacity and a shorter white-core phase. World anchoring and target routing remain. No new generated assets.
 
+- Guide density refinement (2026-10-30): double the shared guide-fire emitter interval from 1.1 to 2.2 seconds, halving emission for both copper and strontium at every quality level. No new assets or other effect changes.
+
 ## Credits and licences
 
 - Owner-supplied `Blackout_Run_For_Your_Life_8min.mp3` (Blackout - Run for Your Life), authorised for game integration; the source manifest records ACE-Step 1.5 Turbo. Locally bundled compressed derivatives are used.

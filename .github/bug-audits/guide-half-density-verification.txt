@@ -1,0 +1,17 @@
+Guide particle density refinement - 2026-10-30
+Related completed issue #167, submitter Kittingsl. Explicit owner tuning request,
+not a reopening of the original defect. Local refinement awaits confirmation.
+
+Shared emitter interval1.1 ->2.2s halves copper/strontium emission at every
+quality level. Size, opacity, lifetime, motion, routing and UI remain unchanged.
+
+Verification: existing mineral-guidance checks and full npm run check/build pass.
+120-second /60Hz /20-emitter comparison against prior source, both materials:
+quality1:2174->1088 births (50.046%); quality.5:1088->545 (50.092%);
+quality.25:545->271 (49.725%). Small differences are emitter phase/frame rounding.
+No new test files, assets, dependencies or State schema changes.
+Docs snapshot unchanged; owner knowledge-base resync: shared interval2.2s.
+
+Browser smoke check: mean3.231/max6 drawn guide pixels; world-space history,
+frozen clock, walls, extinguish, resin target and live game/host HMR pass.
+Browser console errors/warnings: none.
