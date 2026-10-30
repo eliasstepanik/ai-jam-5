@@ -8,7 +8,7 @@ import { TILE, toast } from '../core/state.ts'
 import { T, zt } from '../core/tuning.ts'
 import { spawnMonster } from '../entities/monster.ts'
 import { circleHitsSolid } from '../world/collide.ts'
-import { nearestFloor } from '../world/sample.ts'
+import { nearestPlayerFloor, playerHitsSolid } from '../world/player-collide.ts'
 import { lineOfSightPx } from '../world/los.ts'
 import { emit } from './fx.ts'
 import { flameRadius, insideLight } from './light.ts'
@@ -43,9 +43,9 @@ export function setDebugValue(s: State, slider: 'torch' | 'speed', fraction: num
 // Re-enter on the nearest free tile, rather than leaving collision enabled inside solid rock.
 function leaveNoclip(s: State): boolean {
   const p = s.player, w = s.world.w
-  if (!debugRunActive(s) || !circleHitsSolid(s, p.x, p.y, T.player.radiusPx)) return true
+  if (!debugRunActive(s) || !playerHitsSolid(s, p.x, p.y, T.player.radiusPx)) return true
   const i = Math.floor(p.y / TILE) * w + Math.floor(p.x / TILE)
-  const free = nearestFloor(s, i, Math.max(w, s.world.h))
+  const free = nearestPlayerFloor(s, i, Math.max(w, s.world.h), T.player.radiusPx)
   if (free < 0) { toast(s, 'No free floor nearby; noclip remains on'); return false }
   p.x = (free % w + 0.5) * TILE
   p.y = (Math.floor(free / w) + 0.5) * TILE

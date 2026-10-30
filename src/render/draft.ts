@@ -1,6 +1,6 @@
 // L4 render: the cave's "draft" toward the beacon (cave overhaul G4, design-gen §3, design-render A6).
-// Warm dust motes on main-route tiles drift one tile-edge toward the beacon (the neighbour with distB - 1), and a faint warm bleed lights
-// every 2nd floor tile within 24 steps of the beacon. Fully stateless: positions are pure functions of s.meta.time and a stateless hash2
+// Warm dust motes on main-route tiles drift one tile-edge toward the beacon (the neighbour with distB - 1), and a continuous, faint warm field lights
+// reachable floor within 24 steps of the beacon. Fully stateless: positions are pure functions of s.meta.time and a stateless hash2
 // (salt 0xd4af, unused elsewhere), so the pass freezes while paused, never touches the rng streams, never writes State and keeps no
 // module-level timers or listeners. The guide fields come from the memoized core accessor. Drawn after the vine glow (index.ts wiring: I1).
 // ponytail: each mote restarts at the same spot every 2 s cycle (alpha is 0 at both ends, so no pop); add k-keyed hash2 jitter if it reads as a loop.
@@ -11,11 +11,11 @@ import { guideFields } from '../core/cave-guide.ts'
 import type { GuideFields } from '../core/cave-guide.ts'
 import { flameRadius } from '../systems/light.ts'
 import { getResources } from '../assets/resources.ts'
-import { GLOW_BUCKETS, bucketOf, glowKey } from './keys.ts'
 import { ctx2d, newCanvas } from './light.ts'
 import type { Quality } from './quality.ts'
 import type { View } from './view.ts'
 
+const BLEED_REVISION = import.meta.url // refresh the cached source pixels when this module changes during HMR
 const SALT = 0xd4af // grep-verified unused; per-tile hash lanes are x * 4 + {0 slot, 1 phase, 2 start x, 3 start y}
 export const MOTE_EVERY = 6 // one mote site per 6 main tiles on average
 export const MOTE_DRIFT = 8 // px/s toward the lower-distB neighbour
@@ -62,31 +62,29 @@ export function moteAt(g: GuideFields, x: number, y: number, target: number, t: 
   }
 }
 
-// Warm bleed alpha of a floor tile: every 2nd tile (checkerboard) within 24 steps of the beacon, 0.12 * (1 - distB / 24); else 0.
+// Continuous warm source weight on all reachable floor tiles within 24 steps of the Beacon.
 export function bleedAlpha(g: GuideFields, x: number, y: number): number {
-  if (x < 0 || y < 0 || x >= g.w || y >= g.h || ((x + y) & 1) !== 0) return 0
+  if (x < 0 || y < 0 || x >= g.w || y >= g.h) return 0
   const d = g.distB[y * g.w + x]
   return d >= 0 && d <= BLEED_RANGE ? BLEED_ALPHA * (1 - d / BLEED_RANGE) : 0
 }
 
-// Same radial sprite and cache key as glow.ts drawGlowSprite (glow.ts is frozen and its import chain loads characters.json, which the node
-// check runner cannot import, so the checks could not load this module through it). Shared cache: whoever builds a (hex, bucket) sprite first serves both.
-// ponytail: gradient duplicated from glow.ts; export glowSprite from glow.ts and import it here once glow.ts is unfrozen.
-function bleedSprite(hex: string, b: number): HTMLCanvasElement {
-  const cache = getResources().light, key = glowKey(hex, b)
-  let sprite = cache.get(key)
-  if (sprite) return sprite
-  sprite = newCanvas(b, b)
-  const g = ctx2d(sprite), rgb = parseInt(hex.slice(1), 16), c = (rgb >> 16 & 255) + ',' + (rgb >> 8 & 255) + ',' + (rgb & 255)
-  const grad = g.createRadialGradient(b / 2, b / 2, 0, b / 2, b / 2, b / 2)
-  grad.addColorStop(0, 'rgba(' + c + ',1)')
-  grad.addColorStop(0.25, 'rgba(' + c + ',0.55)')
-  grad.addColorStop(0.6, 'rgba(' + c + ',0.15)')
-  grad.addColorStop(1, 'rgba(' + c + ',0)')
-  g.fillStyle = grad
-  g.fillRect(0, 0, b, b)
-  cache.set(key, sprite)
-  return sprite
+// One source texel per tile, interpolated only for this ambient field. Source centres align with floor-tile centres.
+// Reuse the canvas and retain just one field; a cave/guide change replaces it, so restarts cannot grow the cache.
+function bleedWash(g: GuideFields): HTMLCanvasElement {
+  const res = getResources(), old = res.draftWash
+  if (old?.version === 1 && old.revision === BLEED_REVISION && old.field === g) return old.canvas
+  const canvas = old?.canvas ?? newCanvas(g.w, g.h)
+  if (canvas.width !== g.w || canvas.height !== g.h) { canvas.width = g.w; canvas.height = g.h }
+  const c = ctx2d(canvas), image = c.createImageData(g.w, g.h), rgb = parseInt(BLEED_COL.slice(1), 16)
+  for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) {
+    const i = (y * g.w + x) * 4
+    image.data[i] = rgb >> 16 & 255; image.data[i + 1] = rgb >> 8 & 255; image.data[i + 2] = rgb & 255
+    image.data[i + 3] = Math.round(255 * bleedAlpha(g, x, y))
+  }
+  c.putImageData(image, 0, 0)
+  res.draftWash = { version: 1, revision: BLEED_REVISION, field: g, canvas }
+  return canvas
 }
 
 export function drawDraft(ctx: CanvasRenderingContext2D, s: State, v: View, q: Quality): void {
@@ -96,13 +94,10 @@ export function drawDraft(ctx: CanvasRenderingContext2D, s: State, v: View, q: Q
   const g = guideOf(s), t = s.meta.time
   ctx.save()
   ctx.globalCompositeOperation = 'lighter'
-  const sprite = bleedSprite(BLEED_COL, bucketOf(2 * TILE * ctx.getTransform().a, GLOW_BUCKETS))
-  for (let y = v.ty0; y <= v.ty1; y++) for (let x = v.tx0; x <= v.tx1; x++) {
-    const a = bleedAlpha(g, x, y)
-    if (a <= 0) continue
-    ctx.globalAlpha = a
-    ctx.drawImage(sprite, x * TILE - TILE / 2, y * TILE - TILE / 2, 2 * TILE, 2 * TILE)
-  }
+  ctx.imageSmoothingEnabled = true
+  ctx.globalAlpha = .35 // all tiles now contribute; preserve a faint wash rather than doubling the old staggered glow
+  ctx.drawImage(bleedWash(g), 0, 0, g.w * TILE, g.h * TILE)
+  ctx.imageSmoothingEnabled = false // motes and all authored sprites remain native crisp pixels
   ctx.fillStyle = MOTE_COL
   for (let y = v.ty0; y <= v.ty1; y++) for (let x = v.tx0; x <= v.tx1; x++) {
     const dx = (x + 0.5) * TILE - px, dy = (y + 0.5) * TILE - py

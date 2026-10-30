@@ -219,7 +219,7 @@ function walls(): void { // purposeWall: dressingWall gate stays, def comes from
 }
 
 function draft(): void { // G4 / A6: motes drift one step toward the beacon, only from main tiles; bleed alpha follows distB
-  let main = 0, sites = 0, bleed = 0
+  let main = 0, sites = 0, bleed = 0, oddBleed = 0
   for (const seed of PURPOSE_SEEDS.slice(0, 12)) {
     const c = caveOf(seed), f = guideFields(c.tiles, W, H, c.entrance.ty * W + c.entrance.tx, c.beacon.ty * W + c.beacon.tx)
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -230,8 +230,8 @@ function draft(): void { // G4 / A6: motes drift one step toward the beacon, onl
         if (moteSite(f, x, y) && d > 0) { sites++; ok(tg === lo, 'seed ' + seed + ': moteTarget is the lower neighbour at ' + x + ',' + y) }
       } else ok(tg === -1 && !moteSite(f, x, y), 'seed ' + seed + ': no mote off the main route at ' + x + ',' + y + (f.deadTip[i] ? ' (dead end)' : ''))
       if (f.deadTip[i]) ok(tg === -1, 'seed ' + seed + ': no mote on dead-end tip ' + x + ',' + y)
-      if (a > 0) { bleed++; ok(d >= 0 && d <= BLEED_RANGE && (x + y) % 2 === 0 && Math.abs(a - BLEED_ALPHA * (1 - d / BLEED_RANGE)) < 1e-12, 'seed ' + seed + ': bleed alpha at ' + x + ',' + y) }
-      else ok(d < 0 || d > BLEED_RANGE || (x + y) % 2 !== 0 || d === BLEED_RANGE, 'seed ' + seed + ': bleed missing at ' + x + ',' + y)
+      if (a > 0) { bleed++; if ((x + y) % 2) oddBleed++; ok(d >= 0 && d <= BLEED_RANGE && Math.abs(a - BLEED_ALPHA * (1 - d / BLEED_RANGE)) < 1e-12, 'seed ' + seed + ': bleed alpha at ' + x + ',' + y) }
+      else ok(d < 0 || d >= BLEED_RANGE, 'seed ' + seed + ': bleed missing at ' + x + ',' + y)
       if (tg >= 0) for (const t of [0, 0.37, 1.9, 123.456]) {
         const m = moteAt(f, x, y, tg, t), n = moteAt(f, x, y, tg, t), p = moteAt(f, x, y, tg, t + 2) // life 2 s: t and t + 2 give one phase
         ok(m.x === n.x && m.y === n.y && m.a === n.a, 'seed ' + seed + ': moteAt deterministic at ' + x + ',' + y)
@@ -240,7 +240,7 @@ function draft(): void { // G4 / A6: motes drift one step toward the beacon, onl
     }
   }
   ok(sites > 0 && sites * 3 < main && sites * 12 > main, 'draft: one mote site per ~6 main tiles (' + sites + ' of ' + main + ')')
-  ok(bleed > 0, 'draft: bleed tiles exist')
+  ok(bleed > 0 && oddBleed > 0, 'draft: both tile parities contribute, with no checkerboard gate')
 }
 
 // ---- section 3 (G7b, A6) ----

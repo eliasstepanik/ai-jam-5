@@ -1,4 +1,5 @@
 // Ground-plane colliders, actual combat volumes, and player/enemy animation labels. Read-only with respect to State.
+import { beaconFootprint } from '../world/beacon-position.ts'
 import type { State } from '../core/types.ts'
 import { TILE } from '../core/state.ts'
 import { T, deg } from '../core/tuning.ts'
@@ -35,6 +36,8 @@ export function drawDebugWorld(ctx: CanvasRenderingContext2D, s: State, w: numbe
     for (let ty = v.ty0; ty <= v.ty1; ty++) for (let tx = v.tx0; tx <= v.tx1; tx++) {
       if (solid[ty * s.world.w + tx]) ctx.strokeRect(tx * TILE, ty * TILE, TILE, TILE)
     }
+    const base = beaconFootprint(s)
+    if (base) { ctx.strokeStyle = '#e6b86b'; capsule(ctx, base.x0, base.y, base.x1, base.y, base.r) }
     circle(ctx, p.x, p.y, T.player.radiusPx, '#65d9ef')
     ctx.strokeStyle = '#65d9ef'; ctx.beginPath(); ctx.moveTo(p.x - 4, p.y); ctx.lineTo(p.x + 4, p.y); ctx.moveTo(p.x, p.y - 4); ctx.lineTo(p.x, p.y + 4); ctx.stroke()
   }

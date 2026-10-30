@@ -254,6 +254,8 @@ The jam requires that the majority of the game is AI-generated. This section say
 
 - Guide density refinement (2026-10-30): double the shared guide-fire emitter interval from 1.1 to 2.2 seconds, halving emission for both copper and strontium at every quality level. No new assets or other effect changes.
 
+- Beacon and camera fixes (2026-10-30): Codex added a rounded physical Beacon base to player movement, safe debug landing and the collider overlay; camera follow now continues at map edges while the existing invisible player boundary remains. Replaced alternating-tile Beacon draft glow with one cached, softly interpolated source field. Browser checks cover contact/activation, every edge/corner in normal and noclip movement, cache reuse and HMR. No new art or audio. The owner should re-sync the knowledge-base camera-clamp and draft-glow descriptions to these requested behaviors.
+
 ## Credits and licences
 
 - Owner-supplied `Blackout_Run_For_Your_Life_8min.mp3` (Blackout - Run for Your Life), authorised for game integration; the source manifest records ACE-Step 1.5 Turbo. Locally bundled compressed derivatives are used.
