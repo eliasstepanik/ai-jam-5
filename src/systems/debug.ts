@@ -4,7 +4,7 @@ import { debugTeleport } from './debug-navigation.ts'
 import { startLunge } from './monsters.ts'
 import type { Monster, MonsterKind, State } from '../core/types.ts'
 import { clamp } from '../core/math.ts'
-import { TILE, toast } from '../core/state.ts'
+import { init, TILE, toast } from '../core/state.ts'
 import { T, zt } from '../core/tuning.ts'
 import { spawnMonster } from '../entities/monster.ts'
 import { circleHitsSolid } from '../world/collide.ts'
@@ -128,4 +128,11 @@ export function debugAction(s: State, action: DebugAction, view?: Input['view'])
   if (action === 'forceLeap') { debugForceLeap(s); return }
   if (action === 'kill') { s.player.hp = 0; endRun(s, false); return } // deliberately bypasses immortality
   if (s.meta.phase === 'descent') setTorch(s, action === 'refill' ? s.player.energyMax : 0)
+}
+
+// Clear ongoing cheats/overlays without trapping a noclip player inside rock or the Beacon.
+export function resetDebug(s: State): boolean {
+  if (s.debug.noclip && !leaveNoclip(s)) return false
+  s.debug = init().debug
+  return true
 }

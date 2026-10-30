@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 14 AI-generated audio samples (7 SFX, 2 music stingers, cave ambience, 4 music tracks) produced via ComfyUI, and ComfyUI pipeline additions (`gen-audio` trim/peakDb/loopFade options, loop-seam nodes in the graph). 11 ship in `src/assets/audio/`; the generated `mus_title`, `mus_descent` and `mus_escape` were superseded by the owner-supplied Beacon Run stream and removed from the bundle.
 
 ### Changed
+- Hide developer tools until Ctrl+Shift+F2 unlocks the page session; add Disable dev tools to clear cheats and relock. Reloading clears access/tool settings, including temporary quality overrides (#179).
 - Halve copper and strontium guide-fire emission rates.
 - Enlarge the initial escape dodge cue to 28px; retain the 12px settled hotkey style.
 - Make copper/strontium guide fire subtler with fewer, smaller, dimmer particles and briefer white cores.
@@ -33,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Raised the total audio budget in `scripts/check-assets.ts` from 3.3 MB to 4.6 MB per format (all 30 audio files together need 4,091,024 B ogg / 4,360,305 B mp3); the earlier "14 generated samples" text now means 11 shipped (see Added).
 
 ### Fixed
+- Align fog-of-war memory with raised wall caps and brighter faces (#177).
+- Blend off-map darkness with fog memory and cover the southern boundary's exposed floor strip (#178).
+- Correct three stray daylight pixels on the entrance's stone ridge, preserving all other sprite pixels (#180).
 - Beacon physical base now blocks walking, sprinting and dodging; interaction and debug teleports remain accessible beside it (#143).
 - Camera follows the player at all map edges and corners; the invisible movement boundary still applies in noclip (#141).
 - Removed the alternating-tile checkerboard in the Beacon's warm cave glow, using a continuous cached light field (#175).

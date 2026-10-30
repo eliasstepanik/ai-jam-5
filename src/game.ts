@@ -13,6 +13,7 @@ import { drawCommit, pollCommit } from './ui/commit.ts'
 import { audioStep, warnOnce } from './audio/engine.ts'
 import { settingsLayout } from './ui/settings.ts'
 import { setAudioLevel } from './systems/settings.ts'
+import { debugAccessInput } from './ui/debug-access.ts'
 import { beginDebugUpdate, debugAvailable, debugInput, drawDebug, endDebugUpdate } from './ui/debug.ts'
 
 export type { State } from './core/types.ts'
@@ -32,7 +33,10 @@ function devKeys(s: State, input: Input): Input {
   if (p.has('Digit3')) g.overlay = !g.overlay
   if (p.has('Digit4')) g.freezeAi = !g.freezeAi
   if (p.has('Digit5')) g.showPaths = !g.showPaths
-  if (p.has('Digit6')) s.settings.quality = QUALITY[(QUALITY.indexOf(s.settings.quality) + 1) % QUALITY.length]
+  if (p.has('Digit6')) {
+    const ui = getResources().debug
+    ui.quality = QUALITY[(QUALITY.indexOf(ui.quality ?? s.settings.quality) + 1) % QUALITY.length]
+  }
   const rest = new Set(p)
   for (let i = 1; i <= 6; i++) rest.delete('Digit' + i)
   return rest.size === p.size ? input : { ...input, pressed: rest }
@@ -99,18 +103,17 @@ function pointer(s: State, input: Input): Input {
   return clicks.length === input.clicks.length ? input : { ...input, clicks }
 }
 
-// Render the game, then developer overlays. Access is development-only unless the exported build opts in with ?debug=1.
+// Render the game, then overlays only after the explicit session unlock.
 export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: number): void {
   renderFrame(ctx, s, w, h)
-  drawCommit(ctx, s, w) // dev only; before the overlays so the stats panel covers it
-  if (debugAvailable()) drawDebug(ctx, s, w, h)
+  if (debugAvailable()) { drawCommit(ctx, s, w); drawDebug(ctx, s, w, h) }
 }
 
 // R-096: (1) dev toggles, (2) step (runs stepScreens first, world systems only while playing), (3) platformStep, (4) audioStep (never throws into the loop).
 export function update(s: State, input: Input, dt: number): void {
-  pollCommit(s, dt) // dev only: re-fetches the running commit sha every 30 s
-  const dev = debugAvailable()
-  const next = dev ? debugInput(s, devKeys(s, input)) : input
+  const access = debugAccessInput(s, input), dev = debugAvailable()
+  if (dev) pollCommit(s, dt)
+  const next = dev ? debugInput(s, devKeys(s, access)) : access
   if (dev) beginDebugUpdate(s)
   step(s, pointer(s, next), dt)
   platformStep(s)

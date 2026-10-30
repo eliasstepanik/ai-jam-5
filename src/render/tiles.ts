@@ -176,3 +176,11 @@ export function drawWallRow(ctx: CanvasRenderingContext2D, s: State, v: View, ty
     }
   }
 }
+
+// Off-map cells are solid rock. Their raised caps cover the final FACE_H pixels of ground at the south edge.
+// Paint after real wall/actor rows, matching the virtual next rows' depth order and avoiding an exposed floor strip.
+export function drawOffMapRock(ctx: CanvasRenderingContext2D, s: State): void {
+  ctx.save(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#000'
+  ctx.fillRect(0, s.world.h * 32 - FACE_H, s.world.w * 32, FACE_H)
+  ctx.restore()
+}

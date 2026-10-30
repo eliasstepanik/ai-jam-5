@@ -29,7 +29,7 @@ import { drawBeaconMode, drawFlashes, drawVignettes } from './overlay.ts'
 import { consumeEvents, drawParticles } from './particles.ts'
 import { drawRocks } from './props.ts'
 import { currentQuality, frameBegin, passMark, qualityTick } from './quality.ts'
-import { drawFloor, drawWallRow } from './tiles.ts'
+import { drawFloor, drawWallRow, drawOffMapRock } from './tiles.ts'
 import { makeView, screenXf, worldXf } from './view.ts'
 
 // Draws one frame in CSS-pixel size w x h (host contract: main.ts has set setTransform(dpr,...) and wrapped the call in save/restore).
@@ -67,6 +67,7 @@ export function render(ctx: CanvasRenderingContext2D, s: State, w: number, h: nu
     drawWallRow(ctx, s, v, ty)
     drawRowEntities(ctx, s, v, ty)
   }
+  drawOffMapRock(ctx, s)
   drawRocks(ctx, s, v) // pass 12: telegraph shadows and falling boulders above every row; landed rocks sit in the buckets
   drawParticles(ctx, s, v, 'normal') // pass 13: dust and grit under the darkness
   drawDescentFx(ctx, s, v) // pass 13b: depth motes and falling pebbles, under the darkness (saves and restores its own state)

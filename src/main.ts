@@ -77,6 +77,11 @@ function reset(): void {
 
 on<KeyboardEvent>(window, 'keydown', (e) => {
   if (GAME_KEYS.test(e.code)) e.preventDefault()
+  // Capture the chord at keydown: modifiers may be released before the next fixed update.
+  if (e.code === 'F2' && e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey) {
+    e.preventDefault()
+    if (!e.repeat) input.pressed.add('DevUnlock')
+  }
   if (import.meta.env.DEV && e.code === 'KeyR' && !e.repeat && !e.ctrlKey && !e.metaKey) return reset()
   if (!input.keys.has(e.code)) input.pressed.add(e.code)
   input.keys.add(e.code)

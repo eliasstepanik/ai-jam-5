@@ -1,3 +1,5 @@
+import { run as memoryField } from './memory-field.check.ts'
+import { run as debugAccess } from './debug-access.check.ts'
 // Runs every pure-logic check (R-040). Add one import + one call per new *.check.ts file; the list is kept in sync by hand.
 import { run as telegraph } from './telegraph.check.ts'
 import { run as rockVariants } from './rock-variants.check.ts'
@@ -168,4 +170,6 @@ aiBudget()
 audioRecipes()
 audioWiring()
 audioEngine()
+memoryField()
+debugAccess()
 console.log('checks ok')

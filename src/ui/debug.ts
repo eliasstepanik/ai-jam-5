@@ -15,13 +15,11 @@ import { drawDebugNavigation } from './debug-navigation.ts'
 import { FONT } from './draw.ts'
 import { depthName } from './strings.ts'
 
-export function debugAvailable(): boolean {
-  const ui = getResources().debug
-  ui.available ??= import.meta.env.DEV || (typeof location !== 'undefined' && new URLSearchParams(location.search).get('debug') === '1')
-  return ui.available
-}
+export { debugAvailable } from './debug-access.ts'
+import { debugAvailable, lockDebug } from './debug-access.ts'
 
 export function debugInput(s: State, input: Input): Input {
+  if (!debugAvailable()) return input
   const ui = getResources().debug, { w, h } = input.view
   if (input.pressed.has('F2') || input.pressed.has('Backquote')) { ui.on = !ui.on; ui.drag = 'none' }
   ui.mouseX = input.mouse.x; ui.mouseY = input.mouse.y
@@ -32,7 +30,8 @@ export function debugInput(s: State, input: Input): Input {
     if (control) {
       if (control.enabled) {
         const id = control.id
-        if (id === 'open') { ui.on = !ui.on; ui.drag = 'none' }
+        if (id === 'lock') { if (lockDebug(s)) return false }
+        else if (id === 'open') { ui.on = !ui.on; ui.drag = 'none' }
         else if (id === 'tab0' || id === 'tab1' || id === 'tab2' || id === 'tab3' || id === 'tab4') { ui.tab = Number(id.slice(-1)); ui.drag = 'none' }
         else if (id === 'speed' || id === 'torch') {
           ui.drag = id

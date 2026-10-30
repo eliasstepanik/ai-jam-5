@@ -26,7 +26,7 @@ export type TileCache = {
 }
 // Tint/occlusion scratch; `rows` is the actor sort buffer (bucket heads + next list by foot row, R-180).
 export type Scratch = Canvas2D & { rows: Int32Array }
-export type MemoryCache = { key: number; canvas: Canvas2D | null; img: ImageData | null; words: Int32Array }
+export type MemoryCache = { key: number; canvas: Canvas2D | null; img: ImageData | null; words: Int32Array; owners?: Int32Array; revision?: string }
 export type LightCache = Map<string, HTMLCanvasElement>
 export type Particles = {
   x0: Float32Array; y0: Float32Array; vx: Float32Array; vy: Float32Array
@@ -75,7 +75,7 @@ export type Resources = {
   uiHearts?: HeartUi
   pixelFx?: PixelPool
   particles: Particles; perf: Perf; audio: AudioRes
-  debug: { on: boolean; available: boolean | null; tab: number; drag: 'none' | 'torch' | 'speed'
+  debug: { on: boolean; available: boolean | null; accessVersion?: number; quality?: 'auto' | 'q0' | 'q1' | 'q2' | 'q3'; tab: number; drag: 'none' | 'torch' | 'speed'
     aimX: number; aimY: number; mouseX: number; mouseY: number; updateAt: number; updateMs: number; map: { key: string; canvas: HTMLCanvasElement } | null }
   ui: { fontUrl?: string; font?: FontFace; fontReady?: boolean; copyResult: 'none' | 'ok' | 'failed'; urlRead: boolean }
   hud: { exitA: number; lastT: number; runId: number; dist: number; distT: number } | null
@@ -106,13 +106,13 @@ function makeRes(ctx: AudioContext | null): Resources {
       lastMaster: -1, pauseAt: -1, nextCrackle: 0, nextBeat: 0, crackleN: 0, growlAt: 0,
       broken: new Set(), synthGen: -1,
     },
-    debug: { on: false, available: null, tab: 0, drag: 'none', aimX: 0, aimY: 0, mouseX: 0, mouseY: 0, updateAt: 0, updateMs: 0, map: null }, ui: { copyResult: 'none', urlRead: false }, hud: null,
+    debug: { on: false, available: false, accessVersion: 1, tab: 0, drag: 'none', aimX: 0, aimY: 0, mouseX: 0, mouseY: 0, updateAt: 0, updateMs: 0, map: null }, ui: { copyResult: 'none', urlRead: false }, hud: null,
   }
 }
 
 function fillRes(r: Resources): Resources {
   // Additive fields fill only missing values; active resources and cursors stay intact.
-  r.debug ??= { on: false, available: null, tab: 0, drag: 'none', aimX: 0, aimY: 0, mouseX: 0, mouseY: 0, updateAt: 0, updateMs: 0, map: null }
+  r.debug ??= { on: false, available: false, accessVersion: 1, tab: 0, drag: 'none', aimX: 0, aimY: 0, mouseX: 0, mouseY: 0, updateAt: 0, updateMs: 0, map: null }
   r.debug.available ??= null
   r.debug.tab ??= 0; r.debug.drag ??= 'none'
   r.debug.aimX ??= 0; r.debug.aimY ??= 0; r.debug.mouseX ??= 0; r.debug.mouseY ??= 0
